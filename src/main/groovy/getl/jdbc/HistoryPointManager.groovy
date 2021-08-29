@@ -225,14 +225,13 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 
 	/** Prepare table for store history values */
 	static void prepareTable(TableDataset table) {
-		table.with {
+		table.tap {
 			if (field.isEmpty()) {
 				field = tableHistoryFields
 			}
 			else {
 				CheckTableFields(it, tableHistoryFields)
 			}
-			return true
 		}
 	}
 
@@ -262,7 +261,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 			localCreate(true)
 
 		saveTable = historyTable.cloneDataset() as TableDataset
-		saveTable.with {
+		saveTable.tap {
 			writeOpts {
 				batchSize = 1
 				if (saveMethod == mergeSave) {

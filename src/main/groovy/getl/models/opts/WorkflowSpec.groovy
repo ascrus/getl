@@ -38,7 +38,7 @@ class WorkflowSpec extends BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.scripts == null)
-            params.scripts = [] as List<Map<String, Object>>
+            params.scripts = [:] as Map<String, Map<String, Object>>
         if (params.nested == null)
             params.nested = [] as List<WorkflowSpec>
     }
@@ -96,14 +96,22 @@ class WorkflowSpec extends BaseSpec {
         if (conditionCode == null) {
             try {
                 def script = """import groovy.transform.BaseScript
+import groovy.transform.Field
 import getl.lang.Getl
-@BaseScript Getl main
+import getl.models.Workflows
 
-return  { 
+@BaseScript Getl getl
+
+@Field Workflows proc
+
+Map result(String scriptName) { proc.result(scriptName) }
+
+return  {
     $condition
 } as Closure<Boolean>
 """
                 conditionCode = GenerationUtils.EvalGroovyClosure(value: script, owner: ownerWorkflow.dslCreator) as Closure<Boolean>
+                conditionCode.setProperty('proc', ownerWorkflow)
             }
             catch (Exception e) {
                 ownerWorkflow.dslCreator.logError("Error parsing the execution condition for \"$stepName\" step: ${e.message}")
@@ -125,15 +133,17 @@ return  {
     }
 
     /** List of scripts for processing */
-    List<Map<String, Object>> getScripts() { params.scripts as List<Map<String, Object>> }
+    Map<String, Map<String, Object>> getScripts() { params.scripts as Map<String, Map<String, Object>> }
     /** List of scripts for processing */
-    void setScripts(List<Map<String, Object>> value) {
+    void setScripts(Map<String, Map<String, Object>> value) {
         scripts.clear()
+
         if (value != null) {
-            value.each { script ->
-                detectRunClass(script.name as String)
+            value.each { name, script ->
+                detectRunClass(script.className as String)
             }
-            scripts.addAll(value)
+
+            scripts.putAll(value)
         }
     }
 
@@ -142,28 +152,59 @@ return  {
      * @param runClassName checked class name
      */
     Class<Getl> detectRunClass(String runClassName) {
-        def res = Class.forName(runClassName)
+        if (runClassName == null)
+            throw new ExceptionModel('Required class name!')
+
+        Class<Getl> res
+        try {
+            res = Class.forName(runClassName) as Class<Getl>
+        }
+        catch (Throwable e) {
+            ownerWorkflow.dslCreator.logError("Can not using class \"$runClassName\": ${e.message}")
+            throw e
+        }
+
         if (!Getl.isAssignableFrom(res))
             throw new ExceptionModel("Script \"$runClassName\" is not compatible with Getl class in \"$stepName\" step!")
+
         return res as Class<Getl>
     }
 
     /**
      * Add script to step
-     * @param runClassName the name of the class to run
-     * @param scriptParams script parameters
+     * @param name script name in workflow
+     * @return script description
      */
-    void script(String runClassName, Map<String, Object> scriptParams = null) {
-        detectRunClass(runClassName)
-        scripts.add([name: runClassName, params: scriptParams])
+    WorkflowScriptSpec exec(String name,
+                            @DelegatesTo(WorkflowScriptSpec)
+                            @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowScriptSpec'])
+                                    Closure cl = null) {
+        if (name == null)
+            throw new ExceptionModel("The script name in step \"$stepName\" is required!")
+
+        def exists = ownerWorkflow.scriptByName(name)
+        if (exists != null)
+            throw new ExceptionModel("The script named \"$name\" is already defined in the " +
+                    "\"${exists.ownerWorkflowSpec.stepName}\" step!")
+
+        def scriptParams = [:] as Map<String, Object>
+        scriptParams.vars = [:] as Map<String, Object>
+
+        def parent = new WorkflowScriptSpec(this, true, scriptParams)
+        parent.runClosure(cl)
+        scripts.put(name, scriptParams)
+
+        return parent
     }
     /**
      * Add script to step
      * @param runClass the class to run
      * @param scriptParams script parameters
      */
-    void script(Class<Getl> runClass, Map<String, Object> scriptParams = null) {
-        script(runClass.name, scriptParams)
+    void exec(@DelegatesTo(WorkflowScriptSpec)
+                @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowScriptSpec'])
+                        Closure cl = null) {
+        exec(ownerWorkflow.defaultScriptName(), cl)
     }
 
     /** Nested steps */
@@ -182,55 +223,28 @@ return  {
      * @param cl defining code
      * @return step specification
      */
-    protected WorkflowSpec step(String stepName, Operation operation,
-                      @DelegatesTo(WorkflowSpec)
-                      @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
-                              Closure cl = null) {
-        if (stepName == null) {
-            def pName = operation.toString().capitalize()
-            def lastStep = nested.findAll {
-                it.stepName.matches("(?i)$pName[ ]\\d+")
-            }.collect {
-                it.stepName.substring(4).toInteger()
-            }.max()
+    protected WorkflowSpec addStep(String stepName, Operation operation,
+                                   @DelegatesTo(WorkflowSpec)
+                                   @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
+                                           Closure cl = null) {
+        if (stepName == null)
+            throw new ExceptionModel('Step name required!')
 
-            stepName = "$pName ${(lastStep?:0) + 1}"
-        }
+        if (ownerWorkflow.stepByName(stepName) != null)
+            throw new ExceptionModel("The step named \"$stepName\" is already defined in the workflow!")
 
-        def parent = findStep(stepName)
-        if (parent == null) {
-            if (operation == Operation.ERROR && nested.find { node -> node.operation == Operation.ERROR } != null)
-                throw new ExceptionModel('Only one "error" operation is supported per workflow step!')
+        if (operation == Operation.ERROR && nested.find { node -> node.operation == Operation.ERROR } != null)
+            throw new ExceptionModel('Only one "error" operation is supported per workflow step!')
 
-            parent = new WorkflowSpec(ownerWorkflow, stepName, operation)
-            nested.add(parent)
-        }
-
+        def parent = new WorkflowSpec(ownerWorkflow, stepName, operation)
+        nested.add(parent)
         parent.runClosure(cl)
 
         return parent
     }
 
-    /** Find step in nested */
-    WorkflowSpec findStep(String stepName) { nested.find { it.stepName == stepName } }
-
-    /**
-     * Define nested step
-     * @param stepName operation step name
-     * @param operation execute operation
-     * @param cl defining code
-     * @return step specification
-     */
-    WorkflowSpec step(String stepName,
-                                @DelegatesTo(WorkflowSpec)
-                                @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
-                                        Closure cl = null) {
-        def node = findStep(stepName)
-        if (node == null)
-            throw new ExceptionModel("Step \"$stepName\" not found in workflow!")
-
-        step(stepName, node.operation, cl)
-    }
+    /** Find script */
+    Map<String, Object> findScript(String scriptName) { scripts.get(scriptName) }
 
     /**
      * Define step in workflow
@@ -240,9 +254,9 @@ return  {
      */
     WorkflowSpec later(String stepName,
                        @DelegatesTo(WorkflowSpec)
-                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
-                              Closure cl = null) {
-        step(stepName, Operation.EXECUTE, cl)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
+                               Closure cl = null) {
+        addStep(stepName, Operation.EXECUTE, cl)
     }
 
     /**
@@ -253,7 +267,7 @@ return  {
     WorkflowSpec later(@DelegatesTo(WorkflowSpec)
                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                               Closure cl = null) {
-        step(null, Operation.EXECUTE, cl)
+        addStep(ownerWorkflow.defaultStepName(), Operation.EXECUTE, cl)
     }
 
     /**
@@ -266,7 +280,7 @@ return  {
                          @DelegatesTo(WorkflowSpec)
                          @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                                  Closure cl = null) {
-        step(stepName, errorOperation, cl)
+        addStep(stepName, errorOperation, cl)
     }
 
     /**
@@ -277,7 +291,7 @@ return  {
     WorkflowSpec onError(@DelegatesTo(WorkflowSpec)
                          @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                               Closure cl = null) {
-        step(null, Operation.ERROR, cl)
+        addStep(ownerWorkflow.defaultStepName(), Operation.ERROR, cl)
     }
 
     @Override

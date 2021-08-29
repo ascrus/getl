@@ -190,7 +190,7 @@ class ConfigSlurper extends ConfigManager {
 		if (!file.exists())
 			throw new ExceptionGETL("Configuration file \"$file\" not found!")
 
-		def logger = (owner != null)?owner.logging.manager:Logs.global
+		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 		if (codePage == null)
 			codePage = 'utf-8'
 
@@ -344,7 +344,7 @@ class ConfigSlurper extends ConfigManager {
 		if (codePage == null)
 			codePage = 'utf-8'
 
-		def logger = (owner != null)?owner.logging.manager:Logs.global
+		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 		StringBuilder sb = new StringBuilder()
 		if (SaveMap(data, sb, convertVars, trimMap) > 0) {
 			int oldHash = (smartWrite && file.exists())?file.text.hashCode():0

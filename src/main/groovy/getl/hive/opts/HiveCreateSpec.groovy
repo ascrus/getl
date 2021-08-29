@@ -63,20 +63,20 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Field delimiter
      */
-    String getFieldsTerminated() { params.fieldsTerminated as String }
+    //String getFieldsTerminated() { params.fieldsTerminated as String }
     /**
      * Field delimiter
      */
-    void setFieldsTerminated(String value) { saveParamValue('fieldsTerminated', value) }
+    //void setFieldsTerminated(String value) { saveParamValue('fieldsTerminated', value) }
 
     /**
      * Null value
      */
-    String getNullDefined() { params.nullDefined as String }
+    //String getNullDefined() { params.nullDefined as String }
     /**
      * Null value
      */
-    void setNullDefined(String value) { saveParamValue('nullDefined', value) }
+    //void setNullDefined(String value) { saveParamValue('nullDefined', value) }
 
     /**
      * Store name

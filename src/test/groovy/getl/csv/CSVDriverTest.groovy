@@ -215,7 +215,7 @@ class CSVDriverTest extends GetlTest {
         bad_csv.doneWrite()
         bad_csv.closeWrite()
 
-        bad_csv.fieldByName('datetime').with {
+        bad_csv.fieldByName('datetime').tap {
             type = Field.Type.STRING
             length = 25
         }

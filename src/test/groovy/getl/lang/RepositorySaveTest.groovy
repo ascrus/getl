@@ -146,26 +146,47 @@ class RepositorySaveTest extends RepositorySave {
             start('Start 1') {
                 countThreads = 2
 
-                script WorkflowStepTestScript, [stepName: stepName, stepNum: 1]
-                script WorkflowStepTestScript, [stepName: stepName, stepNum: 2]
-
-                onError {
-                    script WorkflowStepTestScript, [stepName: stepName, stepNum: -1]
+                exec('top1') {
+                    className = WorkflowStepTestScript.name
+                    vars = [stepName: stepName, stepNum: 1]
+                }
+                exec('top2') {
+                    className = WorkflowStepTestScript.name
+                    vars = [stepName: stepName, stepNum: 2]
                 }
 
-                later {
+                onError {
+                    exec('error1') {
+                        className = WorkflowStepTestScript.name
+                        vars = [stepName: stepName, stepNum: -1]
+                    }
+                }
+
+                later('child1') {
                     condition = '(configContent.countProcessed == 2)'
 
-                    script WorkflowStepTestScript, [stepName: stepName, stepNum: 101]
-                    script WorkflowStepTestScript, [stepName: stepName, stepNum: 102]
-
-                    onError {
-                        script WorkflowStepTestScript, [stepName: stepName, stepNum: -101]
+                    exec('child1') {
+                        className = WorkflowStepTestScript.name
+                        vars = [stepName: stepName, stepNum: 101]
+                    }
+                    exec('child2') {
+                        className = WorkflowStepTestScript.name
+                        vars = [stepName: stepName, stepNum: 102]
                     }
 
-                    later {
+                    onError {
+                        exec('error2') {
+                            className = WorkflowStepTestScript.name
+                            vars = [stepName: stepName, stepNum: -101]
+                        }
+                    }
+
+                    later('subchild1') {
                         condition = '(configContent.countProcessed == 4)'
-                        script WorkflowStepTestScript, [stepName: stepName, stepNum: 201]
+                        exec('subchild1') {
+                            className = WorkflowStepTestScript.name
+                            vars = [stepName: stepName, stepNum: 201]
+                        }
                     }
                 }
             }

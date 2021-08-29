@@ -98,11 +98,9 @@ class LoginManager {
         if (owner instanceof GetlRepository) {
             def getl = owner as GetlRepository
             if (getl.dslCreator != null) {
-                getl.dslCreator.repositoryStorageManager.with {
+                getl.dslCreator.repositoryStorageManager.tap {
                     if (storagePassword != null && !isLoadMode)
                         password = encryptText(password)
-
-                    return true
                 }
             }
         }
@@ -122,11 +120,9 @@ class LoginManager {
         if (owner instanceof GetlRepository) {
             def getl = owner as GetlRepository
             if (getl.dslCreator != null) {
-                getl.dslCreator.repositoryStorageManager.with {
+                getl.dslCreator.repositoryStorageManager.tap {
                     if (storagePassword != null)
                         password = decryptText(password)
-
-                    return true
                 }
             }
         }

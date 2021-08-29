@@ -35,7 +35,8 @@ class ExecutorThread extends Thread {
     /** Thread parameters */
     void setParams(Map<String, Object> value) {
         params.clear()
-        if (value != null) params.putAll(value)
+        if (value != null)
+            params.putAll(value)
     }
 
     /** Groups clone objects */
@@ -55,11 +56,11 @@ class ExecutorThread extends Thread {
 
 
     /**
-     * Register group of clone object list
+     * Registed group of clone object list
      * @param groupName object group name
      * @return list of registered group objects
      */
-    List<CloneObject> registerCloneObjectGroup(String groupName) {
+    List<CloneObject> registedCloneObjectGroup(String groupName) {
         def list = listCloneObject(groupName)
         if (list == null) {
             list = [] as List<CloneObject>
@@ -77,8 +78,10 @@ class ExecutorThread extends Thread {
      * @return cloned object
      */
     Object registerCloneObject(String groupName, Object obj, Closure cloneCode) {
-        if (obj == null) return null
-        def list = registerCloneObjectGroup(groupName)
+        if (obj == null)
+            return null
+
+        def list = registedCloneObjectGroup(groupName)
 
         def clone = list.find {
             it.origObject == obj
@@ -103,7 +106,7 @@ class ExecutorThread extends Thread {
         if (name == null)
             throw new ExceptionGETL('Object name required!')
 
-        def list = registerCloneObjectGroup(groupName)
+        def list = registedCloneObjectGroup(groupName)
         def res = list.find {
             (it.cloneObject instanceof GetlRepository) && ((it.cloneObject as GetlRepository).dslNameObject == name)
         }

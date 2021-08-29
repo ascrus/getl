@@ -167,7 +167,7 @@ class FileProcessing extends FileListProcessing {
 
         if (isCachedMode && removeFiles) {
             delFilesTable = tmpConnection.dataset()
-            delFilesTable.with {
+            delFilesTable.tap {
                 field('filepath') { length = 1024; isKey = true }
                 field('filename') { length = 1024; isKey = true }
                 create()
@@ -411,7 +411,7 @@ class FileProcessing extends FileListProcessing {
 
         // Define query for detect threading groups
         def groups = new QueryDataset()
-        groups.with {
+        groups.tap {
             useConnection tmpProcessFiles.connection.cloneConnection() as JDBCConnection
             def cols = ((!threadGroupColumns.isEmpty())?threadGroupColumns:['FILEPATH'])
             def sqlCols = GenerationUtils.SqlListObjectName(tmpProcessFiles, cols)
@@ -461,7 +461,7 @@ class FileProcessing extends FileListProcessing {
                     // Thread processing files by group
                     def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: false,
                             logErrors: false, dslCreator: dslCreator)
-                    exec.with {
+                    exec.tap {
                         useList files
                         onStartingThread = this.onStartingThread
                         onFinishingThread = this.onFinishingThread

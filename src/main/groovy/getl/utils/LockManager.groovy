@@ -25,7 +25,7 @@ class LockManager {
         this.lockLife = lockLife
         if (useCollector) {
             schedule = new Executor()
-            schedule.with {
+            schedule.tap {
                 waitTime = 500
                 startBackground {
                     garbage(this.lockLife)

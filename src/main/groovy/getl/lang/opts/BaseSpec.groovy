@@ -84,7 +84,7 @@ class BaseSpec implements Cloneable {
             return
 
         try {
-            this.with(cl)
+            this.tap(cl)
         }
         finally {
             this.pullAllOptions(false)
@@ -97,7 +97,7 @@ class BaseSpec implements Cloneable {
         if (cl == null)
             return
 
-        parent.with(cl)
+        parent.tap(cl)
     }
 
     private Map<String, Object> _params

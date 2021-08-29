@@ -40,7 +40,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 
 	/** Current logger*/
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	static enum TypeCommand {
 		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK

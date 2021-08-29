@@ -339,7 +339,7 @@ class RepositorySave extends Getl {
         assert schema != null, 'It is required to specify the schema name in "schema"!'
         assert group != null, 'It is required to specify the group name in "group"!'
 
-        con.with {
+        con.tap {
             def list = retrieveDatasets {
                 schemaName = schema
                 tableMask = mask

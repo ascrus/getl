@@ -870,5 +870,5 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Current logger */
     @JsonIgnore
-    Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+    Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 }

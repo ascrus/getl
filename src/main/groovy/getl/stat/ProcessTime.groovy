@@ -57,7 +57,7 @@ class ProcessTime {
 
 	/** Current logger */
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Process name */
 	public String name = 'process'
@@ -150,7 +150,7 @@ class ProcessTime {
 			throw new ExceptionGETL("Closure code required!")
 
 		clear()
-		Long res = this.with(cl)
+		Long res = this.tap(cl)
 		if (res == null)
 			finish(countRow)
 		else

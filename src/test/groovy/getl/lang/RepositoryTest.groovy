@@ -1028,44 +1028,40 @@ class RepositoryTest extends TestDsl {
 
                         assertEquals(2, scripts.size())
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
-                        assertEquals(stepName, scripts[0].params.stepName)
-                        assertEquals(1, scripts[0].params.stepNum)
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('top1').className)
+                        assertEquals('Start 1', script('top1').vars.stepName)
+                        assertEquals(1, script('top1').vars.stepNum)
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', scripts[1].name)
-                        assertEquals(stepName, scripts[1].params.stepName)
-                        assertEquals(2, scripts[1].params.stepNum)
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('top2').className)
+                        assertEquals('Start 1', script('top2').vars.stepName)
+                        assertEquals(2, script('top2').vars.stepNum)
 
-                        step('ERROR 1') {
-                            assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
-                            assertEquals(stepName, scripts[0].params.stepName)
-                            assertEquals(-1, scripts[0].params.stepNum)
-                        }
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('error1').className)
+                        assertEquals('STEP 1', script('error1').vars.stepName)
+                        assertEquals(-1, script('error1').vars.stepNum)
 
-                        step('EXECUTE 1') {
+                        step('child1') {
                             assertEquals('(configContent.countProcessed == 2)', condition)
-
-                            assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
-                            assertEquals(stepName, scripts[0].params.stepName)
-                            assertEquals(101, scripts[0].params.stepNum)
-
-                            assertEquals('getl.lang.WorkflowStepTestScript', scripts[1].name)
-                            assertEquals(stepName, scripts[1].params.stepName)
-                            assertEquals(102, scripts[1].params.stepNum)
-
-                            step('ERROR 1') {
-                                assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
-                                assertEquals(stepName, scripts[0].params.stepName)
-                                assertEquals(-101, scripts[0].params.stepNum)
-                            }
-
-                            step('EXECUTE 1') {
-                                assertEquals('(configContent.countProcessed == 4)', condition)
-                                assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
-                                assertEquals(stepName, scripts[0].params.stepName)
-                                assertEquals(201, scripts[0].params.stepNum)
-                            }
                         }
+
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('child1').className)
+                        assertEquals('child1', script('child1').vars.stepName)
+                        assertEquals(101, script('child1').vars.stepNum)
+
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('child2').className)
+                        assertEquals('child1', script('child2').vars.stepName)
+                        assertEquals(102, script('child2').vars.stepNum)
+
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('error2').className)
+                        assertEquals('STEP 2', script('error2').vars.stepName)
+                        assertEquals(-101, script('error2').vars.stepNum)
+
+                        step('subchild1') {
+                            assertEquals('(configContent.countProcessed == 4)', condition)
+                        }
+                        assertEquals('getl.lang.WorkflowStepTestScript', script('subchild1').className)
+                        assertEquals('subchild1', script('subchild1').vars.stepName)
+                        assertEquals(201, script('subchild1').vars.stepNum)
                     }
                 }
 
@@ -1113,6 +1109,73 @@ class RepositoryTest extends TestDsl {
                 files {
                     rootPath = TFS.systemPath
                     removeDir 'repository.logs', true
+                }
+            }
+        }
+    }
+
+    @Test
+    void testObjectsInThreads() {
+        Getl.Dsl {
+            embeddedTable('test:table0', true) { tableName = 'table0' }
+            thread {
+                runMany(3) {num ->
+                    assertEquals('table0', embeddedTable('test:table0').tableName)
+                    embeddedTable('test:table0').tableName += "_$num"
+                    assertEquals("table0_$num".toString(), embeddedTable('test:table0').tableName)
+                }
+            }
+            assertEquals('table0', embeddedTable('test:table0').tableName)
+
+            shouldFail {
+                thread {
+                    runMany(1) {num ->
+                        embeddedTable("test:table$num", true) {
+                            tableName = "table$num"
+                        }
+                    }
+                }
+            }
+            assertEquals(1, listDatasets('test:table*').size())
+
+            embeddedTable('#table0', true) { tableName = 'table0' }
+            thread {
+                runMany(3) {num ->
+                    embeddedTable("#table$num", true) {
+                        tableName = "table$num"
+                    }
+
+                    assertEquals("table$num".toString(), embeddedTable("#table$num").tableName)
+
+                    thread {
+                        runMany(3) {add ->
+                            assertEquals("table$num".toString(), embeddedTable("#table$num").tableName)
+                            embeddedTable("#table$num").tableName += "_$add"
+                            assertEquals("table${num}_$add".toString(), embeddedTable("#table$num").tableName)
+                        }
+                    }
+                }
+            }
+            assertEquals(4, listDatasets('#table*').size())
+            (1..3).each {num ->
+                assertEquals("table$num".toString(), embeddedTable("#table$num").tableName)
+            }
+        }
+    }
+
+    @Test
+    void testCallScriptInThreads() {
+        Getl.Dsl {
+            thread {
+                runMany(10) { num ->
+                    callScript DslTestScriptCallInThreads, [num: num]
+                }
+            }
+            (1..10).each { num ->
+                embeddedTable("test:table$num") {
+                    assertEquals("table$num".toString(), tableName)
+                    assertNotNull(fieldByName('field1'))
+                    assertEquals(1, field.size())
                 }
             }
         }

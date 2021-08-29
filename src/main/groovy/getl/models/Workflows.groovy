@@ -1,7 +1,9 @@
 //file:noinspection unused
 package getl.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
+import getl.models.opts.WorkflowScriptSpec
 import getl.models.opts.WorkflowSpec
 import getl.models.opts.WorkflowSpec.Operation
 import getl.models.sub.BaseModel
@@ -9,6 +11,7 @@ import getl.models.sub.BaseSpec
 import getl.proc.Executor
 import getl.utils.CloneUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -37,45 +40,161 @@ class Workflows extends BaseModel<WorkflowSpec> {
         usedSteps = list
     }
 
+    /** Script execution results */
+    private final Map<String, Map> _result = [:] as Map<String, Map>
+
+    @JsonIgnore
+    @Synchronized('_result')
+    Map<String, Map> getResults() { _result }
+
+    /**
+     * Get the result of executing the specified script
+     * @param scriptName script name
+     * @return script result
+     */
+    Map result(String scriptName) {
+        return _result.get(scriptName)?:[:]
+    }
+
+    @Synchronized('_result')
+    void cleanResults() {
+        _result.clear()
+    }
+
     /** Process start operator */
     static public final Operation executeOperation = Operation.EXECUTE
     /** Process error operator */
     static public final Operation errorOperation = Operation.ERROR
 
+    /** Return list of used step numbers */
+    static private List<Integer> usedStepNumbers(List<WorkflowSpec> nodes) {
+        def res = [] as List<Integer>
+
+        nodes.each {node ->
+            if (node.stepName.matches("(?i)STEP[ ]\\d+"))
+                res.add(node.stepName.substring(4).toInteger())
+
+            res.addAll(usedStepNumbers(node.nested))
+        }
+
+        return res
+    }
+
+    /** Return last used step number */
+    protected Integer lastStepNumber() {
+        return usedStepNumbers(usedSteps).max()?:0
+    }
+
+    /** Return default step name */
+    String defaultStepName() { "STEP ${lastStepNumber() + 1}" }
+
+    /** Return list of used step numbers */
+    static private List<Integer> usedScriptNumbers(List<WorkflowSpec> nodes) {
+        def res = [] as List<Integer>
+
+        nodes.each {node ->
+            node.scripts.each { name, scriptParams ->
+                if (name.matches("(?i)SCRIPT[ ]\\d+"))
+                    res.add(name.substring(6).toInteger())
+            }
+            res.addAll(usedScriptNumbers(node.nested))
+        }
+
+        return res
+    }
+
+    /** Return last used script number */
+    protected Integer lastScriptNumber() {
+        return usedScriptNumbers(usedSteps).max()?:0
+    }
+
+    /** Return default script name */
+    String defaultScriptName() { "SCRIPT ${lastScriptNumber() + 1}" }
+
     /**
-     * Define step in workflow
+     * Find a step with a specified name in workflow
+     * @param stepName step name
+     * @return found step
+     */
+    WorkflowSpec stepByName(String stepName) {
+        findStepByName(usedSteps, stepName)
+    }
+
+    /**
+     * Find a step with a specified name in list of nodes */
+    @SuppressWarnings('UnnecessaryQualifiedReference')
+    static private WorkflowSpec findStepByName(List<WorkflowSpec> nodes, String stepName) {
+        WorkflowSpec res = null
+
+        nodes.each { node ->
+            if (node.stepName == stepName) {
+                res = node
+                directive = Closure.DONE
+                return
+            }
+
+            res = findStepByName(node.nested, stepName)
+            if (res != null) {
+                directive = Closure.DONE
+                return
+            }
+        }
+
+        return res
+    }
+
+    /**
+     * Find a step with a specified name in workflow
+     * @param scriptName script name
+     * @return found step
+     */
+    WorkflowScriptSpec scriptByName(String scriptName) {
+        def res = findNodeByScriptName(usedSteps, scriptName)
+        return (res != null)?new WorkflowScriptSpec(res, true, res.findScript(scriptName)):null
+    }
+
+    /**
+     * Find a step with a specified name in list of nodes */
+    @SuppressWarnings('UnnecessaryQualifiedReference')
+    static private WorkflowSpec findNodeByScriptName(List<WorkflowSpec> nodes, String scriptName) {
+        WorkflowSpec res = null
+
+        nodes.each { node ->
+            node.scripts.each { name, scriptParams ->
+                if (name == scriptName) {
+                    res = node
+                    directive = Closure.DONE
+                    return
+                }
+            }
+            if (res != null) {
+                directive = Closure.DONE
+                return
+            }
+
+            res = findNodeByScriptName(node.nested, scriptName)
+            if (res != null) {
+                directive = Closure.DONE
+                return
+            }
+        }
+
+        return res
+    }
+
+    /**
+     * Refer to step in workflow
      * @param stepName operation step name
-     * @param operation execute operation
-     * @param cl defining code
+     * @param cl processing code
      * @return step specification
      */
-    protected WorkflowSpec step(String stepName, Operation operation,
+    WorkflowSpec step(String stepName,
                       @DelegatesTo(WorkflowSpec)
                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                               Closure cl = null) {
-        if (operation == errorOperation)
-            throw new ExceptionModel('The "error" operation is not allowed in the top level of the workflow!')
-
-        if (stepName == null) {
-            def pName = operation.toString().capitalize()
-            def lastStep = usedSteps.findAll {
-                it.stepName.matches("(?i)$pName[ ]\\d+")
-            }.collect {
-                it.stepName.substring(4).toInteger()
-            }.max()
-
-            stepName = "$pName ${(lastStep?:0) + 1}"
-        }
-
-        checkModel()
-
-        def parent = objectByName(stepName)
-        if (parent == null) {
-            if (usedSteps.find { it.operation == operation } != null)
-                throw new ExceptionModel('It is allowed to specify no more than one \"$operation\" step in the workflow!')
-
-            parent = newSpec(stepName, operation)
-        }
+        def parent = stepByName(stepName)
+        if (parent == null)
+            throw new ExceptionModel("Step \"$stepName\" not found in workflow!")
 
         parent.runClosure(cl)
 
@@ -83,45 +202,59 @@ class Workflows extends BaseModel<WorkflowSpec> {
     }
 
     /**
-     * Define step in workflow
-     * @param stepName operation step name
-     * @param operation execute operation
-     * @param cl defining code
+     * Refer to script in workflow
+     * @param scriptName operation step name
+     * @param cl processing code
      * @return step specification
      */
-    WorkflowSpec step(String stepName,
-                                @DelegatesTo(WorkflowSpec)
-                                @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
-                                        Closure cl = null) {
-        def node = objectByName(stepName)
-        if (node == null)
-            throw new ExceptionModel("Step \"$stepName\" not found in workflow!")
+    WorkflowScriptSpec script(String scriptName,
+                        @DelegatesTo(WorkflowScriptSpec)
+                        @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowScriptSpec'])
+                                Closure cl = null) {
+        def parent = scriptByName(scriptName)
+        if (parent == null)
+            throw new ExceptionModel("Script \"$scriptName\" not found in workflow!")
 
-        step(stepName, node.operation, cl)
+        parent.runClosure(cl)
+
+        return parent
     }
 
     /**
-     * Define step in workflow
+     * Define start in workflow
      * @param stepName operation step name
      * @param cl defining code
      * @return step specification
      */
     WorkflowSpec start(String stepName,
                        @DelegatesTo(WorkflowSpec)
-                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
-                              Closure cl = null) {
-        step(stepName, executeOperation, cl)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
+                               Closure cl = null) {
+        if (stepName == null)
+            throw new ExceptionModel('Step name required!')
+
+        if (!usedSteps.isEmpty())
+            throw new ExceptionModel('It is allowed to specify no more than one "start" step in the workflow!')
+
+        checkModel()
+
+        if (stepByName(stepName) != null)
+            throw new ExceptionModel("The step named \"$stepName\" is already defined in the workflow!")
+
+        def parent = newSpec(stepName, executeOperation)
+        parent.runClosure(cl)
+
+        return parent
     }
 
     /**
-     * Define step in workflow
+     * Define start in workflow
      * @param cl defining code
      * @return step specification
      */
     WorkflowSpec start(@DelegatesTo(WorkflowSpec)
-                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
-                              Closure cl = null) {
-        step(null, executeOperation, cl)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec']) Closure cl) {
+        start(defaultStepName(), cl)
     }
 
     @Override
@@ -135,8 +268,8 @@ class Workflows extends BaseModel<WorkflowSpec> {
             throw new ExceptionModel('Required operation for \"${step.stepName}\" step!')
 
         step.condition()
-        step.scripts.each { script ->
-            step.detectRunClass(script.name as String)
+        step.scripts.each { name, scriptParams ->
+            step.detectRunClass(scriptParams.className as String)
         }
     }
 
@@ -158,27 +291,41 @@ class Workflows extends BaseModel<WorkflowSpec> {
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
         if (node.condition != null) {
-            if (!dslCreator.runDsl(node.condition())) {
+            if (!(dslCreator.runDsl(this, node.condition()) as Boolean)) {
                 dslCreator.logWarn("Conditions for \"$stepLabel\" step do not require its execute!")
                 return res
             }
         }
 
         try {
-            new Executor().with { exec ->
-                dslCreator = this.dslCreator
-                useList node.scripts
-                setCountProc node.countThreads ?: 1
-                abortOnError = true
-                dumpErrors = true
-                debugElementOnError = true
-                run { Map<String, Object> script ->
-                    exec.counter.nextCount()
-                    def runClass = node.detectRunClass(script.name as String)
-                    def scriptParams = script.params as Map<String, Object>
-                    dslCreator.callScript(runClass, scriptParams)
+            if (!node.scripts.isEmpty()) {
+                new Executor().tap { exec ->
+                    dslCreator = this.dslCreator
+                    useList node.scripts.keySet().toList()
+                    setCountProc node.countThreads ?: 1
+                    abortOnError = true
+                    dumpErrors = true
+                    debugElementOnError = true
+                    run { String scriptName ->
+                        exec.counter.nextCount()
+
+                        def scriptParams = node.scripts.get(scriptName)
+                        def className = scriptParams.className
+                        dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
+
+                        def runClass = node.detectRunClass(className)
+                        if (runClass == null)
+                            throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
+                        def vars = scriptParams.vars as Map<String, Object>
+                        def scriptResult = dslCreator.callScript(runClass, vars)
+                        if (scriptResult.result != null && scriptResult.result instanceof Map) {
+                            synchronized (_result) {
+                                _result.put(scriptName, scriptResult.result as Map)
+                            }
+                        }
+                    }
+                    res = counter.count
                 }
-                res = counter.count
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.lang.sub
 
 import getl.exception.ExceptionDSL
@@ -314,9 +315,19 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        def isThread = (dslCreator.options.useThreadModelCloning && Thread.currentThread() instanceof ExecutorThread) && cloneInThread
-
         def repName = dslCreator.repObjectName(name, registration)
+        def isTemporary = (repName[0] == '#')
+        def isThread = dslCreator.options.useThreadModelCloning &&
+                cloneInThread &&
+                !BoolUtils.IsValue(dslCreator.getGetlSystemParameter('need_main_thread')) &&
+                (Thread.currentThread() instanceof ExecutorThread)
+        if (isThread) {
+            def thread = Thread.currentThread() as ExecutorThread
+            if (BoolUtils.IsValue(thread.params.workInMain))
+                isThread = false
+        }
+
+
         if (!registration && isThread) {
             def thread = Thread.currentThread() as ExecutorThread
             def threadObj = thread.findDslCloneObject(nameCloneCollection, repName) as T
@@ -332,7 +343,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             dslCreator.with {
                 if (!registration && obj == null && options.validRegisterObjects &&
                         repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
-                        repName[0] != '#') {
+                        !isTemporary) {
                     try {
                         obj = repositoryStorageManager.loadObject(repClass, repName) as T
                     }
@@ -345,7 +356,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             }
 
             if (obj == null) {
-                if (registration && isThread)
+                if (registration && isThread && !isTemporary)
                     throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")
 
                 if (!registration && dslCreator.options.validRegisterObjects)
@@ -353,7 +364,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
                 obj = createObject(className)
                 obj.dslNameObject = repName
-                obj.dslCreator = (repName[0] == '#')?creator:dslCreator
+                obj.dslCreator = isTemporary?creator:dslCreator
                 objects.put(repName, obj)
                 initRegisteredObject(obj)
             } else {
@@ -368,20 +379,26 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         if (isThread) {
             def thread = Thread.currentThread() as ExecutorThread
-            def threadObj = thread.registerCloneObject(nameCloneCollection, obj,
-                    {
-                        def par = it as T
-                        def c = cloneObject(par)
-                        creator.repositoryStorageManager.runWithLoadMode(true) {
-                            c.dslNameObject = repName
-                            c.dslCreator = par.dslCreator
+            if (registration && isTemporary) {
+                thread.registerCloneObject(nameCloneCollection, obj, { obj } )
+                processRegisterObject(creator, className, name, registration, obj, null, params)
+            }
+            else {
+                def threadObj = thread.registerCloneObject(nameCloneCollection, obj,
+                        {
+                            def par = it as T
+                            def c = cloneObject(par)
+                            creator.repositoryStorageManager.runWithLoadMode(true) {
+                                c.dslNameObject = repName
+                                c.dslCreator = par.dslCreator
+                            }
+                            return c
                         }
-                        return c
-                    }
-            ) as T
+                ) as T
 
-            processRegisterObject(creator, className, name, registration, obj, threadObj, params)
-            obj = threadObj
+                processRegisterObject(creator, className, name, registration, obj, threadObj, params)
+                obj = threadObj
+            }
         }
         else {
             processRegisterObject(creator, className, name, registration, obj, null, params)

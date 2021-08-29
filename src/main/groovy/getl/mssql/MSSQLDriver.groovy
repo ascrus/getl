@@ -19,7 +19,7 @@ class MSSQLDriver extends JDBCDriver {
 	protected void registerParameters() {
 		super.registerParameters()
 
-		methodParams.register('eachRow', ['with'])
+		methodParams.register('eachRow', ['withHint'])
 	}
 
 	@Override
@@ -85,8 +85,8 @@ class MSSQLDriver extends JDBCDriver {
 	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		def dl = ((dataset as TableDataset).readDirective?:[:]) + (params as Map<String, Object>)
-		if (dl.with != null) {
-			dir.afteralias = "with (${dl.with})"
+		if (dl.withHint != null) {
+			dir.afteralias = "with (${dl.withHint})"
 		}
 		if (params.limit != null) {
 			dir.afterselect = ((dir.afterselect != null)?(dir.afterselect + '\n'):'') + "TOP ${params.limit}"

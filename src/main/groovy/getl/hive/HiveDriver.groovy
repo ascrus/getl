@@ -24,7 +24,7 @@ class HiveDriver extends JDBCDriver {
 
         methodParams.register('createDataset',
                 ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
-                 'fieldsTerminated', 'nullDefined', 'select'])
+                 /*'fieldsTerminated', 'nullDefined', */'select'])
         methodParams.register('openWrite', ['overwrite'])
         methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
                                                'hdfsDir', 'processRow', 'expression', 'files', 'fileMask'])
@@ -175,6 +175,7 @@ class HiveDriver extends JDBCDriver {
             sb << '\n'
         }
 
+        /*
         if (params.fieldsTerminated != null) {
             sb << "FIELDS TERMINATED BY '${params.fieldsTerminated}'"
             sb << '\n'
@@ -183,7 +184,7 @@ class HiveDriver extends JDBCDriver {
         if (params.nullDefined != null) {
             sb << "NULL DEFINED AS '${params.nullDefined}'"
             sb << '\n'
-        }
+        }*/
 
         if (params.storedAs != null) {
             sb << "STORED AS ${params.storedAs}"

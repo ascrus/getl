@@ -29,7 +29,7 @@ abstract class ConfigManager {
 
     /** Current logger */
     @JsonIgnore
-    Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+    Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
     /** Evaluate variables where load configuration */
     private Boolean evalVars

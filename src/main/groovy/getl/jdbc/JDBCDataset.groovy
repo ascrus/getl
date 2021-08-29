@@ -58,25 +58,25 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Database name
 	 */
-	String getDbName () { ListUtils.NotNullValue([params.dbName, currentJDBCConnection?.dbName]) }
+	String getDbName() { ListUtils.NotNullValue([params.dbName, currentJDBCConnection?.dbName]) }
 	/**
 	 * Database name
 	 */
-	void setDbName (String value) { params.dbName = value }
+	void setDbName(String value) { params.dbName = value }
 
 	/**
 	 * Event on retrieve list of field 	
 	 */
 	@JsonIgnore
-	Closure getOnUpdateFields () { params.onUpdateFields as Closure }
+	Closure getOnUpdateFields() { params.onUpdateFields as Closure }
 	/**
 	 * Event on retrieve list of field
 	 */
-	void setOnUpdateFields (Closure value) { params.onUpdateFields = value }
+	void setOnUpdateFields(Closure value) { params.onUpdateFields = value }
 	/**
 	 * Event on retrieve list of field
 	 */
-	void updateFields (Closure value) { setOnUpdateFields(value) }
+	void updateFields(Closure value) { setOnUpdateFields(value) }
 	
 	@Override
 	@JsonIgnore
@@ -89,7 +89,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Name of dataset
 	 */
-	String nameDataset () {
+	String nameDataset() {
 		JDBCDriver drv = currentJDBCConnection?.currentJDBCDriver
 		(drv != null)?drv.nameDataset(this):getClass().name
 	}
@@ -97,7 +97,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Full name of dataset
 	 */
-	String fullNameDataset () {
+	String fullNameDataset() {
 		JDBCDriver drv = currentJDBCConnection?.currentJDBCDriver
 		(drv != null)?drv.fullNameDataset(this):getClass().name
 	}
@@ -113,14 +113,14 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Object name with SQL syntax
 	 */
-	String sqlObjectName (String name) {
+	String sqlObjectName(String name) {
 		GenerationUtils.SqlObjectName(this, name)
 	}
 
 	/**
 	 * Objects name for SQL syntax
 	 */
-	List<String> sqlListObjectName (List<String> listNames) {
+	List<String> sqlListObjectName(List<String> listNames) {
 		GenerationUtils.SqlListObjectName(this, listNames)
 	}
 	
@@ -129,14 +129,14 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} and {orig} macros
 	 * @return - generated list
 	 */
-	List<String> sqlKeyFields (String expr, List<String> excludeFields) {
+	List<String> sqlKeyFields(String expr, List<String> excludeFields) {
 		GenerationUtils.SqlKeyFields(this, field, expr, excludeFields)
 	}
 	
 	/**
 	 * Return key fields name by sql syntax
 	 */
-	List<String> sqlKeyFields () {
+	List<String> sqlKeyFields() {
 		sqlKeyFields(null, null)
 	}
 	
@@ -145,14 +145,14 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} macros
 	 * @return - generated list
 	 */
-	List<String> sqlKeyFields (String expr) {
+	List<String> sqlKeyFields(String expr) {
 		sqlKeyFields(expr, null)
 	}
 	
 	/**
 	 * Return key fields name by sql syntax with expression and exclude fields list
 	 */
-	List<String> sqlKeyFields (List<String> excludeFields) {
+	List<String> sqlKeyFields(List<String> excludeFields) {
 		sqlKeyFields(null, excludeFields)
 	}
 	
@@ -161,7 +161,7 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} macros 
 	 * @return - generated list
 	 */
-	List<String> sqlFields (String expr, List<String> excludeFields) {
+	List<String> sqlFields(String expr, List<String> excludeFields) {
 		GenerationUtils.SqlFields(this, field, expr, excludeFields)
 	}
 	
@@ -189,7 +189,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Return fields name by sql syntax
 	 */
-	List<String> sqlFields () {
+	List<String> sqlFields() {
 		sqlFields(null, null)
 	}
 	
@@ -198,25 +198,27 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} macros
 	 * @return - generated list
 	 */
-	List<String> sqlFields (String expr) {
+	List<String> sqlFields(String expr) {
 		sqlFields(expr, null)
 	}
 	
 	/**
 	 * Return fields name by sql syntax with exclude fields list
 	 */
-	List<String> sqlFields (List<String> excludeFields) {
+	List<String> sqlFields(List<String> excludeFields) {
 		sqlFields(null, excludeFields)
 	}
 
 	/** Query parameters */
-	Map getQueryParams () { params.queryParams as Map<String, Object> }
+	Map<String, Object> getQueryParams() { params.queryParams as Map<String, Object> }
 	/** Query parameters */
-	void setQueryParams (Map value) {
+	void setQueryParams(Map<String, Object> value) {
 		queryParams.clear()
 		if (value != null)
 			queryParams.putAll(value)
 	}
+	/** Query parameters */
+	Map<String, Object> queryParams() { attributes() + queryParams }
 
 	/** Dataset is temporary table */
 	@SuppressWarnings("UnnecessaryQualifiedReference")

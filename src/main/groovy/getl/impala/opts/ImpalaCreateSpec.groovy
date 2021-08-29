@@ -27,9 +27,9 @@ class ImpalaCreateSpec extends CreateSpec {
     void setRowFormat(String value) { saveParamValue('rowFormat', value) }
 
     /** Field delimiter */
-    String getFieldsTerminated() { params.fieldsTerminated as String }
+    //String getFieldsTerminated() { params.fieldsTerminated as String }
     /** Field delimiter */
-    void setFieldsTerminated(String value) { saveParamValue('fieldsTerminated', value) }
+    //void setFieldsTerminated(String value) { saveParamValue('fieldsTerminated', value) }
 
     /** Store name */
     String getStoredAs() { params.storedAs as String }

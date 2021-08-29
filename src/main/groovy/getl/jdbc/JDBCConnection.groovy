@@ -466,7 +466,7 @@ class JDBCConnection extends Connection implements UserLogins {
 					throw new ExceptionGETL("Not support dataset type \"${row.type}\"")
 			}
 			d.connection = this
-			d.with {
+			d.tap {
 				if (row.dbName != null) d.dbName = row.dbName
 				if (row.schemaName != null) d.schemaName = row.schemaName
 				d.tableName = row.tableName
@@ -475,8 +475,6 @@ class JDBCConnection extends Connection implements UserLogins {
 					retrieveFields()
 					retrieveOpts()
 				}
-
-				return true
 			}
 			result << d
 		}

@@ -139,7 +139,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
                       @DelegatesTo(MapTableSpec)
                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
                               Closure cl = null) {
-        addDatasets(maskName, cl)
+        addDatasets(mask: maskName, code: cl)
     }
 
     @Override
@@ -176,7 +176,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
                         "specified for table \"${node.sourceName}\" was not found!")
 
             if (cl != null)
-                node.with(cl)
+                node.tap(cl)
         }
     }
 

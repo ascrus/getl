@@ -93,7 +93,7 @@ class WebUtils {
         Integer res = null
 
         try {
-            serv.with {
+            serv.tap {
                 res = responseCode
                 if (res != HTTP_OK)
                     throw new ExceptionGETL("Error $res reading service \"${serv.URL.text}\": $responseMessage")

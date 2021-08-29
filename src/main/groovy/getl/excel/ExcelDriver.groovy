@@ -220,7 +220,7 @@ class ExcelDriver extends FileDriver {
                 break
             case Field.Type.BOOLEAN:
                 if (cell.cellType == CellType.STRING) {
-                    def format = field.format?:'true|false'
+                    def format = field.format?:dataset.formatBoolean()?:'true|false'
                     def val = format.toLowerCase().split("[|]")
                     res = (cell.stringCellValue == val[0])
                 }

@@ -54,33 +54,48 @@ class KafkaDataset extends Dataset {
     /** Format for date fields */
     void setFormatDate(String value) { params.formatDate = value }
     /** Format for date fields */
-    String formatDate() { formatDate?: DateUtils.defaultDateMask }
+    String formatDate() { formatDate?:currentKafkaConnection.formatDate() }
 
     /** Format for datetime fields */
     String getFormatDateTime() { params.formatDateTime as String }
     /** Format for datetime fields */
     void setFormatDateTime(String value) { params.formatDateTime = value }
     /** Format for datetime fields */
-    String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
+    String formatDateTime() { formatDateTime?:currentKafkaConnection.formatDateTime() }
 
     /** Format for timestamp with timezone fields */
     String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
     /** Format for timestamp with timezone fields */
     void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
     /** Format for timestamp with timezone fields */
-    String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzFullMask }
+    String formatTimestampWithTz() { formatTimestampWithTz?:currentKafkaConnection.formatTimestampWithTz() }
 
     /** Format for time fields */
     String getFormatTime() { params.formatTime as String }
     /** Format for time fields */
     void setFormatTime(String value) { params.formatTime = value }
     /** Format for time fields */
-    String formatTime() { formatTime?:DateUtils.defaultTimeMask }
+    String formatTime() { formatTime?:currentKafkaConnection.formatTime() }
 
     /** Use the same date and time format */
     String getUniFormatDateTime() { params.uniFormatDateTime as String }
     /** Use the same date and time format */
     void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
+    /** Use the same date and time format */
+    String uniFormatDateTime() { uniFormatDateTime?:currentKafkaConnection?.uniFormatDateTime }
+
+    /** Format for boolean fields */
+    String getFormatBoolean() { params.formatBoolean as String }
+    /** Format for boolean fields */
+    void setFormatBoolean(String value) { params.formatBoolean = value }
+    String formatBoolean() { formatBoolean?:currentKafkaConnection.formatBoolean() }
+
+    /** Decimal separator for number fields */
+    String getDecimalSeparator() { params.decimalSeparator as String }
+    /** Decimal separator for number fields */
+    void setDecimalSeparator(String value) { params.decimalSeparator = value }
+    /** Decimal separator for number fields */
+    String decimalSeparator() { decimalSeparator?:currentKafkaConnection.decimalSeparator() }
 
     /**
      * Return the format of the specified field

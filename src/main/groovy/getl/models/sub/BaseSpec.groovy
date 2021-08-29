@@ -1,6 +1,7 @@
 //file:noinspection unused
 package getl.models.sub
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
 import getl.utils.ListUtils
 import getl.utils.MapUtils

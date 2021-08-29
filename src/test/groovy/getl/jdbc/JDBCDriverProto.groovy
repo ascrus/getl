@@ -138,7 +138,7 @@ abstract class JDBCDriverProto extends GetlTest {
     protected void createSequence() {
         if (!con.driver.isSupport(Driver.Support.SEQUENCE) || !testSequence) return
         sequence = new Sequence()
-        sequence.with {
+        sequence.tap {
             useConnection con
             name = 'getl_test_sequence'
             dropSequence(true)
@@ -573,7 +573,7 @@ abstract class JDBCDriverProto extends GetlTest {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
         def bulkTable = new TableDataset(connection: con)
-        bulkTable.with {
+        bulkTable.tap {
             tableName = 'getl_test_copy_bulk'
             field('id') { type = integerFieldType }
             field('name') { type = stringFieldType; length = 50 }
@@ -739,7 +739,7 @@ END FOR;
         def table1 = table.cloneDataset() as TableDataset
         table1.readOpts {where = "${fp1}ID1${fp2} > 0" }
         def table2 = table.cloneDataset() as TableDataset
-        table2.with {
+        table2.tap {
             if (con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
                 createOpts {
                     type = localTemporaryTableType

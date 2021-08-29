@@ -25,7 +25,7 @@ class ImpalaDriver extends JDBCDriver {
         super.registerParameters()
         methodParams.register('createDataset',
                 ['sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties',
-                 'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', 'select'])
+                 /*'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', */'select'])
         methodParams.register('openWrite', ['overwrite'])
         methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
                                                'hdfsDir', 'processRow', 'expression'])
@@ -126,7 +126,7 @@ class ImpalaDriver extends JDBCDriver {
             sb << '\n'
         }
 
-        if (params.fieldsTerminated != null) {
+        /*if (params.fieldsTerminated != null) {
             sb << "FIELDS TERMINATED BY '${params.fieldsTerminated}'"
             sb << '\n'
         }
@@ -139,7 +139,7 @@ class ImpalaDriver extends JDBCDriver {
         if (params.linesTerminatedBy != null) {
             sb << "LINES TERMINATED BY '${params.linesTerminatedBy}'"
             sb << '\n'
-        }
+        }*/
 
         if (params.serdeproperties != null) {
             if (!(params.serdeproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "serdeproperties"')

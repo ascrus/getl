@@ -4,7 +4,7 @@ package getl.models
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
-import getl.jdbc.TableDataset
+import getl.jdbc.JDBCDataset
 import getl.models.opts.TableSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.CloneUtils
@@ -36,6 +36,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
         def con = dslCreator.connection(connectionName)
         if (!(con instanceof JDBCConnection))
             throw new ExceptionDSL("Connection \"$connectionName\" is not JDBC compatible!")
+
         useModelConnection(connectionName)
     }
     /** Use specified connection */
@@ -64,6 +65,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
 
             list.add(new TableSpec(own, p))
         }
+
         usedTables = list
     }
 
@@ -76,6 +78,9 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     TableSpec table(String tableName,
                     @DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
+        if (!(dslCreator.dataset(tableName) instanceof JDBCDataset))
+            throw new ExceptionDSL('Required to specify jdbc compatible dataset!')
+
         dataset(tableName, cl)
     }
 
@@ -86,11 +91,11 @@ class SetOfTables extends DatasetsModel<TableSpec> {
      */
     TableSpec table(@DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl) {
-        def owner = DetectClosureDelegate(cl)
-        if (owner instanceof TableDataset)
-            return table((owner as TableDataset).dslNameObject)
+        def owner = DetectClosureDelegate(cl, true)
+        if (!(owner instanceof JDBCDataset))
+            throw new ExceptionDSL('Required to specify jdbc compatible dataset!')
 
-        throw new ExceptionDSL('Required to specify jdbc compatible table!')
+        return table((owner as JDBCDataset).dslNameObject, cl)
     }
 
     /**
@@ -99,7 +104,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
      * @param cl defining code
      * @return table spec
      */
-    TableSpec table(TableDataset table,
+    TableSpec table(JDBCDataset table,
                     @DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
         useDataset(table, cl)
@@ -113,7 +118,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     void addTables(String maskName,
                    @DelegatesTo(TableSpec)
                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
-        addDatasets(maskName, cl)
+        addDatasets(mask: maskName, code: cl, filter: { String name -> dslCreator.dataset(name) instanceof JDBCDataset })
     }
 
     @Override

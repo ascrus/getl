@@ -418,7 +418,7 @@ class TableDataset extends JDBCDataset {
 			def fn = files.toString()
 			if ((fn).matches('.*(\\{|\\*).*')) {
 				def maskPath = new Path()
-				maskPath.with {
+				maskPath.tap {
 					mask = FileUtils.ConvertToUnixPath(fn)
 					variable('date') { type = Field.datetimeFieldType; format = 'yyyy-MM-dd_HH-mm-ss' }
 					variable('num') { type = Field.integerFieldType; length = 4 }
@@ -426,7 +426,7 @@ class TableDataset extends JDBCDataset {
 				}
 
 				def fm = new FileManager()
-				fm.with {
+				fm.tap {
 					rootPath = path
 					procFiles = buildListFiles(maskPath) { recursive = true }
 				}
@@ -450,7 +450,7 @@ class TableDataset extends JDBCDataset {
 		}
 		else if (files instanceof Path) {
 			def maskPath = files as Path
-			maskPath.with {
+			maskPath.tap {
 				if (maskVariables.date == null)
 					variable('date') { type = Field.datetimeFieldType; format = 'yyyy-MM-dd_HH-mm-ss' }
 
@@ -461,7 +461,7 @@ class TableDataset extends JDBCDataset {
 			}
 
 			def fm = new FileManager()
-			fm.with {
+			fm.tap {
 				rootPath = path
 				procFiles = buildListFiles(maskPath) { recursive = true }
 			}

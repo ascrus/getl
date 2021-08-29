@@ -556,7 +556,8 @@ class Field implements Serializable, Cloneable {
 	static Field New(String name,
 					 @DelegatesTo(Field) @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
 		def parent = new Field(name: name)
-		if (cl != null) parent.with(cl)
+		if (cl != null)
+			parent.tap(cl)
 		return parent
 	}
 }

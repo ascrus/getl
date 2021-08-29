@@ -41,7 +41,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     @JsonIgnore
     VerticaTable getReferenceTable() {
         def destTable = new VerticaTable()
-        destTable.with {
+        destTable.tap {
             useConnection ownerReferenceVerticaTableModel.referenceConnection
             schemaName = ownerReferenceVerticaTableModel.referenceSchemaName
             tableName = referenceTableName
@@ -230,7 +230,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
         Long destRows
 
         def cols = [] as List<String>
-        new QueryDataset().with {
+        new QueryDataset().tap {
             useConnection ownerReferenceVerticaTableModel.referenceConnection
             query = '''
 SELECT column_name
@@ -257,7 +257,7 @@ ORDER BY ordinal_position'''
         p._model_sample_ = (sampleCopy != null) ? "TABLESAMPLE($sampleCopy)" : ''
         p._model_limit_ = (limitCopy) ? "LIMIT $limitCopy" : ''
 
-        externalConnection.with {
+        externalConnection.tap {
             def script = """
 EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_} 
   ({_model_cols_}) 
@@ -274,8 +274,6 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
         destRows = destTable.countRow()
         ownerModel.dslCreator.logInfo("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
                 "${StringUtils.WithGroupSeparator(destRows)} rows copied to reference table from other Vertica server")
-
-        return true
     }
 
     /**
@@ -303,7 +301,7 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
         destTable.truncate()
         if (sourceRows > 0) {
             def tableAttrs = new QueryDataset()
-            tableAttrs.with {
+            tableAttrs.tap {
                 useConnection ownerReferenceVerticaTableModel.referenceConnection
                 query = '''
 SELECT NullIf(partition_expression, '') AS partition_expression, IsNull(c.count_inc_cols, 0) AS count_inc_cols
@@ -328,7 +326,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
                 sourceTable.copyTo(destTable)
             } else {
                 def partDays = new QueryDataset()
-                partDays.with {
+                partDays.tap {
                     useConnection ownerReferenceVerticaTableModel.referenceConnection
                     query = 'SELECT Min({part_expr}) AS part_min, Max({part_expr}) AS part_max FROM {table} AS "{alias}"'
                     queryParams.table = sourceTable.fullTableName
@@ -366,7 +364,5 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
             ownerModel.dslCreator.logInfo("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table has no rows, " +
                     "table ${destTable.fullTableName} is cleared")
         }
-
-        return true
     }
 }

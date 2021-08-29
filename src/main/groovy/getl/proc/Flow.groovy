@@ -36,7 +36,7 @@ class Flow {
 
 	/** Current logger */
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/**
 	 * Initialization parameters
@@ -323,7 +323,7 @@ class Flow {
 			def fn = sf.name.toLowerCase()
 			if (map.containsKey(fn)) {
 				def df = sf.clone() as Field
-				df.with {
+				df.tap {
 					isReadOnly = false
 					defaultValue = null
 					isAutoincrement = null

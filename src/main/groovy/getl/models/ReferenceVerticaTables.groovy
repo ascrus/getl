@@ -74,6 +74,9 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                                                  @DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                      Closure cl = null) {
+        if (!(dslCreator.dataset(tableName) instanceof VerticaTable))
+            throw new ExceptionDSL('Vertica table is required!')
+
         dataset(tableName, cl) as ReferenceVerticaTableSpec
     }
 
@@ -85,7 +88,11 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     ReferenceVerticaTableSpec referenceFromTable(@DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                     Closure cl) {
-        referenceFromTable(null, cl)
+        def owner = DetectClosureDelegate(cl, true)
+        if (!(owner instanceof VerticaTable))
+            throw new ExceptionDSL('Vertica table is required!')
+
+        return referenceFromTable((owner as VerticaTable).dslNameObject, cl)
     }
 
     /**
@@ -97,7 +104,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                             @DelegatesTo(ReferenceVerticaTableSpec)
                             @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                     Closure cl = null) {
-        addDatasets(maskName, cl)
+        addDatasets(mask: maskName, code: cl, filter: { String name -> dslCreator.dataset(name) instanceof VerticaTable })
     }
 
     @Override
@@ -121,7 +128,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     void createReferenceTables(Boolean recreate = false, Boolean grantRolesToSchema = false) {
         checkModel()
         dslCreator.logFine("*** Create reference tables for model \"$repositoryModelName\"")
-        new QueryDataset(dslCreator: dslCreator).with {
+        new QueryDataset(dslCreator: dslCreator).tap {
             useConnection referenceConnection
             query = """SELECT Count(*) AS count FROM schemata WHERE schema_name ILIKE '{schema}'"""
             queryParams.schema = referenceSchemaName

@@ -22,7 +22,7 @@ class ReferenceFilesTest extends TestRepository {
                 fill()
             }
 
-            f.with {
+            f.tap {
                 assertTrue(existsFile('reference/тест.txt'))
                 assertEquals('12345', new File(currentRootPath + '/reference/тест.txt').text)
             }

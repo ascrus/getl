@@ -2,14 +2,14 @@
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.jdbc.TableDataset
+import getl.jdbc.JDBCDataset
 import getl.models.SetOfTables
 import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
 
 /**
  * Table specification
- * @author ALexsey Konstantinov
+ * @author Alexsey Konstantinov
  */
 @InheritConstructors
 class TableSpec extends DatasetSpec {
@@ -22,5 +22,5 @@ class TableSpec extends DatasetSpec {
     void setSourceTableName(String value) { datasetName = value }
     /** Table */
     @JsonIgnore
-    TableDataset getSourceTable() { ownerModel.dslCreator.jdbcTable(datasetName) }
+    JDBCDataset getSourceTable() { ownerModel.dslCreator.dataset(datasetName) as JDBCDataset }
 }

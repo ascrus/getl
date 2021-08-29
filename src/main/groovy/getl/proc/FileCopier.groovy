@@ -56,7 +56,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         def parent = new Path()
         parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
 
-        parent.with(cl)
+        parent.tap(cl)
         params.destinationPath = parent
         if (!destinationPath.isCompile) destinationPath.compile()
     }
@@ -100,7 +100,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         parent.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
         parent.variable('filesize') { type = Field.bigintFieldType }
 
-        parent.with(cl)
+        parent.tap(cl)
         params.renamePath = parent
         if (renamePath != null && !renamePath.isCompile)
             renamePath.compile()
@@ -325,7 +325,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
             def na = numberAttempts
             def ta = timeAttempts
             try {
-                new Executor(dslCreator: dslCreator).with {
+                new Executor(dslCreator: dslCreator).tap {
                     useList (0..(destinations.size() - 1))
                     countProc = list.size()
                     abortOnError = true

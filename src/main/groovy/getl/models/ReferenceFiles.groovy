@@ -219,6 +219,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         }
         dslCreator.logInfo("+++ Deployment ${StringUtils.WithGroupSeparator(res)} files for model " +
                 "\"$repositoryModelName\" completed successfully")
+
+        return res
     }
 
     @Override

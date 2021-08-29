@@ -68,10 +68,6 @@ class Getl extends Script {
         initGetlParams()
     }
 
-    static {
-        GetlSetInstance(new Getl())
-    }
-
     static void main(String[] args) {
         Main(args.toList(), true)
     }
@@ -81,7 +77,8 @@ class Getl extends Script {
         println """
 The syntax for running a specified Getl Dsl script (with @BaseScript directive):
   java getl.lang.Getl runclass=<script class name> [<arguments>]
-  java -jar getl-${Version.version}.jar runclass=<script class name> [<arguments>]
+or
+  java getl.lang.Getl workflow=<workflow model name>
 
 The syntax for running a script that inherits from the Getl class is:
   java <main class name> [<arguments>]
@@ -91,6 +88,8 @@ List of possible arguments:
     class name of the initialization script that runs before the main script runs
   runclass=<class name>
     the name of the main class of the script
+  workflow=<model name>
+    the name of the workflow model to run
   unittest=true|false
     set the flag that unit tests are launched
   environment=dev|test|prod 
@@ -106,8 +105,7 @@ List of possible arguments:
       
 Examples:
   java getl.lang.Getl runclass=com.comp.MainScript vars.message="Hello World!"
-  java -jar getl-${Version.version}.jar runclass=com.comp.MainScript config.path=/etc/myconfig config.filename=1.groovy;2.groovy"
-  java com.comp.MainScript initclass=com.comp.InitScript environment=dev unittest=true
+  java getl.lang.Getl workflow=test:workflow1
 """
     }
 
@@ -180,6 +178,7 @@ Examples:
      * <ul>
      * <li>initclass - class name of the initialization script that runs before the main script runs
      * <li>runclass - the name of the main class of the script
+     * <li>workflow - the name of the workflow model to run
      * <li>unittest - set the flag that unit tests are launched
      * <li>environment - use the specified configuration environment (the default is "prod")
      * <li>config.path - path to load configuration files
@@ -190,7 +189,7 @@ Examples:
      * @param args startup arguments
      * @param isApp run as application or module
      */
-    static void Main(List args, Boolean isApp = true) {
+    static void Main(List args, Boolean isApp = true, Class<Getl> launcher = null) {
         if (isApp) {
             def a = ((args?:[]) as List<String>)*.trim()
             a = a*.toLowerCase()
@@ -205,7 +204,8 @@ Examples:
         def job = new Job() {
             static ParamMethodValidator allowArgs = {
                 def p = new ParamMethodValidator()
-                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'unittest', 'vars', 'getlprop'])
+                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'workflow', 'unittest',
+                                    'vars', 'getlprop'])
                 p.register('main.config', ['path', 'filename'])
                 return p
             }.call()
@@ -213,6 +213,7 @@ Examples:
             public Boolean isMain
             private String className
             private Class runClass
+            private String workflowName
             private Getl eng
 
             @Override
@@ -231,19 +232,28 @@ Examples:
                 super.init()
                 allowArgs.validation('main', jobArgs)
                 className = jobArgs.runclass as String
+                workflowName = jobArgs.workflow as String
 
-                if (className == null)
-                    throw new ExceptionDSL('Required argument "runclass"!')
+                if (className == null && workflowName == null)
+                    throw new ExceptionDSL('Required argument "runclass" or "workflow"!')
 
-                try {
-                    runClass = Class.forName(className)
+                if (className != null && workflowName != null)
+                    throw new ExceptionDSL('Only "runclass" or "workflow" arguments can be specified!')
+
+                if (className != null) {
+                    try {
+                        runClass = Class.forName(className)
+                    }
+                    catch (Throwable e) {
+                        throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
+                    }
+
+                    if (!Getl.isAssignableFrom(runClass))
+                        throw new ExceptionDSL("Class \"${runClass.name}\" is not assignable from Getl class!")
                 }
-                catch (Throwable e) {
-                    throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
+                else {
+                    runClass = launcher?:Getl
                 }
-
-                if (!Getl.isAssignableFrom(runClass))
-                    throw new ExceptionDSL("Class \"${runClass.name}\" is not assignable from Getl class!")
 
                 eng = runClass.newInstance() as Getl
                 eng.configuration.manager.init(jobArgs)
@@ -281,10 +291,16 @@ Examples:
                 }
 
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
-                eng.logInfo("### Start script ${eng.getClass().name}")
+                if (className != null)
+                    eng.logInfo("### Start script ${eng.getClass().name}")
+                else
+                    eng.logInfo("### Start workflow $workflowName")
 
                 try {
-                    eng.runGroovyInstance(eng, eng.configuration.manager.vars)
+                    if (className != null)
+                        eng.runGroovyInstance(eng, eng.configuration.manager.vars)
+                    else
+                        eng.models.workflow(workflowName).execute()
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
@@ -297,7 +313,10 @@ Examples:
                     }
                 }
                 finally {
-                    eng.logInfo("### Finish script ${eng.getClass().name}")
+                    if (className != null)
+                        eng.logInfo("### Finish script ${eng.getClass().name}")
+                    else
+                        eng.logInfo("### Finish workflow $workflowName")
                 }
             }
         }
@@ -749,7 +768,7 @@ Examples:
     /** Engine parameters */
     protected final Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Get engine parameter */
-    protected Object getGetlSystemParameter(String key) { _params.get(key) }
+    Object getGetlSystemParameter(String key) { _params.get(key) }
     /** Set engine parameter */
     protected setGetlSystemParameter(String key, Object value) {
         _params.put(key, value)
@@ -1978,7 +1997,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = [:]) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = [:]) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         return runGroovyClass(groovyClass, runOnce, vars)
@@ -1990,7 +2009,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyScriptFile(String fileName, Map vars = [:]) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = [:]) {
         runGroovyScriptFile(fileName, false, vars)
     }
 
@@ -2001,7 +2020,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyScriptFile(String fileName, Boolean runOnce, Closure vars) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Closure vars) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         return runGroovyClass(groovyClass, runOnce, vars)
@@ -2014,7 +2033,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyScriptFile(String fileName, Closure vars) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Closure vars) {
         runGroovyScriptFile(fileName, false, vars)
     }
 
@@ -2025,7 +2044,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
         def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
             throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
@@ -2039,7 +2058,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer runGroovyScriptFile(String fileName, String configSection) {
+    Map<String, Object> runGroovyScriptFile(String fileName, String configSection) {
         runGroovyScriptFile(fileName, false, configSection)
     }
 
@@ -2052,41 +2071,67 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
-        if (previouslyRun && BoolUtils.IsValue(runOnce)) return 0
+        if (previouslyRun && BoolUtils.IsValue(runOnce))
+            return [exitCode: 0]
 
-        def script = groovyClass.newInstance() as Script
+        Script script
+        synchronized (_lockMainThread) {
+            script = groovyClass.newInstance() as Script
+        }
         def res = runGroovyInstance(script, vars)
 
-        if (!previouslyRun) executedClasses.addToList(className)
+        if (!previouslyRun)
+            executedClasses.addToList(className)
 
         return res
+    }
+
+    static private final Object _lockMainThread = new Object()
+
+    /** Set thread to work in main thread */
+    private void switchThreadToMain(Boolean workInMain) {
+        if (!(Thread.currentThread() instanceof ExecutorThread))
+            return
+
+        def thread = Thread.currentThread() as ExecutorThread
+        thread.params.workInMain = workInMain
     }
 
     /**
      * Run groovy script object
      * @param script groovy script object
      * @param vars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return list of values: exitCode and result
      */
-    protected Integer runGroovyInstance(Script script, Map vars = [:]) {
-        def res = 0
+    protected Map<String, Object> runGroovyInstance(Script script, Map vars = [:]) {
+        def exitCode = 0
+        def result = null
         _repositoryFilter.pushOptions(true)
         def isGetlScript = (script instanceof Getl)
         try {
             if (isGetlScript) {
                 def scriptGetl = script as Getl
-                if (scriptGetl != getlMainInstance)
-                    scriptGetl.importGetlParams(_params)
-                scriptGetl._setGetlInstance()
 
-                _doInitMethod(scriptGetl)
-                if (vars != null && !vars.isEmpty()) {
-                    _fillFieldFromVars(scriptGetl, vars)
+                synchronized (_lockMainThread) {
+                    if (scriptGetl != getlMainInstance)
+                        scriptGetl.importGetlParams(_params)
+                    scriptGetl._setGetlInstance()
+
+                    switchThreadToMain(true)
+                    try {
+                        _doInitMethod(scriptGetl)
+                        if (vars != null && !vars.isEmpty()) {
+                            _fillFieldFromVars(scriptGetl, vars)
+                        }
+                        _doCheckMethod(scriptGetl)
+                    }
+                    finally {
+                        switchThreadToMain(false)
+                    }
                 }
-                _doCheckMethod(scriptGetl)
             } else if (vars != null && !vars.isEmpty()) {
                 script.binding = new Binding(vars)
             }
@@ -2098,19 +2143,29 @@ Examples:
                 if (isGetlScript)
                     (script as Getl).prepare()
 
-                script.run()
+                result = script.run()
             }
             catch (ExceptionDSL e) {
                 if (e.typeCode == ExceptionDSL.STOP_CLASS) {
-                    if (e.message != null) logInfo(e.message)
-                    if (e.exitCode != null) res = e.exitCode
+                    if (e.message != null)
+                        logInfo(e.message)
+                    if (e.exitCode != null)
+                        exitCode = e.exitCode
                 } else {
                     throw e
                 }
             }
             catch (Exception e) {
                 try {
-                    _doErrorMethod(script, e)
+                    synchronized (_lockMainThread) {
+                        switchThreadToMain(true)
+                        try {
+                            _doErrorMethod(script, e)
+                        }
+                        finally {
+                            switchThreadToMain(false)
+                        }
+                    }
                 }
                 catch (Exception err) {
                     logging.manager.exception(err, 'method error', script.getClass().name)
@@ -2120,7 +2175,15 @@ Examples:
                 }
             }
             finally {
-                _doDoneMethod(script)
+                synchronized (_lockMainThread) {
+                    switchThreadToMain(true)
+                    try {
+                        _doDoneMethod(script)
+                    }
+                    finally {
+                        switchThreadToMain(false)
+                    }
+                }
             }
             pt.finish()
             if (isInitMode)
@@ -2134,7 +2197,7 @@ Examples:
             _repositoryFilter.pullOptions()
         }
 
-        return res
+        return [exitCode: exitCode, result: result]
     }
 
     /** Prepare a script before running */
@@ -2154,7 +2217,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyClass(Class groovyClass, Map vars = [:]) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Map vars = [:]) {
         runGroovyClass(groovyClass, false, vars)
     }
 
@@ -2165,7 +2228,7 @@ Examples:
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyClass(Class groovyClass, Boolean runOnce, Closure clVars) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Closure clVars) {
         def cfg = new groovy.util.ConfigSlurper()
         def map = cfg.parse(new ClosureScript(closure: clVars))
         return runGroovyClass(groovyClass, runOnce, MapUtils.ConfigObject2Map(map))
@@ -2177,7 +2240,7 @@ Examples:
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyClass(Class groovyClass, Closure clVars) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Closure clVars) {
         runGroovyClass(groovyClass, false, clVars)
     }
 
@@ -2188,7 +2251,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
         def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
             throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
@@ -2202,7 +2265,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer runGroovyClass(Class groovyClass, String configSection) {
+    Map<String, Object> runGroovyClass(Class groovyClass, String configSection) {
         runGroovyClass(groovyClass, false, configSection)
     }
 
@@ -2213,10 +2276,10 @@ Examples:
      * @param scripts list of Getl scripts to run
      * @return list of exit code
      */
-    List<Integer> callScripts(Class<Getl>... scriptClasses) {
-        def res = [] as List<Integer>
+    List<Map<String, Object>> callScripts(Class<Getl>... scriptClasses) {
+        def res = [] as List<Map<String, Object>>
         scriptClasses.each { script ->
-            res << runGroovyClass(script, true)
+            res.add(runGroovyClass(script, true))
         }
 
         return res
@@ -2229,7 +2292,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:]) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:]) {
         return runGroovyClass(scriptClass, runOnce, vars)
     }
 
@@ -2239,7 +2302,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> scriptClass, Map vars = [:]) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Map vars = [:]) {
         return runGroovyClass(scriptClass, false, vars)
     }
 
@@ -2250,7 +2313,7 @@ Examples:
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> scriptClass, Boolean runOnce, Closure clVars) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Closure clVars) {
         return runGroovyClass(scriptClass, runOnce, clVars)
     }
 
@@ -2260,7 +2323,7 @@ Examples:
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> scriptClass, Closure clVars) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Closure clVars) {
         return runGroovyClass(scriptClass, false, clVars)
     }
 
@@ -2271,7 +2334,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer callScript(Class<Getl> scriptClass, Boolean runOnce, String configSection) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, String configSection) {
         return runGroovyClass(scriptClass, runOnce, configSection)
     }
 
@@ -2281,7 +2344,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer callScript(Class<Getl> scriptClass, String configSection) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, String configSection) {
         return runGroovyClass(scriptClass, false, configSection)
     }
 
@@ -2291,10 +2354,11 @@ Examples:
      * @param runOnce do not execute if previously executed
      * @return exit code
      */
-    Integer callScript(Getl script, Boolean runOnce = false) {
+    Map<String, Object> callScript(Getl script, Boolean runOnce = false) {
         def className = script.getClass().name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
-        if (previouslyRun && BoolUtils.IsValue(runOnce)) return 0
+        if (previouslyRun && BoolUtils.IsValue(runOnce))
+            return [exitCode: 0]
 
         def res = runGroovyInstance(script, null)
 

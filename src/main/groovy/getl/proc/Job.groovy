@@ -15,7 +15,7 @@ abstract class Job {
 
 	/** Current logger */
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Job arguments */
 	static public final Map jobArgs = [:] as Map<String, Object>

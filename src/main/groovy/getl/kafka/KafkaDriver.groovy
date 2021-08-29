@@ -211,23 +211,23 @@ class KafkaDriver extends Driver {
             if (countPortions > 0) {
                 def jsonCon = new JSONConnection(path: jsonDirName)
                 def json = new JSONDataset()
-                json.with {
+                json.tap {
                     useConnection jsonCon
                     extension = 'json'
                     field = (!fields.isEmpty()) ? ds.getFields(fields) : ds.field
                     rootNode = '.'
                     dataNode = ds.dataNode
-                    formatDate = ds.formatDate
-                    formatTime = ds.formatTime
-                    formatDateTime = ds.formatDateTime
-                    formatTimestampWithTz = ds.formatTimestampWithTz
-                    uniFormatDateTime = ds.uniFormatDateTime
+                    formatDate = ds.formatDate()
+                    formatTime = ds.formatTime()
+                    formatDateTime = ds.formatDateTime()
+                    formatTimestampWithTz = ds.formatTimestampWithTz()
+                    uniFormatDateTime = ds.uniFormatDateTime()
+                    formatBoolean = ds.formatBoolean()
+                    decimalSeparator = ds.decimalSeparator()
                     readOpts.onFilter = (params.filter as Closure<Boolean>)?:ds.readOpts.onFilter
-
-                    return true
                 }
                 (1..countPortions).each { num ->
-                    json.with {
+                    json.tap {
                         fileName = 'kafka.' + StringUtils.AddLedZeroStr(num, 6)
                         eachRow(code)
                         res += readRows
@@ -279,7 +279,7 @@ class KafkaDriver extends Driver {
         wp.kafkaTopic = ds.kafkaTopic
         wp.keyName = ds.keyName
         wp.kafkaProducer = new KafkaProducer<String, String>(props)
-        def format = ds.uniFormatDateTime?:ds.formatTimestampWithTz()
+        def format = ds.uniFormatDateTime()?:ds.formatTimestampWithTz()
         wp.jsonGen = new JsonGenerator.Options().dateFormat(format, Locale.default).timezone(TimeZone.default.getID()).build()
         ds._driver_params = wp
     }

@@ -103,7 +103,8 @@ class StructureFileDataset extends WebServiceDataset {
 			parent = new Field(name: name)
 			attributeField << parent
 		}
-		if (cl != null) parent.with(cl)
+		if (cl != null)
+			parent.tap(cl)
 
 		return parent
 	}

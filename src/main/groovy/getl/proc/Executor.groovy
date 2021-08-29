@@ -813,7 +813,7 @@ class Executor implements GetlRepository {
 			code.call()
 		} 
 		catch (Throwable e) {
-			((owner != null)?owner.logging.manager:Logs.global).finest("Ignore error: ${e.message}")
+			((owner?.logging?.manager != null)?owner.logging.manager:Logs.global).finest("Ignore error: ${e.message}")
 			return false 
 		}
 		
@@ -855,5 +855,5 @@ class Executor implements GetlRepository {
 
 	/** Current logger */
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 }

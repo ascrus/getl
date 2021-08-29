@@ -11,6 +11,9 @@ import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
 import groovy.transform.InheritConstructors
+import groovy.transform.NamedVariant
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Datasets model
@@ -105,12 +108,17 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
 
     /**
      * Add datasets to the model using the specified mask
-     * @param maskName dataset search mask
-     * @param cl parameter description code
+     * @param mask dataset search mask
+     * @param code parameter description code
      */
-    protected void addDatasets(String maskName, Closure cl = null) {
-        dslCreator.processDatasets(maskName) {datasetName ->
-            dataset(datasetName, cl)
+    @NamedVariant
+    protected void addDatasets(String mask,
+                               @ClosureParams(value = SimpleType, options = ['java.lang.String'])
+                                       Closure<Boolean> filter = null,
+                               Closure code = null) {
+        dslCreator.processDatasets(mask) {datasetName ->
+            if (filter == null || filter.call(datasetName))
+                dataset(datasetName, code)
         }
     }
 
@@ -148,21 +156,21 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
 
         if (ds instanceof TableDataset) {
             def jdbcTable = ds as TableDataset
-            if (jdbcTable.schemaName == null)
-                throw new ExceptionModel("Table \"$dsn\" [$ds] does not have a schema!")
+            /*if (jdbcTable.schemaName == null)
+                throw new ExceptionModel("Table \"$dsn\" [$ds] does not have a schema!")*/
             if (jdbcTable.tableName == null)
                 throw new ExceptionModel("Table \"$dsn\" [$ds] does not have a table name!")
         }
         else if (ds instanceof ViewDataset) {
             def viewTable = ds as ViewDataset
-            if (viewTable.schemaName == null)
-                throw new ExceptionModel("View \"$dsn\" does not have a schema!")
+            /*if (viewTable.schemaName == null)
+                throw new ExceptionModel("View \"$dsn\" does not have a schema!")*/
             if (viewTable.tableName == null)
                 throw new ExceptionModel("View \"$dsn\" does not have a table name!")
         }
         else if (ds instanceof QueryDataset) {
             def queryTable = ds as QueryDataset
-            if (queryTable.query == null)
+            if (queryTable.query == null && queryTable.scriptFilePath == null)
                 throw new ExceptionModel("Query \"$dsn\" does not have a sql script!")
         }
         else if (ds instanceof FileDataset) {

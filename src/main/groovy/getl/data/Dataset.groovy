@@ -41,7 +41,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Current logger */
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/**
 	 * Register connection parameters with method validator
@@ -627,7 +627,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			parent = new Field(name: name)
 			getField().add(parent)
 		}
-		if (cl != null) parent.with(cl)
+		if (cl != null)
+			parent.tap(cl)
 
 		return parent
 	}

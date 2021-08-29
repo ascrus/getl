@@ -213,7 +213,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Current logger */
 	@JsonIgnore
-	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Root path */
 	String getRootPath() { params.rootPath as String }
@@ -1213,7 +1213,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				throw new ExceptionGETL("The sort contains an unknown field \"$f\"!")
 		}
 
-		fileList.with {
+		fileList.tap {
 			drop(ifExists: true)
 			createOpts {
 				pushOptions(true)
@@ -1243,7 +1243,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def newFiles = new TableDataset(connection: fileList.connection.cloneConnection(),
 				tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
 				type: tableType)
-		newFiles.with {
+		newFiles.tap {
 			field = [Field.New('ID') { type = integerFieldType; isNull = false; isAutoincrement = true }]
 			addFields(fileList.field)
 			//noinspection SpellCheckingInspection
@@ -1275,7 +1275,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				type: tableType)
 		//noinspection SpellCheckingInspection
 		doubleFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
-		doubleFiles.fieldByName('ID').with { 
+		doubleFiles.fieldByName('ID').tap {
 			isAutoincrement = false
 			isKey = true
 		}
@@ -1286,7 +1286,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
 				type: tableType)
 		useFiles.field = [newFiles.fieldByName('ID')]
-		useFiles.fieldByName('ID').with {
+		useFiles.fieldByName('ID').tap {
 			isAutoincrement = false
 			isKey = true
 		}
@@ -1403,7 +1403,7 @@ WHERE
 			}
 			
 			QueryDataset processFiles = new QueryDataset()
-			processFiles.with {
+			processFiles.tap {
 				useConnection newFiles.currentJDBCConnection
 				if (limitSizeFiles == null)
 					query = '''

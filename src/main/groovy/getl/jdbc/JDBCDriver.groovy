@@ -1466,7 +1466,7 @@ class JDBCDriver extends Driver {
 			def where = params.where as String
 			if (where != null)
 				where = StringUtils.EvalMacroString(where,
-						dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
+						dataset.queryParams() + ((params.queryParams as Map)?:[:]), false)
 
 			def order = ListUtils.ToList(params.order) as List<String>
 			String orderBy = null
@@ -1493,7 +1493,7 @@ class JDBCDriver extends Driver {
 				throw new ExceptionGETL("For dataset \"$dataset\" you need to specify the query text!")
 		}
 
-		return StringUtils.EvalMacroString(query, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
+		return StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:[:]), false)
 	}
 
 	/**
@@ -2030,7 +2030,7 @@ $sql
 		if (where == null)
 			return null
 
-		def qp = dataset.queryParams + ((params.queryParams as Map)?:[:])
+		def qp = dataset.queryParams() + ((params.queryParams as Map)?:[:])
 		return StringUtils.EvalMacroString(where, qp, true)
 	}
 
@@ -2547,7 +2547,7 @@ $sql
 		}
 //		println sql
 		
-		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: target.queryParams + ((procParams.queryParams as Map)?:[:])])
+		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: target.queryParams() + ((procParams.queryParams as Map)?:[:])])
 		
 		return target.updateRows
 	}
@@ -2559,7 +2559,7 @@ $sql
 	Long deleteRows(TableDataset dataset, Map procParams) {
 		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
 		if (where != null)
-			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams + ((procParams.queryParams as Map)?:[:]))))
+			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams() + ((procParams.queryParams as Map)?:[:]))))
 		else where = ''
 		def hints = deleteRowsHint(dataset, procParams)?:[:]
 		def afterDelete = (hints.afterDelete)?:''
@@ -2636,7 +2636,7 @@ $sql
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
 		where = where?:(table.readDirective.where)
 		if (where != null && where != '')
-			sql += " WHERE " + StringUtils.EvalMacroString(where, table.queryParams + (procParams?:[:]))
+			sql += " WHERE " + StringUtils.EvalMacroString(where, table.queryParams() + (procParams?:[:]))
 
 		saveToHistory(sql)
 
@@ -2671,7 +2671,7 @@ FROM {source} {after_from}'''
 
 		if (source.readOpts.where != null) {
 			sql += '\nWHERE {where}'
-			qParams.where = StringUtils.EvalMacroString(source.readOpts.where, source.queryParams)
+			qParams.where = StringUtils.EvalMacroString(source.readOpts.where, source.queryParams())
 		}
 		source.currentJDBCConnection.currentJDBCDriver.prepareCopyTableSource(source, qParams)
 		dest.currentJDBCConnection.currentJDBCDriver.prepareCopyTableDestination(dest, qParams)
@@ -2689,7 +2689,7 @@ FROM {source} {after_from}'''
 	Long copyTableTo(TableDataset source, TableDataset dest, Map<String, String> map) {
 		if (source == null)
 			throw new ExceptionGETL('It is required to specify the target table in parameter "source"!')
-		source.with {
+		source.tap {
 			if (type == tableType && !exists)
 				throw new ExceptionGETL("Table $it does not exist or does not have access rights to it!")
 			if (field.isEmpty()) {
@@ -2701,7 +2701,7 @@ FROM {source} {after_from}'''
 
 		if (dest == null)
 			throw new ExceptionGETL('It is required to specify the target table in parameter "dest"!')
-		dest.with {
+		dest.tap {
 			if (type == tableType && !exists)
 				throw new ExceptionGETL("Table $it does not exist or does not have access rights to it!")
 			if (field.isEmpty()) {
@@ -2812,7 +2812,7 @@ FROM {source} {after_from}'''
 		def select = procParams.select as String
 		if (select == null)
 			throw new ExceptionGETL("It is required to specify sql select for view in the \"select\" parameter!")
-		res.select = StringUtils.EvalMacroString(select, dataset.queryParams)
+		res.select = StringUtils.EvalMacroString(select, dataset.queryParams())
 
 		return res
 	}

@@ -37,7 +37,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
         histtab = TDS.dataset()
         StatusTableSetFields(histtab)
-        histtab.with {
+        histtab.tap {
             // for determine new rows
             field('operation')  { length = 6; isNull = false }
             // to determine which rows should be included in the notification
@@ -215,7 +215,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
     /** Set fields for the rule status table */
     static void StatusTableSetFields(TableDataset table) {
-        table.with {
+        table.tap {
             field.clear()
             field('rule_name') { length = 255; isKey = true }
             field('code') { length = 512; isKey = true }
@@ -242,7 +242,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         if (_currentDateTime == null) {
             queryCurrentDate.useConnection(statusTable.currentJDBCConnection)
             try {
-                queryCurrentDate.with {
+                queryCurrentDate.tap {
                     queryParams.now = currentJDBCConnection.currentJDBCDriver.nowFunc
                     queryParams.from = (currentJDBCConnection.currentJDBCDriver.sysDualTable != null) ?
                             "FROM ${currentJDBCConnection.currentJDBCDriver.sysDualTable}" : ''
@@ -354,14 +354,14 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     throw new ExceptionModel("Group field \"code\" was not found in rule \"$rule.queryName\"!")
 
                 def validTable = TDS.dataset()
-                validTable.with {
+                validTable.tap {
                     field('code') { length = 512; isNull = false }
                     create()
                 }
                 new Flow(dslCreator).writeTo(dest: validTable) { add ->
                     statRows.each { row -> add([code: (row.code as String)]) }
                 }
-                new QueryDataset(connection: validTable.connection).with {
+                new QueryDataset(connection: validTable.connection).tap {
                     setQuery 'SELECT code FROM {table} GROUP BY code HAVING Count(*) > 1 ORDER BY code'
                     queryParams.table = validTable.fullTableName
                     def invalidGroups = rows()
@@ -436,7 +436,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             }
         }
 
-        new Flow(dslCreator).with {
+        new Flow(dslCreator).tap {
             statusTable.currentJDBCConnection.transaction {
                 writeTo(dest: statusTable, dest_operation: 'INSERT') { addStatus ->
                     histtab.eachRow(where: 'operation = \'INSERT\'') { row ->
@@ -570,7 +570,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         def closeErrors =  lastCheckStatusTable.countRow('is_notification AND is_correct')
         def titleStr = StringUtils.EvalMacroString(title, [name: repositoryModelName, active: activeErrors, close: closeErrors])
 
-        smtpServer.with {
+        smtpServer.tap {
             dslCreator.logFinest("+++ Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification(rows)
             sendMail(null, titleStr, text, true)

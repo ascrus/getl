@@ -165,7 +165,7 @@ class VerticaConnection extends JDBCConnection {
 
 		Integer res = 0
 
-		new QueryDataset().with {
+		new QueryDataset().tap {
 			useConnection this
 
 			query = """
@@ -225,7 +225,7 @@ ORDER BY threshold DESC, table_name;
 			throw new ExceptionGETL("Invalid percentage value \"$percent\"!")
 
 		def qry = new QueryDataset()
-		qry.with {
+		qry.tap {
 			useConnection this
 			query = "SELECT ANALYZE_STATISTICS('{schema}'{percent}) AS res"
 			queryParams.schema = (schema?:'')
@@ -284,7 +284,7 @@ ORDER BY threshold DESC, table_name;
 		tryConnect()
 
 		def qry = new QueryDataset()
-		qry.with {
+		qry.tap {
 			useConnection this
 			if (specifiedTime != null) {
 				query = "SELECT ANALYZE_WORKLOAD('{scope}', '{time}'::timestamp)"
@@ -306,7 +306,7 @@ ORDER BY threshold DESC, table_name;
 	 * @return count of recommendations processed
 	 */
 	Integer processWorkload(List<Map<String, Object>> analyzeRows) {
-		def tempTables = new QueryDataset(connection: this).with {
+		def tempTables = new QueryDataset(connection: this).tap {
 			query = '''
 SELECT Lower(table_schema || '.' || table_name) AS name 
 FROM tables 

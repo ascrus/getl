@@ -166,7 +166,7 @@ class ConfigFiles extends ConfigManager {
 
         def json = new JsonSlurper()
         def reader = file.newReader(codePage)
-        def logger = (owner != null)?owner.logging.manager:Logs.global
+        def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 		try {
             data = json.parse(reader)
 		}
@@ -212,7 +212,7 @@ class ConfigFiles extends ConfigManager {
         if (codePage == null)
             codePage = 'utf-8'
 
-        def logger = (owner != null)?owner.logging.manager:Logs.global
+        def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 
         JsonBuilder b = new JsonBuilder()
         try {

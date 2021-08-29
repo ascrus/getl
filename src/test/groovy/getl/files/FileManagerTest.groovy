@@ -27,7 +27,7 @@ class FileManagerTest extends ManagerTest {
         def resFileName = resFile.name
         FileUtils.ValidPath(usepath)
         new File(usepath).deleteOnExit()
-        (manager as FileManager).with {
+        (manager as FileManager).tap {
             rootPath = usepath
             localDirectory = resFile.parent
             upload(resFileName)

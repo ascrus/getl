@@ -1639,7 +1639,7 @@ sb << """
 		if (convertReturn)
 			value = value.replace('\r', '\u0001')
 
-		def logger = (owner != null)?owner.logging.manager:Logs.global
+		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 
 		Binding bind = new Binding()
 		vars?.each { String key, Object val ->

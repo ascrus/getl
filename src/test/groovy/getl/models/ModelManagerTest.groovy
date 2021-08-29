@@ -27,7 +27,7 @@ class ModelManagerTest extends TestRepository {
                 runMany(3) {
                     def mod = models.referenceVerticaTables('test:model1')
                     assertNotEquals(origMod, mod)
-                    mod.with {
+                    mod.tap {
                         assertEquals(verticaConnection('ver:con'), referenceConnection)
                         assertEquals('_test_reference', referenceSchemaName)
                         assertEquals(1, modelVars.test)
@@ -52,7 +52,7 @@ class ModelManagerTest extends TestRepository {
             assertEquals(['test:model1', 'test:model2'].sort(), models.listReferenceVerticaTables('*:*').sort())
 
             def cloneMod = models.referenceVerticaTables('test:model1').clone() as ReferenceVerticaTables
-            cloneMod.with {
+            cloneMod.tap {
                 modelAttrs.test = 'c'
                 modelVars.test = 3
 
@@ -69,7 +69,7 @@ class ModelManagerTest extends TestRepository {
                 assertEquals('d', referenceFromTable('ver:table1').attribute('test'))
             }
 
-            origMod.with {
+            origMod.tap {
                 assertEquals(verticaConnection('ver:con'), referenceConnection)
                 assertEquals('_test_reference', referenceSchemaName)
                 assertEquals(1, modelVars.test)

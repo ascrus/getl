@@ -209,7 +209,7 @@ class VerticaTable extends TableDataset {
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
 
         def qry = new QueryDataset()
-        qry.with {
+        qry.tap {
             useConnection currentVerticaConnection
             query = "SELECT DROP_PARTITIONS('{table}', {start}, {finish}, {split}) AS res"
             queryParams.table = fullTableName
@@ -245,7 +245,7 @@ class VerticaTable extends TableDataset {
             throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
 
         def qry = new QueryDataset()
-        qry.with {
+        qry.tap {
             useConnection currentVerticaConnection
             query = "SELECT COPY_PARTITIONS_TO_TABLE('{source}', {start}, {finish}, '{dest}', {split}) AS res"
             queryParams.source = fullTableName
@@ -282,7 +282,7 @@ class VerticaTable extends TableDataset {
             throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
 
         def qry = new QueryDataset()
-        qry.with {
+        qry.tap {
             useConnection currentVerticaConnection
             query = "SELECT MOVE_PARTITIONS_TO_TABLE('{source}', {start}, {finish}, '{dest}', {split}) AS res"
             queryParams.source = fullTableName
@@ -319,7 +319,7 @@ class VerticaTable extends TableDataset {
             throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
 
         def qry = new QueryDataset()
-        qry.with {
+        qry.tap {
             useConnection currentVerticaConnection
             query = "SELECT SWAP_PARTITIONS_BETWEEN_TABLES('{source}', {start}, {finish}, '{dest}', {split}) AS res"
             queryParams.source = fullTableName
@@ -344,7 +344,7 @@ class VerticaTable extends TableDataset {
             throw new ExceptionGETL("Invalid percentage value \"$percent\"!")
 
         def qry = new QueryDataset()
-        qry.with {
+        qry.tap {
             useConnection currentVerticaConnection
             query = "SELECT ANALYZE_STATISTICS('{table}'{columns}{percent}) AS res"
             queryParams.table = fullTableName
@@ -363,7 +363,7 @@ class VerticaTable extends TableDataset {
         validTableName()
 
         def qry = new QueryDataset()
-        qry.with {
+        qry.tap {
             useConnection currentVerticaConnection
             query = "SELECT PURGE_TABLE('{table}') AS res"
             queryParams.table = fullTableName
@@ -504,7 +504,7 @@ class VerticaTable extends TableDataset {
         super.retrieveOpts()
         validTableName()
 
-        new QueryDataset().with {
+        new QueryDataset().tap {
             useConnection this.currentJDBCConnection
             def whereExpr = ['Upper(table_name) = \'' + this.tableName.toUpperCase() + '\'']
             if (this.schemaName != null)
@@ -516,8 +516,6 @@ class VerticaTable extends TableDataset {
                 def part = rows[0].partition_expression
                 this.createOpts.partitionBy = (part != '')?part:null
             }
-
-            return true
         }
     }
 

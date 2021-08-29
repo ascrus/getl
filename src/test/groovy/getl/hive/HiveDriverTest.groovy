@@ -74,7 +74,7 @@ class HiveDriverTest extends JDBCDriverProto {
                 assertEquals(4, countWritePortions)
             }
 
-            hivetable.with {
+            hivetable.tap {
                 bulkLoadCsv(csv) {
                     files = "hive.bulkload.*.csv"
                     loadAsPackage = true

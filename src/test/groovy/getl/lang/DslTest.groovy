@@ -188,7 +188,7 @@ environments {
 
             def ancon = embeddedConnection()
             assertTrue(findConnection(ancon) == null)
-            ancon.with {
+            ancon.tap {
                 sysParams.dslNameObject = 'getl.testdsl.h2:h2-1'
             }
             assertTrue(findConnection(ancon) == null)
@@ -238,7 +238,7 @@ environments {
 
             def antab = h2Table { }
             assertTrue(findDataset(antab) == null)
-            antab.with {
+            antab.tap {
                 sysParams.dslNameObject = 'table3'
             }
             assertTrue(findDataset(antab) == null)
@@ -665,7 +665,7 @@ ORDER BY t1.id"""
 
             def anfiles = files { }
             assertTrue(findFilemanager(anfiles) == null)
-            anfiles.with {
+            anfiles.tap {
                 sysParams.dslNameObject = 'files-1'
             }
             assertTrue(findFilemanager(anfiles) == null)

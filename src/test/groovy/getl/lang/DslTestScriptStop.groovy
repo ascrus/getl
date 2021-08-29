@@ -16,7 +16,7 @@ if (level == 1) {
 }
 else if (level == 2) {
     def res = callScript getl.lang.DslTestScriptStop, { level = 3 }
-    assert res == 3
+    assert res.exitCode == 3
     configContent.test_stop = true
     appRunSTOP(2)
     assert 0 == 1

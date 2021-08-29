@@ -29,7 +29,7 @@ class VerticaDriverTest extends JDBCDriverProto {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
         def con = new VerticaConnection(config: 'vertica')
-        con.with {
+        con.tap {
             storedLogins = Config.content.logins as Map<String, String>
             login = 'getl_test'
         }
@@ -40,7 +40,7 @@ class VerticaDriverTest extends JDBCDriverProto {
 
     @Override
     void prepareTable() {
-        (table as VerticaTable).with {
+        (table as VerticaTable).tap {
             readOpts {label = 'test_getl'}
             writeOpts {direct = 'DIRECT'}
         }
@@ -144,7 +144,7 @@ LIMIT 1'''
             }
 
             logInfo 'Bulk load single file without package:'
-            verTable.with {
+            verTable.tap {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = "vertica.bulkload.0001.csv"
@@ -159,7 +159,7 @@ LIMIT 1'''
             csv.currentCsvConnection.path = TFS.systemPath
 
             logInfo 'Bulk load files with mask without package:'
-            verTable.with {
+            verTable.tap {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = "bulkload/vertica.bulkload.{num}.csv"
@@ -176,7 +176,7 @@ LIMIT 1'''
             assertEquals(3, verTable.countRow())
 
             logInfo 'Bulk load many files with package:'
-            verTable.with {
+            verTable.tap {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = ["bulkload/vertica.bulkload.0003.csv",
@@ -211,7 +211,7 @@ LIMIT 1'''
                 upload('vertica.bulkload.0004.csv')
             }
 
-            verTable.with {
+            verTable.tap {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     remoteLoad = true
@@ -225,7 +225,7 @@ LIMIT 1'''
             assertEquals(3, verTable.countRow())
 
             logInfo 'Bulk load files with path mask without package:'
-            verTable.with {
+            verTable.tap {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = main.filePath {
@@ -243,7 +243,7 @@ LIMIT 1'''
             assertEquals(3, verTable.updateRows)
             assertEquals(3, verTable.countRow())
 
-            verTable.with {
+            verTable.tap {
                 assertEquals(3, countRow())
 
                 def i = 0
@@ -333,7 +333,7 @@ LIMIT 1'''
     @Ignore
     void testVerticaConnectionFunc() {
         Getl.Dsl {
-            (this.con as VerticaConnection).with {
+            (this.con as VerticaConnection).tap {
                 useLogin 'dbadmin'
                 try {
                     analyzeWorkload('getl_demo', true)
@@ -374,7 +374,7 @@ LIMIT 1'''
     @Test
     void testViews() {
         Getl.Dsl {
-            con.with {
+            con.tap {
                 def tab = verticaTable {
                     tableName = 'test_view'
                     field('id') { type = integerFieldType; isKey = true }
@@ -388,7 +388,7 @@ LIMIT 1'''
                     }
                 }
                 try {
-                    new ViewDataset().with {
+                    new ViewDataset().tap {
                         useConnection con
                         tableName = 'v_test_view'
                         createView(select: 'SELECT * FROM test_view', privileges: 'exclude')
@@ -425,7 +425,7 @@ LIMIT 1'''
     @Test
     void testLookupFields() {
         Getl.Dsl {
-            con.with {
+            con.tap {
                 def dim = verticaTable {
                     tableName = 'test_lookup1'
                     field('id') { type = integerFieldType; isKey = true }
@@ -462,7 +462,7 @@ LIMIT 1'''
                 mart.create()
 
                 try {
-                    mart.with {
+                    mart.tap {
                         field.clear()
                         retrieveFields()
                         assertNotNull(field('dim1_name').defaultValue)

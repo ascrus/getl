@@ -62,15 +62,13 @@ class WebServiceDataset extends FileDataset {
     /** Variable parameter values */
     Map<String, Object> webVars() {
         def res = [:] as Map<String, Object>
+        res.putAll(attributes())
         if (connection != null)
             res.putAll(currentWebServiceConnection.webVars)
         res.putAll(webVars)
 
         return res
     }
-
-    @Override
-    Map<String, Object> attributes() { super.attributes() + webVars }
 
     /** Get request method */
     @SuppressWarnings('SpellCheckingInspection')
