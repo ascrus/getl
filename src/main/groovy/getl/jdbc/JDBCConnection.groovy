@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -887,15 +888,26 @@ ${tab}${tab}}
 	static public final Integer transactionIsolationRepeatableRead = java.sql.Connection.TRANSACTION_REPEATABLE_READ
 	static public final Integer transactionIsolationSerializable = java.sql.Connection.TRANSACTION_SERIALIZABLE
 
-	/** Current transactional isolation level */
+	/** Transactional isolation level */
 	Integer getTransactionIsolation() {
+		(params.transactionIsolation as Integer)?:currentJDBCDriver.defaultTransactionIsolation
+	}
+	/** Transactional isolation level */
+	void setTransactionIsolation(Integer value) {
+		if (!(value in [transactionIsolationNone, transactionIsolationReadCommitted, transactionIsolationReadUncommitted,
+						transactionIsolationRepeatableRead, transactionIsolationSerializable]))
+			throw new ExceptionGETL("Unknown isolation level \"$value\"!")
+
+		params.transactionIsolation = value
+
+		if (connected)
+			currentJDBCDriver.transactionIsolation = value
+	}
+
+	/** Current transactional isolation level */
+	Integer currentTransactionIsolation() {
 		checkEstablishedConnection()
 		return currentJDBCDriver.transactionIsolation
-	}
-	/** Current transactional isolation level */
-	void setTransactionIsolation(Integer value) {
-		tryConnect()
-		currentJDBCDriver.transactionIsolation = value
 	}
 
 	/**

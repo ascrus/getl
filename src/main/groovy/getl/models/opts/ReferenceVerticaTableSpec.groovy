@@ -285,7 +285,7 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
         def destTable = workTable as VerticaTable
 
         def sourceRows = sourceTable.countRow()
-        if (!alwaysFill && sourceRows == destTable.countRow()) {
+        if (!BoolUtils.IsValue(alwaysFill) && sourceRows == destTable.countRow()) {
             if (sourceRows > 0)
                 ownerModel.dslCreator.logWarn("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
                         "table ${destTable.fullTableName} contains the required number " +
@@ -364,5 +364,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
             ownerModel.dslCreator.logInfo("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table has no rows, " +
                     "table ${destTable.fullTableName} is cleared")
         }
+
+        return true
     }
 }

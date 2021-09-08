@@ -42,4 +42,12 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
 
     @Override
     Boolean needEnvConfig() { true }
+
+    @Override
+    protected void processUnregisteringObject(Manager obj) {
+        super.processUnregisteringObject(obj)
+
+        if (obj.connected)
+            obj.disconnect()
+    }
 }

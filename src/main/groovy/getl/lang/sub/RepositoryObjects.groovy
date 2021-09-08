@@ -318,15 +318,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         def repName = dslCreator.repObjectName(name, registration)
         def isTemporary = (repName[0] == '#')
         def isThread = dslCreator.options.useThreadModelCloning &&
-                cloneInThread &&
-                !BoolUtils.IsValue(dslCreator.getGetlSystemParameter('need_main_thread')) &&
-                (Thread.currentThread() instanceof ExecutorThread)
-        if (isThread) {
-            def thread = Thread.currentThread() as ExecutorThread
-            if (BoolUtils.IsValue(thread.params.workInMain))
-                isThread = false
-        }
-
+                cloneInThread && Getl.IsCurrentProcessInThread(true)
 
         if (!registration && isThread) {
             def thread = Thread.currentThread() as ExecutorThread
@@ -407,11 +399,15 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         return obj
     }
 
+    /** Process object before unregister */
+    protected void processUnregisteringObject(T obj) { }
+
     /**
      * Unregister objects by a given mask or a list of their classes
      * @param mask mask of objects (in Path format)
      * @param classes list of processed classes
      * @param filter filter for detect objects to unregister
+     * @param process processing object before unregister
      */
     @Synchronized('synchObjects')
     void unregister(String mask = null, List<String> classes = null,
@@ -419,7 +415,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                                       Closure<Boolean> filter = null) {
         def list = list(mask, classes, false, filter)
         list.each { name ->
-            objects.remove(name)?.dslCleanProps()
+            def obj = objects.get(name)
+            if (obj != null) {
+                processUnregisteringObject(obj)
+                obj.dslCleanProps()
+            }
+            objects.remove(name)
         }
     }
 

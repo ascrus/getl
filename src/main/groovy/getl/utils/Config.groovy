@@ -47,8 +47,10 @@ class Config {
     /** Class used for configuration management */
     static private ConfigManager configClassManager = new ConfigFiles()
 	/** Class used for configuration management */
+	@Synchronized
 	static ConfigManager getConfigClassManager() { configClassManager }
 	/** Class used for configuration management */
+	@Synchronized
 	static void setConfigClassManager(ConfigManager value) {
 		if (configClassManager == value)
 			return

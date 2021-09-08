@@ -24,11 +24,12 @@ class XMLDataset extends StructureFileDataset {
 	}
 	
 	/** Feature parsing options */
-	Map<String, Boolean> getFeatures () { params."features" as Map<String, Boolean> }
+	Map<String, Boolean> getFeatures () { params.features as Map<String, Boolean> }
 	/** Feature parsing options */
 	void setFeatures(Map<String, Boolean> values) {
-		(params.features as Map).clear()
-		if (values != null) (params.features as Map).putAll(values)
+		features.clear()
+		if (values != null)
+			features.putAll(values)
 	}
 
 	@Override

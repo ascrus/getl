@@ -408,12 +408,14 @@ class Connection implements Cloneable, GetlRepository {
 	
 	/** Set connected to source */
 	void setConnected (Boolean c) {
-		if (!driver.isSupport(Driver.Support.CONNECT))
-			throw new ExceptionGETL("Driver not support connect method")
 		if (connected && c)
 			return
 		if (!connected && !c)
 			return
+
+		if (!driver.isSupport(Driver.Support.CONNECT))
+			throw new ExceptionGETL("Driver not support connect method")
+
 		if (c)
 			connect()
 		else

@@ -17,13 +17,14 @@ class ConfigSpec extends BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.configManager == null) {
-            def manager = new ConfigSlurper(ownerObject as Getl)
-            saveParamValue('configManager', manager)
-            Config.configClassManager = manager
+        if (!Getl.IsCurrentProcessInThread(false)) {
+            if (params.configManager == null) {
+                def manager = new ConfigSlurper(ownerObject as Getl)
+                saveParamValue('configManager', manager)
+                Config.configClassManager = manager
+            } else
+                Config.configClassManager = manager
         }
-        else
-            Config.configClassManager = manager
     }
 
     /** Configuration manager */

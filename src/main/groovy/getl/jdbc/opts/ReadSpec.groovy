@@ -61,7 +61,6 @@ class ReadSpec extends BaseSpec {
     }
 
     /** Read table as update locking */
-    @JsonIgnore
     Boolean getForUpdate() { params.forUpdate as Boolean }
     /** Read table as update locking */
     void setForUpdate(Boolean value) { saveParamValue('forUpdate', value) }

@@ -150,7 +150,7 @@ class ProcessTime {
 			throw new ExceptionGETL("Closure code required!")
 
 		clear()
-		Long res = this.tap(cl)
+		Long res = this.with(cl)
 		if (res == null)
 			finish(countRow)
 		else

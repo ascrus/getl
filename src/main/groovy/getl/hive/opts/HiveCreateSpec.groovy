@@ -43,7 +43,7 @@ class HiveCreateSpec extends CreateSpec {
 
     /** Skewed options */
     HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec)
-                          @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
+                          @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveSkewedSpec'])
                                   Closure cl = null) {
         def parent = skewed
         parent.runClosure(cl)

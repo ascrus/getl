@@ -34,7 +34,6 @@ class CreateSpec extends BaseSpec {
     void setOnCommit(Boolean value) { saveParamValue('onCommit', value) }
 
     /** Indexes by table */
-    @JsonIgnore
     Map<String, Object> getIndexes() { params.indexes as Map<String, Object> }
     /** Indexes by table */
     void setIndexes(Map<String, Object> value) {
@@ -53,7 +52,6 @@ class CreateSpec extends BaseSpec {
     void setUseNativeDBType(Boolean value) { saveParamValue('useNativeDBType', value) }
 
     /** JDBC dataset type */
-    @JsonIgnore
     JDBCDataset.Type getType() { params.type as JDBCDataset.Type }
     /** JDBC dataset type */
     void setType(JDBCDataset.Type value) { saveParamValue('type', value) }

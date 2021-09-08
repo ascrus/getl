@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.vertica
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -306,7 +307,7 @@ ORDER BY threshold DESC, table_name;
 	 * @return count of recommendations processed
 	 */
 	Integer processWorkload(List<Map<String, Object>> analyzeRows) {
-		def tempTables = new QueryDataset(connection: this).tap {
+		def tempTables = new QueryDataset(connection: this).with {
 			query = '''
 SELECT Lower(table_schema || '.' || table_name) AS name 
 FROM tables 

@@ -313,6 +313,8 @@ Examples:
                     }
                 }
                 finally {
+                    eng.repositoryStorageManager.clearRepositories()
+
                     if (className != null)
                         eng.logInfo("### Finish script ${eng.getClass().name}")
                     else
@@ -847,7 +849,7 @@ Examples:
     void forGroup(String group) {
         if (group == null || group.trim().length() == 0)
             throw new ExceptionDSL('Filter group required!')
-        if (isCurrentProcessInThread())
+        if (IsCurrentProcessInThread(true))
             throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
 
         _repositoryFilter.filteringGroup = group.trim().toLowerCase()
@@ -856,7 +858,7 @@ Examples:
     /** Reset filter to search for objects */
     @Synchronized('_repositoryFilter')
     void clearGroupFilter() {
-        if (isCurrentProcessInThread())
+        if (IsCurrentProcessInThread(true))
             throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
 
         _repositoryFilter.clearGroupFilter()
@@ -1346,7 +1348,7 @@ Examples:
                 res = lastJdbcDefaultConnection
         }
 
-        if (_langOpts.useThreadModelCloning && isCurrentProcessInThread()) {
+        if (_langOpts.useThreadModelCloning && IsCurrentProcessInThread(false)) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject(_repositoryStorageManager.repository(RepositoryConnections).nameCloneCollection, res,
                     {
@@ -1362,7 +1364,7 @@ Examples:
 
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
-        if (isCurrentProcessInThread())
+        if (IsCurrentProcessInThread(true))
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
@@ -1408,7 +1410,7 @@ Examples:
             res = _defaultFileConnection.get(datasetClassName)
         }
 
-        if (_langOpts.useThreadModelCloning && isCurrentProcessInThread()) {
+        if (_langOpts.useThreadModelCloning && IsCurrentProcessInThread(false)) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject(_repositoryStorageManager.repository(RepositoryConnections).nameCloneCollection, res,
                     {
@@ -1424,7 +1426,7 @@ Examples:
 
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
-        if (isCurrentProcessInThread())
+        if (IsCurrentProcessInThread(true))
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
@@ -1471,7 +1473,7 @@ Examples:
             res = _defaultOtherConnection.get(datasetClassName)
         }
 
-        if (_langOpts.useThreadModelCloning && isCurrentProcessInThread()) {
+        if (_langOpts.useThreadModelCloning && IsCurrentProcessInThread(false)) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject(_repositoryStorageManager.repository(RepositoryConnections).nameCloneCollection, res,
                     {
@@ -1487,7 +1489,7 @@ Examples:
 
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
-        if (isCurrentProcessInThread())
+        if (IsCurrentProcessInThread(true))
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
@@ -2626,7 +2628,11 @@ Examples:
     /** System temporary directory */
     static String getSystemTempPath() { TFS.systemPath }
 
-    Boolean isCurrentProcessInThread() { Thread.currentThread() instanceof ExecutorThread }
+    /** Check the work in a separate from the main thread */
+    static Boolean IsCurrentProcessInThread(Boolean checkWorkInMainThread = false) {
+        (Thread.currentThread() instanceof ExecutorThread) &&
+                (!checkWorkInMainThread || !BoolUtils.IsValue((Thread.currentThread() as ExecutorThread).params.workInMain))
+    }
 
     /** Getl options instance */
     private LangSpec _langOpts

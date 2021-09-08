@@ -545,7 +545,7 @@ class JDBCDriver extends Driver {
 			if (server != null) con.sysParams."balancerServer" = server
 
 			sql.getConnection().setAutoCommit(con.autoCommit)
-			sql.getConnection().setTransactionIsolation(defaultTransactionIsolation)
+			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
 			sql.withStatement{ stmt -> 
 				if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
 				if (con.queryTimeout != null) stmt.queryTimeout = con.queryTimeout
@@ -2103,7 +2103,7 @@ $sql
 		}
 		else {
 			fields.each { Field f ->
-				if (f.isAutoincrement || f.isReadOnly)
+				if (f.isAutoincrement || f.isReadOnly || f.compute != null)
 					return
 
 				updateField << f.name

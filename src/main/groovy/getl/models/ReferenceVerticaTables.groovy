@@ -314,7 +314,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             }
 
             try {
-                if (spec.fillFromReferenceTable(usePartitions)) res++
+                if (spec.fillFromReferenceTable(usePartitions))
+                    res++
             }
             catch (Exception e) {
                 dslCreator.logError("Error filling reference data to table \"$name\" in model \"$repositoryModelName\": ${e.message}")

@@ -113,4 +113,10 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     @Override
     Boolean needEnvConfig() { true }
+
+    @Override
+    protected void processUnregisteringObject(Connection obj) {
+        super.processUnregisteringObject(obj)
+        obj.connected = false
+    }
 }

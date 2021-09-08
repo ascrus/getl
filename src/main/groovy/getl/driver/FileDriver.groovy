@@ -547,9 +547,7 @@ class FileDriver extends Driver {
 	}
 
 	@Override
-	Boolean isConnected() {
-		throw new ExceptionGETL('Not support this features!')
-	}
+	Boolean isConnected() { false }
 
 	/**
 	 * Required writing header to file
