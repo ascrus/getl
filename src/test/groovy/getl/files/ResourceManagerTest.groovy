@@ -10,7 +10,7 @@ import org.junit.Test
 
 @InheritConstructors
 class ResourceManagerTest extends TestDsl {
-    private void testListDir(ResourceCatalogElem rootNode) {
+    static private void testListDir(ResourceCatalogElem rootNode) {
         def catalog = rootNode.files
         assertEquals(7, catalog.size())
         def repCon = catalog.find { it.filename == 'getl.lang.sub.RepositoryConnections' && it.type == Manager.directoryType }
@@ -110,6 +110,36 @@ class ResourceManagerTest extends TestDsl {
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory('../' + RepositoryConnections.name))
             }
+        }
+    }
+
+    @Test
+    void testListJarFile() {
+        Getl.Dsl {
+            def jarFileName = FileUtils.ResourceFileName('resource:/jars/test.jar')
+            def jarFile = new File(jarFileName)
+            def jarLoader = FileUtils.ClassLoaderFromPath(jarFileName)
+            resourceFiles {
+                useResourcePath jarFileName
+                useClassLoader jarLoader
+                connect()
+                def list = buildListFiles('*.*') { recursive = true }
+                assertEquals(5, list.countRow())
+                assertEquals(5, list.select('SELECT DISTINCT filepath FROM {table}').size())
+                assertTrue(existsFile('file.txt'))
+                download('file.txt')
+                removeLocalFile('file.txt')
+                assertTrue(existsFile('test1/file.txt'))
+                assertTrue(existsFile('test1/test2/file.txt'))
+                assertTrue(existsFile('test1/test2/test3/file.txt'))
+                download('test1/test2/test3/file.txt', localDirectory + '/test1/test2/test3/file.txt')
+                removeLocalFile('test1/test2/test3/file.txt')
+            }
+            jarLoader.close()
+            jarLoader = null
+            System.gc()
+            sleep 1000
+            println jarFile.delete()
         }
     }
 }

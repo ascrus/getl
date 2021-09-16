@@ -8,8 +8,8 @@ import org.junit.Test
 class WorkflowTest extends GetlDslTest {
     @Test
     void testRun() {
-        Getl.Dsl {
-            models.workflow('test:workflow', true) {
+        Getl.Dsl {getl ->
+            def mod1 = models.workflow('test:workflow', true) {
                 start('Start 1') {
                     countThreads = 2
 
@@ -70,6 +70,8 @@ class WorkflowTest extends GetlDslTest {
                 }
                 shouldFail { execute() }
             }
+            def mod2 = new Workflows(getl, true, mod1.params)
+            assertEquals(mod1.usedSteps.size(), mod2.usedSteps.size())
         }
     }
 

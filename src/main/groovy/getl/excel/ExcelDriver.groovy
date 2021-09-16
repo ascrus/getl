@@ -383,7 +383,5 @@ class ExcelDriver extends FileDriver {
     }
 
     @Override
-    Boolean isConnected() {
-        throw new ExceptionGETL('Not support this features!')
-    }
+    Boolean isConnected() { false }
 }

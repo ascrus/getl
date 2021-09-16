@@ -48,6 +48,8 @@ import groovy.test.GroovyTestCase
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+
+import java.sql.Time
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 
@@ -290,6 +292,8 @@ Examples:
                     }
                 }
 
+                if (className == null)
+                    eng.setGetlSystemParameter('workflow_mode', true)
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
                 if (className != null)
                     eng.logInfo("### Start script ${eng.getClass().name}")
@@ -330,7 +334,7 @@ Examples:
      * Initialize getl instance properties before starting it
      * @param listInitClass list of initialization classes that should be executed before starting
      */
-    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map<String, Object> extProp) {
+    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map<String, Object> extProp, String unitClassName = null) {
         def instance = this
         if (extProp == null)
             extProp = [:] as Map<String, Object>
@@ -352,13 +356,29 @@ Examples:
                     }
 
                     if (en.logFileName != null) {
+                        String procName
+                        String env = instance.configuration.environment
+                        if (unitClassName != null) {
+                            procName = "unittest_$unitClassName"
+                            if (env == null)
+                                env = 'dev'
+                        }
+                        else if (getGetlSystemParameter('workflow') != null)
+                            procName = "workflow_${getGetlSystemParameter('workflow').replace(':', '-')}"
+                        else
+                            procName = "script_${instance.getClass().name}"
+
                         logging.logFileName = StringUtils.EvalMacroString(en.logFileName as String,
-                                [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging the process \"${instance.getClass().name}\" to file \"${FileUtils.TransformFilePath(logging.logFileName, false)}\"")
+                                [env: env?:'prod', process: procName], false)
+                        logFine("Logging the process \"${instance.getClass().name}\" to file " +
+                                "\"${FileUtils.TransformFilePath(logging.logFileName, false)}\"")
                     }
 
                     if (en.printStackTraceError != null)
                         logging.logPrintStackTraceError = BoolUtils.IsValue(en.printStackTraceError)
+
+                    if (en.printConfigMessage != null)
+                        logging.logPrintConfigMessage = BoolUtils.IsValue(en.printConfigMessage)
 
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
@@ -482,12 +502,13 @@ Examples:
         }
     }
 
-    void _initGetlProperties(List<Class<Script>> listInitClass = null, Map<String, Object> extProp, Boolean startAsGroovy = false) {
+    void _initGetlProperties(List<Class<Script>> listInitClass = null, Map<String, Object> extProp,
+                             Boolean startAsGroovy = false, String unitClassName = null) {
         def initClasses = [] as List<Class<Script>>
         if (listInitClass != null)
             initClasses.addAll(listInitClass)
 
-        _prepareGetlProperties(initClasses, extProp)
+        _prepareGetlProperties(initClasses, extProp, unitClassName)
 
         if (!initClasses.isEmpty() && !startAsGroovy) {
             setGetlSystemParameter('isInitMode', true)
@@ -662,7 +683,8 @@ Examples:
         _getl = this
         _getl._getlInstance = true
         Config.configClassManager = getlMainInstance.configuration.manager
-        Logs.global = getlMainInstance.logging.manager
+        if (Logs.global == null)
+            Logs.global = getlMainInstance.logging.manager
     }
 
     /** Get current Getl instance */
@@ -796,13 +818,12 @@ Examples:
     protected void importGetlParams(Map importParams) {
         _params.putAll(MapUtils.Copy(importParams, ['langOpts', 'configOpts', 'logOpts']))
 
-        _langOpts.importParams((importParams.langOpts as LangSpec).params, true)
-        _configOpts.importParams((importParams.configOpts as ConfigSpec).params, true)
-        _logOpts.importParams((importParams.logOpts as LogSpec).params, true)
+        def isThread = IsCurrentProcessInThread(true)
 
-        /*_langOpts = _params.langOpts as LangSpec
-        _configOpts = _params.configOpts as ConfigSpec
-        _logOpts = _params.logOpts as LogSpec*/
+        _langOpts.importParams((importParams.langOpts as LangSpec).params, !isThread)
+        _configOpts.importParams((importParams.configOpts as ConfigSpec).params, !isThread)
+        _logOpts.importParams((importParams.logOpts as LogSpec).params, !isThread)
+
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter
         _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
         _etl = _params.etl as EtlSpec
@@ -2481,6 +2502,11 @@ Examples:
                         }
 
                         break
+                    case Time:
+                        if (!(value instanceof Time))
+                            value = DateUtils.ParseSQLTime('HH:mm:ss', value, false)
+
+                        break
                     case Boolean:
                         if (!(value instanceof Boolean)) {
                             value = (value.toString().toLowerCase() in ['true', '1', 'on'])
@@ -2675,7 +2701,7 @@ Examples:
     }
 
     /** Log options instance */
-    private LogSpec _logOpts //= new LogSpec(this)
+    private LogSpec _logOpts
 
     /** Log options */
     LogSpec getLogging() { _logOpts }

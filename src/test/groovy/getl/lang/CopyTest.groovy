@@ -166,7 +166,8 @@ class CopyTest extends TestDsl {
             files('source') {
                 useStory embeddedTable(historyTable)
                 createStory = true
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-single.{date}.sql"
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-single.{date}.sql"
             }
 
             def countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>,
@@ -242,7 +243,8 @@ class CopyTest extends TestDsl {
             files('source') {
                 useStory embeddedTable(historyTable)
                 createStory = true
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-many.{date}.sql"
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-many.{date}.sql"
             }
 
             def countFiles = this.copy(files('source'), sourceMask,
@@ -276,7 +278,8 @@ class CopyTest extends TestDsl {
 
             files('source') {
                 story = null
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-rename.{date}.sql"
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-rename.{date}.sql"
             }
 
             def countFiles = this.copy(files('source'), sourceMask, [files('rename')] as List<Manager>,
@@ -363,7 +366,8 @@ class CopyTest extends TestDsl {
             files('source') {
                 useStory embeddedTable(historyTable)
                 createStory = true
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-remove.{date}.sql"
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-remove.{date}.sql"
             }
 
             def countFiles = fileman.cleaner(files('source')) {

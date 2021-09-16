@@ -260,11 +260,22 @@ class FileUtilsTest extends getl.test.GetlTest {
     void testClassLoaser() {
         shouldFail { FileUtils.ClassLoaderFromPath('tests/test.jar') }
 
-        if (!FileUtils.ExistsFile('tests/xero/demo.jar')) return
-        def classLoader = FileUtils.ClassLoaderFromPath('tests/xero/*.jar')
-        def url = classLoader.getResource('xero.conf')
-        assertNotNull(url)
-        assertNotNull(url.text)
+        if (FileUtils.ExistsFile('tests/xero/demo.jar')) {
+            def classLoader = FileUtils.ClassLoaderFromPath('tests/xero/demo.jar')
+            def url = classLoader.getResource('xero.conf')
+            assertNotNull(url)
+            assertNotNull(url.text)
+
+            classLoader = FileUtils.ClassLoaderFromPath('tests/xero')
+            url = classLoader.getResource('xero.conf')
+            assertNotNull(url)
+            assertNotNull(url.text)
+
+            classLoader = FileUtils.ClassLoaderFromPath('tests/xero/*.jar')
+            url = classLoader.getResource('xero.conf')
+            assertNotNull(url)
+            assertNotNull(url.text)
+        }
     }
 
     @Test

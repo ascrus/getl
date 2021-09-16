@@ -14,18 +14,17 @@ import getl.utils.BoolUtils
 import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
-import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
+import org.junit.runners.MethodSorters
+
 import static getl.test.TestRunner.Dsl
 
 import groovy.transform.InheritConstructors
 import org.junit.FixMethodOrder
 import org.junit.Test
 
-import java.util.logging.Level
-
-@FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @InheritConstructors
 class DslTest extends TestDsl {
     @Override
@@ -144,25 +143,6 @@ environments {
 
                 FileUtils.DeleteFile(storeName)
             }
-        }
-    }
-
-    @Test
-    void test01_03InitLogFile() {
-        Dsl(this) {
-            options {
-                processTimeDebug = true
-                processTimeLevelLog = Level.FINEST
-                sqlEchoLogLevel = Level.INFO
-            }
-
-            // Init log file
-            logging {
-                logFileName = "${this.tempPath}/getl.{date}.logs"
-                new File(logFileNameHandler).deleteOnExit()
-            }
-
-            assertEquals("${tempPath}/getl.{date}.logs".toString(), logging.manager.logFileName)
         }
     }
 

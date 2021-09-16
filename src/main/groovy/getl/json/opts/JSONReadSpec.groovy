@@ -17,7 +17,8 @@ class JSONReadSpec extends FileReadSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.fields == null) params.fields = [] as List<String>
+        if (params.fields == null)
+            params.fields = [] as List<String>
     }
 
     /** List of fields to read

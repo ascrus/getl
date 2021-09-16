@@ -190,10 +190,16 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
 
     /** Create new instance model object */
     protected T newSpec(Object... args) {
-        def modelClass = (this.getClass().genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
+        def genClass = this.getClass()
+        while (!(genClass.genericSuperclass instanceof ParameterizedType)) {
+            genClass = genClass.superclass
+            if (!BaseModel.isAssignableFrom(genClass))
+                throw new ExceptionDSL("Can't find super class model for class \"${this.getClass()}\"!")
+        }
+        def modelSpecClass = (genClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
         def param = [this] as List<Object>
         if (args != null) param.addAll(args.toList())
-        def res = modelClass.newInstance(param.toArray(String[])) as T
+        def res = modelSpecClass.newInstance(param.toArray(String[])) as T
         (params.usedObjects as List<T>).add(res)
         return res
     }

@@ -9,6 +9,13 @@ import groovy.transform.stc.SimpleType
 
 @InheritConstructors
 class KafkaReadSpec extends BaseSpec {
+    @Override
+    protected void initSpec() {
+        super.initSpec()
+        if (params.fields == null)
+            params.fields = [] as List<String>
+    }
+
     /** List of fields to read
      * <br>if not specified, then all fields are taken
      */
@@ -18,7 +25,8 @@ class KafkaReadSpec extends BaseSpec {
      */
     void setFields(List<String> value) {
         fields.clear()
-        if (value != null) fields.addAll(value)
+        if (value != null)
+            fields.addAll(value)
     }
 
     /**

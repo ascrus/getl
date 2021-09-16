@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.12.0' //noinspection GroovyUnusedAssignment
+version = '4.12.1-14-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -20,11 +20,11 @@ repositories {
 }
 
 dependencies {
-	compile('org.codehaus.groovy:groovy-all:3.0.8') {
+	compile('org.codehaus.groovy:groovy-all:3.0.9') {
 		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
 	}
-	compile 'org.codehaus.groovy:groovy-dateutil:3.0.8'
-	compile 'org.codehaus.groovy:groovy-yaml:3.0.8'
+	compile 'org.codehaus.groovy:groovy-dateutil:3.0.9'
+	compile 'org.codehaus.groovy:groovy-yaml:3.0.9'
 	compile 'com.fasterxml.jackson.core:jackson-annotations:2.12.5'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'

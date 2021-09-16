@@ -436,7 +436,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                     }
                 }
                 finally {
-                    src.removeLocalFile(outfilename)
+                    src.removeLocalFile(outfilename, false)
                 }
 
                 if (afterCopy != null)

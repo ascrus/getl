@@ -145,8 +145,9 @@ class ResourceManager extends Manager {
     static ResourceCatalogElem ListDirJar(String path) {
         def p = new Path(mask: 'file:{jar}!{dir}')
         def m = p.analyze(path, false)
-        if (m.isEmpty())
-            throw new ExceptionGETL("Invalid path to resource file \"$path\"!")
+        if (m == null || m.isEmpty()) {
+            m = [jar: path, dir: '']
+        }
 
         def jarFileName = m.jar as String
         def dirPath = new Path(mask: "${m.dir}/{name}")
@@ -159,54 +160,69 @@ class ResourceManager extends Manager {
         res.type = Manager.directoryType
         res.files = [] as List<ResourceCatalogElem>
 
-        zip.fileHeaders.each { head ->
-            def attr = dirPath.analyze('/' + head.fileName, false)
-            if (attr == null) return
+        try {
+            zip.fileHeaders.each { head ->
+                def attr = dirPath.analyze('/' + head.fileName, false)
+                if (attr == null) return
 
-            def relFilePath = attr.name as String
-            def pathName = FileUtils.RelativePathFromFile(relFilePath, true)
-            def fileName = (!head.directory)?FileUtils.FileName(relFilePath):null
-            def paths = pathName.split('/')
+                def relFilePath = attr.name as String
+                def pathName = FileUtils.RelativePathFromFile(relFilePath, true)
+                def fileName = (!head.directory) ? FileUtils.FileName(relFilePath) : null
+                def paths = pathName.split('/')
 
-            def parentDir = res
-            paths.each { dir ->
-                def cur = parentDir.files.find { elem -> (elem.filename == dir) }
-                if (cur == null) {
-                    cur = new ResourceCatalogElem()
-                    cur.with {
-                        filename = dir
-                        type = Manager.directoryType
-                        files =  [] as List<ResourceCatalogElem>
-                        parent = parentDir
-                        filepath = ((parentDir.filepath != '/')?parentDir.filepath:'') + '/' + dir
+                def parentDir = res
+                paths.each { dir ->
+                    def cur = (dir != '.') ? parentDir.files.find { elem -> (elem.filename == dir) } : parentDir
+                    if (cur == null) {
+                        cur = new ResourceCatalogElem()
+                        cur.tap {
+                            filename = dir
+                            type = Manager.directoryType
+                            files = [] as List<ResourceCatalogElem>
+                            parent = parentDir
+                            filepath = ((parentDir.filepath != '/') ? parentDir.filepath : '') + '/' + dir
+                        }
+                        parentDir.files.add(cur)
                     }
-                    parentDir.files.add(cur)
+                    parentDir = cur
                 }
-                parentDir = cur
-            }
-            if (head.directory) return
+                if (head.directory) return
 
-            def elem = new ResourceCatalogElem()
-            elem.with {
-                type = Manager.fileType
-                filename = fileName
-                parent = parentDir
-                filepath = ((parentDir.filepath != '/')?parentDir.filepath:'') + '/' + fileName
-                filedate = head.lastModifiedTime
-                filesize = head.uncompressedSize
+                def elem = new ResourceCatalogElem()
+                elem.with {
+                    type = Manager.fileType
+                    filename = fileName
+                    parent = parentDir
+                    filepath = ((parentDir.filepath != '/') ? parentDir.filepath : '') + '/' + fileName
+                    filedate = head.lastModifiedTimeEpoch
+                    filesize = head.uncompressedSize
+                }
+                parentDir.files.add(elem)
             }
-            parentDir.files.add(elem)
+        }
+        finally {
+            zip.close()
         }
 
         return res
     }
 
+    private Boolean isZipFile = false
+
     private void buildCatalog() {
-        def res = GroovyClassLoader.getResource(resourcePath)
+        def res = (classLoader != null)?classLoader.getResource(resourcePath):
+                GroovyClassLoader.getResource(resourcePath)
+
+        isZipFile = false
+        if (res == null && FileUtils.ExistsFile(resourcePath)) {
+            def file = new File(resourcePath)
+            res = file.toURI().toURL()
+            isZipFile = true
+        }
         if (res == null)
             throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources!")
 
-        rootNode = (res.protocol == 'file')?ListDirFiles(res.file):ListDirJar(res.file)
+        rootNode = (res.protocol == 'file' && !isZipFile)?ListDirFiles(res.file):ListDirJar(res.file)
         setCurrentDirectory(directoryFromPath(currentRootPath))
     }
 
@@ -284,7 +300,7 @@ class ResourceManager extends Manager {
                 files = dir.files.findAll { p.match(it.filename) }
             }
             else {
-                files = [dir.files.find { it.filename = fileName}] as List<ResourceCatalogElem>
+                files = [dir.files.find { it.filename == fileName}] as List<ResourceCatalogElem>
             }
         }
         else
@@ -374,7 +390,7 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    void download(String filePath, String localPath, String localFileName) {
+    File download(String filePath, String localPath, String localFileName) {
         validConnect()
 
         def cd = directoryFromPath(FileUtils.RelativePathFromFile(filePath, true))
@@ -382,7 +398,11 @@ class ResourceManager extends Manager {
         def file = cd.files.find { it.filename == fileName }
         if (file == null)
             throw new ExceptionGETL("File \"$filePath\" not found!")
-        def fp = resourcePath + file.filepath
+        String fp
+        if (!isZipFile)
+            fp = resourcePath + file.filepath
+        else
+            fp = file.filepath.substring(1)
 
         def destFile = new File(localPath + '/' + localFileName)
         FileUtils.ValidFilePath(destFile)
@@ -395,8 +415,11 @@ class ResourceManager extends Manager {
         }
         delDirs.reverse().each { dir -> dir.deleteOnExit() }
 
-        if (FileUtils.FileFromResources(fp, resourceDirectories, classLoader, destFile) == null)
+        def res= FileUtils.FileFromResources(fp, resourceDirectories, classLoader, destFile)
+        if (res == null)
             throw new ExceptionGETL("Resource file \"$fp\" not found!")
+
+        return res
     }
 
     @Override

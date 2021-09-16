@@ -388,6 +388,8 @@ class Logs {
 		}
 
 		config("# Log file \"$fileNameHandler\" closed")
+
+		fileNameHandler = null
 	}
 	
 	/**
@@ -682,7 +684,6 @@ class Logs {
 			message += " => " + error.stackTrace.join('\n')
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
-		StackTraceUtils.sanitize(error)
 		if (printStackTraceError)
 			error.printStackTrace()
 	}
@@ -774,6 +775,9 @@ class Logs {
 		FileUtils.ConvertToUnixPath("${FileUtils.PathFromFile(fileNameHandler)}/dump/${FileUtils.FileName(fileNameHandler)}")
 	}
 
+	@Synchronized('lockLog')
+	String dumpFile() { "${dumpFolder()}/dump.txt" }
+
 	/**
 	 * Write error trace to dump log file
 	 * @param error error exception
@@ -800,12 +804,10 @@ class Logs {
 			return
 		}
 		
-		def fn = "${dumpFolder()}/dump.txt"
+		def fn = dumpFile()
 		
 		finest("Saving dump information to file $fn from error ${error?.message} ...")
 		FileUtils.ValidFilePath(fn)
-		if (error != null)
-			StackTraceUtils.sanitize(error)
 
 		File df = new File(fn)
 		def w
@@ -817,8 +819,8 @@ class Logs {
 			if (error != null) {
 				w.println "Error: $error"
 				w.println "Stack trace:"
-				if (printStackTraceError)
-					error.printStackTrace(w)
+				StackTraceUtils.sanitize(error)
+				error.printStackTrace(w)
 			}
 			if (data != null) {
 				w.println "Generated script:"

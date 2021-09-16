@@ -8,13 +8,12 @@ import static getl.test.TestRunner.Dsl
 
 @InheritConstructors
 class ReferenceFilesTest extends TestRepository {
-    void fill(boolean local) {
+    static void fill(boolean local) {
         Dsl {
             def f = files {
                 rootPath = '{GETL_TEST}/getl.dsl'
                 connect()
                 cleanDir()
-                createDir('reference')
             }
 
             models.referenceFiles('files') {
@@ -25,6 +24,9 @@ class ReferenceFilesTest extends TestRepository {
             f.tap {
                 assertTrue(existsFile('reference/тест.txt'))
                 assertEquals('12345', new File(currentRootPath + '/reference/тест.txt').text)
+
+                assertTrue(existsFile('reference1/тест.txt'))
+                assertEquals('12345', new File(currentRootPath + '/reference1/тест.txt').text)
             }
         }
     }

@@ -357,12 +357,12 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	void download(String filePath, String localPath, String localFileName) {
+	File download(String filePath, String localPath, String localFileName) {
 		validConnect()
 
 		def fn = ((localPath != null)?localPath + "/":"") + localFileName
-        def f = new File(fn)
-		OutputStream s = f.newOutputStream()
+        def res = new File(fn)
+		OutputStream s = res.newOutputStream()
 		try {
 			channelFtp.get(filePath, s)
 		}
@@ -374,7 +374,9 @@ class SFTPManager extends Manager implements UserLogins {
 			s.close()
 		}
 
-        setLocalLastModified(f, getLastModified(filePath))
+        setLocalLastModified(res, getLastModified(filePath))
+
+		return res
 	}
 
 	@Override

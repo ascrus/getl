@@ -680,7 +680,8 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Run after processing */
     protected void afterProcessing() {
-        if (onFinishProcess != null) onFinishProcess.call(this)
+        if (onFinishProcess != null)
+            onFinishProcess.call(this)
 
         if (sourceAfterScript != null)
             if (source.connected)
@@ -735,7 +736,8 @@ abstract class FileListProcessing implements GetlRepository {
                 logger.warning("No files found for source \"${source.toString()}\"!")
             }
             else {
-                logger.info("${countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
+                logger.info("${countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} " +
+                        "for source \"${source.toString()}\"")
 
                 if (cacheTable != null) {
                     if (source.story.field.size() == 0)
@@ -766,7 +768,8 @@ abstract class FileListProcessing implements GetlRepository {
 
                 ConnectTo([source], numberAttempts, timeAttempts)
 
-                if (removeEmptyDirs) delEmptyFolders()
+                if (removeEmptyDirs)
+                    delEmptyFolders()
             }
         }
         catch (Exception e) {

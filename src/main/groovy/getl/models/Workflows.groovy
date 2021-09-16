@@ -22,6 +22,7 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class Workflows extends BaseModel<WorkflowSpec> {
     /** List of used steps */
+    @JsonIgnore
     List<WorkflowSpec> getUsedSteps() { usedObjects as List<WorkflowSpec> }
     /** List of used steps */
     void setUsedSteps(List<WorkflowSpec> value) {
@@ -310,7 +311,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                         exec.counter.nextCount()
 
                         def scriptParams = node.scripts.get(scriptName)
-                        def className = scriptParams.className
+                        def className = scriptParams.className as String
                         dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
 
                         def runClass = node.detectRunClass(className)

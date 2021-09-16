@@ -96,7 +96,7 @@ class FileUtils {
 	 * @param fullPath path to file
 	 * @return
 	 */
-	static String FileExtension (String fullPath) {
+	static String FileExtension(String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)
 		def sepPos = fullPath.lastIndexOf(File.separator)
 		String nameAndExt = fullPath.substring(sepPos + 1, fullPath.length())
@@ -333,7 +333,10 @@ class FileUtils {
 	 * @return
 	 */
 	static Boolean DeleteFile(String fileName) {
-		new File(TransformFilePath(fileName)).delete()
+		if (fileName == null)
+			throw new ExceptionGETL('Required file name!')
+
+		return new File(TransformFilePath(fileName)).delete()
 	}
 
 	/**
@@ -344,7 +347,9 @@ class FileUtils {
 	 */
 	static Boolean DeleteFolder(String rootFolder, Boolean deleteRoot = true, Boolean throwError = true,
 								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete = null) {
-		if (rootFolder == null) return null
+		if (rootFolder == null)
+			return null
+
 		rootFolder = TransformFilePath(rootFolder)
 
 		File root = new File(rootFolder)
@@ -530,7 +535,9 @@ class FileUtils {
 	 * @return result of checking
 	 */
 	static Boolean IsMaskFileName(String filePath) {
-		if (filePath == null) return null
+		if (filePath == null)
+			return null
+
 		return FileName(filePath)?.matches('.*([?]|[*]).*')
 	}
 
@@ -540,7 +547,9 @@ class FileUtils {
 	 * @return result of checking
 	 */
 	static Boolean IsMaskPath(String filePath) {
-		if (filePath == null) return null
+		if (filePath == null)
+			return null
+
 		return PathFromFile(filePath)?.matches('.*([?]|[*]).*')
 	}
 
@@ -550,7 +559,9 @@ class FileUtils {
 	 * @return result of checking
 	 */
 	static Boolean IsMaskFilePath(String filePath) {
-		if (filePath == null) return null
+		if (filePath == null)
+			return null
+
 		return filePath.matches('.*([?]|[*]).*')
 	}
 	
@@ -581,12 +592,16 @@ class FileUtils {
 	 * @return directory path
 	 */
 	static String RelativePathFromFile(String pathToFile, String pathSeparator) {
-		if (pathToFile == null) return null
+		if (pathToFile == null)
+			return null
 
 		String res
 		def i = pathToFile.lastIndexOf(pathSeparator)
-		if (i < 0) res = '.' else res = pathToFile.substring(0, i)
-		
+		if (i < 0)
+			res = '.'
+		else
+			res = pathToFile.substring(0, i)
+
 		return res
 	}
 
@@ -610,10 +625,13 @@ class FileUtils {
 	 * @return file name
 	 */
 	static String FileName(String filePath, Boolean isUnix = null) {
-		if (filePath == null) return null
+		if (filePath == null)
+			return null
 		
 		def res = new File(TransformFilePath(filePath)).name
-		if (res in ['.', '..']) return null
+		if (res in ['.', '..'])
+			return null
+
 		if (isUnix != null) {
 			if (isUnix)
 				res = ConvertToUnixPath(res)
@@ -936,36 +954,43 @@ class FileUtils {
     }
 
 	/**
-	 * Generate URL class loader from specified path
+	 * Generate URL class loader from specified path to jar files
 	 * @param path
 	 * @return class loader for use in Class.forName method
 	 */
 	static URLClassLoader ClassLoaderFromPath(String path, ClassLoader classLoader = null) {
-		if (classLoader == null) classLoader = ClassLoader.systemClassLoader
+		if (classLoader == null)
+			classLoader = ClassLoader.systemClassLoader
+
 		File pathFile = new File(TransformFilePath(path))
 		List<URL> urls = []
-		if (pathFile.isFile()) {
-			urls << pathFile.toURI().toURL()
-			return new URLClassLoader(urls.toArray(URL[]) as URL[], classLoader)
-		}
-		String mask = '*.jar'
-		if (!pathFile.isDirectory()) {
-			pathFile = new File(PathFromFile(path))
-			if (!pathFile.exists()) throw new ExceptionGETL("Path $path not found")
-			mask = FileName(path)
-			if (mask.indexOf('*') == -1 && mask.indexOf('?') == -1) throw new ExceptionGETL("File \"$path\" not found")
-		}
-		FileManager fileMan = new FileManager(rootPath: pathFile.canonicalPath)
-		fileMan.connect()
-		try {
-			fileMan.list(mask) { Map file ->
-				String fileName = "${fileMan.rootPath}/${file.filename}"
-				urls << new File(fileName).toURI().toURL()
+
+		def findJarFiles = { String jarPath, String mask ->
+			FileManager fileMan = new FileManager(rootPath: jarPath)
+			fileMan.connect()
+			try {
+				fileMan.list(mask) { Map file ->
+					String fileName = "$jarPath/${file.filename}"
+					urls << new File(fileName).toURI().toURL()
+				}
+			}
+			finally {
+				fileMan.disconnect()
 			}
 		}
-		finally {
-			fileMan.disconnect()
+
+		def isMask = IsMaskFilePath(path)
+		if (!isMask) {
+			if (!pathFile.exists())
+				throw new ExceptionGETL("Path \"${pathFile.path}\" not found!")
+
+			if (pathFile.isFile())
+				urls << pathFile.toURI().toURL()
+			else if (pathFile.isDirectory())
+				findJarFiles.call(pathFile.path, '*.*')
 		}
+		else
+			findJarFiles.call(pathFile.parent, pathFile.name)
 
 		return new URLClassLoader(urls.toArray(URL[]) as URL[], classLoader)
 	}

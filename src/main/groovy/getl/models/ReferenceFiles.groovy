@@ -82,6 +82,13 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** Unpack archive locally instead of uploading and unpacking on the destination */
     void setLocalUnpack(Boolean value) { saveParamValue('localUnpack', value) }
 
+    /** Create directories in destination */
+    Boolean getCreateDestinationDirectories() { params.createDestinationDirectories as Boolean }
+    /** Create directories in destination */
+    void setCreateDestinationDirectories(Boolean value) {
+        saveParamValue('createDestinationDirectories', value)
+    }
+
     /**
      * Specify a file that contains reference data
      * @param filePath file path
@@ -118,8 +125,12 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         super.checkObject(obj)
         def modelFile = obj as ReferenceFileSpec
         def destPath = (modelFile as ReferenceFileSpec).destinationPath
-        if (destPath != null && !destinationManager.existsDirectory(destPath))
-            throw new ExceptionModel("Destination path \"$destPath\" not found!")
+        if (destPath != null && !destinationManager.existsDirectory(destPath)) {
+            if (!BoolUtils.IsValue(createDestinationDirectories))
+                throw new ExceptionModel("Destination path \"$destPath\" not found!")
+            destinationManager.createDirs(destPath)
+            destinationManager.changeDirectoryToRoot()
+        }
     }
 
     /**
@@ -151,7 +162,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                 new ProcessTime(dslCreator: dslCreator,
                         name: "Download reference file \"$fileName\" from \"$source\" to local directory",
                         objectName: 'file', debug: true).run {
-                    source.download(modelFile.filePath, fileName)
+                    source.download(modelFile.filePath)
                     return 1
                 }
                 try {
@@ -172,7 +183,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         def cmdOut = new StringBuilder(), cmdErr = new StringBuilder()
                         def cmdText = StringUtils.EvalMacroString(unpackCommand, modelVars + modelFile.objectVars + [file: fileName])
                         def cmdMan = (!isLocalUnpack)?dest:new FileManager(rootPath: source.localDirectory)
-                        if (isLocalUnpack) cmdMan.connect()
+                        if (isLocalUnpack)
+                            cmdMan.connect()
                         try {
                             new ProcessTime(dslCreator: dslCreator,
                                     name: "Unpack reference file \"$fileName\" on \"$cmdMan\"",

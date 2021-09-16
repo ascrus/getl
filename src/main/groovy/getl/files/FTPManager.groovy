@@ -332,20 +332,23 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	@Override
-	void download(String filePath, String localPath, String localFileName) {
+	File download(String filePath, String localPath, String localFileName) {
 		validConnect()
 
+		File res
 		def fn = ((localPath != null)?localPath + '/':'') + localFileName
 		try {
-            def f = new File(fn)
-			client.download(filePath, f)
-            setLocalLastModified(f, getLastModified(filePath))
+            res = new File(fn)
+			client.download(filePath, res)
+            setLocalLastModified(res, getLastModified(filePath))
 
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog) logger.severe("Can not download file \"$filePath\" to \"$fn\"")
 			throw e
 		}
+
+		return res
 	}
 
 	@SuppressWarnings('SpellCheckingInspection')

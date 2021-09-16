@@ -183,7 +183,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	void download (String filePath, String localPath, String localFileName) {
+	File download (String filePath, String localPath, String localFileName) {
 		validConnect()
 		
 		def f = fileFromLocalDir("${_currentPath}/${filePath}")
@@ -193,6 +193,8 @@ class FileManager extends Manager {
 
         def fDest = new File(fn)
         setLocalLastModified(fDest, f.lastModified())
+
+		return fDest
 	}
 	
 	@Override

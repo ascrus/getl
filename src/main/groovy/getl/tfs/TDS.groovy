@@ -19,7 +19,7 @@ class TDS extends H2Connection {
 	protected void initParams() {
 		super.initParams()
 		
-		if (connectURL == null && params."inMemory" == null)
+		if (connectURL == null && params.inMemory == null)
 			params.inMemory = true
 
 		synchronized (lock) {
@@ -46,16 +46,17 @@ class TDS extends H2Connection {
 			login = "easyloader"
 			password = "easydata"
 		}
-		if (connectProperty."PAGE_SIZE" == null) {
-			connectProperty."PAGE_SIZE" = 8192
+		if (connectProperty.PAGE_SIZE == null) {
+			connectProperty.PAGE_SIZE = 8192
 		}
-		if (connectProperty."LOG" == null) {
-			connectProperty."LOG" = 0
+		if (connectProperty.LOG == null) {
+			connectProperty.LOG = 0
 		}
-		if (connectProperty."UNDO_LOG" == null) {
-			connectProperty."UNDO_LOG" = 0
+		if (connectProperty.UNDO_LOG == null) {
+			connectProperty.UNDO_LOG = 0
 		}
-		if (params."config" == null) config = "getl_tds"
+		if (params.config == null)
+			config = "getl_tds"
 	}
 
 	/** Global temporary database connection object */

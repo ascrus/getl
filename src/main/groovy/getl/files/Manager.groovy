@@ -562,14 +562,16 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param filePath downloaded file name
 	 * @param localPath path to file on server
 	 * @param localFileName saved file name in local directory
+	 * @return downloaded file
 	 */
-	abstract void download(String filePath, String localPath, String localFileName)
+	abstract File download(String filePath, String localPath, String localFileName)
 	
 	/**
 	 * Download file from current directory by server
 	 * @param filePath file path on server
+	 * @return downloaded file
 	 */
-	void download(String filePath) {
+	File download(String filePath) {
 		download(filePath, null)
 	}
 	
@@ -577,25 +579,32 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Download file to specified name in local directory
 	 * @param filePath file path on server
 	 * @param localFilePath file download path to local directory
+	 * @return downloaded file
 	 */
 	@CompileStatic
-	void download(String filePath, String localFilePath) {
+	File download(String filePath, String localFilePath) {
 		validConnect()
 
-		if (localFilePath == null)
-			localFilePath = FileUtils.FileName(filePath)
+		String localDir = currentLocalDir()
+		String localFileName = FileUtils.FileName(filePath)
+		if (localFilePath != null) {
+			localFilePath = FileUtils.TransformFilePath(FileUtils.ConvertToUnixPath(localFilePath))
 
-		def ld = FileUtils.PathFromFile(localFilePath)
-		if (ld == null)
-			ld = currentLocalDir()
-		else if (localFilePath[0] in ['/', '\\'])
-			ld = localFilePath
-		else
-			ld += '/' + localFilePath
+			def localPath = FileUtils.RelativePathFromFile(localFilePath, true)
+			if (localPath == '.')
+				localFileName = localFilePath
+			else {
+				FileUtils.ValidPath(localPath)
+				if (FileUtils.ExistsFile(localPath, true)) {
+					localDir = localPath
+					localFileName = FileUtils.FileName(localFilePath, true)
+				} else
+					throw new ExceptionGETL("Local path \"$localPath\" not found!")
+			}
+		}
 
-		FileUtils.ValidPath(ld)
-
-		download(filePath, ld, FileUtils.FileName(localFilePath))
+		FileUtils.ValidPath(localDir)
+		download(filePath, localDir, localFileName)
 	}
 	
 	/**
@@ -1298,7 +1307,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 		}
 		
 		try {
-			if (code != null) code.init()
+			if (code != null)
+				code.init()
+
 			try {
 				newFiles.openWrite(batchSize: 100)
 				try {
@@ -1311,7 +1322,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 				}
 			}
 			finally {
-				if (code != null) code.done()
+				if (code != null)
+					code.done()
 			}
 			
 			// Detect double file name
@@ -1445,11 +1457,14 @@ FROM (
 			sizeFileList = sizeFiles
 		}
 		finally {
-			if (noopService != null) noopService.stopBackground()
+			if (noopService != null)
+				noopService.stopBackground()
 			
 			newFiles.drop(ifExists: true)
 			doubleFiles.drop(ifExists: true)
 			useFiles.drop(ifExists: true)
+
+			newFiles.connection.connected = false
 		}
 	}
 
@@ -1844,12 +1859,13 @@ WHERE
 	
 	/**
 	 * Remove local file
-	 * @param fileName
+	 * @param fileName file name
+	 * @param valid check delete operation
 	 */
-	void removeLocalFile(String fileName) {
+	void removeLocalFile(String fileName, Boolean valid = true) {
 		def fn = "${currentLocalDir()}/$fileName"
-		if (!new File(fn).delete())
-			throw new ExceptionGETL("Can not remove Local file \"$fn\"")
+		if (!new File(fn).delete() && valid)
+			throw new ExceptionGETL("Can not remove local file \"$fn\"")
 	}
 
 	/**

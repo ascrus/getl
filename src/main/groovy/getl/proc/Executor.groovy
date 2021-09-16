@@ -761,10 +761,8 @@ class Executor implements GetlRepository {
 				}
 			}
 			catch (Throwable e) {
-				if (logErrors) {
+				if (logErrors)
 					logger.exception(e, this.toString(), null)
-					StackTraceUtils.sanitize(e)
-				}
 			}
 		}
 		
