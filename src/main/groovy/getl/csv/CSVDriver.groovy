@@ -319,7 +319,7 @@ class CSVDriver extends FileDriver {
 		def isOptional = fParams.isOptional as Boolean
 		def isWrite = fParams.isWrite as Boolean
 		def isValid = fParams.isValid as Boolean
-		def isEscape = BoolUtils.IsValue(fParams.isEscape, dataset.isEscaped())
+		def escaped = BoolUtils.IsValue(fParams.isEscape, dataset.escaped())
 		def nullAsValue = ListUtils.NotNullValue([fParams.nullAsValue, dataset.nullAsValue()]) as String
 		def locale = ListUtils.NotNullValue([fParams.locale, dataset.locale()]) as String
 		def decimalSeparator = ListUtils.NotNullValue([fParams.decimalSeparator, dataset.decimalSeparator()]) as String
@@ -346,7 +346,7 @@ class CSVDriver extends FileDriver {
 				else {
 					Field f = dataset.field[i]
 					
-					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, locale, decimalSeparator,
+					CellProcessor p = type2cellProcessor(f, isWrite, escaped, nullAsValue, locale, decimalSeparator,
 															formatDate, formatTime, formatDateTime, formatTimestampWithTz, isValid)
 					cp << p
 				}
@@ -384,7 +384,7 @@ class CSVDriver extends FileDriver {
 
 		cds.currentCsvConnection.validPath()
 		
-		def escaped = BoolUtils.IsValue([params.escaped, cds.isEscaped()])
+		def escaped = BoolUtils.IsValue([params.escaped, cds.escaped()])
 		def readAsText = BoolUtils.IsValue(params.readAsText)
 		def ignoreHeader = BoolUtils.IsValue(params.ignoreHeader, cds.isIgnoreHeader())
 		def formatDate = params.formatDate as String
@@ -597,7 +597,7 @@ class CSVDriver extends FileDriver {
 		ReadParams p = readParamDataset(csv_ds, params)
 		def isAppend = BoolUtils.IsValue(p.params.isAppend)
 		def isValid = BoolUtils.IsValue(params.isValid, csv_ds.isConstraintsCheck())
-		def escaped = BoolUtils.IsValue(params.escaped, csv_ds.isEscaped())
+		def escaped = BoolUtils.IsValue(params.escaped, csv_ds.escaped())
 		def formatDate = params.formatDate as String
 		def formatTime = params.formatTime as String
 		def formatDateTime = params.formatDateTime as String
@@ -852,9 +852,9 @@ class CSVDriver extends FileDriver {
 
 		String targetRowDelimiter = target.rowDelimiter()
 		String sourceFieldDelimiter = source.fieldDelimiter()
-		String sourceFieldDelimiterLast = sourceFieldDelimiter + '\u0000'
+		String sourceFieldDelimiterLast = sourceFieldDelimiter + '\u0001'
 		String targetFieldDelimiter = target.fieldDelimiter()
-		def source_escaped = source.isEscaped()
+		def source_escaped = source.escaped()
 		String sourceQuoteStr = source.quoteStr()
 		String targetQuoteStr = target.quoteStr()
 		
@@ -1020,7 +1020,7 @@ class CSVDriver extends FileDriver {
 		String targetQuoteStr = target.quoteStr()
 		
 		Map<String, String> encodeMap = [:]
-		if (target.isEscaped()) {
+		if (target.escaped()) {
 			encodeMap."\\" = '\\\\'
 			encodeMap."\n" = '\\n' 
 			encodeMap."\t" = '\\t'

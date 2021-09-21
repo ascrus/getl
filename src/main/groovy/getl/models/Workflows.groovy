@@ -3,13 +3,17 @@ package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
+import getl.lang.Getl
 import getl.models.opts.WorkflowScriptSpec
 import getl.models.opts.WorkflowSpec
 import getl.models.opts.WorkflowSpec.Operation
 import getl.models.sub.BaseModel
 import getl.models.sub.BaseSpec
 import getl.proc.Executor
+import getl.utils.BoolUtils
 import getl.utils.CloneUtils
+import getl.utils.GenerationUtils
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -267,32 +271,76 @@ class Workflows extends BaseModel<WorkflowSpec> {
             throw new ExceptionModel('Required name for step!')
         if (step.operation == null)
             throw new ExceptionModel('Required operation for \"${step.stepName}\" step!')
-
-        step.condition()
-        step.scripts.each { name, scriptParams ->
-            step.detectRunClass(scriptParams.className as String)
-        }
     }
 
-    /** Start workflow processes */
-    Integer execute() {
+    /**
+     * Start workflow processes
+     * @param classLoader class loader
+     */
+    Integer execute(URLClassLoader classLoader = null) {
         dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
+        def conditions = generateConditions(classLoader)
+        cleanResults()
+
         def res = 0
         usedSteps.each { node ->
-            res =+ stepExecute(node)
+            res =+ stepExecute(node, conditions, classLoader)
         }
         dslCreator.logInfo("+++ Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
 
         return res
     }
 
+    /** Condtition name from class of conditions */
+    static private String conditionName(String stepName) {
+        return "condition_${stepName.replace(' ', '')}"
+    }
+
+    /** Generate class of conditions */
+    private Getl generateConditions(URLClassLoader classLoader) {
+        def conditions = [:] as Map<String, String>
+        findConditions(usedSteps[0], conditions)
+        if (conditions.isEmpty())
+            return null
+
+        def className = "Workflow_${StringUtils.RandomStr().replace('-', '')}"
+        def sb = new StringBuilder()
+        sb.append """class $className extends getl.lang.Getl {
+    public getl.models.Workflows proc
+    Map result(String scriptName) { proc.result(scriptName) }\n"""
+
+        conditions.each { stepName, condition ->
+            sb.append "Boolean ${conditionName(stepName)}() { $condition }\n"
+        }
+
+        sb.append """}
+
+return $className"""
+
+        def classGenerated = GenerationUtils.EvalGroovyScript(sb.toString(), null, false, classLoader,
+                dslCreator) as Class<Getl>
+        def obj = dslCreator.callScript(classGenerated, [proc: this]).result as Getl
+
+        return obj
+    }
+
+    /** Build list of conditions */
+    private void findConditions(WorkflowSpec node, Map<String, String> conditions) {
+        if (node.condition != null)
+            conditions.put(node.stepName, node.condition)
+
+        node.nested.each {findConditions(it, conditions) }
+    }
+
     /** Run workflow step */
-    private Integer stepExecute(WorkflowSpec node, String parentStep = null) {
+    private Integer stepExecute(WorkflowSpec node, Getl conditions, URLClassLoader classLoader = null, String parentStep = null) {
         def res = 0
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
         if (node.condition != null) {
-            if (!(dslCreator.runDsl(this, node.condition()) as Boolean)) {
+            def conditionName = conditionName(node.stepName)
+            def conditionResult = conditions."$conditionName"()
+            if (!BoolUtils.IsValue(conditionResult)) {
                 dslCreator.logWarn("Conditions for \"$stepLabel\" step do not require its execute!")
                 return res
             }
@@ -314,9 +362,10 @@ class Workflows extends BaseModel<WorkflowSpec> {
                         def className = scriptParams.className as String
                         dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
 
-                        def runClass = node.detectRunClass(className)
+                        def runClass = classForExecute(className, classLoader, node.stepName)
                         if (runClass == null)
                             throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
+
                         def vars = scriptParams.vars as Map<String, Object>
                         def scriptResult = dslCreator.callScript(runClass, vars)
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {
@@ -330,14 +379,14 @@ class Workflows extends BaseModel<WorkflowSpec> {
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, stepLabel)
+                res += stepExecute(subNode, conditions, classLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, stepLabel)
+                    stepExecute(errStep, conditions, classLoader, stepLabel)
             }
             finally {
                 throw e
@@ -345,5 +394,33 @@ class Workflows extends BaseModel<WorkflowSpec> {
         }
 
         return res
+    }
+
+    /**
+     * Get class for execute
+     * @param className class name
+     * @param stepName step name
+     * @return class for execute
+     */
+    private Class<Getl> classForExecute(String className, URLClassLoader classLoader, String stepName) {
+        if (className == null)
+            throw new ExceptionModel("Required class name in step \"$stepName\"!")
+
+        Class<Getl> res
+        try {
+            if (classLoader != null)
+                res = Class.forName(className, true, classLoader) as Class<Getl>
+            else
+                res = Class.forName(className) as Class<Getl>
+        }
+        catch (Throwable e) {
+            dslCreator.logError("Can not using class \"$className in step \"$stepName\": ${e.message}")
+            throw e
+        }
+
+        if (!Getl.isAssignableFrom(res))
+            throw new ExceptionModel("Class \"$className\" is not compatible with Getl class in step \"$stepName\"!")
+
+        return res as Class<Getl>
     }
 }

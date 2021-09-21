@@ -166,7 +166,7 @@ class VerticaDriver extends JDBCDriver {
 				if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 			}
 		}
-		else if (!source.isEscaped()) {
+		else if (!source.escaped()) {
 			def fd = source.fieldDelimiter()
 			def qs = source.quoteStr()
 			if (fd == '\u0001')
@@ -470,7 +470,7 @@ class VerticaDriver extends JDBCDriver {
 		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter != '\r\n')
 			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
 
-		if (!csvFile.isEscaped()) {
+		if (!csvFile.escaped()) {
 			def blobFields = csvFile.field.findAll { it.type == Field.blobFieldType && source.fieldByName(it.name) != null }
 			if (blobFields != null && !blobFields.isEmpty()) {
 				def blobNames = blobFields*.name

@@ -1028,15 +1028,15 @@ class RepositoryTest extends TestDsl {
 
                         assertEquals(2, scripts.size())
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('top1').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('top1').className)
                         assertEquals('Start 1', script('top1').vars.stepName)
                         assertEquals(1, script('top1').vars.stepNum)
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('top2').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('top2').className)
                         assertEquals('Start 1', script('top2').vars.stepName)
                         assertEquals(2, script('top2').vars.stepNum)
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('error1').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('error1').className)
                         assertEquals('STEP 1', script('error1').vars.stepName)
                         assertEquals(-1, script('error1').vars.stepNum)
 
@@ -1044,22 +1044,22 @@ class RepositoryTest extends TestDsl {
                             assertEquals('(configContent.countProcessed == 2)', condition)
                         }
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('child1').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('child1').className)
                         assertEquals('child1', script('child1').vars.stepName)
                         assertEquals(101, script('child1').vars.stepNum)
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('child2').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('child2').className)
                         assertEquals('child1', script('child2').vars.stepName)
                         assertEquals(102, script('child2').vars.stepNum)
 
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('error2').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('error2').className)
                         assertEquals('STEP 2', script('error2').vars.stepName)
                         assertEquals(-101, script('error2').vars.stepNum)
 
                         step('subchild1') {
                             assertEquals('(configContent.countProcessed == 4)', condition)
                         }
-                        assertEquals('getl.lang.WorkflowStepTestScript', script('subchild1').className)
+                        assertEquals('getl.models.WorkflowStepTestScript', script('subchild1').className)
                         assertEquals('subchild1', script('subchild1').vars.stepName)
                         assertEquals(201, script('subchild1').vars.stepNum)
                     }

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.utils
 
 //@GrabConfig(systemClassLoader=true)
@@ -5,6 +6,7 @@ package getl.utils
 import getl.files.*
 import getl.files.sub.Filter
 import getl.lang.Getl
+import getl.proc.Executor
 import getl.tfs.TFS
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
@@ -805,36 +807,64 @@ class FileUtils {
 	 * @param err
 	 * @return
 	 */
-	static Integer Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
+	static Integer Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err,
+					   Long checkTime = 500, Closure checkCode = null) {
+		if (dir == null)
+			dir = new File('.').absolutePath
+		else {
+			dir = TransformFilePath(dir)
+			if (!ExistsFile(dir, true))
+				throw new ExceptionGETL("Directory \"$dir\" not found!")
+		}
+
 		Process p
 		try {
-			String[] env = []
-			p = Runtime.getRuntime().exec(command, env, new File(TransformFilePath(dir)))
+			p = Runtime.getRuntime().exec(command, null, new File(dir))
 		}
 		catch (IOException e) {
 			err.append(e.message)
 			return -1
 		}
-		
+
 		def is = p.getInputStream()
+		def consoleReader = new BufferedReader(new InputStreamReader(is, codePage))
+
 		def es = p.getErrorStream()
-		
-		p.waitFor()
-		
-		BufferedReader reader = new BufferedReader(new InputStreamReader(is, codePage))
-		String line
-		while ((line = reader.readLine()) != null) {
-			out.append(line)
-			out.append('\n')
+		def errorReader = new BufferedReader(new InputStreamReader(es, codePage))
+
+		def readConsole = {
+			String consoleLine = null
+			while (consoleReader.ready() && (consoleLine = consoleReader.readLine()) != null) {
+				out.append(consoleLine)
+				out.append('\n')
+			}
+
+			String errorLine = null
+			while (errorReader.ready() && (errorLine = errorReader.readLine()) != null) {
+				err.append(errorLine)
+				err.append('\n')
+			}
+
+			if (checkCode != null && (consoleLine != null || errorLine != null))
+				checkCode.call()
 		}
-		
-		reader = new BufferedReader(new InputStreamReader(es, codePage))
-		while ((line = reader.readLine()) != null) {
-			err.append(line)
-			err.append('\n')
+
+		try {
+			new Executor().with {
+				waitTime = checkTime?:500
+				mainCode = readConsole
+				runSingle {
+					p.waitFor()
+				}
+			}
 		}
-		
-		p.exitValue()
+		finally {
+			readConsole.call()
+			consoleReader.close()
+			errorReader.close()
+		}
+
+		return p.exitValue()
 	}
 	
 	/**
@@ -1063,6 +1093,7 @@ class FileUtils {
 	 * @param classLoader use the specified classloader to access resources
 	 * @param destFile place the resource in the specified file
      */
+	@SuppressWarnings(['RegExpRedundantEscape', 'RegExpSingleCharAlternation'])
 	@Synchronized
 	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null, File destFile = null) {
 		URL resource = (classLoader == null)?GroovyClassLoader.getResource(fileName):classLoader.getResource(fileName)

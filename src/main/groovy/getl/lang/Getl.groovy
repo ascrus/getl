@@ -682,9 +682,11 @@ Examples:
 
         _getl = this
         _getl._getlInstance = true
-        Config.configClassManager = getlMainInstance.configuration.manager
-        if (Logs.global == null)
-            Logs.global = getlMainInstance.logging.manager
+        if (getlMainInstance != null) {
+            Config.configClassManager = getlMainInstance.configuration.manager
+            if (Logs.global == null)
+                Logs.global = getlMainInstance.logging.manager
+        }
     }
 
     /** Get current Getl instance */
@@ -821,7 +823,7 @@ Examples:
         def isThread = IsCurrentProcessInThread(true)
 
         _langOpts.importParams((importParams.langOpts as LangSpec).params, !isThread)
-        _configOpts.importParams((importParams.configOpts as ConfigSpec).params, !isThread)
+        _configOpts.importParams((importParams.configOpts as ConfigSpec).params, true)
         _logOpts.importParams((importParams.logOpts as LogSpec).params, !isThread)
 
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter

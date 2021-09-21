@@ -126,19 +126,24 @@ class ParseObjectName {
         return names.name
     }
 
+    /** Incorrect symbols for name */
     static private final Pattern namePattern = Pattern.compile('([\\:\\+\\*\\%\\&\\$\\"\\\']+)')
+    /** Check name characters */
+    static Boolean CheckNameCharacters(String name) {
+        return (!namePattern.matcher(name).find())
+    }
 
     /** Check object name */
     void validName() {
         if (objectName == null)
             throw new ExceptionDSL("No name given for object \"$name\"!")
-        if (namePattern.matcher(objectName).find())
+        if (!CheckNameCharacters(objectName))
             throw new ExceptionDSL("The object name \"$objectName\" contains invalid characters!")
 
         if (groupName != null) {
             if (groupName[0] == '#')
                 throw new ExceptionDSL('The group name cannot begin with the character "#" in object \"$name\"!')
-            if (namePattern.matcher(groupName).find())
+            if (!CheckNameCharacters(groupName))
                 throw new ExceptionDSL("The group name \"$groupName\" contains invalid characters in object \"$name\"!")
         }
     }

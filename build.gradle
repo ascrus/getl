@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.12.1-14-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.12.1-19-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {

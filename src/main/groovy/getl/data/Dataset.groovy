@@ -1683,7 +1683,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		Closure res
 		def hash = script.hashCode()
 		if ((_cacheReadHash?:0) != hash) {
-			res = GenerationUtils.EvalGroovyClosure(value: script, owner: dslCreator)
+			res = GenerationUtils.EvalGroovyClosure(value: script, owner: dslCreator, vars: null as Map,
+					convertReturn: false, classLoader: null)
 			_cacheReadCode = res
 			_cacheReadHash = hash
 		}

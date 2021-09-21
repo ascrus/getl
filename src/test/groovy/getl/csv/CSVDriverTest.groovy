@@ -507,23 +507,24 @@ class CSVDriverTest extends GetlTest {
                         }
                     }
 
-                    return new File((ds as CSVDataset).fullFileName()).text
+                    def res = new File((ds as CSVDataset).fullFileName()).getText('utf-8')
+                    return res
                 }
 
                 escaped = true
-                nullAsValue = '\u0000'
+                nullAsValue = '\u0001'
                 write()
                 assertEquals('''id|name|v1|v2|v3|v4|v5
 1|"one"|1|"\\"string\\""|2019-12-31|123.45|1
-2|"two"|\u0000|\u0000|\u0000|\u0000|\u0000
+2|"two"|\u0001|\u0001|\u0001|\u0001|\u0001
 ''',read())
 
                 escaped = false
-                nullAsValue = '\u0000'
+                nullAsValue = '\u0002'
                 write()
                 assertEquals('''id|name|v1|v2|v3|v4|v5
 1|one|1|"""string"""|2019-12-31|123.45|1
-2|two|\u0000|\u0000|\u0000|\u0000|\u0000
+2|two|\u0002|\u0002|\u0002|\u0002|\u0002
 ''',read())
 
                 escaped = true
@@ -601,13 +602,13 @@ class CSVDriverTest extends GetlTest {
             }
 
             assertTrue(con.escaped)
-            assertTrue(file.escaped)
+            assertTrue(file.escaped())
 
             con.config = 'rfc4180PresetMode'
             assertFalse(con.escaped)
 
             file.config = 'rfc4180PresetMode'
-            assertFalse(file.escaped)
+            assertFalse(file.escaped())
 
             testCase {
                 shouldFail { con.presetMode = 'unknown' }

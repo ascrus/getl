@@ -1596,8 +1596,8 @@ sb << """
 	 * Compile groovy script to closure
 	 */
 	@NamedVariant
-	static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false,
-									 ClassLoader classLoader = null, Getl owner = null) {
+	static Closure EvalGroovyClosure(String value, Map vars = null,
+									 Boolean convertReturn = false, ClassLoader classLoader = null, Getl owner = null) {
         return EvalGroovyScript(value: value, vars: vars, convertReturn: BoolUtils.IsValue(convertReturn),
 				classLoader: classLoader, owner: owner) as Closure
 	}
@@ -1630,8 +1630,8 @@ sb << """
 	 */
 	@CompileStatic
 	@NamedVariant
-	static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false,
-								ClassLoader classLoader = null, Getl owner = null) {
+	static def EvalGroovyScript(String value, Map vars = null,
+								Boolean convertReturn = false, ClassLoader classLoader = null, Getl owner = null) {
 		if (value == null)
 			return null
 
@@ -1642,7 +1642,7 @@ sb << """
 		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 
 		Binding bind = new Binding()
-		vars?.each { String key, Object val ->
+		(vars as Map<String, Object>)?.each { String key, Object val ->
 			bind.setVariable(key, val)
 		}
 

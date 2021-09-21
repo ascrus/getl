@@ -105,8 +105,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** Required convert string to escape value */
-	//@JsonIgnore
-	Boolean isEscaped() { BoolUtils.IsValue(escaped, currentCsvConnection?.isEscaped()) }
+	Boolean escaped() { BoolUtils.IsValue(escaped, currentCsvConnection?.isEscaped()) }
 
 	/** Mode of quote value */
 	QuoteMode getQuoteMode() { ListUtils.NotNullValue([params.quoteMode, currentCsvConnection?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }

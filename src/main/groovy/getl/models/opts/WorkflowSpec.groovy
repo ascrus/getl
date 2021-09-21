@@ -3,6 +3,7 @@ package getl.models.opts
 
 import getl.exception.ExceptionModel
 import getl.lang.Getl
+import getl.lang.sub.ParseObjectName
 import getl.models.Workflows
 import getl.models.sub.BaseSpec
 import getl.utils.GenerationUtils
@@ -67,6 +68,9 @@ class WorkflowSpec extends BaseSpec {
         if (value == null)
             throw new ExceptionModel('Required step name!')
 
+        if (!ParseObjectName.CheckNameCharacters(value))
+            throw new ExceptionModel('Step name \"$value\" contains invalid characters!')
+
         saveParamValue('stepName', value)
     }
 
@@ -83,19 +87,14 @@ class WorkflowSpec extends BaseSpec {
     /** Step start condition */
     String getCondition() { params.condition as String }
     /** Step start condition */
-    void setCondition(String value) {
-        saveParamValue('condition', value)
-        conditionCode = null
-        condition()
-    }
+    void setCondition(String value) { saveParamValue('condition', value) }
 
     /** Condition closure code */
-    private Closure<Boolean> conditionCode
-    /** Condition closure code */
     Closure<Boolean> condition() {
-        if (conditionCode == null) {
-            try {
-                def script = """import groovy.transform.BaseScript
+        Closure<Boolean> res
+
+        try {
+            /*def script = """import groovy.transform.BaseScript
 import groovy.transform.Field
 import getl.lang.Getl
 import getl.models.Workflows
@@ -106,20 +105,34 @@ import getl.models.Workflows
 
 Map result(String scriptName) { proc.result(scriptName) }
 
-return  {
+return {
     $condition
 } as Closure<Boolean>
+"""*/
+            def script = """import groovy.transform.BaseScript
+import groovy.transform.Field
+import getl.lang.Getl
+import getl.models.Workflows
+
+@BaseScript Getl getl
+
+@Field Workflows proc
+
+Map result(String scriptName) { proc.result(scriptName) }
+
+return
+    $condition
 """
-                conditionCode = GenerationUtils.EvalGroovyClosure(value: script, owner: ownerWorkflow.dslCreator) as Closure<Boolean>
-                conditionCode.setProperty('proc', ownerWorkflow)
-            }
-            catch (Exception e) {
-                ownerWorkflow.dslCreator.logError("Error parsing the execution condition for \"$stepName\" step: ${e.message}")
-                throw e
-            }
+
+            res = GenerationUtils.EvalGroovyClosure(value: script, owner: ownerWorkflow.dslCreator) as Closure<Boolean>
+            res.setProperty('proc', ownerWorkflow)
+        }
+        catch (Exception e) {
+            ownerWorkflow.dslCreator.logError("Error parsing the execution condition for \"$stepName\" step: ${e.message}")
+            throw e
         }
 
-        return conditionCode
+        return res
     }
 
     /** Number of simultaneously executed script (default 1) */
@@ -138,36 +151,8 @@ return  {
     void setScripts(Map<String, Map<String, Object>> value) {
         scripts.clear()
 
-        if (value != null) {
-            value.each { name, script ->
-                detectRunClass(script.className as String)
-            }
-
+        if (value != null)
             scripts.putAll(value)
-        }
-    }
-
-    /**
-     * Check run class
-     * @param runClassName checked class name
-     */
-    Class<Getl> detectRunClass(String runClassName) {
-        if (runClassName == null)
-            throw new ExceptionModel('Required class name!')
-
-        Class<Getl> res
-        try {
-            res = Class.forName(runClassName) as Class<Getl>
-        }
-        catch (Throwable e) {
-            ownerWorkflow.dslCreator.logError("Can not using class \"$runClassName\": ${e.message}")
-            throw e
-        }
-
-        if (!Getl.isAssignableFrom(res))
-            throw new ExceptionModel("Script \"$runClassName\" is not compatible with Getl class in \"$stepName\" step!")
-
-        return res as Class<Getl>
     }
 
     /**
@@ -181,6 +166,9 @@ return  {
                                     Closure cl = null) {
         if (name == null)
             throw new ExceptionModel("The script name in step \"$stepName\" is required!")
+
+        if (!ParseObjectName.CheckNameCharacters(name))
+            throw new ExceptionModel('Script name \"$name\" contains invalid characters!')
 
         def exists = ownerWorkflow.scriptByName(name)
         if (exists != null)

@@ -4,6 +4,8 @@ import getl.lang.Getl
 import getl.tfs.TFS
 import org.junit.Test
 
+import java.sql.Timestamp
+
 /**
  * @author Alexsey Konstantinov
  */
@@ -197,15 +199,43 @@ class FileUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testRun() {
-        //return
-        def sout = new StringBuilder()
-        def serr = new StringBuilder()
-        if (Config.isWindows()) {
-            FileUtils.Run('cmd /c dir', TFS.systemPath, 'utf-8', sout, serr)
+        def f = new File("${TFS.systemPath}/check_run.groovy")
+        f.deleteOnExit()
+        f.text = '''
+String time() { new java.sql.Timestamp(new Date().time).toString() + ' => ' }
+
+println time() + 'start'
+(1..5).each { 
+    println time() + "number $it"
+    sleep(700) 
+}
+println time() + 'finish' '''
+
+        def count = 0
+        def codePage = (Config.isWindows())?'cp866':'utf-8'
+        def cmd = (Config.isWindows())?'cmd /c groovy check_run.groovy':'groovy check_run.groovy'
+
+        def outConsole = new StringBuilder()
+        def outErrors = new StringBuilder()
+        def curConsole = 0
+        def exitCode = FileUtils.Run(cmd, TFS.systemPath, codePage, outConsole, outErrors, 100) {
+            if (outConsole.length() > curConsole) {
+                println outConsole.substring(curConsole, outConsole.length() - 1) + ' >>> ' + new Timestamp(new Date().time)
+                curConsole = outConsole.length()
+            }
+            count++
         }
-        else {
-            FileUtils.Run('ls', TFS.systemPath, 'utf-8', sout, serr)
-        }
+
+        if (exitCode != 0)
+            println outErrors.toString()
+
+        assertEquals(0, exitCode)
+        assertEquals(7, count)
+
+        assertEquals(7, outConsole.readLines().size())
+        assertEquals(0, outErrors.length())
+
+        f.delete()
     }
 
     @Test
