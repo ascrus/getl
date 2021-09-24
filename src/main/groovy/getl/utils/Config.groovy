@@ -80,7 +80,7 @@ class Config {
 			options = ['getl.config.ConfigManager', 'getl.config.ConfigManager']) Closure cl) {
 		listChangeManagerEvents.remove(cl)
 	}
-	/** Clear enent on change config manager */
+	/** Clear event on change config manager */
 	@Synchronized
 	static void ClearChangeManagerEvents() {
 		listChangeManagerEvents.clear()

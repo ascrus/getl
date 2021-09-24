@@ -20,6 +20,7 @@ import net.lingala.zip4j.model.enums.EncryptionMethod
 import java.nio.charset.Charset
 import java.nio.file.*
 import java.nio.channels.*
+import java.sql.Timestamp
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -1074,7 +1075,7 @@ class FileUtils {
 	static List<String> Path2List(String path) {
 		if (path == null) throw new ExceptionGETL('Path parameter is required!')
 		def canonicalPath = new File(path).canonicalPath
-		return canonicalPath.split('[' + StringUtils.EscapeJava(File.separator) + ']').toList() as List<String>
+		return canonicalPath.split("[${StringUtils.EscapeJava(File.separator)}]").toList() as List<String>
 	}
 
 	/** Find parent directory by nearest specified elements in path */
@@ -1321,6 +1322,29 @@ class FileUtils {
 	 */
 	static String TransformFilePath(String path, Boolean errorWhenUndefined = true) {
 		return StringUtils.EvalMacroString(path, Config.SystemProps(), errorWhenUndefined)
+	}
+
+	/**
+	 * Get the file path given the specified macro variables
+	 * @param path path pattern
+	 * @param vars macro variables
+	 * @param errorWhenUndefined generate an error if unknown variables are identified
+	 * @return the resulting file path
+	 */
+	@SuppressWarnings('UnnecessaryQualifiedReference')
+	static String EvalFilePath(String path, Map vars, Boolean errorWhenUndefined = true) {
+		return StringUtils.EvalMacroString(path, vars, errorWhenUndefined) { varValue ->
+			if (varValue instanceof java.sql.Date)
+				varValue = DateUtils.FormatDate('yyyy-MM-dd', varValue as Date)
+			else if (varValue instanceof java.sql.Time)
+				varValue = DateUtils.FormatDate('HH-mm-ss', varValue as Date)
+			/*else if (varValue instanceof Timestamp)
+				varValue = DateUtils.FormatDate('yyyy-MM-dd_HH-mm-ss', varValue as Date)*/
+			else if (varValue instanceof Date)
+				varValue = DateUtils.FormatDate('yyyy-MM-dd_HH-mm-ss', varValue as Date)
+
+			return varValue
+		}
 	}
 
 	/**

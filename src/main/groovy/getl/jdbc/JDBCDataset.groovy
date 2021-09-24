@@ -56,15 +56,6 @@ class JDBCDataset extends Dataset {
 	void setType(Type value) { directives('create').type = value }
 	
 	/**
-	 * Database name
-	 */
-	String getDbName() { ListUtils.NotNullValue([params.dbName, currentJDBCConnection?.dbName]) }
-	/**
-	 * Database name
-	 */
-	void setDbName(String value) { params.dbName = value }
-
-	/**
 	 * Event on retrieve list of field 	
 	 */
 	@JsonIgnore

@@ -77,9 +77,9 @@ class JDBCConnection extends Connection implements UserLogins {
 		super.registerParameters()
 		methodParams.register('Super', [
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
-				'javaConnection', 'sessionProperty', 'schemaName',
-				'driverName', 'driverPath', 'connectHost', 'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout',
-				'queryTimeout', 'sqlHistoryOutput', 'storedLogins', 'outputServerWarningToLog'])
+				'javaConnection', 'sessionProperty', 'schemaName', 'driverName', 'driverPath', 'connectHost',
+				'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput',
+				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation'])
 	}
 	
 	@Override
@@ -755,8 +755,8 @@ import groovy.transform.BaseScript
 			}
 
 			sb << "\n\n$classObject ('${repName}', true) { table ->"
-			if (dataset.dbName != null) sb << "\n${tab}dbName = '$dataset.dbName'"
-			if (dataset.schemaName != null) sb << "\n${tab}schemaName = '$dataset.schemaName'"
+			if (dataset.dbName != null) sb << "\n${tab}dbName = '${dataset.dbName}'"
+			if (dataset.schemaName != null) sb << "\n${tab}schemaName = '${dataset.schemaName}'"
 			sb << "\n${tab}tableName = '$dataset.tableName'"
 
 			def cr = generateDslCreate(dataset)?:([] as List<String>)

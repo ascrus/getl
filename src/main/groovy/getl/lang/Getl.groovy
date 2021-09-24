@@ -162,6 +162,24 @@ Examples:
         setGetlSystemParameter('mainClass', getClass().name)
         setUnitTestMode(isTestMode)
 
+        if (jobArgs.environment == null) {
+            def propPath = new File('.')
+            def propFile = new File('getl-test-properties.conf')
+            def path = FileUtils.ConvertToUnixPath(propPath.absolutePath)
+            if (!propFile.exists() && path.matches('.+/src/main/[.]')) {
+                propPath = new File(StringUtils.LeftStr(path, path.length() - 11))
+                propFile = new File(propPath.path + '/' + 'getl-test-properties.conf')
+            }
+
+            String env = 'dev'
+            if (propFile.exists()) {
+                def cp = ConfigSlurper.LoadConfigFile(file: propFile)
+                if (cp.containsKey('defaultEnv'))
+                    env = cp.defaultEnv as String
+            }
+            configuration.environment = env
+        }
+
         _initGetlProperties(null, jobArgs.getlprop as Map<String, Object>, true)
         logInfo("### Start script ${getClass().name}")
 
@@ -304,7 +322,7 @@ Examples:
                     if (className != null)
                         eng.runGroovyInstance(eng, eng.configuration.manager.vars)
                     else
-                        eng.models.workflow(workflowName).execute()
+                        eng.models.workflow(workflowName).execute(eng.configuration.manager.vars)
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
@@ -363,8 +381,10 @@ Examples:
                             if (env == null)
                                 env = 'dev'
                         }
-                        else if (getGetlSystemParameter('workflow') != null)
-                            procName = "workflow_${getGetlSystemParameter('workflow').replace(':', '-')}"
+                        else if (getGetlSystemParameter('workflow') != null) {
+                            def wf = (getGetlSystemParameter('workflow') as String).replace(':', '-')
+                            procName = "workflow_$wf"
+                        }
                         else
                             procName = "script_${instance.getClass().name}"
 
@@ -649,7 +669,7 @@ Examples:
 
         Version.SayInfo(true, this)
 
-        if (MainClassName() == 'org.codehaus.groovy.tools.GroovyStarter')
+        if (MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper'])
             groovyStarter()
     }
 
@@ -4494,14 +4514,31 @@ Examples:
 
         parent.logEcho = _langOpts.sqlEchoLogLevel.toString()
         parent.extVars = configVars
-        if (owner instanceof TableDataset) {
-            def tab = owner as TableDataset
-            if (tab.schemaName != null) parent.extVars.put('schema_name', tab.schemaName)
-            if (tab.tableName != null) {
-                parent.extVars.put('table_name', tab.tableName)
-                parent.extVars.put('full_table_name', tab.fullTableName)
+
+        if (owner instanceof GetlRepository) {
+            def rep = owner as GetlRepository
+            if (rep.dslNameObject != null)
+                parent.extVars.put('~dsl_name~', rep.dslNameObject)
+
+            if (owner instanceof Dataset) {
+                def ds = owner as Dataset
+                if (ds.objectName != null)
+                    parent.extVars.put('~short_name~', ds.objectName)
+                if (ds.objectFullName != null)
+                    parent.extVars.put('~full_name~', ds.objectFullName)
+
+                if (owner instanceof TableDataset) {
+                    def tab = owner as TableDataset
+                    if (tab.dbName() != null)
+                        parent.extVars.put('~db~', tab.dbName())
+                    if (tab.schemaName() != null)
+                        parent.extVars.put('~schema~', tab.schemaName())
+                    if (tab.tableName != null)
+                        parent.extVars.put('~table~', tab.tableName)
+                }
             }
         }
+
         def pt = startProcess("Execution SQL script${(parent.connection != null) ? ' on [' + parent.connection + ']' : ''}")
         runClosure(parent, cl)
         finishProcess(pt, parent.rowCount)

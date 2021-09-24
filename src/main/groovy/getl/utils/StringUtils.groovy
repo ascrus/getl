@@ -1,11 +1,9 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.exception.ExceptionGETL
 import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
-
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
@@ -81,6 +79,7 @@ class StringUtils {
 	 * @param formatValue value formatting code
 	 * @return converted string
 	 */
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true,
 								  Closure<String> formatValue = null) {
 		if (value == null)
@@ -105,7 +104,8 @@ class StringUtils {
 			def varValue = vars.get(vn)
 			if (varValue == null || (varValue instanceof Map) || (varValue instanceof Collection)) {
 				if (errorWhenUndefined)
-					throw new ExceptionGETL("Unknown variable in \"$vn\", known vars: $vars")
+					throw new ExceptionGETL("Unknown variable in \"$vn\", " +
+							"known vars: ${vars.keySet().toList().join(', ')}")
 
 				sb.append(groupName)
 
@@ -114,6 +114,10 @@ class StringUtils {
 
 			if (formatValue != null)
 				varValue = formatValue.call(varValue)
+			else if (varValue instanceof java.sql.Date)
+				varValue = DateUtils.FormatDate('yyyy-MM-dd', varValue as Date)
+			else if (varValue instanceof java.sql.Time)
+				varValue = DateUtils.FormatDate('HH:mm:ss.SSS', varValue as Date)
 			else if (varValue instanceof Timestamp)
 				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', varValue as Date)
 			else if (varValue instanceof Date)
@@ -515,7 +519,7 @@ class StringUtils {
 	 * @return script without comments
 	 */
 	static String RemoveSQLComments(String sql) {
-		def p = Pattern.compile("--.*|\\/\\*[\\s\\S]*?\\*\\/", Pattern.MULTILINE)
+		def p = Pattern.compile('--.*|[/][*][\\s\\S]*?[*][/]', Pattern.MULTILINE) // "--.*|\\/\\*[\\s\\S]*?\\*\\/"
 		def m = p.matcher(sql)
 		return m.replaceAll('').trim()
 	}
@@ -526,9 +530,9 @@ class StringUtils {
 	 * @return script without comments
 	 */
 	static String RemoveSQLCommentsWithoutHints(String sql) {
-		def p = Pattern.compile("--.*|\\/\\*[\\s\\S]*?\\*\\/", Pattern.MULTILINE)
+		def p = Pattern.compile('--.*|[/][*][\\s\\S]*?[*][/]', Pattern.MULTILINE) // "--.*|\\/\\*[\\s\\S]*?\\*\\/"
 		def m = p.matcher(sql)
-		def fm = '\\/\\*\\s*[\\+|\\:]+.*'
+		def fm = '[/][*]\\s*([+]|[:])+.*' // '\\/\\*\\s*[\\+|\\:]+.*'
 
 		def sb = new StringBuffer()
 		while (m.find()) {
@@ -547,7 +551,7 @@ class StringUtils {
 	 * @return
 	 */
 	static Integer DetectStartSQLCommand(String sql) {
-		def p = Pattern.compile("--.*|\\/\\*[\\s\\S]*?\\*\\/", Pattern.MULTILINE)
+		def p = Pattern.compile('--.*|[/]\\*[\\s\\S]*?\\*[/]', Pattern.MULTILINE) // "--.*|\\/\\*[\\s\\S]*?\\*\\/"
 		def m = p.matcher(sql)
 		def le = -1
 		while (m.find()) {

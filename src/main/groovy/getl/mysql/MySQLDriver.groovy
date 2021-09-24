@@ -127,6 +127,7 @@ class MySQLDriver extends JDBCDriver {
 		}
 	}
 
+	@SuppressWarnings(['SqlDialectInspection', 'SqlNoDataSourceInspection'])
 	@Override
 	protected String sessionID() {
 		String res = null
@@ -139,7 +140,7 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = super.prepareForRetrieveFields(dataset)
-		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, (dataset.connection as MySQLConnection).connectDatabase, defaultDBName]) as String)
+		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 		return names
 	}
 }

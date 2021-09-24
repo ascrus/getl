@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.vertica.opts
 
 import getl.exception.ExceptionGETL
@@ -176,6 +177,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * <br>location = '(VMART_0001,VMART_0002,VMART_0003)'
      * <br>location = 'ANY NODE
      */
+    @SuppressWarnings('SpellCheckingInspection')
     String getLocation() { params.location as String }
     /**
      * Specifies where files are located. if not specified, local files are loaded.

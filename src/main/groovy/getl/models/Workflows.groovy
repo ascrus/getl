@@ -4,6 +4,7 @@ package getl.models
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import getl.models.opts.WorkflowScriptSpec
 import getl.models.opts.WorkflowSpec
 import getl.models.opts.WorkflowSpec.Operation
@@ -12,12 +13,15 @@ import getl.models.sub.BaseSpec
 import getl.proc.Executor
 import getl.utils.BoolUtils
 import getl.utils.CloneUtils
+import getl.utils.DateUtils
 import getl.utils.GenerationUtils
+import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import java.lang.reflect.Modifier
 
 /**
  * Description of the steps in the workflow
@@ -275,23 +279,28 @@ class Workflows extends BaseModel<WorkflowSpec> {
 
     /**
      * Start workflow processes
-     * @param classLoader class loader
+     * @param addVars variable for execution steps over step variables
+     * @param conditionClassLoader class loader for running conditions
+     * @param scriptClassLoader class loader for running specified script (closure parameter is passed the name of the class)
+     * @return number of steps successfully completed
      */
-    Integer execute(URLClassLoader classLoader = null) {
+    Integer execute(Map addVars = [:], URLClassLoader conditionClassLoader = null,
+                    @ClosureParams(value = SimpleType, options = ['java.lang.String'])
+                            Closure<URLClassLoader> scriptClassLoader = null) {
         dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
-        def conditions = generateConditions(classLoader)
+        def conditions = generateConditions(conditionClassLoader)
         cleanResults()
 
         def res = 0
         usedSteps.each { node ->
-            res =+ stepExecute(node, conditions, classLoader)
+            res =+ stepExecute(node, conditions, addVars?:[:], scriptClassLoader)
         }
-        dslCreator.logInfo("+++ Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
+        dslCreator.logInfo("--- Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
 
         return res
     }
 
-    /** Condtition name from class of conditions */
+    /** Condition name from class of conditions */
     static private String conditionName(String stepName) {
         return "condition_${stepName.replace(' ', '')}"
     }
@@ -333,7 +342,10 @@ return $className"""
     }
 
     /** Run workflow step */
-    private Integer stepExecute(WorkflowSpec node, Getl conditions, URLClassLoader classLoader = null, String parentStep = null) {
+    private Integer stepExecute(WorkflowSpec node, Getl conditions, Map addVars,
+                                @ClosureParams(value = SimpleType, options = ['java.lang.String'])
+                                        Closure<URLClassLoader> scriptClassLoader,
+                                String parentStep = null) {
         def res = 0
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
@@ -362,12 +374,30 @@ return $className"""
                         def className = scriptParams.className as String
                         dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
 
+                        URLClassLoader classLoader = null
+                        if (scriptClassLoader != null)
+                            classLoader = scriptClassLoader.call(className)
                         def runClass = classForExecute(className, classLoader, node.stepName)
                         if (runClass == null)
                             throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
 
-                        def vars = scriptParams.vars as Map<String, Object>
-                        def scriptResult = dslCreator.callScript(runClass, vars)
+                        def classParams = ReadClassFields(runClass)
+                        def scriptVars = scriptParams.vars as Map<String, Object>
+                        def execVars = [:] as Map<String, Object>
+                        classParams.each { field ->
+                            def fieldName = field.name as String
+                            if (addVars.containsKey(fieldName))
+                                execVars.put(fieldName, addVars.get(fieldName))
+                            else if (scriptVars.containsKey(fieldName))
+                                execVars.put(fieldName, scriptVars.get(fieldName))
+                            else {
+                                def objVar = node.variable(fieldName)
+                                if (objVar != null)
+                                    execVars.put(fieldName, objVar)
+                            }
+                        }
+
+                        def scriptResult = dslCreator.callScript(runClass, execVars)
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {
                             synchronized (_result) {
                                 _result.put(scriptName, scriptResult.result as Map)
@@ -379,14 +409,14 @@ return $className"""
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, conditions, classLoader, stepLabel)
+                res += stepExecute(subNode, conditions, addVars, scriptClassLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, conditions, classLoader, stepLabel)
+                    stepExecute(errStep, conditions, addVars, scriptClassLoader, stepLabel)
             }
             finally {
                 throw e
@@ -422,5 +452,85 @@ return $className"""
             throw new ExceptionModel("Class \"$className\" is not compatible with Getl class in step \"$stepName\"!")
 
         return res as Class<Getl>
+    }
+
+    /**
+     * Read list of public field from Getl class
+     * @param scriptClass Getl script class
+     * @return list of field with attribute name, type and defaultValue
+     */
+    @SuppressWarnings('UnnecessaryQualifiedReference')
+    static List<Map<String, Object>> ReadClassFields(Class<Getl> scriptClass) {
+        if (scriptClass == null)
+            throw new ExceptionModel('Required script class!')
+
+        def res = [] as List<Map<String, Object>>
+
+        def script = scriptClass.getDeclaredConstructor().newInstance()
+        def fields = script.getClass().declaredFields.toList()
+        script.getClass().fields.each { f ->
+            if (fields.find { it.name == f.name } == null)
+                fields.add(f)
+        }
+        fields.each { field ->
+            def name = field.name
+            def prop = script.hasProperty(name as String)
+            if (groovy.lang.Closure.isAssignableFrom(prop.type))
+                return
+
+            def mod = prop.modifiers
+            if (!Modifier.isPublic(mod) || Modifier.isStatic(mod))
+                return
+
+            def val = script[name]
+
+            def p = [:] as Map<String, Object>
+            p.name = name
+            p.type = prop.type.name
+            if (val != null)
+                p.defaultValue = val
+
+            res.add(p)
+        }
+
+        def convertType = { v ->
+            def ret
+            switch (v.getClass()) {
+                case String:
+                    ret = v
+                    break
+
+                case java.sql.Date:
+                    ret = DateUtils.FormatDate('yyyy-MM-dd', v as java.sql.Date)
+                    break
+
+                case java.sql.Time:
+                    ret = DateUtils.FormatDate('HH:mm:ss', v as java.sql.Time)
+                    break
+
+                case java.util.Date:
+                    ret = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', v as java.util.Date)
+                    break
+
+                case Path:
+                    ret = (v as Path).mask
+                    break
+
+                default:
+                    if (v instanceof GetlRepository)
+                        ret = (v as GetlRepository).dslNameObject
+                    else
+                        ret = v.toString()
+            }
+
+            return ret
+        }
+
+        res.each { p ->
+            if (p.defaultValue != null)
+                p.defaultValue = convertType.call(p.defaultValue)
+        }
+
+        return res
     }
 }

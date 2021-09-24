@@ -116,7 +116,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             throw new ExceptionModel("Table \"$dsn\" [$ds] is not a Vertica table!")
 
         def vtb = ds as VerticaTable
-        if (vtb.schemaName.toLowerCase() == referenceSchemaName.toLowerCase())
+        if (vtb.schemaName().toLowerCase() == referenceSchemaName.toLowerCase())
             throw new ExceptionModel("The schema of table \"$dsn\" [$ds] cannot be a model schema!")
     }
 

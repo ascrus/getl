@@ -78,6 +78,8 @@ class FileConnection extends Connection {
 		params.path = value
 		currentPath = null
 	}
+	/** Connection path */
+	String path() { FileUtils.EvalFilePath(path, attributes(), false) }
 	
 	/** Code page for connection files */
 	String getCodePage() { params.codePage as String }
@@ -192,19 +194,23 @@ class FileConnection extends Connection {
 
 	/** Current root path */
 	String currentPath() {
-		if (path == null) return null
+		if (path == null)
+			return null
 
 		if (currentPath == null)
-			currentPath = FileUtils.TransformFilePath(path, true)
+			currentPath = FileUtils.TransformFilePath(path(), true)
 
 		return currentPath
 	}
 
 	/** Delete path of connection */
 	Boolean deletePath() {
-		if (path == null) return false
+		if (path == null)
+			return false
+
 		def p = new File(currentPath())
-		if (!p.exists()) return false
+		if (!p.exists())
+			return false
 
 		retrieveObjects().each { f ->
 			(f as File).delete()

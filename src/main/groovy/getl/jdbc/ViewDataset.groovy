@@ -37,7 +37,7 @@ class ViewDataset extends TableDataset {
 	@Override
 	@JsonIgnore
 	Boolean isExists() {
-		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName,
+		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName(), schemaName: schemaName(),
 					tableName: tableName, type: ["VIEW"])
 		
 		return (!ds.isEmpty())

@@ -230,7 +230,7 @@ println time() + 'finish' '''
             println outErrors.toString()
 
         assertEquals(0, exitCode)
-        assertEquals(7, count)
+        assertEquals(6, count)
 
         assertEquals(7, outConsole.readLines().size())
         assertEquals(0, outErrors.length())

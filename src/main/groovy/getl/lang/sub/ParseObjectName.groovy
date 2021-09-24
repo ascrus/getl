@@ -126,11 +126,13 @@ class ParseObjectName {
         return names.name
     }
 
-    /** Incorrect symbols for name */
-    static private final Pattern namePattern = Pattern.compile('([\\:\\+\\*\\%\\&\\$\\"\\\']+)')
+    /** Incorrect symbols pattern for name */
+    static private final String incorrectNameChars = '([:]|[+]|[*]|[%]|[&]|[\"]|[\']|[\\\\]|[/])+' // '([\\:\\+\\*\\%\\&\\$\\"\\\']+)'
+    /** Incorrect symbols pattern for name */
+    static private final Pattern incorrectNamePattern = Pattern.compile(incorrectNameChars)
     /** Check name characters */
     static Boolean CheckNameCharacters(String name) {
-        return (!namePattern.matcher(name).find())
+        return (!incorrectNamePattern.matcher(name).find())
     }
 
     /** Check object name */

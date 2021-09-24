@@ -95,13 +95,14 @@ class ProcessTime {
 		if (conf != null) {
 			if (conf.level != null && logLevel == null)
 				logLevel = Logs.StrToLevel(conf.level as String)
-			if (conf.debug != null) debug = conf.debug 
+			if (conf.debug != null)
+				debug = conf.debug
 		}
 		if (logLevel == null)
 			logLevel = LogLevelDefault
 		
 		if (logLevel != Level.OFF && debug) {
-			def msg = "${(abbrName != null)?"[$abbrName start] ":''}${name}"
+			def msg = "${(abbrName != null)?"[$abbrName start] ":''}${name} ..."
 			logger.write(Level.FINEST, msg)
 		}
 	}

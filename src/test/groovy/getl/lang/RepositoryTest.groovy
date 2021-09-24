@@ -873,13 +873,13 @@ class RepositoryTest extends TestDsl {
         Getl.Dsl {
             shouldFail { embeddedTable('#group:name', true) }
             assertEquals('#name_1', embeddedTable('group:#name_1', true).dslNameObject)
-            shouldFail { embeddedTable('$group:name', true) }
-            shouldFail { embeddedTable('group:$name', true) }
+            assertEquals('$group:name', embeddedTable('$group:name', true).dslNameObject)
+            assertEquals('group:$name', embeddedTable('group:$name', true).dslNameObject)
             shouldFail { embeddedTable('group*:name', true) }
             shouldFail { embeddedTable('group:name*', true) }
             shouldFail { embeddedTable('group:name:1', true) }
-            assertNotNull(embeddedTable('group:name_1', true))
-            assertNotNull(embeddedTable('#name', true))
+            assertEquals('group:name_1', embeddedTable('group:name_1', true).dslNameObject)
+            assertEquals('#name', embeddedTable('#name', true).dslNameObject)
             shouldFail { embeddedTable('group1:', true) }
         }
     }

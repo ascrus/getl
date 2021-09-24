@@ -83,7 +83,7 @@ class MapUtils {
 			return null
 
 		if (keys == null)
-			throw new ExceptionGETL('Requored key list!')
+			throw new ExceptionGETL('Required key list!')
 		
 		keys.each {
 			map.remove(it)

@@ -35,7 +35,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
     /** Reference table name */
     @JsonIgnore
-    String getReferenceTableName() { "m_${workTable.schemaName}_${workTable.tableName}" }
+    String getReferenceTableName() { "m_${workTable.schemaName()}_${workTable.tableName}" }
 
     /** Reference table */
     @JsonIgnore
@@ -240,7 +240,7 @@ WHERE
   table_name ILIKE '{table}' AND
   column_set_using = ''
 ORDER BY ordinal_position'''
-            queryParams.schema = sourceTable.schemaName
+            queryParams.schema = sourceTable.schemaName()
             queryParams.table = sourceTable.tableName
             eachRow { row -> cols << '"' + (row.column_name as String) + '"' }
         }
@@ -274,6 +274,8 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
         destRows = destTable.countRow()
         ownerModel.dslCreator.logInfo("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
                 "${StringUtils.WithGroupSeparator(destRows)} rows copied to reference table from other Vertica server")
+
+        return true
     }
 
     /**
@@ -314,7 +316,7 @@ FROM v_catalog.tables t
    ) c ON c.table_id = t.table_id
 WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
 '''
-                queryParams.schema = destTable.schemaName
+                queryParams.schema = destTable.schemaName()
                 queryParams.table = destTable.tableName
             }
             def row = tableAttrs.rows()[0]

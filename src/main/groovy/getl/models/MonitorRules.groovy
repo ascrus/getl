@@ -105,8 +105,8 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         if (value != null) {
             if (value.connection == null)
                 throw new ExceptionModel("The connection for the table $value is not specified!")
-            if (value.schemaName == null)
-                throw new ExceptionModel("Table $value does not have a schema!")
+            /*if (value.schemaName == null)
+                throw new ExceptionModel("Table $value does not have a schema!")*/
             if (value.tableName == null)
                 throw new ExceptionModel("Table $value does not have a table name!")
             if (value.dslNameObject == null)

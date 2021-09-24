@@ -499,6 +499,7 @@ class VerticaTable extends TableDataset {
         setField(ProcessOracleFields(oraTable, allowClob, allowNumericWithoutLength, convertToUtf))
     }
 
+    @SuppressWarnings('GroovyMissingReturnStatement')
     @Override
     void retrieveOpts() {
         super.retrieveOpts()
@@ -507,8 +508,8 @@ class VerticaTable extends TableDataset {
         new QueryDataset().tap {
             useConnection this.currentJDBCConnection
             def whereExpr = ['Upper(table_name) = \'' + this.tableName.toUpperCase() + '\'']
-            if (this.schemaName != null)
-                whereExpr << 'Upper(table_schema) = \'' + this.schemaName.toUpperCase() + '\''
+            if (this.schemaName() != null)
+                whereExpr << 'Upper(table_schema) = \'' + this.schemaName().toUpperCase() + '\''
             queryParams.where = whereExpr.join(' AND ')
             query = 'SELECT partition_expression FROM v_catalog.tables WHERE {where}'
             def rows = rows()

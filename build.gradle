@@ -2,12 +2,14 @@ import java.time.LocalDateTime
 
 plugins {
     id 'groovy'
-    id 'maven'
+    id 'maven-publish'
     id 'signing'
+	id 'java-library'
+	id 'idea'
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.12.1-19-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = "$getl_version" //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -20,12 +22,12 @@ repositories {
 }
 
 dependencies {
-	compile('org.codehaus.groovy:groovy-all:3.0.9') {
+	api('org.codehaus.groovy:groovy-all:3.0.9') {
 		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
 	}
-	compile 'org.codehaus.groovy:groovy-dateutil:3.0.9'
-	compile 'org.codehaus.groovy:groovy-yaml:3.0.9'
-	compile 'com.fasterxml.jackson.core:jackson-annotations:2.12.5'
+	api 'org.codehaus.groovy:groovy-dateutil:3.0.9'
+	api 'org.codehaus.groovy:groovy-yaml:3.0.9'
+	api 'com.fasterxml.jackson.core:jackson-annotations:2.12.5'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'
@@ -38,7 +40,7 @@ dependencies {
 
 	addJars files('file:libs/ftp4j-1.7.2.jar')
 
-	compile fileTree(dir: 'jdbc')
+	compileOnly fileTree(dir: 'jdbc')
 
 	implementation 'com.typesafe:config:1.4.1'
 
@@ -61,17 +63,18 @@ dependencies {
 	implementation 'com.github.xeroapi:xero-java:2.1.3'
 	implementation 'com.github.xeroapi:xeroapi-schemas:1.0.0'
 
-	configurations.compile.extendsFrom(configurations.addJars)
+	configurations.implementation.extendsFrom(configurations.addJars)
 
 	deployerJars 'org.apache.maven.wagon:wagon-http:3.4.3'
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation  fileTree(dir: 'tests', include: '**/*.jar')
+	testImplementation fileTree(dir: 'jdbc')
 }
 
 test {
 	jvmArgs '-Xmx16g' //, '-XX:+CMSClassUnloadingEnabled', '-XX:+UseParallelGC', '-XX:MaxPermSize=1g'
 
-	System.properties.each { String k, String v ->
+	(System.properties as Map<String, String>).each { String k, String v ->
 		if (k.matches('getl[-]vars[.].+'))
 			systemProperty k, v
 	}
@@ -85,90 +88,9 @@ tasks.withType(GroovyCompile) {
   groovyOptions.forkOptions.jvmArgs += ['-Xmx2g', '-Dgroovy.antlr4.cache.threshold=250']
 }
 
-task copyDependencies(type: Copy) {
-    from configurations.runtime
-     into "${project.buildDir}/libs.jar"
-}
-
-signing {
-	required { gradle.taskGraph.hasTask("uploadArchives") }
-	sign configurations.archives
-}
-
 jar {
 	from configurations.addJars.collect { it.isDirectory() ? it : zipTree(it) }
 	from { ['licenses/getl.readme.txt', 'licenses/getl.license.txt', 'licenses/getl.license_rus.txt'] }
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: groovydoc) {
-	classifier = 'javadoc'
-	from groovydoc.destinationDir
-}
-
-artifacts {
-	archives javadocJar, sourcesJar
-}
-
-build.dependsOn sourcesJar
-build.dependsOn javadocJar
-
-//noinspection GroovyMissingReturnStatement
-uploadArchives {
-	def login = project.properties."mavenLogin"
-	def password = project.properties."mavenPassword"
-	def repRelease = project.properties."mavenRepRelease"
-	def repSnapshot = project.properties."mavenRepSnapshot"
-
-	repositories.mavenDeployer {
-		//noinspection
-		beforeDeployment { deployment -> signing.signPom(deployment) }
-
-		configuration = configurations.deployerJars
-
-		repository(url: repRelease) {
-			authentication(userName: login, password: password)
-		}
-
-		snapshotRepository(url: repSnapshot) {
-			authentication(userName: login, password: password)
-		}
-
-		pom.project {
-			inceptionYear '2020'
-			packaging 'jar'
-			name 'getl'
-			artifactId 'getl'
-			groupId 'net.sourceforge.getl'
-			description 'GETL - based package in Groovy, which automates the work of loading and transforming data'
-			url 'https://github.com/ascrus/getl'
-
-			licenses {
-				license {
-					name 'GNU GENERAL PUBLIC LICENSE, Version 3'
-					url 'https://www.gnu.org/licenses/gpl.txt'
-					distribution 'repo'
-				}
-			}
-
-			scm {
-				url 'https://github.com/ascrus/getl.git'
-			}
-
-			developers {
-				developer {
-					id 'owner'
-					name 'Aleksey Konstantinov'
-					email 'ascrus@easydata.ru'
-					timezone 'UTC+3'
-				}
-			}
-		}
-	}
 }
 
 processResources.dependsOn "generateProjectConfig"
@@ -197,4 +119,96 @@ task toPackage(type: Zip) {
 	from fileTree('reports')
 }
 
+task copyDependencies(type: Copy) {
+	from configurations.runtimeClasspath into "${project.buildDir}/libs.jar"
+}
+
+java {
+	withSourcesJar()
+}
+
+groovydoc {
+	use = true
+}
+
+task groovydocJar(type: Jar, dependsOn: groovydoc ) {
+	classifier 'javadoc' // must use javadoc classifier to be able to deploy to Sonatype
+	from groovydoc.destinationDir
+
+}
+
+javadoc {
+	if(JavaVersion.current().isJava9Compatible()) {
+		options.addBooleanOption('html5', true)
+	}
+}
+
 jar.finalizedBy toPackage
+
+publishing {
+	def repLogin = project.properties."mavenLogin"
+	def repPassword = project.properties."mavenPassword"
+	def repRelease = project.properties."mavenRepRelease"
+	def repSnapshot = project.properties."mavenRepSnapshot"
+
+	publications {
+		mavenJava(MavenPublication) {
+			artifactId = 'getl'
+			groupId = 'net.sourceforge.getl'
+			from components.java
+			artifact(groovydocJar) {
+				classifier = 'javadoc'
+			}
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+			pom {
+				name = 'getl'
+				description = 'Getl - based package in Groovy, which automates the work of loading and transforming data'
+				url = 'https://github.com/ascrus/getl'
+				/*properties = [
+						myProp: "value",
+						"prop.with.dots": "anotherValue"
+				]*/
+				licenses {
+					license {
+						name = 'GNU GENERAL PUBLIC LICENSE, Version 3'
+						url = 'https://www.gnu.org/licenses/gpl.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'ascrus'
+						name = 'Alexsey Konstantinov'
+						email = 'ascrus@easydata.ru'
+						timezone = 'UTC+3'
+					}
+				}
+				scm {
+					/*connection = 'scm:git:git://example.com/my-library.git'
+					developerConnection = 'scm:git:ssh://example.com/my-library.git'*/
+					url = 'https://github.com/ascrus/getl.git'
+				}
+			}
+		}
+	}
+	repositories {
+		maven {
+			url = version.endsWith('SNAPSHOT')?repSnapshot:repRelease
+			allowInsecureProtocol = true
+			credentials(PasswordCredentials) {
+				username = repLogin
+				password = repPassword
+			}
+		}
+	}
+}
+
+signing {
+	sign publishing.publications.mavenJava
+}

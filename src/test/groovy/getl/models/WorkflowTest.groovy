@@ -2,11 +2,22 @@ package getl.models
 
 import getl.lang.Getl
 import getl.test.GetlDslTest
+import getl.utils.ListUtils
 import org.junit.Test
 
 class WorkflowTest extends GetlDslTest {
     @Test
-    void testRun() {
+    void testReadFields() {
+        def res = Workflows.ReadClassFields(WorkflowStepTestScript)
+        assertEquals(4, res.size())
+        assertEquals([name: 'stepName', type: 'java.lang.String'], res[0])
+        assertEquals([name: 'stepNum', type: 'java.lang.Integer'], res[1])
+        assertEquals([name: 'map', type: 'java.util.Map'], res[2])
+        assertEquals([name: 'list', type: 'java.util.List'], res[3])
+    }
+
+    @Test
+    void testExecute() {
         Getl.Dsl {getl ->
             def mod1 = models.workflow('test:workflow', true) {
                 start('Start 1') {
@@ -75,7 +86,13 @@ class WorkflowTest extends GetlDslTest {
                 assertEquals([a: '1', b: '2'], result('child1').map)
                 assertEquals(['a', 'b', 'c'], result('child1').list)
 
-                assertEquals(2, execute())
+                script('root1').vars.remove('list')
+                step('Start 1') {
+                    objectVars.list = ['aa', 'bb', 'cc']
+                }
+                assertEquals(2, execute([map: [a: '100', b: '200']]))
+                assertEquals([a: '100', b: '200'], result('root1').map)
+                assertEquals(['aa', 'bb', 'cc'], result('root1').list)
 
                 configContent.countProcessed = 0
 

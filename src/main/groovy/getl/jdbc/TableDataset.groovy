@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -40,10 +41,19 @@ class TableDataset extends JDBCDataset {
 		type = tableType
 	}
 
+	/** Database name */
+	String getDbName() { params.dbName as String }
+	/** Database name */
+	void setDbName(String value) { params.dbName = value }
+	/** Database name */
+	String dbName() { dbName?:currentJDBCConnection?.dbName }
+
 	/** Schema name */
-	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, currentJDBCConnection?.schemaName]) }
+	String getSchemaName() { params.schemaName as String }
 	/** Schema name */
 	void setSchemaName(String value) { params.schemaName = value }
+	/** Schema name */
+	String schemaName() { schemaName?:currentJDBCConnection?.schemaName }
 
 	/** Table name */
 	String getTableName() { params.tableName }
@@ -128,8 +138,8 @@ class TableDataset extends JDBCDataset {
 			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
 
 		validTableName()
-		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tableName,
-				retrieveInfo: false)
+		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName(), schemaName: schemaName(),
+				tableName: tableName, retrieveInfo: false)
 
 		return (!ds.isEmpty())
 	}
@@ -416,7 +426,7 @@ class TableDataset extends JDBCDataset {
 		}
 		else if (files instanceof String || files instanceof GString) {
 			def fn = files.toString()
-			if ((fn).matches('.*(\\{|\\*).*')) {
+			if ((fn).matches('.*([{]|[*]).*')) { // '.*(\\{|\\*).*'
 				def maskPath = new Path()
 				maskPath.tap {
 					mask = FileUtils.ConvertToUnixPath(fn)

@@ -350,7 +350,7 @@ class HiveDriver extends JDBCDriver {
         }
 
         try {
-            def tempTable = new TableDataset(connection: dest.connection, tableName: "t_${tempFile.fileName}",
+            def tempTable = new TableDataset(connection: dest.connection, tableName: "t_${tempFile.fileName()}",
                     type: JDBCDataset.Type.LOCAL_TEMPORARY)
             tempTable.field = tempFile.field
             tempTable.create(rowFormat: """DELIMITED FIELDS TERMINATED BY '\\001' NULL DEFINED AS '${tempFile.nullAsValue()}'""")
@@ -383,7 +383,7 @@ class HiveDriver extends JDBCDriver {
     static Map<String, Object> tableExtendedInfo(TableDataset table) {
         Map<String, Object> res = [:]
         def sql = 'SHOW TABLE EXTENDED'
-        if (table.schemaName != null) sql += " IN ${table.schemaName}"
+        if (table.schemaName() != null) sql += " IN ${table.schemaName()}"
         sql += " LIKE '${table.tableName}'"
         def query = new QueryDataset(connection: table.connection, query: sql)
         query.eachRow { Map r ->

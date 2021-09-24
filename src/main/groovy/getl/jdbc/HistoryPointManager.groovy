@@ -224,6 +224,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	]
 
 	/** Prepare table for store history values */
+	@SuppressWarnings('GroovyMissingReturnStatement')
 	static void prepareTable(TableDataset table) {
 		table.tap {
 			if (field.isEmpty()) {

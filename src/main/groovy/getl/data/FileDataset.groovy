@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.sub.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
+import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -48,7 +49,7 @@ class FileDataset extends Dataset {
 	/** File name */
 	void setFileName(String value) { params.fileName = value }
 	/** File name with conversion of attribute names in it to attribute values */
-	String fileName() { StringUtils.EvalMacroString(fileName, attributes(), false) }
+	String fileName() { FileUtils.EvalFilePath(fileName, attributes(), false) }
 	
 	/** Code page for file */
 	String getCodePage() { params.codePage as String }

@@ -792,12 +792,12 @@ class JDBCDriver extends Driver {
 	/** Prepare database, schema and table name for retrieve field operation */
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = [:] as Map<String, String>
-		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
+		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 
 		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType])
 			names.schemaName = tempSchemaName
 		else
-			names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+			names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName(), defaultSchemaName]) as String)
 
 		names.tableName = prepareObjectName(dataset.tableName as String)
 
@@ -1273,7 +1273,8 @@ class JDBCDriver extends Driver {
 
 		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
 		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
-			def schemaName = ds.schemaName
+			def dbName = ds.dbName()
+			def schemaName = ds.schemaName()
 			if (schemaName == null &&
 					(dataset as JDBCDataset).type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 													  JDBCDataset.externalTable] &&
@@ -1285,11 +1286,11 @@ class JDBCDriver extends Driver {
 				r = prepareTableNameForSQL(schemaName) + '.' + r
 			}
 
-			if (ds.dbName != null) {
+			if (dbName != null) {
 				if (schemaName != null) {
-					r = prepareTableNameForSQL(ds.dbName) + '.' + r
+					r = prepareTableNameForSQL(dbName) + '.' + r
 				} else {
-					r = prepareTableNameForSQL(ds.dbName) + '..' + r
+					r = prepareTableNameForSQL(dbName) + '..' + r
 				}
 			}
 		}
@@ -1308,14 +1309,16 @@ class JDBCDriver extends Driver {
         def ds = dataset as TableDataset
 
 		def r = prepareObjectName(ds.params.tableName as String)
-		def schema = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.schemaName as String):null
-		if (schema != null) r = prepareObjectName(ds.schemaName as String) + '.' + r
-		if (ds.dbName != null) {
-			if (schema != null) {
-				r = prepareObjectName(ds.dbName) + '.' + r
+		def dbName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.dbName()):null
+		def schemaName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.schemaName()):null
+		if (schemaName != null)
+			r = schemaName + '.' + r
+		if (dbName != null) {
+			if (schemaName != null) {
+				r = dbName + '.' + r
 			}
 			else {
-				r = prepareObjectName(ds.dbName) + '..' + r
+				r = dbName + '..' + r
 			}
 		}
 

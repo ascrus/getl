@@ -91,6 +91,7 @@ class LoginManager {
      * @param password original password
      * @return encrypted password
      */
+    @SuppressWarnings('GroovyMissingReturnStatement')
     String encryptPassword(String password) {
         if (password == null)
             return null
@@ -113,6 +114,7 @@ class LoginManager {
      * @param password encrypted password
      * @return decrypted password
      */
+    @SuppressWarnings('GroovyMissingReturnStatement')
     String decryptPassword(String password) {
         if (password == null)
             return null

@@ -250,7 +250,7 @@ Example:
 	/**
 	 * Build reverse statement with feed line
 	 */
-	static String statln(String pattern, def value, Boolean quote = false) {
+	static String statLine(String pattern, def value, Boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -909,8 +909,8 @@ Example:
 
 			if (!userEmpty) {
 			   write parln('RESOURCE POOL', "\"${r.resource_pool}\"")
-			   write statln('MEMORYCAP {val}', (r.memory_cap_kb == 'unlimited') ? null : (r.memory_cap_kb + 'K'), true)
-			   write statln('TEMPSPACECAP {val}', (r.temp_space_cap_kb == 'unlimited') ? null : (r.temp_space_cap_kb + 'K'), true)
+			   write statLine('MEMORYCAP {val}', (r.memory_cap_kb == 'unlimited') ? null : (r.memory_cap_kb + 'K'), true)
+			   write statLine('TEMPSPACECAP {val}', (r.temp_space_cap_kb == 'unlimited') ? null : (r.temp_space_cap_kb + 'K'), true)
 			   write parln('RUNTIMECAP', (r.run_time_cap == 'unlimited') ? null : r.run_time_cap, true)
 			}
 		   if (isWriteln) writeln ";"

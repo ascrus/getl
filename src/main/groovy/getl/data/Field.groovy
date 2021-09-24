@@ -37,7 +37,9 @@ class Field implements Serializable, Cloneable {
 	static public final Type dateFieldType = Type.DATE
 	/** Time field type */
 	static public final Type timeFieldType = Type.TIME
-	/** Date and time field type */
+	/** Timestamp field type */
+	static public final Type timestampFieldType = Type.DATETIME
+	/** Timestamp field type */
 	static public final Type datetimeFieldType = Type.DATETIME
 	/** Timestamp with time zone field type */
 	static public final Type timestamp_with_timezoneFieldType = Type.TIMESTAMP_WITH_TIMEZONE
