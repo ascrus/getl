@@ -296,8 +296,6 @@ class RepositoryStorageManager {
             throw new ExceptionDSL("Object \"${objName.name}\" not found in repository \"${repository.getClass().name}\"!")
 
         def objParams = repository.exportConfig(obj)
-        /*if (obj instanceof UserLogins)
-            encryptObject(objName.name, objParams)*/
 
         def fileName = objectFilePathInStorage(repository, objName, env)
         FileUtils.ValidFilePath(fileName)
@@ -308,6 +306,24 @@ class RepositoryStorageManager {
         if (!file.exists())
             throw new ExceptionDSL("Error saving object \"${objName.name}\" from repository " +
                                     "\"${repository.getClass().name}\" to file \"$file\"!")
+    }
+
+    /**
+     * Internal method for save repository object to storage
+     * @param repository used repository
+     * @param objName parsed object name
+     * @param env used environment
+     */
+    void saveObjectToFile(RepositoryObjects repository, GetlRepository obj, String fileName) {
+        def objParams = repository.exportConfig(obj)
+        FileUtils.ValidFilePath(fileName)
+        def file = new File(fileName)
+        ConfigSlurper.SaveConfigFile(data: objParams, file: new File(fileName), codePage: 'utf-8', convertVars: false,
+                trimMap: true, smartWrite: true, owner: dslCreator)
+
+        if (!file.exists())
+            throw new ExceptionDSL("Error saving object \"${obj.dslNameObject?:'noname'}\" from repository " +
+                    "\"${repository.getClass().name}\" to file \"$file\"!")
     }
 
     /**
@@ -602,6 +618,29 @@ class RepositoryStorageManager {
         }
 
         return obj
+    }
+
+    /**
+     * Load object from specified configuration file
+     * @param repository used repository
+     * @param fileName file path
+     * @param env used environment
+     * @param obj destination object
+     */
+    void readObjectFromFile(RepositoryObjects repository, String fileName, String env, GetlRepository obj) {
+        if (repository == null)
+            throw new ExceptionDSL("Required repository!")
+        if (fileName == null)
+            throw new ExceptionDSL("Required file name!")
+
+        def file = new File(fileName)
+        if (!file.exists())
+            throw new ExceptionDSL("File \"$fileName\" was not found to load the object!")
+
+        def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8', environment: env,
+                configVars: this.dslCreator.configVars, owner: dslCreator)
+        obj = repository.importConfig(objParams, obj)
+        repository.initRegisteredObject(obj)
     }
 
     /** The object is being loaded from the repository */

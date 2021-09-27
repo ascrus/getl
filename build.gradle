@@ -9,12 +9,12 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = "$getl_version" //noinspection GroovyUnusedAssignment
+version = "$getl_version"
 group = 'net.sourceforge.getl'
 
 configurations {
 	addJars
-	deployerJars
+	//deployerJars
 }
 
 repositories {
@@ -65,7 +65,7 @@ dependencies {
 
 	configurations.implementation.extendsFrom(configurations.addJars)
 
-	deployerJars 'org.apache.maven.wagon:wagon-http:3.4.3'
+	//deployerJars 'org.apache.maven.wagon:wagon-http:3.4.3'
 	testImplementation 'junit:junit:4.13.2'
 	testImplementation  fileTree(dir: 'tests', include: '**/*.jar')
 	testImplementation fileTree(dir: 'jdbc')

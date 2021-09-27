@@ -61,7 +61,7 @@ class ModelSpec extends BaseSpec {
     /** Reference tables model description */
     ReferenceVerticaTables referenceVerticaTables(@DelegatesTo(ReferenceVerticaTables)
                                                   @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceVerticaTables'])
-                                                          Closure cl) {
+                                                          Closure cl = null) {
         referenceVerticaTables(null, false, cl)
     }
 
@@ -132,7 +132,7 @@ class ModelSpec extends BaseSpec {
     /** Reference files model description */
     ReferenceFiles referenceFiles(@DelegatesTo(ReferenceFiles)
                                   @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceFiles'])
-                                          Closure cl) {
+                                          Closure cl = null) {
         referenceFiles(null, false, cl)
     }
 
@@ -203,7 +203,7 @@ class ModelSpec extends BaseSpec {
     /** Monitor tables model description */
     MonitorRules monitorRules(@DelegatesTo(MonitorRules)
                               @ClosureParams(value = SimpleType, options = ['getl.models.MonitorRules'])
-                                      Closure cl) {
+                                      Closure cl = null) {
         monitorRules(null, false, cl)
     }
 
@@ -271,7 +271,7 @@ class ModelSpec extends BaseSpec {
 
     /** Map tables model description */
     MapTables mapTables(@DelegatesTo(MapTables)
-                        @ClosureParams(value = SimpleType, options = ['getl.models.MapTables']) Closure cl) {
+                        @ClosureParams(value = SimpleType, options = ['getl.models.MapTables']) Closure cl = null) {
         mapTables(null, false, cl)
     }
 
@@ -339,7 +339,7 @@ class ModelSpec extends BaseSpec {
 
     /** List tables model description */
     SetOfTables setOfTables(@DelegatesTo(SetOfTables)
-                          @ClosureParams(value = SimpleType, options = ['getl.models.SetOfTables']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.models.SetOfTables']) Closure cl = null) {
         setOfTables(null, false, cl)
     }
 
@@ -410,7 +410,7 @@ class ModelSpec extends BaseSpec {
     /** Workflow model description */
     Workflows workflow(@DelegatesTo(Workflows)
                        @ClosureParams(value = SimpleType, options = ['getl.models.Workflows'])
-                               Closure cl) {
+                               Closure cl = null) {
         workflow(null, false, cl)
     }
 

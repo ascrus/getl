@@ -183,7 +183,7 @@ class ExcelDriver extends FileDriver {
                 if (filter == null || filter.call(updater)) {
                     code.call(updater)
                     countRec++
-                    if (limit != null && countRec >= limit)
+                    if ((limit != null && countRec >= limit) || code.directive == Closure.DONE)
                         break
                 }
             }

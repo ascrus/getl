@@ -1,6 +1,7 @@
 package getl.lang.opts
 
 import getl.config.ConfigSlurper
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.tfs.TFS
 import getl.utils.BoolUtils
@@ -119,9 +120,37 @@ class FileTextSpec extends BaseSpec {
         write(MapUtils.Closure2Map(cl), convertVars)
     }
 
-    /** Read file to text buffer */
-    static String read(String sourceFileName, String codePage = 'UTF-8') {
-        if (sourceFileName == null) throw new ExceptionGETL("Required \"sourceFileName\" value!")
-        return new File(sourceFileName).getText(codePage)
+    /** Read text from specified file */
+    static String read(String sourceFileName, String codePage = null) {
+        if (sourceFileName == null)
+            throw new ExceptionGETL("Required \"sourceFileName\" value!")
+
+        return new File(sourceFileName).getText(codePage?:'utf-8')
     }
+
+    /** Read file to text buffer */
+    String readToBuffer(String sourceFileName = null, String encode = null) {
+        def res = new File(sourceFileName?:filePath()).getText(encode?:codePage)
+        buffer.append(res)
+        return res
+    }
+
+    /**
+     * Delete file
+     * @param throwIfNotExists throw if file not exists
+     */
+    void delete(Boolean throwIfNotExists = true) {
+        def file = new File(filePath())
+        if (!file.exists()) {
+            if (throwIfNotExists)
+                throw new ExceptionDSL("File \"${filePath()}\" not found!")
+        }
+        else {
+            if (!file.delete())
+                throw new ExceptionDSL("Can not delete file \"${filePath()}\"!")
+        }
+    }
+
+    /** Check exists file */
+    Boolean getExists() { new File(filePath()).exists() }
 }

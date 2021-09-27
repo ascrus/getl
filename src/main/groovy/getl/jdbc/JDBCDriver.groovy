@@ -1520,9 +1520,10 @@ class JDBCDriver extends Driver {
 		return result
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@CompileStatic
-	@Override
 	@Synchronized('operationLock')
+	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (params == null) params = [:]
 
@@ -1625,25 +1626,43 @@ class JDBCDriver extends Driver {
 		try {
 			java.sql.Connection con = sqlConnect.connection
 			if (sqlParams == null) {
+				def isContinue = true
 				sqlConnect.eachRow(sql, getFields, offs, max) { GroovyResultSet row ->
-					Map outRow = [:]
+					if (!isContinue)
+						return
+
+					def outRow = [:] as Map<String, Object>
 					copyToMap(con, row, outRow)
 					
-					if (filter != null && !filter(outRow)) return
+					if (filter != null && !filter(outRow))
+						return
 					
 					countRec++
 					code.call(outRow)
+					if (code.directive == Closure.DONE) {
+						directive = Closure.DONE
+						isContinue = false
+					}
 				}
 			}
 			else {
+				def isContinue = true
 				sqlConnect.eachRow(sqlParams as Map, sql, getFields, offs, max) { row ->
-					Map outRow = [:]
+					if (!isContinue)
+						return
+
+					def outRow = [:] as Map<String, Object>
 					copyToMap(con, row, outRow)
 					
-					if (filter != null && !filter(outRow)) return
+					if (filter != null && !filter(outRow))
+						return
 					
 					countRec++
 					code.call(outRow)
+					if (code.directive == Closure.DONE) {
+						directive = Closure.DONE
+						isContinue = false
+					}
 				}
 			}
 		}

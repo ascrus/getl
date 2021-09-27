@@ -527,7 +527,8 @@ class CSVDriver extends FileDriver {
 					} 
 
 					code.call(row)
-					if (cur == limit) break
+					if (cur == limit || code.directive == Closure.DONE)
+						break
 				}
 			}
 			countRec = cur

@@ -137,6 +137,8 @@ $body
 		Map<String, Object> row = [:]
 $body
 		code.call(row)
+		if (code.directive == Closure.DONE)
+			directive = Closure.DONE
 	}"""
 		}
 		else {

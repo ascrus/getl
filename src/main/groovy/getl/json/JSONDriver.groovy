@@ -216,6 +216,7 @@ class JSONDriver extends WebServiceDriver {
 		readRows(dataset, fields, limit, data, (params.initAttr as Closure<Boolean>)?:dataset.onInitAttributes, code)
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -230,6 +231,8 @@ class JSONDriver extends WebServiceDriver {
 			
 			countRec++
 			code.call(row)
+			if (code.directive == Closure.DONE)
+				directive = Closure.DONE
 		}
 		
 		return countRec

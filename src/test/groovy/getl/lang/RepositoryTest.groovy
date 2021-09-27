@@ -11,7 +11,6 @@ import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositorySequences
-import getl.models.sub.RepositoryWorkflows
 import getl.test.Config
 import getl.test.TestDsl
 import getl.tfs.TDS
@@ -1177,6 +1176,61 @@ class RepositoryTest extends TestDsl {
                     assertNotNull(fieldByName('field1'))
                     assertEquals(1, field.size())
                 }
+            }
+        }
+    }
+
+    @Test
+    void testReadObjectFile() {
+        Getl.Dsl {
+            def conFile = textFile {
+                temporaryFile = true
+                fileName = 'csv.con.conf'
+                writeln'''connection = 'getl.csv.CSVConnection'
+path = '{GETL_TEST}/csv/test'
+'''
+            }
+
+            def dsFile = textFile {
+                temporaryFile = true
+                fileName = 'csv.ds.conf'
+                writeln '''dataset = 'getl.csv.CSVDataset'
+connection = 'csv:test'
+fileName = 'test1.csv'
+'''
+            }
+
+            def con = csvConnection('csv:test', true)
+            def ds = csv('csv:test', true)
+            repositoryStorageManager {
+                readObjectFromFile(repository(RepositoryConnections), conFile.filePath(), null, con)
+                assertEquals('{GETL_TEST}/csv/test', con.path())
+
+                readObjectFromFile(repository(RepositoryDatasets), dsFile.filePath(), null, ds)
+                assertEquals('{GETL_TEST}/csv/test', ds.currentCsvConnection.path())
+                assertEquals('test1.csv', ds.fileName())
+
+                conFile.delete()
+                dsFile.delete()
+
+                saveObjectToFile(repository(RepositoryConnections), con, conFile.filePath())
+                assertTrue(conFile.exists)
+
+                saveObjectToFile(repository(RepositoryDatasets), ds, dsFile.filePath())
+                assertTrue(dsFile.exists)
+
+                con.path = null
+                ds.fileName = null
+
+                readObjectFromFile(repository(RepositoryConnections), conFile.filePath(), null, con)
+                assertEquals('{GETL_TEST}/csv/test', con.path())
+
+                readObjectFromFile(repository(RepositoryDatasets), dsFile.filePath(), null, ds)
+                assertEquals('{GETL_TEST}/csv/test', ds.currentCsvConnection.path())
+                assertEquals('test1.csv', ds.fileName())
+
+                conFile.delete()
+                dsFile.delete()
             }
         }
     }

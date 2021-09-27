@@ -25,6 +25,7 @@ import getl.models.ReferenceFiles
 import getl.models.ReferenceVerticaTables
 import getl.models.SetOfTables
 import getl.models.sub.BaseModel
+import getl.models.sub.RepositoryWorkflows
 import getl.mssql.*
 import getl.mysql.*
 import getl.netezza.*
@@ -224,8 +225,8 @@ Examples:
         def job = new Job() {
             static ParamMethodValidator allowArgs = {
                 def p = new ParamMethodValidator()
-                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'workflow', 'unittest',
-                                    'vars', 'getlprop'])
+                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'workflow', 'workflowfile',
+                                    'unittest', 'vars', 'getlprop'])
                 p.register('main.config', ['path', 'filename'])
                 return p
             }.call()
@@ -234,6 +235,7 @@ Examples:
             private String className
             private Class runClass
             private String workflowName
+            private String workflowFileName
             private Getl eng
 
             @Override
@@ -253,9 +255,10 @@ Examples:
                 allowArgs.validation('main', jobArgs)
                 className = jobArgs.runclass as String
                 workflowName = jobArgs.workflow as String
+                workflowFileName = jobArgs.workflowfile as String
 
-                if (className == null && workflowName == null)
-                    throw new ExceptionDSL('Required argument "runclass" or "workflow"!')
+                if (className == null && workflowName == null && workflowFileName == null)
+                    throw new ExceptionDSL('Required argument "runclass" or "workflow" or  "workflowfile"!')
 
                 if (className != null && workflowName != null)
                     throw new ExceptionDSL('Only "runclass" or "workflow" arguments can be specified!')
@@ -315,20 +318,30 @@ Examples:
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
                 if (className != null)
                     eng.logInfo("### Start script ${eng.getClass().name}")
-                else
+                else if (workflowName != null)
                     eng.logInfo("### Start workflow $workflowName")
+                else
+                    eng.logInfo("### Start workflow file \"$workflowFileName\"")
 
                 try {
                     if (className != null)
                         eng.runGroovyInstance(eng, eng.configuration.manager.vars)
-                    else
+                    else if (workflowName != null)
                         eng.models.workflow(workflowName).execute(eng.configuration.manager.vars)
+                    else {
+                        def workflow = eng.models.workflow('##_main_##', true)
+                        eng.repositoryStorageManager {
+                            readObjectFromFile(repository(RepositoryWorkflows), workflowFileName, null, workflow)
+                        }
+                        workflow.execute()
+                    }
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
                         if (e.message != null)
                             eng.logInfo(e.message)
-                        if (e.exitCode != null) exitCode = e.exitCode
+                        if (e.exitCode != null)
+                            exitCode = e.exitCode
                     }
                     else {
                         throw e
@@ -339,8 +352,10 @@ Examples:
 
                     if (className != null)
                         eng.logInfo("### Finish script ${eng.getClass().name}")
-                    else
+                    else if (workflowName != null)
                         eng.logInfo("### Finish workflow $workflowName")
+                    else
+                        eng.logInfo("### Finish workflow file \"$workflowFileName\"")
                 }
             }
         }
