@@ -225,8 +225,9 @@ Examples:
         def job = new Job() {
             static ParamMethodValidator allowArgs = {
                 def p = new ParamMethodValidator()
+                //noinspection SpellCheckingInspection
                 p.register('main', ['config', 'environment', 'initclass', 'runclass', 'workflow', 'workflowfile',
-                                    'unittest', 'vars', 'getlprop'])
+                                    'unittest', 'vars', 'getlprop', 'loadproperties'])
                 p.register('main.config', ['path', 'filename'])
                 return p
             }.call()
@@ -236,6 +237,7 @@ Examples:
             private Class runClass
             private String workflowName
             private String workflowFileName
+            private Boolean loadProperties
             private Getl eng
 
             @Override
@@ -256,6 +258,7 @@ Examples:
                 className = jobArgs.runclass as String
                 workflowName = jobArgs.workflow as String
                 workflowFileName = jobArgs.workflowfile as String
+                loadProperties = BoolUtils.IsValue(jobArgs.loadproperties, true)
 
                 if (className == null && workflowName == null && workflowFileName == null)
                     throw new ExceptionDSL('Required argument "runclass" or "workflow" or  "workflowfile"!')
@@ -315,7 +318,8 @@ Examples:
 
                 if (className == null)
                     eng.setGetlSystemParameter('workflow_mode', true)
-                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
+                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>, false,
+                        loadProperties)
                 if (className != null)
                     eng.logInfo("### Start script ${eng.getClass().name}")
                 else if (workflowName != null)
@@ -367,14 +371,16 @@ Examples:
      * Initialize getl instance properties before starting it
      * @param listInitClass list of initialization classes that should be executed before starting
      */
-    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map<String, Object> extProp, String unitClassName = null) {
+    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map<String, Object> extProp,
+                                          Boolean loadProperties, String unitClassName = null) {
         def instance = this
         if (extProp == null)
             extProp = [:] as Map<String, Object>
 
         options {
             if (autoInitFromConfig) {
-                loadProjectProperties(instance.configuration.environment, extProp.filename as String)
+                if (loadProperties)
+                    loadProjectProperties(instance.configuration.environment, extProp.filename as String)
                 if (!extProp?.isEmpty())
                     MapUtils.MergeMap(options.getlConfigProperties,
                             MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
@@ -436,7 +442,12 @@ Examples:
                 procs.repository = { Map<String, Object> en ->
                     instance.repositoryStorageManager {
                         if (en.encryptKey != null) {
-                            storagePassword = en.encryptKey as String
+                            def password = en.encryptKey as String
+                            if (password.length() > 2 && password[0] == '#' && password[password.length() - 1] == '#') {
+                                password = StringUtils.Decrypt(password.substring(1, password.length() - 1),
+                                        new String(RepositoryObjects._storage_key))
+                            }
+                            storagePassword = password
                             logFine('Repository encryption mode: enabled')
                         }
                         if (en.path != null) {
@@ -538,12 +549,12 @@ Examples:
     }
 
     void _initGetlProperties(List<Class<Script>> listInitClass = null, Map<String, Object> extProp,
-                             Boolean startAsGroovy = false, String unitClassName = null) {
+                             Boolean startAsGroovy = false, Boolean loadProperties = true, String unitClassName = null) {
         def initClasses = [] as List<Class<Script>>
         if (listInitClass != null)
             initClasses.addAll(listInitClass)
 
-        _prepareGetlProperties(initClasses, extProp, unitClassName)
+        _prepareGetlProperties(initClasses, extProp, loadProperties, unitClassName)
 
         if (!initClasses.isEmpty() && !startAsGroovy) {
             setGetlSystemParameter('isInitMode', true)

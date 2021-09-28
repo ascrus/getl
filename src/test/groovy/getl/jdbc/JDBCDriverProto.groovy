@@ -775,6 +775,9 @@ END FOR;
 
     @Test
     void testRetrieveCatalogs() {
+        if (!con.currentJDBCDriver.isSupport(Driver.Support.DATABASE))
+            return
+
         def list = con.retrieveCatalogs()
         println "Detect databases: $list"
         if (needCatalog != null)
@@ -783,6 +786,9 @@ END FOR;
 
     @Test
     void testRertieveSchemas() {
+        if (!con.currentJDBCDriver.isSupport(Driver.Support.SCHEMA))
+            return
+
         def list = con.retrieveSchemas()
         println "Detect schemas: $list"
         if (con.currentJDBCDriver.defaultSchemaName != null)

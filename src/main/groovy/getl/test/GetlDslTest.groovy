@@ -123,7 +123,7 @@ class GetlDslTest extends GetlTest {
             if (initClass != null)
                 initClasses.add(initClass)
             Getl.GetlInstance().with {
-                _initGetlProperties(initClasses, null, false, this.getClass().name)
+                _initGetlProperties(initClasses, null, false, true, this.getClass().name)
             }
             initWasRun = true
         }

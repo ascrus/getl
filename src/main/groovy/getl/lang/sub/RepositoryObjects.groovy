@@ -17,8 +17,11 @@ import groovy.transform.stc.SimpleType
 @SuppressWarnings("GrMethodMayBeStatic")
 abstract class RepositoryObjects<T extends GetlRepository> implements GetlRepository {
     RepositoryObjects() {
-        this.objects = [:] as Map<String, T> //new ConcurrentHashMap<String, T>()
+        this.objects = [:] as Map<String, T>
     }
+
+    static public final byte[] _storage_key = [71, 69, 84, 76, 33, 114, 101, 112, 111, 115, 105, 116, 111, 114, 121, 35,
+                                               115, 116, 111, 114, 97, 103, 101, 36, 65, 83, 67, 82, 85, 83]
 
     /** Repository priority order */
     private Integer _priority

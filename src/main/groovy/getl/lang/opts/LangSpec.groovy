@@ -159,6 +159,7 @@ class LangSpec extends BaseSpec {
             filePath = FileUtils.TransformFilePath(filePath)
             if (!FileUtils.ExistsFile(filePath))
                 throw new ExceptionDSL("Getl config file on path \"$filePath\" not found!")
+
             mainFile = new File(filePath)
         }
         else if (FileUtils.ExistsFile('getl-properties.conf'))
@@ -166,7 +167,9 @@ class LangSpec extends BaseSpec {
         else
             mainFile = FileUtils.FileFromResources('/getl-properties.conf')
 
-        if (mainFile == null) return
+        if (mainFile == null)
+            return
+
         def mainConfig = ConfigSlurper.LoadConfigFile(file: mainFile, codePage: 'utf-8',
                 environment: env, configVars: dslCreator.configVars, owner: dslCreator)
         getlConfigProperties.putAll(mainConfig)

@@ -104,7 +104,8 @@ class JDBCDriver extends Driver {
 	List<Support> supported() {
 		[Support.CONNECT, Support.SQL, Support.EACHROW, Support.WRITE, Support.BATCH,
 		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.NOT_NULL_FIELD,
-		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW]
+		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW, Support.SCHEMA,
+		 Support.DATABASE]
 	}
 
 	@Override
@@ -642,6 +643,9 @@ class JDBCDriver extends Driver {
 	 */
 	@Synchronized('operationLock')
 	List<String> retrieveCatalogs(List<String> masks) {
+		if (!isSupport(Support.DATABASE))
+			throw new ExceptionGETL("Databases is not supported for driver \"${getClass().name}\"!")
+
 		def maskList = [] as List<Path>
 		if (masks != null)
 			maskList = Path.Masks2Paths(masks)
@@ -691,6 +695,9 @@ class JDBCDriver extends Driver {
 	 */
 	@Synchronized('operationLock')
 	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
+		if (!isSupport(Support.SCHEMA))
+			throw new ExceptionGETL("Schemas is not supported for driver \"${getClass().name}\"!")
+
 		def maskList = [] as List<Path>
 		if (masks != null)
 			maskList = Path.Masks2Paths(masks)
@@ -722,9 +729,11 @@ class JDBCDriver extends Driver {
 		if (filter == null && params.filter != null)
 			filter = params.filter as Closure<Boolean>
 
-		def isMultiDB = isSupport(Support.MULTIDATABASE)
-		String catalog = (isMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName/*defaultDBName*/):null
-		String schemaPattern = prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName/*defaultSchemaName*/
+		def isSupportDB = isSupport(Support.DATABASE)
+		def isSupportSchemas = isSupport(Support.SCHEMA)
+		def isSupportMultiDB = isSupport(Support.MULTIDATABASE)
+		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName):null):null
+		String schemaPattern = (isSupportSchemas)?(prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName):null
 		String tableNamePattern = prepareObjectName(params.tableName as String)
 
 		def maskList = [] as List<Path>
@@ -752,24 +761,17 @@ class JDBCDriver extends Driver {
 				if (tableName != null && useMask) {
 					if (!Path.MatchList(tableName, maskList))
 						continue
-
-					/*def addTable = false
-					tableMaskList.each {
-						if (tableName.matches(it.maskPathPattern)) {
-							addTable = true
-							directive = Closure.DONE
-						}
-					}
-					if (!addTable) continue*/
 				}
 
 				def t = [:]
-				if (isMultiDB) t.dbName = prepareObjectName(rs.getString('TABLE_CAT'))
-				t.schemaName = prepareObjectName(rs.getString('TABLE_SCHEM'))
+				if (isSupportDB && isSupportMultiDB)
+					t.dbName = prepareObjectName(rs.getString('TABLE_CAT'))
+				if (isSupportSchemas)
+					t.schemaName = prepareObjectName(rs.getString('TABLE_SCHEM'))
 				t.tableName = tableName
 				t.type = rs.getString('TABLE_TYPE')
 				t.description = rs.getString('REMARKS')
-				
+
 				if (filter == null || filter.call(t)) tables << t
 			}
 		}
