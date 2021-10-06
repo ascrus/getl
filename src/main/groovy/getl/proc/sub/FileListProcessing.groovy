@@ -640,7 +640,7 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Inform about start in the log */
     protected void infoProcess() {
-        logger.fine("Processing files from \"$source\"")
+        logger.fine("Processing files from \"${source}\"")
 
         logger.fine("  for intermediate operations, \"$tmpPath\" directory will be used")
         if (inMemoryMode) logger.fine("  operating mode \"in-memory\" is used")

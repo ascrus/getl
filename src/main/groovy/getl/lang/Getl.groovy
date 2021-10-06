@@ -2175,7 +2175,7 @@ Examples:
      * Run groovy script object
      * @param script groovy script object
      * @param vars set values for script fields declared as "@Field"
-     * @return list of values: exitCode and result
+     * @return exitCode and result
      */
     protected Map<String, Object> runGroovyInstance(Script script, Map vars = [:]) {
         def exitCode = 0
@@ -2286,7 +2286,7 @@ Examples:
      * Run groovy script class
      * @param groovyClass groovy script class
      * @param vars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> runGroovyClass(Class groovyClass, Map vars = [:]) {
         runGroovyClass(groovyClass, false, vars)
@@ -2297,7 +2297,7 @@ Examples:
      * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param clVars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Closure clVars) {
         def cfg = new groovy.util.ConfigSlurper()
@@ -2309,7 +2309,7 @@ Examples:
      * Run groovy script class
      * @param groovyClass groovy script class
      * @param clVars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> runGroovyClass(Class groovyClass, Closure clVars) {
         runGroovyClass(groovyClass, false, clVars)
@@ -2320,7 +2320,7 @@ Examples:
      * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
         def sectParams = configuration.manager.findSection(configSection)
@@ -2334,7 +2334,7 @@ Examples:
      * Run groovy script class
      * @param groovyClass groovy script class
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> runGroovyClass(Class groovyClass, String configSection) {
         runGroovyClass(groovyClass, false, configSection)
@@ -2345,7 +2345,7 @@ Examples:
      * <br><br>Example:
      * <br>callScripts project.processed.GetlScript1, project.processed.GetlScript2
      * @param scripts list of Getl scripts to run
-     * @return list of exit code
+     * @return list of exit code and result
      */
     List<Map<String, Object>> callScripts(Class<Getl>... scriptClasses) {
         def res = [] as List<Map<String, Object>>
@@ -2361,7 +2361,7 @@ Examples:
      * @param scriptClass Getl script class
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:]) {
         return runGroovyClass(scriptClass, runOnce, vars)
@@ -2371,7 +2371,7 @@ Examples:
      * Call Getl script
      * @param scriptClass Getl script class
      * @param vars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Class<Getl> scriptClass, Map vars = [:]) {
         return runGroovyClass(scriptClass, false, vars)
@@ -2382,7 +2382,7 @@ Examples:
      * @param scriptClass Getl script class
      * @param runOnce do not execute if previously executed
      * @param clVars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Closure clVars) {
         return runGroovyClass(scriptClass, runOnce, clVars)
@@ -2392,7 +2392,7 @@ Examples:
      * Call Getl script
      * @param scriptClass Getl script class
      * @param clVars set values for script fields declared as "@Field"
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Class<Getl> scriptClass, Closure clVars) {
         return runGroovyClass(scriptClass, false, clVars)
@@ -2403,7 +2403,7 @@ Examples:
      * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, String configSection) {
         return runGroovyClass(scriptClass, runOnce, configSection)
@@ -2413,7 +2413,7 @@ Examples:
      * Call Getl script
      * @param groovyClass groovy script class
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Class<Getl> scriptClass, String configSection) {
         return runGroovyClass(scriptClass, false, configSection)
@@ -2423,7 +2423,7 @@ Examples:
      * Call Getl instance script
      * @param script Getl script instance
      * @param runOnce do not execute if previously executed
-     * @return exit code
+     * @return exitCode and result
      */
     Map<String, Object> callScript(Getl script, Boolean runOnce = false) {
         def className = script.getClass().name
@@ -2591,7 +2591,7 @@ Examples:
                                     value = getl.dataset(value as String)
                             } else if (Manager.isAssignableFrom(prop.type)) {
                                 if (value instanceof String)
-                                    value = getl.dataset(value as String)
+                                    value = getl.filemanager(value as String)
                             } else if (HistoryPointManager.isAssignableFrom(prop.type)) {
                                 if (value instanceof String)
                                     value = getl.historypoint(value as String)

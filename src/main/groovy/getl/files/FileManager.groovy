@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -50,7 +51,11 @@ class FileManager extends Manager {
 
 	/** Check exist root path */
 	Boolean existsRootDirectory() {
-		if (rootPath == null) return false
+		validConnect()
+
+		if (rootPath == null)
+			return false
+
 		new File(currentRootPath).exists()
 	}
 
@@ -104,7 +109,7 @@ class FileManager extends Manager {
 		@CompileStatic
 		@Override
 		Integer size () {
-			listFiles.length
+			(listFiles != null)?listFiles.length:0
 		}
 
 		@CompileStatic
@@ -200,6 +205,7 @@ class FileManager extends Manager {
 	@Override
 	void upload (String path, String fileName) {
 		validConnect()
+		validWrite()
 		
 		def fn = ((path != null)?path + "/":"") + fileName
 
@@ -214,6 +220,7 @@ class FileManager extends Manager {
 	@Override
 	void removeFile (String fileName) {
 		validConnect()
+		validWrite()
 		
 		def f = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
 		if (!f.delete()) throw new ExceptionGETL("Can not remove file ${f.canonicalPath}")
@@ -222,6 +229,7 @@ class FileManager extends Manager {
 	@Override
 	void createDir (String dirName) {
 		validConnect()
+		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
 		if (f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" already exists")
@@ -231,6 +239,7 @@ class FileManager extends Manager {
 	@Override
 	void removeDir (String dirName, Boolean recursive) {
 		validConnect()
+		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
 		if (!f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found")
@@ -245,6 +254,7 @@ class FileManager extends Manager {
 	@Override
 	void rename(String fileName, String path) {
 		validConnect()
+		validWrite()
 
 		def sourceFile = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
 
@@ -337,6 +347,7 @@ class FileManager extends Manager {
 	@Override
 	void setLastModified(String fileName, Long time) {
 		validConnect()
+		validWrite()
 
 		if (saveOriginalDate) new File(fileName).setLastModified(time)
 	}

@@ -1,5 +1,6 @@
 package getl.models
 
+import getl.job.jdbc.RunSql
 import getl.lang.Getl
 import getl.test.GetlDslTest
 import getl.utils.ListUtils
@@ -117,6 +118,56 @@ class WorkflowTest extends GetlDslTest {
 
             shouldFail {
                 execute()
+            }
+        }
+    }
+
+    @Test
+    void testRunSql() {
+        Getl.Dsl {
+            embeddedConnection('test:run_sql', true)
+            models.workflow {
+                start {
+                    exec('S1') {
+                        className = RunSql.name
+                        vars.connection = 'test:run_sql'
+                        vars.path = 'resource:/models'
+                        vars.files = 'workflow_runsql.sql'
+                        vars.ext = [var1: 'test1', var2: 'test2', var3: 'test3']
+                    }
+                }
+                execute()
+                assertEquals('test1', result('S1').var1)
+                assertEquals('test2', result('S1').var2)
+                assertEquals('test3', result('S1').var3)
+
+                execute([ext: [var3: 'new test3']])
+                assertEquals('test1', result('S1').var1)
+                assertEquals('test2', result('S1').var2)
+                assertEquals('new test3', result('S1').var3)
+
+                execute([ext: "var2: 'new test2'"])
+                assertEquals('test1', result('S1').var1)
+                assertEquals('new test2', result('S1').var2)
+                assertEquals('test3', result('S1').var3)
+
+                script('S1') {
+                    vars.ext = "[var1: 'test1', var2: 'test2', var3: 'test3']"
+                }
+                execute()
+                assertEquals('test1', result('S1').var1)
+                assertEquals('test2', result('S1').var2)
+                assertEquals('test3', result('S1').var3)
+
+                execute([ext: [var3: 'new test3']])
+                assertEquals('test1', result('S1').var1)
+                assertEquals('test2', result('S1').var2)
+                assertEquals('new test3', result('S1').var3)
+
+                execute([ext: "var2: 'new test2'"])
+                assertEquals('test1', result('S1').var1)
+                assertEquals('new test2', result('S1').var2)
+                assertEquals('test3', result('S1').var3)
             }
         }
     }

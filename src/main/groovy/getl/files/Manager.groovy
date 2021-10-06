@@ -43,7 +43,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles',
 				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
-				 'attributes', 'story', 'storyName', 'description', 'config'])
+				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder',
 				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'threadLevel', 'ignoreExistInStory',
@@ -71,8 +71,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		tempDirFile = new File(TFS.systemPath + '/files.localdir')
 		tempDirFile.deleteOnExit()
-
-		currentRootPathSet()
 	}
 
 	static Manager CreateManager(Map params) {
@@ -125,8 +123,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (locDir != null)
 			setLocalDirectory(locDir)
 
-		currentRootPathSet()
-
 		return this
 	}
 	
@@ -154,7 +150,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Finalization cloned manager */
 	protected void afterClone(Manager original) {
 		fileNameScriptHistory = null
-		currentRootPathSet()
+		currentRootPath = null
 	}
 
 	/**
@@ -220,21 +216,34 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Root path */
 	void setRootPath(String value) {
 		params.rootPath = value
-		currentRootPathSet()
+		if (connected)
+			currentRootPathSet()
+		else
+			currentRootPath = null
 	}
+
+	/** Allow only read from source */
+	Boolean getReadOnlyMode() { params.readOnlyMode }
+	/** Allow only read from source */
+	void setReadOnlyMode(Boolean value) { params.readOnlyMode = value }
+	/** Allow only read from source */
+	Boolean readOnlyMode() { BoolUtils.IsValue(readOnlyMode) }
 
 	/** Current root path */
 	private String currentRootPath
 	/** Current root path */
 	@JsonIgnore
-	String getCurrentRootPath() {
-		currentRootPath
+	String getCurrentRootPath() { currentRootPath }
+
+	/** Preparing root path for using */
+	String prepareRootPath(String path) {
+		FileUtils.PrepareDirPath(FileUtils.TransformFilePath(path, true), true)
 	}
 
 	/** Set current root path */
-	private currentRootPathSet() {
+	protected void currentRootPathSet() {
 		if (rootPath != null)
-			currentRootPath = FileUtils.PrepareDirPath(FileUtils.TransformFilePath(rootPath, true), true)
+			currentRootPath = prepareRootPath(rootPath)
 		else
 			currentRootPath = null
 	}
@@ -346,7 +355,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { (rootPath != null)?"file:$currentRootPath":'file' }
+	String getObjectName() { (rootPath != null)?"file:${FileUtils.TransformFilePath(rootPath, false)}":'file' }
 	
 	/** Write errors to log */
 	@JsonIgnore
@@ -393,7 +402,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (configSection.containsKey("localDirectory"))
 			setLocalDirectory(configSection.localDirectory as String)
 		fileNameScriptHistory = null
-		currentRootPathSet()
+		currentRootPath = null
 	}
 	
 	/** File name is case-sensitive */
@@ -408,9 +417,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/** Connect to server */
 	void connect() {
-		validRootPath()
 		FileUtils.ValidPath(localDirectoryFile)
 		currentRootPathSet()
+		validRootPath()
 		try {
 			sessionID = UUID.randomUUID().toString()
 			writeScriptHistoryFile("Connect session $sessionID to directory $currentRootPath")
@@ -430,6 +439,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		writeScriptHistoryFile("Disconnect from session $sessionID")
 		doDisconnect()
 		sessionID = null
+		currentRootPath = null
 		if (isTempLocalDirectory)
 			FileUtils.DeleteFolder(localDirectory, true)
 	}
@@ -627,6 +637,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	long uploadDir(Boolean removeLocal = false) {
 		validConnect()
+		validWrite()
 
 		def res = 0L
 		def lc = localDirFile
@@ -673,6 +684,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@CompileStatic
 	void createDirs(String dirPath) {
 		validConnect()
+		validWrite()
 
 		def dirs = FileUtils.PrepareDirPath(dirPath, true).split('/')
 		dirs.each { dir ->
@@ -717,15 +729,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Return current directory with relative path */
 	@CompileStatic
 	String currentDir() {
+		validConnect()
+
 		def cur = _currentPath
-		if (cur == null) throw new ExceptionGETL("Current path not set")
+		if (cur == null)
+			throw new ExceptionGETL("Current path not set")
 
 		cur = cur.replace("\\", "/")
 
 		def root = currentRootPath
 		root = root.replace("\\", "/")
 		
-		if (cur == root) return "."
+		if (cur == root)
+			return "."
 		
 		def rp = root
 		if (rp[rp.length() - 1] != "/") rp += "/"
@@ -1986,6 +2002,9 @@ WHERE
 	 */
 	Boolean deleteEmptyFolder(String dirName, Boolean recursive,
 							  @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
+		validConnect()
+		validWrite()
+
 		deleteEmptyFolderRecurse(0, dirName, recursive, onDelete)
 	}
 	
@@ -1999,8 +2018,6 @@ WHERE
 	 */
 	protected Boolean deleteEmptyFolderRecurse(Integer level, String dirName, Boolean recursive,
 											   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
-		validConnect()
-
 		changeDirectory(dirName)
 		def existsFiles = false
 		try {
@@ -2063,6 +2080,7 @@ WHERE
 	Boolean deleteEmptyFolders(Boolean ignoreErrors,
 							   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
 		validConnect()
+		validWrite()
 
 		if (fileList == null)
 			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
@@ -2126,6 +2144,7 @@ WHERE
 	Boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors,
 							@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
 		validConnect()
+		validWrite()
 
 		def res = true
 		dirs.each { String name, Map subDirs ->
@@ -2164,6 +2183,7 @@ WHERE
 	 */
 	void deleteEmptyFolder(Boolean recursive) {
 		validConnect()
+		validWrite()
 
 		list().each { file ->
 			if (file.type == TypeFile.DIRECTORY)
@@ -2272,7 +2292,8 @@ WHERE
 	 * Send noop command to server
 	 */
 	void noop() {
-		if (sayNoop) logger.fine("files.manager: NOOP")
+		if (sayNoop)
+			logger.fine("files.manager: NOOP")
 	}
 
     /**
@@ -2311,7 +2332,8 @@ WHERE
 	 */
 	protected Map<String, String> toStringParams() {
 		def res = [:] as Map<String, String>
-		if (rootPath != null) res.root = currentRootPath
+		if (rootPath != null)
+			res.root = FileUtils.TransformFilePath(rootPath, false)
 
 		return res
 	}
@@ -2344,6 +2366,7 @@ WHERE
 	 */
 	void removeDirs(String maskDirs) {
 		validConnect()
+		validWrite()
 
 		def p = new Path(mask: maskDirs)
 		list().each { file ->
@@ -2357,6 +2380,7 @@ WHERE
 	/** Clear the current directory from directories and files */
 	void cleanDir() {
 		validConnect()
+		validWrite()
 
 		writeScriptHistoryFile("Clean current directory ${currentDir()} from session $sessionID")
 
@@ -2367,5 +2391,14 @@ WHERE
 			else if (file.type == fileType)
 				removeFile(file.filename as String)
 		}
+	}
+
+	/** Write allowed */
+	protected Boolean allowWrite() { !readOnlyMode() }
+
+	/** Check write allowed */
+	protected void validWrite() {
+		if (!allowWrite())
+			throw new ExceptionGETL('Modification of files is not allowed!')
 	}
 }

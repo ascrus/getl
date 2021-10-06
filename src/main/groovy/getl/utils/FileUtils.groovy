@@ -1191,8 +1191,10 @@ class FileUtils {
 		else if (IsRepositoryFileName(fileName)) {
 			if (getl == null)
 				throw new ExceptionGETL("No Getl instance specified for repository files!")
+
 			if (getl.repositoryStorageManager.storagePath == null)
 				throw new ExceptionGETL("Getl has no repository storage path set!")
+
 			if (fileName.length() < 12)
 				throw new ExceptionGETL("Invalid path to repository file \"$fileName\"!")
 

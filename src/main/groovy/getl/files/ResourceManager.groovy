@@ -258,7 +258,7 @@ class ResourceManager extends Manager {
         @CompileStatic
         @Override
         Integer size () {
-            listFiles.size()
+            (listFiles != null)?listFiles.size():0
         }
 
         @SuppressWarnings('UnnecessaryQualifiedReference')
@@ -424,27 +424,27 @@ class ResourceManager extends Manager {
 
     @Override
     void upload(String path, String fileName) {
-        throw new ExceptionGETL('Not supported!')
+        validWrite()
     }
 
     @Override
     void removeFile(String fileName) {
-        throw new ExceptionGETL('Not supported!')
+        validWrite()
     }
 
     @Override
     void createDir(String dirName) {
-        throw new ExceptionGETL('Not supported!')
+        validWrite()
     }
 
     @Override
     void removeDir(String dirName, Boolean recursive) {
-        throw new ExceptionGETL('Not supported!')
+        validWrite()
     }
 
     @Override
     void rename(String fileName, String path) {
-        throw new ExceptionGETL('Not supported!')
+        validWrite()
     }
 
     @Override
@@ -465,11 +465,14 @@ class ResourceManager extends Manager {
 
     @Override
     void setLastModified(String fileName, Long time) {
-        throw new ExceptionGETL('Not supported!')
+        validWrite()
     }
 
     @Override
     String getObjectName() {
         return (rootPath != null)?"resource:/$rootPath":'resource'
     }
+
+    @Override
+    protected Boolean allowWrite() { false }
 }

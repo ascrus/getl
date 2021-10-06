@@ -6,6 +6,7 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
 import getl.files.FileManager
+import getl.lang.Getl
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -32,18 +33,21 @@ class FileConnection extends Connection {
 	}
 
 	@Override
-	protected void initParams() {
-		super.initParams()
-
-		connectionFileManager = new FileManager()
-	}
-
-	@Override
 	protected void doInitConnection() {
 		super.doInitConnection()
 
 		if (path != null)
 			setPath(path)
+	}
+
+	@Override
+	void setDslCreator(Getl value) {
+		super.setDslCreator(value)
+		if (_connectionFileManager != null) {
+			if (_connectionFileManager.connected)
+				_connectionFileManager.disconnect()
+			_connectionFileManager.dslCreator = value
+		}
 	}
 
 	@Override
@@ -71,12 +75,14 @@ class FileConnection extends Connection {
 				value = value.substring(0, value.length() - 1)
 		}
 
-		if (connectionFileManager.connected)
-			connectionFileManager.disconnect()
-		connectionFileManager.rootPath = value
-
 		params.path = value
 		currentPath = null
+
+		if (_connectionFileManager != null) {
+			if (_connectionFileManager.connected)
+				_connectionFileManager.disconnect()
+			_connectionFileManager.rootPath = path
+		}
 	}
 	/** Connection path */
 	String path() { FileUtils.EvalFilePath(path, attributes(), false) }
@@ -239,8 +245,17 @@ class FileConnection extends Connection {
 	String getObjectName() { (path != null)?"file:${currentPath()}":'[NONE]' }
 
 	/** File manager for the connection path */
-	private FileManager connectionFileManager
+	private FileManager _connectionFileManager
 	/** File manager for the connection path */
 	@JsonIgnore
-	FileManager getConnectionFileManager() { connectionFileManager }
+	FileManager getConnectionFileManager() {
+		if (_connectionFileManager == null) {
+			_connectionFileManager = new FileManager()
+			_connectionFileManager.dslCreator = dslCreator
+			if (path != null)
+				_connectionFileManager.rootPath = path
+		}
+
+		return _connectionFileManager
+	}
 }

@@ -237,7 +237,7 @@ class FTPManager extends Manager implements UserLogins {
 		@CompileStatic
 		@Override
 		Integer size() {
-			listFiles.length
+			(listFiles != null)?listFiles.length:0
 		}
 		
 		@CompileStatic
@@ -355,6 +355,7 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void upload(String path, String fileName) {
 		validConnect()
+		validWrite()
 
 		def fn = ((path != null)?path + '/':'') + fileName
 		try {
@@ -378,6 +379,7 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void removeFile(String fileName) {
 		validConnect()
+		validWrite()
 
 		try {
 			client.deleteFile(fileName)
@@ -391,6 +393,7 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void createDir(String dirName) {
 		validConnect()
+		validWrite()
 
 		def curDir = client.currentDirectory()
 		String cdDir = null
@@ -424,6 +427,7 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void removeDir(String dirName, Boolean recursive) {
 		validConnect()
+		validWrite()
 
 		try {
 			if (recursive) {
@@ -468,6 +472,7 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void rename(String fileName, String path) {
 		validConnect()
+		validWrite()
 
 		try {
 			client.rename(fileName, path)
@@ -496,8 +501,10 @@ class FTPManager extends Manager implements UserLogins {
     @Override
     void setLastModified(String fileName, Long time) {
 		validConnect()
+		validWrite()
 
-        if (!saveOriginalDate) return
+        if (!saveOriginalDate)
+			return
 
         if (supportCommand('MFMT')) {
             def d = new Date(time)
@@ -516,10 +523,10 @@ class FTPManager extends Manager implements UserLogins {
 		def loginStr = (login != null)?"$login@":''
 		if (rootPath == null || rootPath.length() == 0)
 			res = "ftp://$loginStr$server"
-		else if (currentRootPath[0] == '/')
-			res = "ftp://$loginStr$server$currentRootPath"
+		else if (rootPath[0] == '/')
+			res = "ftp://$loginStr$server$rootPath"
 		else
-			res = "ftp://$loginStr$server/$currentRootPath"
+			res = "ftp://$loginStr$server/$rootPath"
 
 		return res
 	}

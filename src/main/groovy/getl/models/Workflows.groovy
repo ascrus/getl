@@ -13,6 +13,7 @@ import getl.models.sub.BaseSpec
 import getl.proc.Executor
 import getl.utils.BoolUtils
 import getl.utils.CloneUtils
+import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.GenerationUtils
 import getl.utils.Path
@@ -386,14 +387,67 @@ return $className"""
                         def execVars = [:] as Map<String, Object>
                         classParams.each { field ->
                             def fieldName = field.name as String
-                            if (addVars.containsKey(fieldName))
-                                execVars.put(fieldName, addVars.get(fieldName))
-                            else if (scriptVars.containsKey(fieldName))
-                                execVars.put(fieldName, scriptVars.get(fieldName))
+                            def fieldType = field.type as String
+                            if (!(fieldType in [Map.name, HashMap.name, List.name, ArrayList.name])) {
+                                if (addVars.containsKey(fieldName))
+                                    execVars.put(fieldName, addVars.get(fieldName))
+                                else if (scriptVars.containsKey(fieldName))
+                                    execVars.put(fieldName, scriptVars.get(fieldName))
+                                else {
+                                    def objVar = node.variable(fieldName)
+                                    if (objVar != null)
+                                        execVars.put(fieldName, objVar)
+                                }
+                            }
+                            else if (fieldType in [Map.name, HashMap.name]) {
+                                Map mapValue = null
+                                Closure<Map> convertMap = { Map map, val ->
+                                    if (val == null)
+                                        return map
+
+                                    if (map == null)
+                                        map = [:]
+                                    if (val instanceof Map)
+                                        map.putAll(val as Map)
+                                    else if (val instanceof String)
+                                        map.putAll(ConvertUtils.String2Structure(val as String) as Map)
+                                    else
+                                        throw new ExceptionModel("It is not possible to convert " +
+                                                "type \"${val.getClass().name}\" to type \"${Map.name}\"!")
+
+                                    return map
+                                }
+
+                                mapValue = convertMap.call(mapValue, node.variable(fieldName))
+                                mapValue = convertMap.call(mapValue, scriptVars.get(fieldName))
+                                mapValue = convertMap.call(mapValue, addVars.get(fieldName))
+                                if (mapValue != null)
+                                    execVars.put(fieldName, mapValue)
+                            }
                             else {
-                                def objVar = node.variable(fieldName)
-                                if (objVar != null)
-                                    execVars.put(fieldName, objVar)
+                                List listValue = null
+                                Closure<List> convertList = { List list, val ->
+                                    if (val == null)
+                                        return list
+
+                                    if (list == null)
+                                        list = []
+                                    if (val instanceof List)
+                                        list.addAll(val as List)
+                                    else if (val instanceof String)
+                                        list.addAll(ConvertUtils.String2Structure(val as String) as List)
+                                    else
+                                        throw new ExceptionModel("It is not possible to convert " +
+                                                "type \"${val.getClass().name}\" to type \"${List.name}\"!")
+
+                                    return list
+                                }
+
+                                listValue = convertList.call(listValue, node.variable(fieldName))
+                                listValue = convertList.call(listValue, scriptVars.get(fieldName))
+                                listValue = convertList.call(listValue, addVars.get(fieldName))
+                                if (listValue != null)
+                                    execVars.put(fieldName, listValue)
                             }
                         }
 

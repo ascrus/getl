@@ -280,7 +280,7 @@ class SFTPManager extends Manager implements UserLogins {
 		@CompileStatic
 		@Override
 		Integer size () {
-			listFiles.size()
+			(listFiles != null)?listFiles.size():0
 		}
 		
 		@CompileStatic
@@ -382,6 +382,7 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void upload(String path, String fileName) {
 		validConnect()
+		validWrite()
 
 		def fn = ((path != null)?path + "/":"") + fileName
         def f = new File(fn)
@@ -402,6 +403,7 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void removeFile(String fileName) {
 		validConnect()
+		validWrite()
 
 		try {
 			channelFtp.rm(fileName)
@@ -416,6 +418,7 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void createDir(String dirName) {
 		validConnect()
+		validWrite()
 
 		def curDir = channelFtp.pwd()
 		String cdDir = null
@@ -449,6 +452,7 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void removeDir(String dirName, Boolean recursive) {
 		validConnect()
+		validWrite()
 
         if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
 		try {
@@ -470,7 +474,8 @@ class SFTPManager extends Manager implements UserLogins {
      * @param objName
      */
     private void doDeleteDirectory(String objName) {
-        if (objName in ['.', '..']) return
+        if (objName in ['.', '..'])
+			return
 
         if (channelFtp.stat(objName).isDir()) {
             channelFtp.cd(objName)
@@ -492,6 +497,7 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void rename(String fileName, String path) {
 		validConnect()
+		validWrite()
 
 		try {
 			channelFtp.rename(fileName, path)
@@ -610,6 +616,7 @@ exit \$LastExitCode
 	@Override
 	void setLastModified(String fileName, Long time) {
 		validConnect()
+		validWrite()
 
 		if (saveOriginalDate)
 			channelFtp.setMtime(fileName, (time / 1000L).intValue())
@@ -624,10 +631,10 @@ exit \$LastExitCode
 		def loginStr = (login != null)?"$login@":''
 		if (rootPath == null || rootPath.length() == 0)
 			res = "sftp $loginStr$server"
-		else if (currentRootPath[0] == '/')
-			res = "sftp $loginStr$server:$currentRootPath"
+		else if (rootPath[0] == '/')
+			res = "sftp $loginStr$server:$rootPath"
 		else
-			res = "sftp $loginStr$server:/$currentRootPath"
+			res = "sftp $loginStr$server:/$rootPath"
 
 		return res
 	}

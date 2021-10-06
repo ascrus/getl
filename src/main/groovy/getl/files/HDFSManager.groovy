@@ -201,9 +201,12 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     private fullName(String dir, String file) {
-        if (dir != null && dir[0] == '/' && StringUtils.LeftStr(dir, 6) != '/user/') dir = dir.substring(1)
-        if (dir == null) dir = currentPath
-        if (!((dir + '/').matches(rootPath + '/.*'))) dir = currentRootPath + '/' + dir
+        if (dir != null && dir[0] == '/' && StringUtils.LeftStr(dir, 6) != '/user/')
+            dir = dir.substring(1)
+        if (dir == null)
+            dir = currentPath
+        if (!((dir + '/').matches(rootPath + '/.*')))
+            dir = currentRootPath + '/' + dir
         return ((dir != null)?dir:'') + ((file != null)?"/$file":'')
     }
 
@@ -217,7 +220,7 @@ class HDFSManager extends Manager implements UserLogins {
         @CompileStatic
         @Override
         Integer size() {
-            listFiles.length
+            (listFiles != null)?listFiles.length:0
         }
 
         @CompileStatic
@@ -329,6 +332,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void upload(String path, String fileName) {
         validConnect()
+        validWrite()
 
         def fn = ((path != null)?path + "/":"") + fileName
         try {
@@ -346,6 +350,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void removeFile(String fileName) {
         validConnect()
+        validWrite()
 
         try {
             client.delete(fullPath(_currentPath, fileName), false)
@@ -359,6 +364,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void createDir(String dirName) {
         validConnect()
+        validWrite()
 
         try {
             client.mkdirs(fullPath(_currentPath, dirName))
@@ -372,6 +378,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void removeDir(String dirName, Boolean recursive) {
         validConnect()
+        validWrite()
 
         try {
             client.delete(fullPath(_currentPath, dirName), recursive)
@@ -385,6 +392,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void rename(String fileName, String path) {
         validConnect()
+        validWrite()
 
         try {
             if (FileUtils.RelativePathFromFile(path, '/') == '.')
@@ -432,6 +440,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void setLastModified(String fileName, Long time) {
         validConnect()
+        validWrite()
 
         if (saveOriginalDate)
             client.setTimes(fullPath(_currentPath, fileName), time, -1)
@@ -445,10 +454,10 @@ class HDFSManager extends Manager implements UserLogins {
         String res
         if (rootPath == null || rootPath.length() == 0)
             res = "hdfs://$server"
-        else if (currentRootPath[0] == '/')
-            res = "hdfs://$server$currentRootPath"
+        else if (rootPath[0] == '/')
+            res = "hdfs://$server$rootPath"
         else
-            res = "hdfs://$server/$currentRootPath"
+            res = "hdfs://$server/$rootPath"
 
         return res
     }

@@ -37,6 +37,8 @@ logFine "  files: ${scripts.join(', ')}"
 logFinest "Connect to server $con ..."
 con.connected = true
 
+def res = [:] as Map<String, Object>
+
 //noinspection GroovyVariableNotAssigned
 sql {scripter ->
     useConnection con
@@ -46,9 +48,12 @@ sql {scripter ->
             logFinest "Executing SQL script file \"$fileName\" ..."
             def fn = ((path != null)?(path + '/'):'') + fileName
             if (ext != null)
-                extVars = ext
+                vars = ext
             runFile fn
             logInfo "SQL script file \"$fileName\" executed successfully"
+            res.putAll(vars)
         }
     }
 }
+
+return res
