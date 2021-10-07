@@ -16,6 +16,7 @@ import getl.csv.CSVDriver.WriterParams
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 class CSVEscapeTokenizer extends Tokenizer {
 	CSVEscapeTokenizer (Reader reader, CsvPreference preferences, Boolean useHeader) {
 		super(reader, preferences)
@@ -36,7 +37,6 @@ class CSVEscapeTokenizer extends Tokenizer {
 	static private final Pattern pattern3 = StringUtils.SearchPattern('\u0081')
 	static private final String replace3 = '\\\\'
 	
-	@CompileStatic
 	@Override
 	protected String readLine() throws IOException {
 		def res = super.readLine()

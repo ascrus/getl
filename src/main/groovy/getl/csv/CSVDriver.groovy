@@ -159,7 +159,7 @@ class CSVDriver extends FileDriver {
 		List<Field> fields = []
 		header.each { String name ->
 			if (name == null || name.length() == 0) throw new ExceptionGETL("Detected empty field name for $header")
-			fields << new Field(name: name/*.toLowerCase()*/, type: Field.Type.STRING)
+			fields << new Field(name: name, type: Field.Type.STRING)
 		}
 		return fields
 	}
@@ -168,13 +168,13 @@ class CSVDriver extends FileDriver {
 													   String locale, String decimalSeparator, String formatDate,
 													   String formatTime, String formatDateTime, String formatTimestampWithTz,
 													   Boolean isValid) {
-		CellProcessor cp
+		CellProcessor cp = null
 		if (field.type == null || (field.type in [Field.stringFieldType, Field.objectFieldType, Field.rowidFieldType, Field.uuidFieldType])) {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
 
-			if (BoolUtils.IsValue(field.trim))
-				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())
+			/*if (BoolUtils.IsValue(field.trim))
+				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())*/
 
 			if (isEscape && field.type == Field.Type.STRING) {
 				if (!isWrite)
@@ -281,8 +281,8 @@ class CSVDriver extends FileDriver {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
 
-			if (BoolUtils.IsValue(field.trim))
-				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())
+			/*if (BoolUtils.IsValue(field.trim))
+				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())*/
 
 			if (isEscape)
 				if (!isWrite)
@@ -299,14 +299,20 @@ class CSVDriver extends FileDriver {
 
 		if (!BoolUtils.IsValue(field.isNull, true) && isValid)
 			cp = (cp != null)?new NotNull(cp):new NotNull()
-		else
-			cp = (cp != null)?new Optional(cp):new Optional()
+		else if (cp != null)
+			cp = new Optional(cp)
+			//cp = (cp != null)?new Optional(cp):new Optional()
+
+		if (!isWrite && BoolUtils.IsValue(field.trim)) {
+			def isStr = field.type in [Field.stringFieldType, Field.textFieldType]
+			cp = (cp != null) ? new CSVTrimProcessor(!isStr, cp) : new CSVTrimProcessor(isStr)
+		}
 
 		if (nullAsValue != null) {
 			if (isWrite)
-				cp = new ConvertNullTo(nullAsValue, cp)
+				cp = (cp != null)?new ConvertNullTo(nullAsValue, cp):new ConvertNullTo(nullAsValue)
 			else
-				cp = new CSVConvertToNullProcessor(nullAsValue, cp)
+				cp = (cp != null)?new CSVConvertToNullProcessor(nullAsValue, cp):new CSVConvertToNullProcessor(nullAsValue)
 		}
 
 		return cp

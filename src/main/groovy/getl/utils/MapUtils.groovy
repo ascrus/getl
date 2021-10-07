@@ -1136,4 +1136,25 @@ class MapUtils {
 
 		return res
 	}
+
+	/**
+	 * Convert empty string value to null
+	 * @param map map structure
+	 */
+	static void EmptyValue2Null(Map map) {
+		if (map == null)
+			return
+
+		map.each { name, value ->
+			if (value == null)
+				return
+
+			if (value instanceof Map)
+				EmptyValue2Null(value as Map)
+			else if (value instanceof List)
+				ListUtils.EmptyValue2Null(value as List)
+			else if (value instanceof String && value.length() == 0)
+				map.put(name, null)
+		}
+	}
 }

@@ -106,6 +106,11 @@ class VerticaDriver extends JDBCDriver {
 		return result
 	}
 
+	@Override
+	String generateComputeDefinition(Field f) {
+		return "DEFAULT USING ${f.compute}"
+	}
+
 	/**
 	 * Convert text to unicode escape Vertica string
 	 * @param value

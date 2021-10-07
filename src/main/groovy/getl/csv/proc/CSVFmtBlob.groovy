@@ -7,6 +7,7 @@ import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 import getl.utils.*
 
+@CompileStatic
 class CSVFmtBlob extends CellProcessorAdaptor {
 	CSVFmtBlob() {
 		super()
@@ -16,7 +17,6 @@ class CSVFmtBlob extends CellProcessorAdaptor {
 		super(next)
 	}
 
-	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)

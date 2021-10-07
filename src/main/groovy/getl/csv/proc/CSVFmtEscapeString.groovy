@@ -6,6 +6,7 @@ import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.util.CsvContext
 
+@CompileStatic
 class CSVFmtEscapeString extends CellProcessorAdaptor implements StringCellProcessor {
     CSVFmtEscapeString() {
         super()
@@ -15,7 +16,6 @@ class CSVFmtEscapeString extends CellProcessorAdaptor implements StringCellProce
         super(next)
     }
 
-    @CompileStatic
     @Override
     <T> T execute(final Object value, final CsvContext context) {
         return next.execute(StringUtils.EscapeJavaWithoutUTF(value as String), context)

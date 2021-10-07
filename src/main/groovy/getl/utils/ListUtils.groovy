@@ -301,4 +301,27 @@ class ListUtils {
 
 		return res
 	}
+
+	/**
+	 * Convert empty string value to null
+	 * @param list list structure
+	 */
+	static void EmptyValue2Null(List list) {
+		if (list == null)
+			return
+
+		for (int i = 0; i < list.size(); i++) {
+			def value = list.get(i)
+
+			if (value == null)
+				continue
+
+			if (value instanceof Map)
+				MapUtils.EmptyValue2Null(value as Map)
+			else if (value instanceof List)
+				EmptyValue2Null(value as List)
+			else if (value instanceof String && value.length() == 0)
+				list.set(i, null)
+		}
+	}
 }

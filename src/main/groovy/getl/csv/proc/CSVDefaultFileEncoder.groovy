@@ -14,6 +14,7 @@ import getl.csv.CSVDriver.WriterParams
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 	CSVDefaultFileEncoder (WriterParams wp) {
 		super()
@@ -42,7 +43,6 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 
 	public Long writeSize = 0L
 
-	@CompileStatic
 	@Override
     String encode(String value, final CsvContext context, final CsvPreference pref) {
 		if (context.lineNumber == 1 && header)

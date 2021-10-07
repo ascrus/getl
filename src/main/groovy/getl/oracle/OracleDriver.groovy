@@ -225,7 +225,12 @@ class OracleDriver extends JDBCDriver {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" +
 				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
 				((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
-				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" COMPUTED BY ${f.compute}":"")
+				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" ${generateComputeDefinition(f)}":"")
+	}
+
+	@Override
+	String generateComputeDefinition(Field f) {
+		return "COMPUTED BY ${f.compute}"
 	}
 
 	@SuppressWarnings(['SpellCheckingInspection', 'SqlNoDataSourceInspection'])

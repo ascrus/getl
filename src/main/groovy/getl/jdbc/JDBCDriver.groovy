@@ -1167,11 +1167,17 @@ class JDBCDriver extends Driver {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && autoIncrement != null)?" $autoIncrement":"") +
 				((isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
-				((isSupport(Support.COMPUTE_FIELD) && f.compute != null)?" AS ${f.compute}":"")
+				((isSupport(Support.COMPUTE_FIELD) && f.compute != null)?" ${generateComputeDefinition(f)}":"")
 	}
 
+	/** Generate default constraint for field of table */
 	String generateDefaultDefinition(Field f) {
 		return "DEFAULT ${f.defaultValue}"
+	}
+
+	/** Generate default constraint for field of table */
+	String generateComputeDefinition(Field f) {
+		return "AS ${f.compute}"
 	}
 
 	/**

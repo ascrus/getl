@@ -7,12 +7,12 @@ import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 import getl.utils.*
 
+@CompileStatic
 class CSVParseBlob extends CellProcessorAdaptor {
 	CSVParseBlob() {
 		super()
 	}
 
-	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)

@@ -15,6 +15,7 @@ import javax.sql.rowset.serial.SerialClob
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 class CSVEscapeMapReader extends CsvMapReader {
 	CSVEscapeMapReader(Reader reader, CsvPreference preferences) {
 		super(reader, preferences)
@@ -24,7 +25,6 @@ class CSVEscapeMapReader extends CsvMapReader {
 		super(tokenizer, preferences)
 	}
 	
-	@CompileStatic
 	@Override
     Map<String, Object> read(final String[] cols, final CellProcessor[] proc) throws IOException {
 		Map<String, Object> res = super.read(cols, proc)

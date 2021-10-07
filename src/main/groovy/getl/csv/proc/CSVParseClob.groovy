@@ -6,6 +6,7 @@ import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 
+@CompileStatic
 class CSVParseClob extends CellProcessorAdaptor implements StringCellProcessor {
 	CSVParseClob() {
 		super()
@@ -15,7 +16,6 @@ class CSVParseClob extends CellProcessorAdaptor implements StringCellProcessor {
 		super(next)
 	}
 
-	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)

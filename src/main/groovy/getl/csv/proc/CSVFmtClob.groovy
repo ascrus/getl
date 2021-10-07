@@ -8,6 +8,7 @@ import org.supercsv.util.CsvContext
 import getl.utils.*
 import java.sql.Clob
 
+@CompileStatic
 class CSVFmtClob extends CellProcessorAdaptor implements StringCellProcessor {
 	CSVFmtClob() {
 		super()
@@ -17,7 +18,6 @@ class CSVFmtClob extends CellProcessorAdaptor implements StringCellProcessor {
 		super(next)
 	}
 
-	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)

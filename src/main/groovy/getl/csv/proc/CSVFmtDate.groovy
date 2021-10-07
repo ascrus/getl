@@ -15,6 +15,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
     CSVFmtDate(String dateFormat, String localeStr) {
 		super()
@@ -45,7 +46,6 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@CompileStatic
 	@Override
     Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)

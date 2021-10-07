@@ -723,4 +723,38 @@ class CSVDriverTest extends GetlTest {
             assertEquals(4, errRows.size())
         }
     }
+
+    @Test
+    void testTrim() {
+        Getl.Dsl {
+            def ds = csvTemp {
+                fieldDelimiter = ';'
+
+                field('id') { type = bigintFieldType; trim = true }
+                field('name') { trim = true }
+                field('pok') { type = integerFieldType; trim = true }
+                field('value') { type = numericFieldType; length = 12; precision = 2; trim = true }
+                field('kpi') { type = doubleFieldType; trim = true }
+                field('flag') { type = booleanFieldType; trim = true }
+            }
+
+            textFile(ds.fullFileName()) {
+                writeln(' 1 ; aaa ; 123 ; 123.45 ; 123.45 ; true ')
+                writeln('  ; aaa ; 123 ; 123.45 ; 123.45 ; true ')
+            }
+
+            def rows = ds.rows()
+
+            def r = rows[0]
+            assertEquals(1, r.id)
+            assertEquals('aaa', r.name)
+            assertEquals(123, r.pok)
+            assertEquals(123.45, r.value)
+            assertEquals(123.45, r.kpi as Double, 0)
+            assertTrue(r.flag as Boolean)
+
+            r = rows[1]
+            assertNull(r.id)
+        }
+    }
 }

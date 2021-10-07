@@ -11,12 +11,14 @@ import org.supercsv.util.*
  * Csv null processor
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 class CSVConvertToNullProcessor extends CellProcessorAdaptor
 						implements BoolCellProcessor, DateCellProcessor, DoubleCellProcessor, 
 									LongCellProcessor, StringCellProcessor {
 	
-    CSVConvertToNullProcessor() {
+    CSVConvertToNullProcessor(String nullValue) {
 		super()
+		this.nullValue = nullValue
 	}
 
     CSVConvertToNullProcessor(String nullValue, CellProcessor next) {
@@ -26,12 +28,10 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 
 	private String nullValue
 
-	@CompileStatic
 	@Override
     <T> T execute(Object value, final CsvContext context) {
 		if (nullValue != null && value != null && value == nullValue) value = null
 		
 		next.execute(value, context)
 	}
-
 }
