@@ -87,7 +87,9 @@ class VerticaConnection extends JDBCConnection {
 
 		if (anotherConnection.login == null)
 			throw new ExceptionGETL("No login is specified for the connection \"$anotherConnection\"!")
-		if (anotherConnection.password == null)
+
+		def password = anotherConnection.loginManager.currentDecryptPassword()
+		if (password == null)
 			throw new ExceptionGETL("No password is specified for the connection \"$anotherConnection\"!")
 
 		def database, host, port = 5433
@@ -123,8 +125,8 @@ class VerticaConnection extends JDBCConnection {
 
 		def command = "CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}"
 		def p = [host: host, port: port, database: database,
-					  login: anotherConnection.login, password: anotherConnection.password]
-		def h = StringUtils.EvalMacroString(command, p + [password: StringUtils.Replicate('*', anotherConnection.password.length())])
+					  login: anotherConnection.login, password: password]
+		def h = StringUtils.EvalMacroString(command, p + [password: StringUtils.Replicate('*', password.length())])
 		executeCommand(command, [queryParams: p, historyText: h])
 
 		attachedVertica.put(anotherConnection.toString().toLowerCase(), database)

@@ -2,7 +2,10 @@
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.jdbc.JDBCDataset
+import getl.data.Dataset
+import getl.data.FileDataset
+import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
 import getl.models.SetOfTables
 import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
@@ -16,11 +19,23 @@ class TableSpec extends DatasetSpec {
     /** Owner list tables model */
     protected SetOfTables getOwnerSetOfTables() { ownerModel as SetOfTables }
 
-    /** Table name */
+    /** Source dataset name */
     String getSourceTableName() { datasetName }
-    /** Table name */
+    /** Source dataset name */
     void setSourceTableName(String value) { datasetName = value }
-    /** Table */
+    /** Source dataset */
     @JsonIgnore
-    JDBCDataset getSourceTable() { ownerModel.dslCreator.dataset(datasetName) as JDBCDataset }
+    Dataset getSourceDataset() { ownerModel.dslCreator.dataset(datasetName) as Dataset }
+
+    /** Source dataset as JDBC table */
+    @JsonIgnore
+    TableDataset getSourceTable() { sourceDataset as TableDataset }
+
+    /** Source dataset as JDBC query */
+    @JsonIgnore
+    QueryDataset getSourceQuery() { sourceDataset as QueryDataset }
+
+    /** Source dataset as file dataset */
+    @JsonIgnore
+    FileDataset getSourceFile() { sourceDataset as FileDataset }
 }

@@ -3,7 +3,10 @@ package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
+import getl.data.FileDataset
 import getl.exception.ExceptionModel
+import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
 import getl.models.MapTables
 import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
@@ -30,6 +33,18 @@ class MapTableSpec extends DatasetSpec {
     /** Source dataset */
     @JsonIgnore
     Dataset getSource() { ownerModel.dslCreator.dataset(datasetName) }
+
+    /** Source dataset as JDBC table */
+    @JsonIgnore
+    TableDataset getSourceTable() { source as TableDataset }
+
+    /** Source dataset as JDBC query */
+    @JsonIgnore
+    QueryDataset getSourceQuery() { source as QueryDataset }
+
+    /** Source dataset as file dataset */
+    @JsonIgnore
+    FileDataset getSourceFile() { source as FileDataset }
 
     /** Destination dataset name */
     String getDestinationName() { params.destinationName as String }
@@ -64,6 +79,14 @@ class MapTableSpec extends DatasetSpec {
     /** Destination dataset */
     @JsonIgnore
     Dataset getDestination() { ownerModel.dslCreator.dataset(destinationName) }
+
+    /** Destination dataset as JDBC table */
+    @JsonIgnore
+    TableDataset getDestinationTable() { destination as TableDataset }
+
+    /** Destination dataset as file dataset */
+    @JsonIgnore
+    FileDataset getDestinationFile() { destination as FileDataset }
 
     /** List of key values for partitions being processed */
     List getListPartitions() { params.listPartitions as List }

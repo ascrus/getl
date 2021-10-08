@@ -4,8 +4,10 @@ package getl.models
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
+import getl.data.FileConnection
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
+import getl.jdbc.JDBCConnection
 import getl.models.sub.BaseSpec
 import getl.models.opts.MapTableSpec
 import getl.models.sub.DatasetsModel
@@ -38,6 +40,14 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     void useSourceConnection(String connectionName) { useModelConnection(connectionName) }
     /** Use specified connection for source datasets */
     void useSourceConnection(Connection connection) { useModelConnection(connection) }
+
+    /** Source connection as JDBC connection */
+    @JsonIgnore
+    JDBCConnection getSourceJdbcConnection() { sourceConnection as JDBCConnection }
+
+    /** Source connection as file connection */
+    @JsonIgnore
+    FileConnection getSourceFileConnection() { sourceConnection as FileConnection }
 
     /** Used mapping datasets */
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
@@ -93,6 +103,14 @@ class MapTables extends DatasetsModel<MapTableSpec> {
 
         saveParamValue('destinationConnectionName', connection.dslNameObject)
     }
+
+    /** Destination connection as JDBC connection */
+    @JsonIgnore
+    JDBCConnection getDestinationJdbcConnection() { destinationConnection as JDBCConnection }
+
+    /** Destination connection as file connection */
+    @JsonIgnore
+    FileConnection getDestinationFileConnection() { destinationConnection as FileConnection }
 
     /**
      * Use dataset for the mapping
