@@ -182,14 +182,12 @@ class Field implements Serializable, Cloneable {
 	
 	private Boolean trim = false
 	/** Trim space (used for reading datasource) */
-	@JsonIgnore
 	Boolean getTrim() { return this.trim }
 	/** Trim space (used for reading datasource) */
 	void setTrim(Boolean value) { this.trim = value }
 	
 	private String decimalSeparator
 	/** Decimal separator */
-	@JsonIgnore
 	String getDecimalSeparator() { return this.decimalSeparator }
 	/** Decimal separator */
 	void setDecimalSeparator (String value) { this.decimalSeparator = value }

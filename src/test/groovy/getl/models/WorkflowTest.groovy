@@ -68,12 +68,14 @@ class WorkflowTest extends GetlDslTest {
                         }
                     }
                 }
-                assertEquals(5, execute())
+                assertEquals(5, execute([ext_var1: 'test']))
                 //results.each { name, result -> println "$name: $result" }
+
                 assertEquals(5, results.size())
                 assertEquals(1, result('root1').processed)
                 assertEquals([a: '1', b: '2'], result('root1').map)
                 assertEquals(['a', 'b', 'c'], result('root1').list)
+                assertEquals('test', result('root1').ext_var1)
                 assertEquals(2, result('root2').processed)
                 assertNull(result('root2').map)
                 assertNull(result('root2').list)
@@ -94,6 +96,7 @@ class WorkflowTest extends GetlDslTest {
                 assertEquals(2, execute([map: [a: '100', b: '200']]))
                 assertEquals([a: '100', b: '200'], result('root1').map)
                 assertEquals(['aa', 'bb', 'cc'], result('root1').list)
+                assertNull(result('root1').ext_var1)
 
                 configContent.countProcessed = 0
 

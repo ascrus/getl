@@ -451,7 +451,7 @@ return $className"""
                             }
                         }
 
-                        def scriptResult = dslCreator.callScript(runClass, execVars)
+                        def scriptResult = dslCreator.callScript(runClass, execVars, addVars)
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {
                             synchronized (_result) {
                                 _result.put(scriptName, scriptResult.result as Map)

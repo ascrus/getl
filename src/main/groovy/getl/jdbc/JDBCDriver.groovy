@@ -888,7 +888,7 @@ class JDBCDriver extends Driver {
 	/** Read fields from query */
 	protected List<Field> queryFields(Dataset dataset) {
 		def ds = dataset as QueryDataset
-		def sql = sqlForDataset(ds, [:])
+		def sql = sqlForDataset(ds, [:], false)
 		if (sql == null)
 			throw new ExceptionGETL('Invalid sql query for dataset!')
 
@@ -1450,11 +1450,12 @@ class JDBCDriver extends Driver {
 
 	/**
 	 * Generate select statement for read rows
-	 * @param dataset
-	 * @param params
+	 * @param dataset table or query
+	 * @param params generation parameters
+	 * @param checkVars check exists variables
 	 * @return
 	 */
-	String sqlForDataset(JDBCDataset dataset, Map params) {
+	String sqlForDataset(JDBCDataset dataset, Map params, Boolean checkVars = true) {
 		String query
 		if (isTable(dataset)) {
 			def table = dataset as TableDataset
@@ -1475,9 +1476,14 @@ class JDBCDriver extends Driver {
 			def selectFields = fields.join(",")
 
 			def where = params.where as String
-			if (where != null)
-				where = StringUtils.EvalMacroString(where,
-						dataset.queryParams() + ((params.queryParams as Map)?:[:]), false)
+			if (where != null) {
+				try {
+					where = StringUtils.EvalMacroString(where, dataset.queryParams() + ((params.queryParams as Map) ?: [:]), checkVars)
+				}
+				catch (Exception e) {
+					throw new ExceptionGETL("Error compiling \"where\" statement for table \"$dataset\": ${e.message}")
+				}
+			}
 
 			def order = ListUtils.ToList(params.order) as List<String>
 			String orderBy = null
@@ -1495,6 +1501,7 @@ class JDBCDriver extends Driver {
 		else {
 			if (!(dataset instanceof QueryDataset))
 				throw new ExceptionGETL("Not supported JDBC dataset class \"${dataset.getClass().name}\"!")
+
 			def qry = dataset as QueryDataset
 			query = qry.query
 			if (query == null && qry.scriptFilePath != null) {
@@ -1504,7 +1511,15 @@ class JDBCDriver extends Driver {
 				throw new ExceptionGETL("For dataset \"$dataset\" you need to specify the query text!")
 		}
 
-		return StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:[:]), false)
+		String res
+		try {
+			res = StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:[:]), checkVars)
+		}
+		catch (Exception e) {
+			throw new ExceptionGETL("Error compiling SQL script for dataset \"$dataset\": ${e.message}")
+		}
+
+		return res
 	}
 
 	/**

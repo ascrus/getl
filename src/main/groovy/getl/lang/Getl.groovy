@@ -1,5 +1,6 @@
 package getl.lang
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.*
 import getl.csv.*
 import getl.data.*
@@ -2066,22 +2067,24 @@ Examples:
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @param extVars extend script variables
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = [:]) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = [:], Map extVars = null) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
-        return runGroovyClass(groovyClass, runOnce, vars)
+        return runGroovyClass(groovyClass, runOnce, vars, extVars)
     }
 
     /**
      * Load and run groovy script file
      * @param fileName script file path
      * @param vars set values for script fields declared as "@Field"
+     * @param extVars extend script variables
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = [:]) {
-        runGroovyScriptFile(fileName, false, vars)
+    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = [:], Map extVars = null) {
+        runGroovyScriptFile(fileName, false, vars, extVars)
     }
 
     /**
@@ -2140,9 +2143,10 @@ Examples:
      * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @param extVars extend script variables
      * @return exit code
      */
-    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:], Map extVars = null) {
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
         if (previouslyRun && BoolUtils.IsValue(runOnce))
@@ -2152,7 +2156,7 @@ Examples:
         synchronized (_lockMainThread) {
             script = groovyClass.newInstance() as Script
         }
-        def res = runGroovyInstance(script, vars)
+        def res = runGroovyInstance(script, vars, extVars)
 
         if (!previouslyRun)
             executedClasses.addToList(className)
@@ -2171,13 +2175,21 @@ Examples:
         thread.params.workInMain = workInMain
     }
 
+    /** Extended script variables */
+    private final Map scriptExtendedVars = [:]
+    /** Extended script variables */
+    @JsonIgnore
+    @Synchronized('scriptExtendedVars')
+    Map getScriptExtendedVars() { scriptExtendedVars }
+
     /**
      * Run groovy script object
      * @param script groovy script object
      * @param vars set values for script fields declared as "@Field"
+     * @param extVars extend script variables
      * @return exitCode and result
      */
-    protected Map<String, Object> runGroovyInstance(Script script, Map vars = [:]) {
+    protected Map<String, Object> runGroovyInstance(Script script, Map vars = [:], Map extVars = null) {
         def exitCode = 0
         def result = null
         _repositoryFilter.pushOptions(true)
@@ -2187,8 +2199,12 @@ Examples:
                 def scriptGetl = script as Getl
 
                 synchronized (_lockMainThread) {
+                    if (extVars != null)
+                        scriptGetl.scriptExtendedVars.putAll(extVars)
+
                     if (scriptGetl != getlMainInstance)
                         scriptGetl.importGetlParams(_params)
+
                     scriptGetl._setGetlInstance()
 
                     switchThreadToMain(true)
@@ -2286,10 +2302,11 @@ Examples:
      * Run groovy script class
      * @param groovyClass groovy script class
      * @param vars set values for script fields declared as "@Field"
+     * @param extVars extend script variables
      * @return exitCode and result
      */
-    Map<String, Object> runGroovyClass(Class groovyClass, Map vars = [:]) {
-        runGroovyClass(groovyClass, false, vars)
+    Map<String, Object> runGroovyClass(Class groovyClass, Map vars = [:], Map extVars = null) {
+        runGroovyClass(groovyClass, false, vars, extVars)
     }
 
     /**
@@ -2363,8 +2380,8 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exitCode and result
      */
-    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:]) {
-        return runGroovyClass(scriptClass, runOnce, vars)
+    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:], Map extVars = null) {
+        return runGroovyClass(scriptClass, runOnce, vars, extVars)
     }
 
     /**
@@ -2373,8 +2390,8 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exitCode and result
      */
-    Map<String, Object> callScript(Class<Getl> scriptClass, Map vars = [:]) {
-        return runGroovyClass(scriptClass, false, vars)
+    Map<String, Object> callScript(Class<Getl> scriptClass, Map vars = [:], Map extVars = null) {
+        return runGroovyClass(scriptClass, false, vars, extVars)
     }
 
     /**

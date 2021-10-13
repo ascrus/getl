@@ -47,7 +47,7 @@ class QueryDataset extends JDBCDataset {
 
 	@Override
 	@JsonIgnore
-	String getObjectName() { (description != null)?description:'sql query' }
+	String getObjectName() { (dslNameObject != null)?"Jdbc query [$dslNameObject]":'Jdbc query' }
 
 	/**
 	 * Load script from file

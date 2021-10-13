@@ -390,8 +390,15 @@ class ConfigSlurper extends ConfigManager {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def res = 0
 		def lines = [] as List<String>
-		data.each { key, value ->
-			if (value == null) return
+		def keys = data.keySet().toList().sort()
+		keys.each { key ->
+			if (key == null)
+				return
+
+			def value = data.get(key)
+			if (value == null)
+				return
+
 			def varName = PrepareVariableName(key.toString(), isListMap)
 
 			if (value instanceof Map) {

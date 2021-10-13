@@ -71,6 +71,9 @@ class StringUtils {
 		return s.toString().padLeft(len, '0')
 	}
 
+	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[{]([^}{]+)[}]')
+	static private final Pattern EvalMacroStringPattern2 = Pattern.compile('[%]([^%]+)[%]')
+
 	/**
 	 * Set for string {variables}
 	 * @param value parsing string
@@ -90,7 +93,8 @@ class StringUtils {
 
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
-		def matcher = Pattern.compile('(?i)([{][~]*[a-z0-9._-]+[~]*[}])').matcher(value)
+		//def matcher = Pattern.compile('(?i)([{][~]*[a-z0-9._-]+[~]*[}])').matcher(value)
+		def matcher = EvalMacroStringPattern1.matcher(value)
 
 		def sb = new StringBuilder()
 		def pos = 0
@@ -98,16 +102,34 @@ class StringUtils {
 			sb.append(value, pos, matcher.start())
 			pos = matcher.end()
 
-			def groupName = matcher.group(1) as String
-			def vn = groupName.substring(1, groupName.length() - 1).trim()
+			def varName = matcher.group(0) as String
+			//def vn = varName.substring(1, varName.length() - 1).trim()
+			def vn = matcher.group(1) as String
+			if (vn.indexOf('%') != -1) {
+				def subVars = (vn =~ EvalMacroStringPattern2).findAll() as List<List>
+				def foundVars = 0
+				subVars.each { group ->
+					def subVarName = group[0] as String
+					if (vars.get(group[1]) != null) {
+						def varSubName = '{' + (group[1] as String) + '}'
+						vn = vn.replace(subVarName, varSubName)
+						foundVars++
+					}
+				}
+				if (foundVars == subVars.size()) {
+					def varValue = EvalMacroString(vn, vars, true, formatValue)
+					sb.append(varValue)
+				}
+				continue
+			}
 
 			def varValue = vars.get(vn)
-			if (varValue == null || (varValue instanceof Map) || (varValue instanceof Collection)) {
+			if (!vars.containsKey(vn) || (varValue instanceof Map) || (varValue instanceof Collection)) {
 				if (errorWhenUndefined)
 					throw new ExceptionGETL("Unknown variable in \"$vn\", " +
 							"known vars: ${vars.keySet().toList().join(', ')}")
 
-				sb.append(groupName)
+				sb.append(varName)
 
 				continue
 			}
