@@ -7,11 +7,14 @@ import getl.exception.ExceptionGETL
 import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.utils.DateUtils
 import getl.utils.MapUtils
 import getl.utils.Path
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.lang.reflect.ParameterizedType
+import java.sql.Timestamp
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -132,6 +135,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     void saveModelAttribute(String name, Object value) {
         modelAttrs.put(name, value)
     }
+
     /**
      * Get the value of the specified attribute
      * @param name attribute name
@@ -139,6 +143,90 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
      */
     @Synchronized('synchAttrs')
     Object modelAttribute(String name) { modelAttrs.get(name) }
+
+    /**
+     * Get the value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @return parsed attribute value
+     */
+    @Synchronized('synchAttrs')
+    String modelAttributeValue(String name, Map extVars = null) {
+        def val = modelAttributes().get(name)
+        if (val == null)
+            return null
+
+        String res
+        try {
+            res = StringUtils.EvalMacroString(val.toString(), modelVariables() + (extVars?:[:]))
+        }
+        catch (Exception e) {
+            throw new ExceptionDSL("Error parsing the value of the \"$name\" model attribute: ${e.message}")
+        }
+
+        return res
+    }
+
+    /**
+     * Get the integer value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @return parsed integer value
+     */
+    @Synchronized('synchAttrs')
+    Integer modelAttributeIntegerValue(String name, Map extVars = null) {
+        def value = modelAttributeValue(name, extVars)
+        if (value == null || value.length() == 0)
+            return null
+
+        if (!value.integer)
+            throw new ExceptionDSL("Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
+
+        return value.toInteger()
+    }
+
+    /**
+     * Get the long value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @return parsed long value
+     */
+    @Synchronized('synchAttrs')
+    Long modelAttributeLongValue(String name, Map extVars = null) {
+        def value = modelAttributeValue(name, extVars)
+        if (value == null || value.length() == 0)
+            return null
+
+        if (!value.bigInteger)
+            throw new ExceptionDSL("Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
+
+        return value.toBigInteger().longValue()
+    }
+
+    /**
+     * Get the timestamp value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @param format parse format (default yyyy-MM-dd HH:mm:ss)
+     * @return parsed timestamp value
+     */
+    @Synchronized('synchAttrs')
+    Timestamp modelAttributeTimestampValue(String name, Map extVars = null, String format = null) {
+        def value = modelAttributeValue(name, extVars)
+        if (value == null || value.length() == 0)
+            return null
+
+        Timestamp res
+        try {
+            res = DateUtils.ParseSQLTimestamp((format?:'yyyy-MM-dd HH:mm:ss'), value, false)
+        }
+        catch (Exception e) {
+            throw new ExceptionDSL("Error converting the value \"$value\" of the model attribute \"$name\" into a timestamp: ${e.message}!")
+        }
+
+        return res
+    }
+
     /**
      * Return model attributes
      * @param mask mask name

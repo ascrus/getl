@@ -1,12 +1,15 @@
 //file:noinspection unused
 package getl.models.sub
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
+import getl.utils.DateUtils
 import getl.utils.ListUtils
 import getl.utils.MapUtils
 import getl.utils.Path
+import getl.utils.StringUtils
 import groovy.transform.Synchronized
+
+import java.sql.Timestamp
 
 abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     BaseSpec(BaseModel model) {
@@ -87,15 +90,99 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     void saveAttribute(String name, Object value) {
         attrs.put(name, value)
     }
+
     /**
      * Get the value of the specified attribute
      * @param name attribute name
      * @return attribute value
      */
     @Synchronized('synchAttrs')
-    Object attribute(String name) {
-        //ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name))
-        attributes().get(name)
+    Object attribute(String name) { attributes().get(name) }
+
+    /**
+     * Get the value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @return parsed attribute value
+     */
+    @Synchronized('synchAttrs')
+    String attributeValue(String name, Map extVars = null) {
+        def val = attributes().get(name)
+        if (val == null)
+            return null
+
+        String res
+        try {
+            res = StringUtils.EvalMacroString(val.toString(), variables() + (extVars?:[:]))
+        }
+        catch (Exception e) {
+            throw new ExceptionDSL("Error parsing the value of the \"$name\" attribute from \"${objectNameInModel()}\" node: ${e.message}")
+        }
+
+        return res
+    }
+
+    /**
+     * Get the integer value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @return parsed integer value
+     */
+    @Synchronized('synchAttrs')
+    Integer attributeIntegerValue(String name, Map extVars = null) {
+        def value = attributeValue(name, extVars)
+        if (value == null || value.length() == 0)
+            return null
+
+        if (!value.integer)
+            throw new ExceptionDSL("Error converting the value \"$value\" of the attribute \"$name\" into a " +
+                    "number from \"${objectNameInModel()}\" node!")
+
+        return value.toInteger()
+    }
+
+    /**
+     * Get the long value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @return parsed long value
+     */
+    @Synchronized('synchAttrs')
+    Long attributeLongValue(String name, Map extVars = null) {
+        def value = attributeValue(name, extVars)?.toString()
+        if (value == null || value.length() == 0)
+            return null
+
+        if (!value.bigInteger)
+            throw new ExceptionDSL("Error converting the value \"$value\" of the attribute \"$name\" into a " +
+                    "number from \"${objectNameInModel()}\" node!")
+
+        return value.toBigInteger().longValue()
+    }
+
+    /**
+     * Get the timestamp value of the specified attribute with parsing variables
+     * @param name attribute name
+     * @param extVars extend variables
+     * @param format parse format (default yyyy-MM-dd HH:mm:ss)
+     * @return parsed timestamp value
+     */
+    @Synchronized('synchAttrs')
+    Timestamp attributeTimestampValue(String name, Map extVars = null, String format = null) {
+        def value = attributeValue(name, extVars)?.toString()
+        if (value == null || value.length() == 0)
+            return null
+
+        Timestamp res
+        try {
+            res = DateUtils.ParseSQLTimestamp((format?:'yyyy-MM-dd HH:mm:ss'), value, false)
+        }
+        catch (Exception e) {
+            throw new ExceptionDSL("Error converting the value \"$value\" of the attribute \"$name\" into a " +
+                    "timestamp from \"${objectNameInModel()}\" node: ${e.message}!")
+        }
+
+        return res
     }
 
     /**

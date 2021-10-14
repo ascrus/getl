@@ -264,7 +264,7 @@ Examples:
                 if (className == null && workflowName == null && workflowFileName == null)
                     throw new ExceptionDSL('Required argument "runclass" or "workflow" or  "workflowfile"!')
 
-                if (className != null && workflowName != null)
+                if (className != null && (workflowName != null || workflowFileName != null))
                     throw new ExceptionDSL('Only "runclass" or "workflow" arguments can be specified!')
 
                 if (className != null) {
@@ -318,28 +318,30 @@ Examples:
                 }
 
                 if (className == null)
-                    eng.setGetlSystemParameter('workflow_mode', true)
+                    eng.setGetlSystemParameter('workflow', workflowName?:FileUtils.FilenameWithoutExtension(FileUtils.FileName(workflowFileName)))
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>, false,
                         loadProperties)
                 if (className != null)
                     eng.logInfo("### Start script ${eng.getClass().name}")
-                else if (workflowName != null)
-                    eng.logInfo("### Start workflow $workflowName")
+                else if (workflowFileName != null)
+                    eng.logInfo("### Start workflow ${(workflowName != null)?"\"$workflowName\" ":''}from file \"$workflowFileName\"")
+
                 else
-                    eng.logInfo("### Start workflow file \"$workflowFileName\"")
+                    eng.logInfo("### Start workflow \"$workflowName\"")
 
                 try {
                     if (className != null)
                         eng.runGroovyInstance(eng, eng.configuration.manager.vars)
-                    else if (workflowName != null)
-                        eng.models.workflow(workflowName).execute(eng.configuration.manager.vars)
-                    else {
-                        def workflow = eng.models.workflow('##_main_##', true)
+                    else if (workflowFileName != null) {
+                        def workflow = eng.models.workflow((workflowName != null)?
+                                "##${workflowName.replace(':', '_')}##":'##workflow##', true)
                         eng.repositoryStorageManager {
                             readObjectFromFile(repository(RepositoryWorkflows), workflowFileName, null, workflow)
                         }
                         workflow.execute()
                     }
+                    else
+                        eng.models.workflow(workflowName).execute(eng.configuration.manager.vars)
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {

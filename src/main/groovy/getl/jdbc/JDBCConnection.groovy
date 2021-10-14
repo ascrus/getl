@@ -90,19 +90,6 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 
 	@Override
-	protected void doBeforeConnect() {
-		super.doBeforeConnect()
-		currentJDBCDriver.saveToHistory("-- USER CONNECTING " +
-				"${MapUtils.CopyOnly(params as Map<String, Object>, ['connectURL', 'connectHost', 'connectDatabase', 'login', 'autoCommit', 'driverName', 'driverPath', 'loginTimeout'])}")
-	}
-
-	@Override
-	protected void doBeforeDisconnect() {
-		super.doBeforeDisconnect()
-		currentJDBCDriver.saveToHistory("-- USER DISCONNECTING (URL: ${sysParams."currentConnectURL"})")
-	}
-
-	@Override
 	protected void doDoneConnect() {
 		super.doDoneConnect()
 		sysParams.sessionID = currentJDBCDriver.sessionID()
@@ -118,7 +105,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		super.doDoneDisconnect()
 		sysParams.sessionID = null
 	}
-	
+
 	/** Use exists JDBC connection */
 	@JsonIgnore
 	java.sql.Connection getJavaConnection() { params.javaConnection as java.sql.Connection }

@@ -627,7 +627,7 @@ class FileUtils {
 	 * @param isUnix return format (true-unix, false-windows, null-default os)
 	 * @return file name
 	 */
-	static String FileName(String filePath, Boolean isUnix = null) {
+	static String FileName(String filePath, /* TODO: need? */ Boolean isUnix = null) {
 		if (filePath == null)
 			return null
 		

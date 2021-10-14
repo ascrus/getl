@@ -667,6 +667,7 @@ class JDBCDriver extends Driver {
 		finally {
 			rs.close()
 		}
+		saveToHistory("-- RETRIEVE CATALOGS")
 
 		return res
 	}
@@ -719,6 +720,7 @@ class JDBCDriver extends Driver {
 		finally {
 			rs.close()
 		}
+		saveToHistory("-- RETRIEVE SCHEMAS FROM catalog=$catalog, schema pattern=$schemaPattern")
 
 		return res
 	}
@@ -778,6 +780,7 @@ class JDBCDriver extends Driver {
 		finally {
 			rs.close()
 		}
+		saveToHistory("-- RETRIEVE DATASETS FROM catalog=$catalog, schema pattern=$schemaPattern, table pattern=$tableNamePattern")
 		
 		return tables
 	}
@@ -2692,6 +2695,10 @@ $sql
 			rs.next()
 			res = rs.getLong(1)
 		}
+
+		def tableLimit = table.readOpts.limit?:0
+		if (tableLimit > 0 && res > tableLimit)
+			res = tableLimit
 
 		return res
 	}

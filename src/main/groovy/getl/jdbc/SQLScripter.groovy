@@ -366,7 +366,8 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param i
 	 */
 	private void doUpdate(List<String> st, Integer i) {
-		def rc = connection.executeCommand(command: sql)
+		def b = StringUtils.EvalMacroString(sql, allVars)
+		def rc = connection.executeCommand(command: b)
 		if (rc > 0) rowCount += rc
 		if (scriptLabel != null) {
 			vars.put(scriptLabel, rc)
@@ -539,7 +540,8 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			}
 			b.append(st[fs].replace('\r', '') + ";\n")
 		}
-		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction!")
+		if (fe == -1)
+			throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction!")
 
 		sql = StringUtils.EvalMacroString(b.toString(), allVars)
 		connection.executeCommand(command: sql)
