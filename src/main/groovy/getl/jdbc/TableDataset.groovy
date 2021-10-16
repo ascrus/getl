@@ -778,7 +778,7 @@ class TableDataset extends JDBCDataset {
 		if (query == null)
 			throw new ExceptionGETL('Required query parameter!')
 
-		def ds = new QueryDataset(connection: connection, query: query, queryParams: [table: fullTableName] + (qParams?:[:]))
+		def ds = new QueryDataset(connection: connection, query: query, queryParams: queryParams() + [table: fullTableName] + (qParams?:[:]))
 		return ds.rows()
 	}
 

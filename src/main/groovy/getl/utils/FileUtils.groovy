@@ -900,10 +900,13 @@ class FileUtils {
 		zipName = TransformFilePath(zipName)
 		path = TransformFilePath(path)
 
+		if (params == null)
+			params = [:]
+
 		zipName = new File(zipName).canonicalPath
 		def password = params.password as String
 		ZipFile zipFile = (password != null)?new ZipFile(zipName, password.toCharArray()):new ZipFile(zipName)
-        params = params?:[:]
+
 
 		ZipParameters parameters = new ZipParameters()
 		parameters.setCompressionMethod((params.compressionMethod != null)?(CompressionMethod.valueOf(params.compressionMethod as String)):CompressionMethod.DEFLATE)
