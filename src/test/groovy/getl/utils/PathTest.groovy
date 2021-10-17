@@ -42,10 +42,8 @@ class PathTest extends getl.test.GetlTest {
         assertNotNull(p.vars.subgroup)
         assertEquals('yyyy-MM-dd', p.vars.date?.format)
         assertEquals(2, p.vars.num.len)
-        assertEquals(p.variable('year').calc, p.vars.year?.calc)
-        assertNotNull(p.vars.field1)
-        assertEquals(Field.stringFieldType, p.vars.field1.type)
-        assertEquals(50, p.vars.field1.len)
+        assertEquals(p.variable('year').onCalc, p.vars.year?.calc)
+        assertNull(p.vars.field1)
     }
 
     @Test
@@ -104,5 +102,52 @@ class PathTest extends getl.test.GetlTest {
         assertTrue(Path.MatchList('b123', r))
         assertTrue(Path.MatchList('c', r))
         assertFalse(Path.MatchList('d', r))
+    }
+
+    @Test
+    void testCreateFromDescription() {
+        def desc = '/{dir}/{date}/{name}.{num}.{part}.csv?dir||/.+/;date|date|yyyyMMdd;name||\\|\\;|50;num|integer|||1|3;part|datetime|yyyy-MM-dd HH:mm:ss'
+        def m = new Path(desc)
+
+        def valid = {
+            assertEquals('/{dir}/{date}/{name}.{num}.{part}.csv', m.mask)
+            assertEquals(['date', 'dir', 'name', 'num', 'part'], m.vars.keySet().toList().sort())
+
+            assertEquals('.+', m.vars.dir.regular)
+
+            assertEquals('|;', m.vars.name.format)
+            assertEquals(50, m.vars.name.len)
+
+            assertEquals(Field.datetimeFieldType, m.vars.part.type)
+            assertEquals('yyyy-MM-dd HH:mm:ss', m.vars.part.format)
+
+            assertEquals(Field.integerFieldType, m.vars.num.type)
+            assertEquals(1, m.vars.num.lenMin)
+            assertEquals(3, m.vars.num.lenMax)
+
+            assertEquals(Field.dateFieldType, m.vars.date.type)
+            assertEquals('yyyyMMdd', m.vars.date.format)
+
+            assertEquals(desc, m.toString())
+        }
+        valid()
+
+        m = m.clonePath()
+        valid()
+    }
+
+    @Test
+    void testToString() {
+        assertEquals('{a}.{b}.*', new Path('{a}.{b}.*').toString())
+        assertEquals('{a}.{b}.*', new Path('{a}.{b}.*?a;b').toString())
+        assertEquals('{a}.{b}.*?a|date|yyyy-MM-dd', new Path('{a}.{b}.*?a|date').toString())
+        assertEquals('{a}.{b}.*?a|date|yyyyMMdd', new Path('{a}.{b}.*?a|date|yyyyMMdd').toString())
+        assertEquals('{a}.{b}.*?b|integer||10', new Path('{a}.{b}.*?b|integer||10;').toString())
+        assertEquals('{a}.{b}.*?a||/.+/;b||||1|2', new Path('{a}.{b}.*?a||/.+/;b||||1|2').toString())
+    }
+
+    @Test
+    void testClone() {
+
     }
 }

@@ -24,7 +24,28 @@ class Path implements Cloneable, GetlRepository {
 		registerMethod()
 	}
 
+	/**
+	 * Create new path for parameters<br>
+	 * <ul>
+	 * <li>String mask: mask of filename
+	 * <li>boolean sysVar: include system variables #file_date and #file_size
+	 * <li>Map<String, Map> vars: attributes of variable
+	 * </ul>
+	 * <i>Variable elements:</i>
+	 * <ul>
+	 * <li>type:type of the variable in the mask (STRING, INTEGER, BIGINT, DATE, DATETIME)</li>
+	 * <li>format: variable parsing format</li>
+	 * <li>len: constant variable length</li>
+	 * <li>lenMin: minimum variable length</li>
+	 * <li>lenMax: maximum variable length</li>
+	 * <li>regular: regular expression</li>
+	 * <li>calc: computed variable code
+	 * </ul>
+	 * @param params
+	 */
 	Path(Map params) {
+		if (params == null)
+			throw new ExceptionGETL('Parameter "params" required!')
 		registerMethod()
 		if (params?.vars != null) {
 			setMaskVariables(params.vars as Map)
@@ -32,10 +53,97 @@ class Path implements Cloneable, GetlRepository {
 		compile(MapUtils.CleanMap(params, ['vars']))
 	}
 
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
+	/**
+	 * Create new path for description<br><br>
+	 * The parameter description specifies the mask and its list of variables.<br><br>
+	 * <i>Syntax:</i><br>
+	 * mask?var_name|type|format|length|min_length|max_length;var_name2|...</b><br><br>
+	 * Description items:<br>
+	 * <ul>
+	 * <li>mask: mask of filename</li>
+	 * <li>var_name: variable name in mask</li>
+	 * <li>type: type of the variable in the mask (STRING, INTEGER, BIGINT, DATE, DATETIME)</li>
+	 * <li>format: variable parsing format</li>
+	 * <li>length: constant variable length</li>
+	 * <li>min_length: minimum variable length</li>
+	 * <li>max_length: maximum variable length</li>
+	 * </ul>
+	 * @param description - properties of the path being created
+	 */
+	Path(String description) {
+		if (description == null || description.length() == 0)
+			throw new ExceptionGETL('Parameter "params" required!')
+		registerMethod()
+		def params = [:] as Map<String, Object>
+		def i = description.indexOf('?')
+		if (i == -1)
+			params.mask = description
+		else {
+			params.mask = description.substring(0, i)
+
+			def vars = [:] as Map<String, Map>
+			def list = description.substring(i + 1).replace('\\|', '\u0001').replace('\\;', '\u0002')
+					.split(';')
+
+			def varNum = 0
+			list.each {str ->
+				varNum++
+
+				def opts = str.split('[|]').collect {
+					return it.replace('\u0001', '|').replace('\u0002', ';')
+				}
+				if (opts.size() > 6)
+					throw new ExceptionGETL("Incorrect number of parameters for $varNum variable!")
+
+				def varName = opts[0].trim()
+				if (varName.length() == 0)
+					throw new ExceptionGETL("Required name for $varNum variable!")
+
+				def varType = (opts.size() > 1 && opts[1].trim().length() > 0)?opts[1].trim().toUpperCase():null
+				def varFormat = (opts.size() > 2 && opts[2].trim().length() > 0)?opts[2].trim():null
+
+				def varLen = (opts.size() > 3 && opts[3].trim().length() > 0)?opts[3].trim():null
+				if (varLen != null && !varLen.integer)
+					throw new ExceptionGETL("Incorrect value \"$varLen\" of parameter \"length\" in variable \"$varName\"!")
+
+				def varMinLen = (opts.size() > 4 && opts[4].trim().length() > 0)?opts[4].trim():null
+				if (varMinLen != null && !varMinLen.integer)
+					throw new ExceptionGETL("Incorrect value \"$varMinLen\" of parameter \"min_length\" in variable \"$varName\"!")
+
+				def varMaxLen = (opts.size() > 5 && opts[5].trim().length() > 0)?opts[5].trim():null
+				if (varMaxLen != null && !varMaxLen.integer)
+					throw new ExceptionGETL("Incorrect value \"$varMaxLen\" of parameter \"max_length\" in variable \"$varName\"!")
+
+				def varParams = [:] as Map<String, Object>
+				if (varType != null)
+					varParams.put('type', varType)
+				if (varFormat != null) {
+					if (varFormat.matches('[/].+[/]'))
+						varParams.put('regular', varFormat.substring(1, varFormat.length() - 1))
+					else
+						varParams.put('format', varFormat)
+				}
+				if (varLen != null)
+					varParams.put('len', varLen.toInteger())
+				if (varMinLen != null)
+					varParams.put('lenMin', varMinLen.toInteger())
+				if (varMaxLen != null)
+					varParams.put('lenMax', varMaxLen.toInteger())
+
+				vars.put(varName, varParams)
+			}
+			if (!vars.isEmpty())
+				setMaskVariables(vars)
+		}
+
+		compile(params)
+	}
+
+	/** Parameters validator */
+	private ParamMethodValidator methodParams = new ParamMethodValidator()
 
 	private void registerMethod() {
-		methodParams.register("compile", ["mask", "sysVar", "patterns", "vars"])
+		methodParams.register('compile', ['mask', 'sysVar', 'vars'])
 	}
 
 	/**
@@ -115,60 +223,65 @@ class Path implements Cloneable, GetlRepository {
 	/** Expression mask file for SQL like */
 	String getLikeFile() { this.likeFile }
 
+	/** Compiled variables */
 	private Map<String, Map> vars = (MapUtils.UnmodifiableMap(new HashMap<String, Map>()) as Map<String, Map>)
 
 	/**
 	 * Compiled mask variables<br><br>
-	 * <b>Field for var:</b>
+	 * Variable fields:
 	 * <ul>
-	 * <li>Field.Type type	- type var
-	 * <li>String format	- parse format
-	 * <li>int len			- length value of variable
-	 * <li>int lenMin		- minimum length of variable
-	 * <li>int lenMax		- maximum length of variable
-	 * <li>Closure calc		- value calculation code
+	 * <li>Field.Type type: variable type</li>
+	 * <li>String format: parsing format</li>
+	 * <li>int len: length value of variable</li>
+	 * <li>int lenMin: minimum length of variable</li>
+	 * <li>int lenMax: maximum length of variable</li>
+	 * <li>String regular: regular expression (specified instead of format)</li>
+	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
 	Map<String, Map> getVars() { this.vars }
 
 	/**
-	 * Variable parameters for compiling a mask
-	 * <b>Field for var:</b>
+	 * Variable parameters for compiling mask
+	 * Variable fields:
 	 * <ul>
-	 * <li>Field.Type type	- type var
-	 * <li>String format	- parse format
-	 * <li>int len			- length value of variable
-	 * <li>int lenMin		- minimum length of variable
-	 * <li>int lenMax		- maximum length of variable
-	 * <li>Closure calc		- value calculation code
+	 * <li>Field.Type type: variable type</li>
+	 * <li>String format: parsing format</li>
+	 * <li>int len: length value of variable</li>
+	 * <li>int lenMin: minimum length of variable</li>
+	 * <li>int lenMax: maximum length of variable</li>
+	 * <li>String regular: regular expression (specified instead of format)</li>
+	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
-	private final def maskVariables = ([:] as Map<String, Map<String, Object>>)
+	private final Map<String, Map<String, Object>> maskVariables = ([:] as Map<String, Map<String, Object>>)
 
 	/**
-	 * Variable parameters for compiling a mask
-	 * <b>Field for var:</b>
+	 * Variable parameters for compiling mask
+	 * Variable fields:
 	 * <ul>
-	 * <li>Field.Type type	- type var
-	 * <li>String format	- parse format
-	 * <li>int len			- length value of variable
-	 * <li>int lenMin		- minimum length of variable
-	 * <li>int lenMax		- maximum length of variable
-	 * <li>Closure calc		- value calculation code
+	 * <li>Field.Type type: variable type</li>
+	 * <li>String format: parsing format</li>
+	 * <li>int len: length value of variable</li>
+	 * <li>int lenMin: minimum length of variable</li>
+	 * <li>int lenMax: maximum length of variable</li>
+	 * <li>String regular: regular expression (specified instead of format)</li>
+	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
 	Map<String, Map<String, Object>> getMaskVariables() { maskVariables }
 
 	/**
-	 * Variable parameters for compiling a mask
-	 * <b>Field for var:</b>
+	 * Variable parameters for compiling mask
+	 * Variable fields:
 	 * <ul>
-	 * <li>Field.Type type	- type var
-	 * <li>String format	- parse format
-	 * <li>int len			- length value of variable
-	 * <li>int lenMin		- minimum length of variable
-	 * <li>int lenMax		- maximum length of variable
-	 * <li>Closure calc		- value calculation code
+	 * <li>Field.Type type: variable type</li>
+	 * <li>String format: parsing format</li>
+	 * <li>int len: length value of variable</li>
+	 * <li>int lenMin: minimum length of variable</li>
+	 * <li>int lenMax: maximum length of variable</li>
+	 * <li>String regular: regular expression (specified instead of format)</li>
+	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
 	void setMaskVariables(Map<String, Map<String, Object>> value) {
@@ -193,10 +306,11 @@ class Path implements Cloneable, GetlRepository {
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Define variable options */
-	Map variable(String name,
+	PathVarsSpec variable(String name,
 				 @DelegatesTo(PathVarsSpec) @ClosureParams(value = SimpleType, options = ['getl.utils.opts.PathsVarSpec'])
 					Closure cl = null) {
-		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
+		if (name == null || name == '')
+			throw new ExceptionGETL('Name required for variable!')
 
 		def var = maskVariables.get(name) as Map
 		if (var == null) {
@@ -207,9 +321,10 @@ class Path implements Cloneable, GetlRepository {
 
 		def parent = new PathVarsSpec(dslCreator, true, var)
 		parent.runClosure(cl)
-		if (cl != null) isCompile = false
+		if (cl != null)
+			isCompile = false
 
-		return parent.params
+		return parent
 	}
 
 	/** Mask path pattern */
@@ -222,14 +337,24 @@ class Path implements Cloneable, GetlRepository {
 	Boolean getIsCompile() { isCompile }
 
 	/**
-	 * Compile path mask<br><br>
-	 * <b>Parameters</b>
+	 * Compile path mask.<br><br>
+	 * <i>Path parameters:</i><br>
 	 * <ul>
-	 * <li>String mask - mask of filename<br>
-	 * <li>boolean sysVar - include system variables #file_date and #file_size
-	 * <li>Map patterns - pattern of variable for use in generation regular expressions
-	 * <li>Map<String, Map> vars - attributes of variable
+	 * <li>String mask: mask of filename</li>
+	 * <li>boolean sysVar: include system variables #file_date and #file_size</li>
+	 * <li>Map<String, Map> vars: attributes of variable</li>
 	 * </ul>
+	 * <i>Variable elements:</i>
+	 * <ul>
+	 * <li>type:type of the variable in the mask (STRING, INTEGER, BIGINT, DATE, DATETIME)</li>
+	 * <li>format: variable parsing format</li>
+	 * <li>len: constant variable length</li>
+	 * <li>lenMin: minimum variable length</li>
+	 * <li>lenMax: maximum variable length</li>
+	 * <li>regular: regular expression</li>
+	 * <li>calc: computed variable code
+	 * </ul>
+	 * @param params path parameters
 	 */
 	void compile(Map params = [:]) {
 		if (params == null) params = [:]
@@ -237,10 +362,36 @@ class Path implements Cloneable, GetlRepository {
 		maskStr = (params.mask as String)?:mask
 		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
 		def sysVar = BoolUtils.IsValue(params.sysVar)
-		Map patterns = (params.patterns as Map)?:[:]
-		def varAttr = ([:] as Map<String, Map<String, Object>>)
+		def varAttr = [:] as Map<String, Map<String, Object>>
 		varAttr.putAll(maskVariables)
-		if (params.vars != null) MapUtils.MergeMap(varAttr, params.vars as Map<String, Map<String, Object>>)
+		if (params.vars != null)
+			MapUtils.MergeMap(varAttr, params.vars as Map<String, Map<String, Object>>)
+		varAttr.each { name, varParams ->
+			if (varParams == null) {
+				varParams = [:] as Map<String, Object>
+				varAttr.put(name, varParams)
+			}
+
+			varParams.keySet().toList().each { opt ->
+				if (!(opt in ['type', 'format', 'len', 'lenMin', 'lenMax', 'calc', 'regular']))
+					throw new ExceptionGETL("Unknown attribute \"$opt\" in \"$name\" variable!")
+			}
+
+			if (varParams.containsKey('type')) {
+				def type = varParams.get('type')
+				if (type instanceof String || type instanceof GString)
+					varParams.put('type', Field.Type.valueOf(type.toString()))
+			}
+
+			if (varParams.len != null && (!(varParams.len.toString()).integer))
+				throw new ExceptionGETL("Invalid value \"${varParams.len}\" for \"len\" attribute in \"$name\" variable!")
+
+			if (varParams.lenMin != null && (!(varParams.lenMin.toString()).integer))
+				throw new ExceptionGETL("Invalid value \"${varParams.lenMin}\" for \"lenMin\" attribute in \"$name\" variable!")
+
+			if (varParams.lenMax != null && (!(varParams.lenMax.toString()).integer))
+				throw new ExceptionGETL("Invalid value \"${varParams.lenMax}\" for \"lenMax\" attribute in \"$name\" variable!")
+		}
 
 		elements.clear()
 		likeElements.clear()
@@ -261,7 +412,6 @@ class Path implements Cloneable, GetlRepository {
 		StringBuilder rb = new StringBuilder()
 
 		def listFoundVars = [] as List<String>
-		def varsFormat = [:] as Map<String, String>
 		for (Integer i = 0; i < d.length; i++) {
 			Map p = [:]
 			p.vars = []
@@ -272,70 +422,75 @@ class Path implements Cloneable, GetlRepository {
 			while (s >= 0) {
 				def e = d[i].indexOf('}', s)
 				if (e >= 0) {
-					String df = null
+					String df
 
 					b.append(d[i].substring(f, s))
 
 					String vn = d[i].substring(s + 1, e).toLowerCase()
-					def pm = patterns.get(vn)
-					if (pm == null) {
-						def vt = varAttr.get(vn)
-						def type = vt?.type as Field.Type
-						if (type != null && type instanceof String) type = Field.Type."$type"
-						if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
-							if (vt.format != null) {
-								df = vt.format
-							}
-							else {
-								if (type == Field.dateFieldType) {
-									df = 'yyyy-MM-dd'
-								}
-								else if (type == Field.timeFieldType) {
-									df = 'HH:mm:ss'
-								}
-								else if (type == Field.datetimeFieldType) {
-									df = 'yyyy-MM-dd HH:mm:ss'
-								}
-								else {
-									df = 'yyyy-MM-dd\'T\'HH:mm:ssZ'
-								}
-							}
+					def vt = varAttr.get(vn)?:([:] as Map<String, Object>)
 
-							def vm = df.toLowerCase()
-							vm = vm.replace('\'', '')
-									.replace('d', '\\d')
-									.replace('y', '\\d')
-									.replace('m', '\\d')
-									.replace('h', '\\d')
-									.replace('s', '\\d')
-									.replace('t', '\\d')
-									.replace('z', '\\d')
+					if (vt.type == null)
+						vt.type = Field.stringFieldType
+					compVars.put(vn, vt)
 
-							b.append("($vm)")
-						}
-						else if (type in [Field.bigintFieldType, Field.integerFieldType]) {
-							if (vt?.len != null) {
-								b.append("(\\d{${vt.len}})")
-							}
-							else if (vt?.lenMin != null && vt?.lenMax != null) {
-								b.append("(\\d{${vt.lenMin},${vt.lenMax}})")
-							}
-							else {
-								b.append("(\\d+)")
-							}
+					def type = vt.type as Field.Type
+
+					if (vt.regular != null)
+						b.append("(${vt.regular})")
+					else if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
+						if (vt.format != null) {
+							df = vt.format.toString()
 						}
 						else {
-							if (vt?.format != null) {
-								df = vt.format as String
-								b.append("(${vt.format})")
+							if (type == Field.dateFieldType) {
+								df = 'yyyy-MM-dd'
+							}
+							else if (type == Field.timeFieldType) {
+								df = 'HH:mm:ss'
+							}
+							else if (type == Field.datetimeFieldType) {
+								df = 'yyyy-MM-dd HH:mm:ss'
 							}
 							else {
-								b.append("(.+)")
+								df = 'yyyy-MM-dd\'T\'HH:mm:ssZ'
 							}
+
+							vt.format = df
 						}
+
+						def vm = df.toLowerCase()
+						vm = vm.replace('\'', '')
+								.replace('d', '\\d')
+								.replace('y', '\\d')
+								.replace('m', '\\d')
+								.replace('h', '\\d')
+								.replace('s', '\\d')
+								.replace('t', '\\d')
+								.replace('z', '\\d')
+
+						b.append("($vm)")
+					}
+					else if (type in [Field.bigintFieldType, Field.integerFieldType]) {
+						if (vt.len != null)
+							b.append("(\\d{${vt.len}})")
+						else if (vt.lenMin != null && vt.lenMax != null)
+							b.append("(\\d{${vt.lenMin},${vt.lenMax}})")
+						else
+							b.append("(\\d+)")
 					}
 					else {
-						b.append("(${pm})")
+						if (vt.format != null) {
+							df = vt.format.toString()
+							b.append("($df)")
+						}
+						else {
+							if (vt.len != null)
+								b.append("(.+{${vt.len}})")
+							else if (vt.lenMin != null && vt.lenMax != null)
+								b.append("(.+{${vt.lenMin},${vt.lenMax}})")
+							else
+								b.append("(.+)")
+						}
 					}
 
 					if (vn in listFoundVars)
@@ -343,8 +498,6 @@ class Path implements Cloneable, GetlRepository {
 
 					(p.vars as List).add(vn)
 					listFoundVars << vn
-					if (df != null)
-						varsFormat.put(vn, df)
 
 					f = e + 1
 				}
@@ -366,27 +519,6 @@ class Path implements Cloneable, GetlRepository {
 				if (numLocalPath == -1) numLocalPath = i
 		}
 		rootPath = (rb.length() == 0)?".":rb.toString().substring(1)
-
-		for (Integer i = 0; i < elements.size(); i++) {
-			List<String> v = elements[i].vars as List<String>
-			for (Integer x = 0; x < v.size(); x++) {
-				def varName = v[x] as String
-				def varValue = [:] as Map<String, Object>
-
-				def df = varsFormat.get(varName)
-				if (df != null)
-					varValue.put('format', df)
-
-				compVars.put(varName, varValue)
-			}
-		}
-
-		patterns.each { k, v ->
-			def p = compVars.get(k) as Map
-			if (p != null) {
-				p.pattern = v
-			}
-		}
 		generateMaskPattern()
 
 		if (sysVar) {
@@ -394,23 +526,10 @@ class Path implements Cloneable, GetlRepository {
 			compVars.put("#file_size", [:])
 		}
 
-		varAttr.each { name, values ->
-			if (values == null)
-				return
-
-			def fn = name.toLowerCase()
-			Map<String, Object> attrList = compVars.get(fn)
-			if (attrList != null) {
-				if (values.calc != null)
-					throw new ExceptionGETL("The calculated variable \"$name\" cannot be used in the mask!")
-				values.each { attr, value ->
-					def a = attr.toLowerCase()
-					if (!(a in ['type', 'format', 'len', 'lenmin', 'lenmax']))
-						throw new ExceptionGETL("Unknown variable attribute \"${attr}\"!")
-
-					attrList.put(a, value)
-				}
-			}
+		varAttr.findAll { name, value -> value.calc != null }.each { name, values ->
+			if (name.toLowerCase() in listFoundVars)
+				throw new ExceptionGETL("The calculated variable \"$name\" cannot be used in the mask!")
+			compVars.put(name, values)
 		}
 
 		maskFile = maskStr.replace('$', '\\$')
@@ -423,20 +542,6 @@ class Path implements Cloneable, GetlRepository {
 		maskFile = maskFile.replace('\\', '\\\\')
 		likeFile = likeFile.replace('*', '%').replace('\\', '\\\\')
 				.replace('.', '\\.').replace('$', '\\$')
-
-		maskVariables.each { name, value ->
-			if (value == null)
-				return
-
-			if (value.calc != null) {
-				def cm = compVars.get(name)?:([:] as Map<String, Object>)
-				MapUtils.MergeMap(cm, value, false, false)
-				compVars.put(name, value)
-			}
-			else if (!compVars.containsKey(name)) {
-				compVars.put(name, value)
-			}
-		}
 
 		compVars.each { name, value ->
 			def type = value.type as Field.Type
@@ -480,7 +585,7 @@ class Path implements Cloneable, GetlRepository {
 		maskFolder = null
 		likeFolder = null
 
-		if (!elements.isEmpty() /*&& elements[elements.size() - 2].vars.size() > 0*/) {
+		if (!elements.isEmpty()) {
 			StringBuilder mp = new StringBuilder()
 			StringBuilder lp = new StringBuilder()
 			mp.append("(?i)")
@@ -496,7 +601,8 @@ class Path implements Cloneable, GetlRepository {
 
 	/** Generation mask path pattern on elements */
 	Pattern generateMaskPattern (Integer countElements) {
-		if (countElements > elements.size()) throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements")
+		if (countElements > elements.size())
+			throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements")
 		StringBuilder b = new StringBuilder()
 		b.append("(?i)")
 		for (Integer i = 0; i < countElements; i++) {
@@ -780,35 +886,56 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	String toString() {
-		StringBuilder b = new StringBuilder()
-		b.append("""original mask: $maskStr
-root path: $rootPath
-count level in path: $countLevel
-count root levels in path: $numLocalPath
-mask path: $maskPath
-mask folder: $maskFolder
-mask file: $maskFile
-like folder: $likeFolder
-like file: $likeFile
-variables: $vars
-elements:
-""")
-		for (Integer i = 0; i < elements.size(); i++) {
-			def pe = elements[i]
-			b.append("[${i+1}]:\t")
-			b.append(pe.mask)
-            List vr = pe.vars as List
-			if (vr.size() > 0) b.append(" [")
-			for (Integer v = 0; v < vr.size(); v++) {
-				b.append(vr.get(v))
-				if (v < vr.size() - 1)
-					b.append(", ")
+		if (mask == null)
+			return ''
+
+		if (!isCompile)
+			compile()
+
+		def sb = new StringBuilder()
+		sb.append(mask)
+		if (!vars.isEmpty()) {
+			def varDesc = [] as List<String>
+			vars.each { name, val ->
+				if (val == null && val.isEmpty())
+					return
+
+				def elements = [] as List<String>
+				def addElements = { v ->
+					if (v != null)
+						elements.add(v.toString())
+					else
+						elements.add('')
+				}
+
+				addElements((val.type != null && val.type != Field.stringFieldType)?(val.type as Field.Type).toString().toLowerCase():null)
+				String varFormat
+				if (val.regular != null)
+					varFormat = '/' + (val.regular as String) + '/'
+				else
+					varFormat = (val.format as String)
+				addElements(varFormat?.replace('|', '\\|')?.replace(';', '\\;'))
+				addElements(val.len)
+				addElements(val.lenMin)
+				addElements(val.lenMax)
+
+				for (int i = elements.size() - 1; i >= 0; i--) {
+					if (elements[i].length() == 0)
+						elements.remove(i)
+					else
+						break
+				}
+
+				if (!elements.isEmpty())
+					varDesc.add(name + '|' + elements.join('|'))
 			}
-			if (vr.size() > 0) b.append("]")
-			b.append("\n")
+			if (!varDesc.isEmpty()) {
+				sb.append('?')
+				sb.append(varDesc.join(';'))
+			}
 		}
 
-		return b.toString()
+		return sb.toString()
 	}
 
 	void dslCleanProps() {
@@ -857,7 +984,12 @@ elements:
 
 	/** Clone path */
 	Path clonePath() {
-		return new Path(mask: this.mask, vars: MapUtils.Clone(this.maskVariables))
+		def res = new Path()
+		res.dslCreator = this.dslCreator
+		res.mask = this.mask
+		res.maskVariables = MapUtils.Clone(this.maskVariables) as Map<String, Map<String, Object>>
+		res.compile()
+		return res
 	}
 
 	@Override

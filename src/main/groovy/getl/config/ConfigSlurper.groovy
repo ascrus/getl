@@ -304,6 +304,7 @@ class ConfigSlurper extends ConfigManager {
 		def fp = FileUtils.TransformFilePath(saveParams?.path as String)?:this.path()
 		def fn = (saveParams?.fileName as String)?:this.fileName
 		def cp = (saveParams?.codePage as String)?:this.codePage
+		def useVars = BoolUtils.IsValue(saveParams?.useVars)
 		def convVars = BoolUtils.IsValue(saveParams?.convertVars)
 		def tm = BoolUtils.IsValue(saveParams?.trimMap)
 		def sw = BoolUtils.IsValue(saveParams?.smartWrite)
@@ -319,7 +320,7 @@ class ConfigSlurper extends ConfigManager {
 		}
 		def ff = new File(fullConfigName(rp, fn))
 
-		SaveConfigFile(data: content, file: ff, codePage: cp, convertVars: convVars, trimMap: tm, smartWrite:  sw,
+		SaveConfigFile(data: content, file: ff, codePage: cp, useVars: useVars, convertVars: convVars, trimMap: tm, smartWrite:  sw,
 				owner: dslCreator)
 	}
 
@@ -328,13 +329,14 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data saved configuration
 	 * @param file saved file descriptor
 	 * @param codePage text encoding
+	 * @param useVars using config variable in content
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param trimMap
 	 * @param smartWrite don't overwrite the file if it hasn't changed
 	 * @param owner Getl instance
 	 */
 	@NamedVariant
-	static void SaveConfigFile(Map data, File file, String codePage = 'utf-8', Boolean convertVars = false,
+	static void SaveConfigFile(Map data, File file, String codePage = 'utf-8', Boolean useVars = false, Boolean convertVars = false,
 							   Boolean trimMap = false, Boolean smartWrite = false, Getl owner = null) {
 		def vars = data.vars as Map
 		if (vars != null && !vars.isEmpty()) {
@@ -346,7 +348,7 @@ class ConfigSlurper extends ConfigManager {
 
 		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 		StringBuilder sb = new StringBuilder()
-		if (SaveMap(data, sb, convertVars, trimMap) > 0) {
+		if (SaveMap(data, sb, useVars, convertVars, trimMap) > 0) {
 			int oldHash = (smartWrite && file.exists())?file.text.hashCode():0
 			try {
 				def str = sb.toString()
@@ -380,13 +382,15 @@ class ConfigSlurper extends ConfigManager {
 	 * Write map data
 	 * @param data stored map data
 	 * @param writer writer object
+	 * @param useVars using config variable in content
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param trimMap
 	 * @param tab indent when writing to text
 	 * @param isListMap data is in the list
 	 * @return count saved items
 	 */
-	static Integer SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Boolean trimMap = false, Integer tab = 0, Boolean isListMap = false) {
+	static Integer SaveMap(Map data, StringBuilder writer, Boolean useVars = false, Boolean convertVars = false, Boolean trimMap = false,
+						   Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def res = 0
 		def lines = [] as List<String>
@@ -405,7 +409,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, isListMap) > 0) {
+					if (SaveMap(map, sb, useVars, convertVars, trimMap, tab + 1, isListMap) > 0) {
 						def eqStr = (isListMap)?':':''
 						def dvStr1 = (isListMap)?'[':'{'
 						def dvStr2 = (isListMap)?']':'}'
@@ -418,7 +422,7 @@ class ConfigSlurper extends ConfigManager {
 				def list = value as List
 				if (!list.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveList(list, sb, convertVars, trimMap, tab + 1) > 0) {
+					if (SaveList(list, sb, useVars, convertVars, trimMap, tab + 1) > 0) {
 						def eqStr = (isListMap)?':':' ='
 						lines.add("${tabStr}${varName}${eqStr} [\n" + sb.toString() + "${tabStr}]")
 						res++
@@ -429,7 +433,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = (value as BaseSpec).params
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, isListMap) > 0) {
+					if (SaveMap(map, sb, useVars, convertVars, trimMap, tab + 1, isListMap) > 0) {
 						def eqStr = (isListMap)?':':''
 						def dvStr1 = (isListMap)?'[':'{'
 						def dvStr2 = (isListMap)?']':'}'
@@ -440,7 +444,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else {
 				def sb = new StringBuilder()
-				if (SaveObject(key, value, sb, convertVars, tab, isListMap)) {
+				if (SaveObject(key, value, sb, useVars, convertVars, tab, isListMap)) {
 					lines.add(sb.toString())
 					res++
 				}
@@ -461,12 +465,13 @@ class ConfigSlurper extends ConfigManager {
 	 * Write list data
 	 * @param data stored list data
 	 * @param writer writer object
+	 * @param useVars using config variable in content
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param trimMap
 	 * @param tab indent when writing to text
 	 * @return count saved items
 	 */
-	static Integer SaveList(List data, StringBuilder writer, Boolean convertVars = false, Boolean trimMap = false, Integer tab = 0) {
+	static Integer SaveList(List data, StringBuilder writer, Boolean useVars = false, Boolean convertVars = false, Boolean trimMap = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def i = 0
 		def res = 0
@@ -477,7 +482,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, true) > 0) {
+					if (SaveMap(map, sb, useVars, convertVars, trimMap, tab + 1, true) > 0) {
 						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
 					}
@@ -487,7 +492,7 @@ class ConfigSlurper extends ConfigManager {
 				def list = value as List
 				if (!list.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveList(list, sb, convertVars, trimMap, tab + 1) > 0) {
+					if (SaveList(list, sb, useVars, convertVars, trimMap, tab + 1) > 0) {
 						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
 					}
@@ -497,7 +502,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = (value as BaseSpec).params
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, true) > 0) {
+					if (SaveMap(map, sb, useVars, convertVars, trimMap, tab + 1, true) > 0) {
 						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
 					}
@@ -505,7 +510,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else {
 				def sb = new StringBuilder()
-				if (SaveObject(null, value, sb, convertVars, tab)) {
+				if (SaveObject(null, value, sb, useVars, convertVars, tab)) {
 					lines.add(sb.toString())
 					res++
 				}
@@ -523,12 +528,14 @@ class ConfigSlurper extends ConfigManager {
 	 * @param key object name
 	 * @param value object value
 	 * @param writer writer object
+	 * @param useVars using config variable in content
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param tab indent when writing to text
 	 * @param isListMap object is in the list
 	 * @return object saved
 	 */
-	static Boolean SaveObject(def key, def value, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+	static Boolean SaveObject(def key, def value, StringBuilder writer, Boolean useVars = false, Boolean convertVars = false,
+							  Integer tab = 0, Boolean isListMap = false) {
 		if (value instanceof Closure) return false
 
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
@@ -562,8 +569,8 @@ class ConfigSlurper extends ConfigManager {
 		}
 		else if (value instanceof String || value instanceof GString || value instanceof Enum) {
 			def str = value.toString()
-			def quote = (str.indexOf('${') == -1)?'\'':'"'
-			if (convertVars) {
+			def quote = (str.indexOf('${') == -1 || !useVars)?'\'':'"'
+			if (useVars && convertVars) {
 				value = value.toString().replace('${', '${vars.')
 			}
 			writer.append("${tabStr}${keyStr}${quote}${StringUtils.EscapeJavaWithoutUTF(value.toString())}${quote}")

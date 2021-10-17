@@ -46,7 +46,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder',
-				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'threadLevel', 'ignoreExistInStory',
+				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'filter', 'threadLevel', 'ignoreExistInStory',
 				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory', 'buildListThread'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
@@ -236,6 +236,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	String getCurrentRootPath() { currentRootPath }
 
 	/** Preparing root path for using */
+	@SuppressWarnings('GrMethodMayBeStatic')
 	String prepareRootPath(String path) {
 		FileUtils.PrepareDirPath(FileUtils.TransformFilePath(path, true), true)
 	}
@@ -849,9 +850,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Limit the size of files */
-	Integer getLimitSizeFiles() { params.limitSizeFiles as Integer }
+	Long getLimitSizeFiles() { params.limitSizeFiles as Long }
 	/** Limit the size of files */
-	void setLimitSizeFiles(Integer value) {
+	void setLimitSizeFiles(Long value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('limitSizeFiles value must be greater than zero!')
 
@@ -1131,23 +1132,24 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Build list files with path processor<br>
 	 * <p><b>Dynamic parameters:</b></p>
 	 * <ul>
-	 * <li>Path path - path processor
-	 * <li>String maskFile - mask processed files
-	 * <li>TableDataset story - story table on file history
-	 * <li>Boolean createStory - create story table if not exist (default false)
-	 * <li>Boolean recursive - find as recursive
-	 * <li>Boolean takePathInStory - save filepath in story table
-	 * <li>Boolean ignoreExistInStory - ignore already loaded file by story (default true)
-	 * <li>Integer limitDirs - limit processing directory
-	 * <li>Integer limitCountFiles - limit count files
-	 * <li>Integer limitSizeFiles - limit size files
-	 * <li>List<String> fileListSortOrder - sort order of the file list
-	 * <li>Integer threadLevel - thread processing directory
-	 * <li>List<Field> extendFields - list of extended fields
-	 * <li>List<List<String>> extendIndexes - list of extended indexes
+	 * <li>Path path: path processor</li>
+	 * <li>String maskFile: mask processed files</li>
+	 * <li>TableDataset story: story table on file history</li>
+	 * <li>Boolean createStory: create story table if not exist (default false)</li>
+	 * <li>Boolean recursive: find as recursive</li>
+	 * <li>Boolean takePathInStory: save filepath in story table</li>
+	 * <li>Boolean ignoreExistInStory: ignore already loaded file by story (default true)</li>
+	 * <li>Integer limitDirs: limit processing directory</li>
+	 * <li>Integer limitCountFiles: limit count files</li>
+	 * <li>Integer limitSizeFiles: limit size files</li>
+	 * <li>String filter: sql filter expressions on a list of files</li>
+	 * <li>List&lt;String&gt; fileListSortOrder: sort order of the file list</li>
+	 * <li>Integer threadLevel: thread processing directory</li>
+	 * <li>List&lt;Field&gt; extendFields: list of extended fields</li>
+	 * <li>List&lt;List&lt;String&gt;&gt; extendIndexes: list of extended indexes</li>
 	 * </ul>
-	 * @param params - parameters
-	 * @param code - processing code for file attributes as boolean code (Map file)
+	 * @param params parameters
+	 * @param code processing code for file attributes as boolean code (Map file)
 	 */
 	void buildList(Map lParams, ManagerListProcessing code) {
 		lParams = lParams?:[:]
@@ -1156,9 +1158,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 		validConnect()
 
 		String maskFile = lParams.maskFile?:null
-		def maskPath = (maskFile != null)?new Path(mask: maskFile):null
+		def maskPath = (maskFile != null)?new Path(maskFile):null
 		Path path = (lParams.path as Path)?.clonePath()
-		if (path != null && !path.isCompile) path.compile()
+		if (path != null && !path.isCompile)
+			path.compile()
 		def requiredAnalyze = (path != null && !(path.vars.isEmpty()))
 		def recursive = BoolUtils.IsValue(lParams.recursive, this.recursive)
 		def takePathInStory =  BoolUtils.IsValue(lParams.takePathInStory, this.takePathInStory)
@@ -1166,6 +1169,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def createStory = BoolUtils.IsValue(lParams.createStory, this.createStory)
 		def onlyFromStory = BoolUtils.IsValue(lParams.onlyFromStory)
 		def ignoreStory = BoolUtils.IsValue(lParams.ignoreStory)
+
+		def whereFilter = lParams.filter as String
 		
 		Integer limitDirs = (lParams.limitDirs as Integer)?:this.limitDirs
 		if (limitDirs != null && limitDirs <= 0)
@@ -1179,7 +1184,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (limitCountFiles != null && limitCountFiles <= 0)
 			throw new ExceptionGETL('"limitCountFiles" value must be great zero!')
 
-		Integer limitSizeFiles = (lParams.limitSizeFiles as Integer)?:this.limitSizeFiles
+		Long limitSizeFiles = (lParams.limitSizeFiles as Long)?:this.limitSizeFiles
 		if (limitSizeFiles != null && limitSizeFiles <= 0)
 			throw new ExceptionGETL('"limitSizeFiles" value must be great zero!')
 
@@ -1390,7 +1395,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				if (!newFiles.currentJDBCConnection.autoCommit)
 					newFiles.connection.commitTran()
 				if (countDouble != countDelete)
-					throw new ExceptionGETL("internal error on delete double files name for build list files in filemanager!")
+					throw new ExceptionGETL("Internal error on delete double files name for build list files in filemanager!")
 			}
 			doubleFiles.drop(ifExists: true)
 			
@@ -1400,7 +1405,8 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				useFiles.create()
 				
 				def validFiles = new TableDataset(connection: storyTable.connection,
-															tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+						tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
+						type: JDBCDataset.Type.LOCAL_TEMPORARY)
 				//noinspection SpellCheckingInspection
 				validFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
@@ -1431,35 +1437,49 @@ WHERE
 			}
 			
 			QueryDataset processFiles = new QueryDataset()
+			//noinspection GroovyMissingReturnStatement
 			processFiles.tap {
 				useConnection newFiles.currentJDBCConnection
 				if (limitSizeFiles == null)
 					query = '''
-SELECT {fields}, {story_flag}
-FROM {table} files {join}
-{order}
-{limit}'''
+SELECT *
+FROM (
+	SELECT {fields}, {story_flag}
+	FROM {table} files {%join%}
+) tab
+{WHERE %filter%}
+{ORDER BY %order%}
+{LIMIT %limit%}'''
 				else
 					query = '''
-SELECT {fields}, {story_flag}
+SELECT *
 FROM (
-	SELECT {fields}, {story_flag}, {inc_sum}
-	FROM {table} files {join}
-) x
-{where}
-{order}
-{limit}'''
+	SELECT {fields}, FILEINSTORY
+	FROM (
+		SELECT {fields}, {story_flag}{, %inc_sum%}
+		FROM {table} files {%join%}
+	) x
+	{WHERE %where%}
+) tab
+{WHERE %filter%}
+{ORDER BY %order%}
+{LIMIT %limit%}'''
 				queryParams.table = newFiles.fullTableName
 				queryParams.fields = newFiles.sqlFields(['ID', 'FILEINSTORY']).join(', ')
 				queryParams.story_flag = (storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'
-				queryParams.join = (storyTable != null)?"${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID":'' /* TODO: story.ID not found!!! */
-				queryParams.order = (!fileListSortOrder.isEmpty())?
-						('ORDER BY ' + fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')):''
-				queryParams.limit = (limitCountFiles != null)?"LIMIT $limitCountFiles":''
-				queryParams.inc_sum = (limitSizeFiles != null)?
-						"Sum(FILESIZE) OVER(ORDER BY ${fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')} " +
-								"RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS _sum":''
-				queryParams.where = (limitSizeFiles != null)?"WHERE _sum <= $limitSizeFiles":''
+				if (storyTable != null) /* TODO: story.ID not found!!! */
+					queryParams.join = "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
+				if (!fileListSortOrder.isEmpty())
+					queryParams.order = fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')
+				if (limitCountFiles != null)
+					queryParams.limit = limitCountFiles
+				if (limitSizeFiles != null)
+					queryParams.inc_sum = "Sum(FILESIZE) OVER(ORDER BY ${fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')} " +
+							"RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS _sum"
+				if (limitSizeFiles != null)
+					queryParams.where = "_sum <= $limitSizeFiles"
+				if (whereFilter != null)
+					queryParams.filter = whereFilter
 			}
 
 			def countFiles = 0L
@@ -1523,7 +1543,7 @@ FROM (
 	TableDataset buildListFiles(String mask,
 								@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerBuildListSpec'])
 								@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
-		def maskPath = (mask != null)?new Path(mask: mask):null
+		def maskPath = (mask != null)?new Path(mask):null
 		buildListFiles(maskPath, cl)
 	}
 
@@ -2368,7 +2388,7 @@ WHERE
 		validConnect()
 		validWrite()
 
-		def p = new Path(mask: maskDirs)
+		def p = new Path(maskDirs)
 		list().each { file ->
 			if (file.type == directoryType && p.match(file.filename as String)) {
 				logger.fine("Remove directory \"${file.filename}\"")

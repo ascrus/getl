@@ -109,6 +109,11 @@ class ManagerBuildListSpec extends BaseSpec {
         saveParamValue('limitSizeFiles', value)
     }
 
+    /** Sql filter expressions on a list of files */
+    String getWhereFiles() { params.filter as String }
+    /** Sql filter expressions on a list of files */
+    void setWhereFiles() { saveParamValue('filter', value) }
+
     /** Sort order of the file list */
     List<String> getSortOrder() { params.fileListSortOrder as List<String> }
     /** Sort order of the file list */

@@ -121,21 +121,21 @@ class ConfigSlurperTest extends GetlTest {
         (Config.content.map as Map)."\$1" = 6
         (Config.content.map as Map)."a#" = 7
         (Config.content.map as Map).'"1"' = 8
-        Config.SaveConfig(fileName: 'test_config.groovy')
+        Config.SaveConfig(fileName: 'test_config.groovy', useVars: true)
         Getl.pause(250)
         def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
         groovyFile.deleteOnExit()
         def fileDate = groovyFile.lastModified()
-        Config.SaveConfig(fileName: 'test_config.groovy', smartWrite: true)
+        Config.SaveConfig(fileName: 'test_config.groovy', smartWrite: true, useVars: true)
         assertEquals(fileDate, groovyFile.lastModified())
-//        println groovyFile.text
+        println groovyFile.text
 
         Config.ClearConfig()
         Config.SetValue('vars.config_var', 'variable value')
         Config.LoadConfig(fileName: configPath.currentPath() + '/' + 'test_config.groovy')
-//        println '----------------'
-//        println MapUtils.ToJson(Config.content)
-        assertEquals(Config.content.var1.toString(), 'local variable value')
+        println '----------------'
+        println MapUtils.ToJson(Config.content)
+        assertEquals('local variable value', Config.content.var1.toString())
         assertEquals('2019-02-01 01:02:03', Config.content.var2)
         assertTrue([a:1,b:2,c:3,d:'local variable value', '1': 111].equals(Config.content.var3[0]))
         assertTrue([a:4,b:5,c:6,d:'variable value', '_1': 222].equals(Config.content.var3[1]))

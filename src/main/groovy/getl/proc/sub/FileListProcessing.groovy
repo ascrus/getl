@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.proc.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -80,7 +81,8 @@ abstract class FileListProcessing implements GetlRepository {
     Integer getNumberAttempts() { (params.numberAttempts as Integer)?:1 }
     /** Number of attempts to copy a file without an error (default 1) */
     void setNumberAttempts(Integer value) {
-        if (value <= 0) throw new ExceptionFileListProcessing('The number of attempts cannot be less than 1!')
+        if (value <= 0)
+            throw new ExceptionFileListProcessing('Parameter "numberAttempts" must be greater than zero!')
         params.numberAttempts = value
     }
 
@@ -88,7 +90,8 @@ abstract class FileListProcessing implements GetlRepository {
     Integer getTimeAttempts() { (params.timeAttempts as Integer)?:1 }
     /** Time in seconds between attempts */
     void setTimeAttempts(Integer value) {
-        if (value <= 0) throw new ExceptionFileListProcessing('The time between attempts cannot be less than 1!')
+        if (value <= 0)
+            throw new ExceptionFileListProcessing('Parameter "timeAttempts" must be greater than zero!')
         params.timeAttempts = value
     }
 
@@ -178,6 +181,38 @@ abstract class FileListProcessing implements GetlRepository {
     String getCacheFilePath() { params.cacheFilePath as String }
     /** Path to file storage caching file processing history */
     void setCacheFilePath(String value) { params.cacheFilePath = value }
+
+    /** Process no more than the specified number of directories */
+    Integer getLimitDirs() { params.limitDirs as Integer }
+    /** Process no more than the specified number of directories */
+    void setLimitDirs(Integer value) {
+        if (value != null && value <= 0)
+            throw new ExceptionFileListProcessing('Parameter "limitDirs" must be greater than zero!')
+        params.limitDirs = value
+    }
+
+    /** Process no more than the specified number of files */
+    Integer getLimitCountFiles() { params.limitCountFiles as Integer }
+    /** Process no more than the specified number of files */
+    void setLimitCountFiles(Integer value) {
+        if (value != null && value <= 0)
+            throw new ExceptionFileListProcessing('Parameter "limitCountFiles" must be greater than zero!')
+        params.limitCountFiles = value
+    }
+
+    /** Process no more than the specified size of files */
+    Long getLimitSizeFiles() { params.limitSizeFiles as Long }
+    /** Process no more than the specified size of files */
+    void setLimitSizeFiles(Long value) {
+        if (value != null && value <= 0)
+            throw new ExceptionFileListProcessing('Parameter "limitSizeFiles" must be greater than zero!')
+        params.limitSizeFiles = value
+    }
+
+    /** Sql filter expressions on a list of files */
+    String getWhereFiles() { params.whereFiles as String }
+    /** Sql filter expressions on a list of files */
+    void setWhereFiles(String value) { params.whereFiles = value }
 
     /** Synchronized counter files */
     protected final SynchronizeObject counter = new SynchronizeObject()
@@ -506,7 +541,9 @@ abstract class FileListProcessing implements GetlRepository {
     protected void buildList () {
         def pt = profile("Getting a list of files from the source ${source.toString()}", "file")
         source.buildList([path: sourcePath, recursive: true, onlyFromStory: onlyFromStory, fileListSortOrder: order,
-                          ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes],
+                          ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes,
+                          limitDirs: limitDirs, limitCountFiles: limitCountFiles, limitSizeFiles: limitSizeFiles,
+                          filter: whereFiles],
                 createBuildList())
         pt.finish(source.countFileList)
 
@@ -646,6 +683,15 @@ abstract class FileListProcessing implements GetlRepository {
         if (inMemoryMode) logger.fine("  operating mode \"in-memory\" is used")
         logger.fine("  source mask path: ${sourcePath.maskStr}")
         logger.fine("  source mask pattern: ${sourcePath.maskPath}")
+
+        if (limitDirs != null)
+            logger.fine("  maximum number of processed directories: $limitDirs")
+        if (limitCountFiles != null)
+            logger.fine("  maximum number of processed files: $limitCountFiles")
+        if (limitSizeFiles != null)
+            logger.fine("  maximum size of processed files: ${FileUtils.SizeBytes(limitSizeFiles)}")
+        if (whereFiles != null)
+            logger.fine("  expression for filtering processed files: $whereFiles")
 
         if (removeFiles)
             logger.fine('  after processing the files will be removed on the source')

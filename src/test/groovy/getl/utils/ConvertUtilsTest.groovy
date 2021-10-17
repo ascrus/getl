@@ -11,6 +11,14 @@ class ConvertUtilsTest extends GetlTest {
         assertEquals(m, ConvertUtils.String2Structure(t))
         assertEquals(m, ConvertUtils.String2Structure('[' + t + ']'))
         assertEquals(m, ConvertUtils.String2Structure('{' + t + '}'))
+        assertEquals(m, ConvertUtils.String2Structure('(' + t + ')'))
+
+        def l = [1,2,3]
+        def s = '1,2,3'
+        assertEquals(l, ConvertUtils.String2Structure(s))
+        assertEquals(l, ConvertUtils.String2Structure('[' + s + ']'))
+        assertEquals(l, ConvertUtils.String2Structure('{' + s + '}'))
+        assertEquals(l, ConvertUtils.String2Structure('(' + s + ')'))
     }
 
     @Test

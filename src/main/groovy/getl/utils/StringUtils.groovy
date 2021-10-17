@@ -155,7 +155,8 @@ class StringUtils {
 
 	/** Replicate character */
 	static String Replicate(String c, Integer len) {
-		if (len == 0) return ""
+		if (len == 0)
+			return ""
 		return c * len
 	}
 
@@ -166,7 +167,8 @@ class StringUtils {
 	 * @return
 	 */
 	static String LeftStr(String s, Integer len) {
-		if (s == null) return null
+		if (s == null)
+			return null
 		return (s.length() <= len)?s:s.substring(0, len)
 	}
 
@@ -177,9 +179,11 @@ class StringUtils {
 	 * @return string of given length
 	 */
 	static String CutStr(String s, Integer len) {
-		if (s == null) return null
+		if (s == null)
+			return null
 		def l = s.length()
-		if (l <= len) return s
+		if (l <= len)
+			return s
 		return (l < 5 || len < 5)?s.substring(0, len):(s.substring(0, len - 4) + ' ...')
 	}
 
@@ -190,8 +194,10 @@ class StringUtils {
 	 * @return string of given length
 	 */
 	static String CutStrByWord(String s, Integer len) {
-		if (s == null) return null
-		if (s.length() <= len) return s
+		if (s == null)
+			return null
+		if (s.length() <= len)
+			return s
 
 		def l = s.trim().substring(0, len)
 		def m = l =~ /.+([ ]|[-]|[,]|[.]|[\/]|[\\])/

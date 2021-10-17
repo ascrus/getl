@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.exception.ExceptionDSL
@@ -142,23 +143,39 @@ class ConvertUtils {
 	 * @return structure (list or map)
 	 */
 	static Object String2Structure(String value) {
-		def str = value
-		switch (str[0]) {
-			case '[':
-				break
-			case '{':
-				if (str[str.length() - 1] != '}')
-					throw new ExceptionDSL("The closing symbol \"}\" was not found in the expression \"$value\"!")
-				str = '[' + str.substring(1, str.length() - 1) + ']'
+		if (value == null)
+			return null
 
-				break
-			default:
-				str = '[' + str + ']'
+		if (value == '')
+			return null
+
+		def trimValue = value.trim()
+		Closure<String> analyzeList = { String div1, String div2 ->
+			if (trimValue.indexOf(div1) == 0) {
+				if (trimValue[trimValue.length() - 1] != div2)
+					throw new ExceptionDSL("The closing symbol \"$div2\" was not found in the expression \"$value\"!")
+				return trimValue.substring(1, value.trim().length() - 1)
+			}
+			return null
 		}
 
-		str = Eval.me(str.toString())
+		def val = analyzeList('[', ']')
+		if (val == null)
+			val = analyzeList('{', '}')
+		if (val == null)
+			val = analyzeList('(', ')')
+		if (val == null)
+			val = value
 
-		return str
+		def res
+		try {
+			res = Eval.me('[' + val + ']')
+		}
+		catch (Exception e) {
+			throw new ExceptionGETL("Can't convert text \"$value\" to list: ${e.message}")
+		}
+
+		return res
 	}
 
 	/**

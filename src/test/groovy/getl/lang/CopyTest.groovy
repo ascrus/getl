@@ -285,8 +285,8 @@ class CopyTest extends TestDsl {
             def countFiles = this.copy(files('source'), sourceMask, [files('rename')] as List<Manager>,
                     filePath { mask = '.' },
                     filePath { mask = '{date}.{filenameonly}.{filedate}.{fileextonly}'
-                        variable('date') { format = 'yyyy_MM_dd'}
-                        variable('filedate') { format = 'yyyy_MM_dd-HH_mm_ss'}
+                        variable('date') { type = dateFieldType; format = 'yyyy_MM_dd'}
+                        variable('filedate') { type = datetimeFieldType; format = 'yyyy_MM_dd-HH_mm_ss'}
                     }
             )
             testCase {

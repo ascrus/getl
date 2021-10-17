@@ -2593,9 +2593,8 @@ Examples:
 
                         break
                     case Path:
-                        if (!value instanceof Path) {
-                            value = new Path(mask: value.toString())
-                        }
+                        if (!(value instanceof Path))
+                            value = new Path(value.toString())
 
                         break
 
@@ -4906,7 +4905,7 @@ Examples:
 
     /** File path parser */
     Path filePath(String mask) {
-        def parent = new Path(mask: mask)
+        def parent = new Path(mask)
         parent.dslCreator = this
         return parent
     }
