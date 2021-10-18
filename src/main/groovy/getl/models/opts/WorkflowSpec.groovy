@@ -84,31 +84,26 @@ class WorkflowSpec extends BaseSpec {
         saveParamValue('operation', value)
     }
 
-    /** Step start condition */
+    /** Step condition code */
     String getCondition() { params.condition as String }
-    /** Step start condition */
+    /** Step condition code */
     void setCondition(String value) { saveParamValue('condition', value) }
 
+    /** Step initialization code */
+    String getInitCode() { params.initCode as String }
+    /** Step initialization code */
+    void setInitCode(String value) { saveParamValue('initCode', value) }
+
+    /** Step finalization code */
+    String getFinalCode() { params.finalCode as String }
+    /** Step finalization code */
+    void setFinalCode(String value) { saveParamValue('finalCode', value) }
+
     /** Condition closure code */
-    Closure<Boolean> condition() {
+    /*Closure<Boolean> condition() {
         Closure<Boolean> res
 
         try {
-            /*def script = """import groovy.transform.BaseScript
-import groovy.transform.Field
-import getl.lang.Getl
-import getl.models.Workflows
-
-@BaseScript Getl getl
-
-@Field Workflows proc
-
-Map result(String scriptName) { proc.result(scriptName) }
-
-return {
-    $condition
-} as Closure<Boolean>
-"""*/
             def script = """import groovy.transform.BaseScript
 import groovy.transform.Field
 import getl.lang.Getl
@@ -133,7 +128,7 @@ return
         }
 
         return res
-    }
+    }*/
 
     /** Number of simultaneously executed script (default 1) */
     Integer getCountThreads() { params.countThreads as Integer }

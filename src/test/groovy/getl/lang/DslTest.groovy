@@ -1092,7 +1092,7 @@ ORDER BY t1.id"""
 
     @Test
     void test99_05RunApplication() {
-        String[] args = ['vars.field1="test application"', 'vars.field2=100']
+        String[] args = ['vars.field1="test application"', 'vars.field2=100', 'getlprop.filename=src/test/resources/getl-properties.conf', 'environment=dev']
         DslApplication.main(args)
         Dsl(this) {
             assertTrue(configContent.init as Boolean)

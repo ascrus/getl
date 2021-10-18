@@ -64,7 +64,7 @@ class LangSpec extends BaseSpec {
     /** Write SQL command from temporary database connection to history file */
     void setTempDBSQLHistoryFile(String value) {
         if (value != null)
-            FileUtils.ValidPath(value)
+            FileUtils.ValidFilePath(value)
         saveParamValue('tempDBSQLHistoryFile', value)
         TDS.storage.sqlHistoryFile = value
     }
@@ -155,17 +155,26 @@ class LangSpec extends BaseSpec {
      */
     void loadProjectProperties(String env = null, String filePath = null) {
         File mainFile
+        Boolean isResource
         if (filePath != null) {
             filePath = FileUtils.TransformFilePath(filePath)
             if (!FileUtils.ExistsFile(filePath))
                 throw new ExceptionDSL("Getl config file on path \"$filePath\" not found!")
 
             mainFile = new File(filePath)
+            isResource = false
+            dslCreator.logFinest("Loading configuration from \"${mainFile.canonicalPath}\" ...")
         }
-        else if (FileUtils.ExistsFile('getl-properties.conf'))
-            mainFile = new File('getl-properties.conf')
-        else
+        else if (FileUtils.ExistsFile('./getl-properties.conf')) {
+            mainFile = new File('./getl-properties.conf')
+            isResource = false
+            dslCreator.logFinest("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+        }
+        else {
             mainFile = FileUtils.FileFromResources('/getl-properties.conf')
+            isResource = true
+            dslCreator.logFinest("Loading configuration from \"resource:/getl-properties.conf\" ...")
+        }
 
         if (mainFile == null)
             return
@@ -174,8 +183,20 @@ class LangSpec extends BaseSpec {
                 environment: env, configVars: dslCreator.configVars, owner: dslCreator)
         getlConfigProperties.putAll(mainConfig)
 
-        def childFile = FileUtils.FileFromResources('/getl-properties-ext.conf')
-        if (childFile == null) return
+        File childFile
+        if (isResource)
+            childFile = FileUtils.FileFromResources('/getl-properties-ext.conf')
+        else
+            childFile = new File(mainFile.parent + '/getl-properties-ext.conf')
+
+        if (childFile == null || !childFile.exists())
+            return
+
+        if (isResource)
+            dslCreator.logFinest("Loading extended configuration from \"resource:/getl-properties-ext.conf\" ...")
+        else
+            dslCreator.logFinest("Loading extended configuration from \"${childFile.canonicalPath}\" ...")
+
         def childConfig = ConfigSlurper.LoadConfigFile(file: childFile, codePage: 'utf-8',
                 environment: env, configVars: dslCreator.configVars, owner: dslCreator)
         MapUtils.MergeMap(getlConfigProperties, childConfig, true, false)

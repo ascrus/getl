@@ -6,7 +6,6 @@ import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
-import javax.xml.bind.DatatypeConverter
 import java.security.Key
 import java.sql.Timestamp
 import java.util.regex.Pattern
@@ -450,7 +449,10 @@ class StringUtils {
 	 * @return
 	 */
 	static String RawToHex(byte[] bytes) {
-		return DatatypeConverter.printHexBinary(bytes)
+		if (bytes == null)
+			return null
+
+		return bytes.encodeHex().toString().toUpperCase()
 	}
 	
 	/**
@@ -459,8 +461,10 @@ class StringUtils {
 	 * @return
 	 */
 	static byte[] HexToRaw(String str) {
-		if (str == null) return null
-		return DatatypeConverter.parseHexBinary(str)
+		if (str == null)
+			return null
+
+		return str.decodeHex()
 	}
 	
 	/**
@@ -702,9 +706,11 @@ class StringUtils {
 	 */
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String Encrypt(String text, String password) {
-		if (text == null) return null
-		if (password == null || password.length() < 16)
-			throw new ExceptionGETL('Password must be at least 16 characters!')
+		if (text == null)
+			return null
+
+		if (password == null || password.length() < 16 || password.length() > 32)
+			throw new ExceptionGETL('Password must be between 16 and 32 characters!')
 
 		def l = password.length()
 		if ((l % 8) != 0) {
@@ -728,9 +734,11 @@ class StringUtils {
 	 */
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String Decrypt(String text, String password) {
-		if (text == null) return null
-		if (password == null || password.length() < 16)
-			throw new ExceptionGETL('Invalid password value!')
+		if (text == null)
+			return null
+
+		if (password == null || password.length() < 16 || password.length() > 32)
+			throw new ExceptionGETL('Password must be between 16 and 32 characters!')
 
 		def l = password.length()
 		if ((l % 8) != 0) {

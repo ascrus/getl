@@ -222,7 +222,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 		}
 		catch (Exception e) {
-			logger.severe("Error parse configuration file \"$file\", error: ${e.message}!")
+			logger.severe("Error parse configuration file \"${file.canonicalPath}\", error: ${e.message}!")
 			throw e
 		}
 

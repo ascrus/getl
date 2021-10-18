@@ -27,6 +27,7 @@ dependencies {
 	}
 	api 'org.codehaus.groovy:groovy-dateutil:3.0.9'
 	api 'org.codehaus.groovy:groovy-yaml:3.0.9'
+
 	api 'com.fasterxml.jackson.core:jackson-annotations:2.13.0'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'

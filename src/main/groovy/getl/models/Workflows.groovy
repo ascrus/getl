@@ -289,44 +289,70 @@ class Workflows extends BaseModel<WorkflowSpec> {
                     @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                             Closure<URLClassLoader> scriptClassLoader = null) {
         dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
-        def conditions = generateConditions(conditionClassLoader)
+        def userCodes = generateUserCode(conditionClassLoader)
         cleanResults()
 
         def res = 0
         usedSteps.each { node ->
-            res =+ stepExecute(node, conditions, addVars?:[:], scriptClassLoader)
+            res =+ stepExecute(node, userCodes, addVars?:[:], scriptClassLoader)
         }
         dslCreator.logInfo("--- Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
 
         return res
     }
 
-    /** Condition name from class of conditions */
+    /** Condition name from class of user codes */
     static private String conditionName(String stepName) {
         return "condition_${stepName.replace(' ', '')}"
     }
 
-    /** Generate class of conditions */
-    private Getl generateConditions(URLClassLoader classLoader) {
+    /** Initialization name from class of user codes */
+    static private String initCodeName(String stepName) {
+        return "init_${stepName.replace(' ', '')}"
+    }
+
+    /** Finalization name from class of user codes */
+    static private String finalCodeName(String stepName) {
+        return "final_${stepName.replace(' ', '')}"
+    }
+
+    /** Generate class of user codes */
+    private Getl generateUserCode(URLClassLoader classLoader) {
         def conditions = [:] as Map<String, String>
         findConditions(usedSteps[0], conditions)
-        if (conditions.isEmpty())
+
+        def inits = [:] as Map<String, String>
+        findInitCode(usedSteps[0], inits)
+
+        def finals = [:] as Map<String, String>
+        findFinalCode(usedSteps[0], finals)
+
+        if (conditions.isEmpty() && inits.isEmpty() && finals.isEmpty())
             return null
 
         def className = "Workflow_${StringUtils.RandomStr().replace('-', '')}"
         def sb = new StringBuilder()
         sb.append """class $className extends getl.lang.Getl {
-    public getl.models.Workflows proc
-    Map result(String scriptName) { proc.result(scriptName) }\n"""
+public getl.models.Workflows proc
+Map result(String scriptName) { proc.result(scriptName) }\n\n"""
 
-        conditions.each { stepName, condition ->
-            sb.append "Boolean ${conditionName(stepName)}() { $condition }\n"
+        conditions.each { stepName, code ->
+            sb.append "Boolean ${conditionName(stepName)}() {\n$code\n}\n"
+        }
+
+        inits.each { stepName, code ->
+            sb.append "void ${initCodeName(stepName)}() {\n$code\n}\n"
+        }
+
+        finals.each { stepName, code ->
+            sb.append "void ${finalCodeName(stepName)}() {\n$code\n}\n"
         }
 
         sb.append """}
 
 return $className"""
 
+//        println sb.toString()
         def classGenerated = GenerationUtils.EvalGroovyScript(sb.toString(), null, false, classLoader,
                 dslCreator) as Class<Getl>
         def obj = dslCreator.callScript(classGenerated, [proc: this]).result as Getl
@@ -334,29 +360,53 @@ return $className"""
         return obj
     }
 
-    /** Build list of conditions */
-    private void findConditions(WorkflowSpec node, Map<String, String> conditions) {
+    /** Build list of conditions code */
+    private void findConditions(WorkflowSpec node, Map<String, String> list) {
         if (node.condition != null)
-            conditions.put(node.stepName, node.condition)
+            list.put(node.stepName, node.condition)
 
-        node.nested.each {findConditions(it, conditions) }
+        node.nested.each {findConditions(it, list) }
+    }
+
+    /** Build list of initialization code */
+    private void findInitCode(WorkflowSpec node, Map<String, String> list) {
+        if (node.initCode != null)
+            list.put(node.stepName, node.initCode)
+
+        node.nested.each {findInitCode(it, list) }
+    }
+
+    /** Build list of finalization code */
+    private void findFinalCode(WorkflowSpec node, Map<String, String> list) {
+        if (node.finalCode != null)
+            list.put(node.stepName, node.finalCode)
+
+        node.nested.each {findFinalCode(it, list) }
     }
 
     /** Run workflow step */
-    private Integer stepExecute(WorkflowSpec node, Getl conditions, Map addVars,
+    private Integer stepExecute(WorkflowSpec node, Getl userCodes, Map addVars,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                         Closure<URLClassLoader> scriptClassLoader,
                                 String parentStep = null) {
         def res = 0
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
+
+        // Check condition for step
         if (node.condition != null) {
-            def conditionName = conditionName(node.stepName)
-            def conditionResult = conditions."$conditionName"()
+            def methodName = conditionName(node.stepName)
+            def conditionResult = userCodes."$methodName"()
             if (!BoolUtils.IsValue(conditionResult)) {
                 dslCreator.logWarn("Conditions for \"$stepLabel\" step do not require its execute!")
                 return res
             }
+        }
+
+        // Calc initialization code for step
+        if (node.initCode != null) {
+            def methodName = initCodeName(node.stepName)
+            userCodes."$methodName"()
         }
 
         try {
@@ -462,15 +512,21 @@ return $className"""
                 }
             }
 
+            // Calc finalization code for step
+            if (node.finalCode != null) {
+                def methodName = finalCodeName(node.stepName)
+                userCodes."$methodName"()
+            }
+
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, conditions, addVars, scriptClassLoader, stepLabel)
+                res += stepExecute(subNode, userCodes, addVars, scriptClassLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, conditions, addVars, scriptClassLoader, stepLabel)
+                    stepExecute(errStep, userCodes, addVars, scriptClassLoader, stepLabel)
             }
             finally {
                 throw e

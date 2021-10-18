@@ -41,8 +41,11 @@ class FileUtils {
 	 * @return true if the directory was created or false if it already existed
 	 */
 	static Boolean ValidFilePath(String fileName, Boolean deleteOnExit = false) {
-		fileName = ConvertToDefaultOSPath(fileName)
-		return ValidFilePath(new File(TransformFilePath(fileName)), deleteOnExit)
+		if (fileName == null)
+			return null
+
+		fileName = TransformFilePath(ConvertToDefaultOSPath(fileName), false)
+		return ValidPath(new File(fileName).parentFile, deleteOnExit)
 	}
 	
 	/**
@@ -52,7 +55,9 @@ class FileUtils {
 	 * @return true if object is file or the directory was created or false if it already existed
 	 */
 	static Boolean ValidFilePath(File file, Boolean deleteOnExit = false) {
-		if (file == null || file.parentFile == null) return null
+		if (file == null || file.parentFile == null)
+			return null
+
 		if (!file.isDirectory()) {
 			if (file.parentFile.mkdirs()) {
 				if (deleteOnExit) file.deleteOnExit()

@@ -1467,7 +1467,7 @@ FROM (
 				queryParams.table = newFiles.fullTableName
 				queryParams.fields = newFiles.sqlFields(['ID', 'FILEINSTORY']).join(', ')
 				queryParams.story_flag = (storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'
-				if (storyTable != null) /* TODO: story.ID not found!!! */
+				if (storyTable != null)
 					queryParams.join = "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 				if (!fileListSortOrder.isEmpty())
 					queryParams.order = fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')
@@ -1475,9 +1475,9 @@ FROM (
 					queryParams.limit = limitCountFiles
 				if (limitSizeFiles != null)
 					queryParams.inc_sum = "Sum(FILESIZE) OVER(ORDER BY ${fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')} " +
-							"RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS _sum"
+							"RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS _getl_sum"
 				if (limitSizeFiles != null)
-					queryParams.where = "_sum <= $limitSizeFiles"
+					queryParams.where = "_getl_sum <= $limitSizeFiles"
 				if (whereFilter != null)
 					queryParams.filter = whereFilter
 			}

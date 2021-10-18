@@ -3,6 +3,7 @@ package getl.models
 import getl.job.jdbc.RunSql
 import getl.lang.Getl
 import getl.test.GetlDslTest
+import getl.utils.BoolUtils
 import getl.utils.ListUtils
 import org.junit.Test
 
@@ -23,6 +24,9 @@ class WorkflowTest extends GetlDslTest {
             def mod1 = models.workflow('test:workflow', true) {
                 start('Start 1') {
                     countThreads = 2
+
+                    initCode = 'ifUnitTestMode { configContent.init_code = true }'
+                    finalCode = 'ifUnitTestMode { configContent.final_code = true }'
 
                     exec('root1') {
                         className = WorkflowStepTestScript.name
@@ -76,6 +80,8 @@ class WorkflowTest extends GetlDslTest {
                 assertEquals([a: '1', b: '2'], result('root1').map)
                 assertEquals(['a', 'b', 'c'], result('root1').list)
                 assertEquals('test', result('root1').ext_var1)
+                assertTrue(BoolUtils.IsValue(configContent.init_code))
+                assertTrue(BoolUtils.IsValue(configContent.final_code))
                 assertEquals(2, result('root2').processed)
                 assertNull(result('root2').map)
                 assertNull(result('root2').list)
