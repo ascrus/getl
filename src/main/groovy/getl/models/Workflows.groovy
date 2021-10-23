@@ -289,7 +289,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                     @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                             Closure<URLClassLoader> scriptClassLoader = null) {
         dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
-        def userCodes = generateUserCode(conditionClassLoader)
+        def userCodes = generateUserCode(conditionClassLoader, addVars)
         cleanResults()
 
         def res = 0
@@ -317,7 +317,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
     }
 
     /** Generate class of user codes */
-    private Getl generateUserCode(URLClassLoader classLoader) {
+    private Getl generateUserCode(URLClassLoader classLoader, Map addVars) {
         def conditions = [:] as Map<String, String>
         findConditions(usedSteps[0], conditions)
 
@@ -355,7 +355,7 @@ return $className"""
 //        println sb.toString()
         def classGenerated = GenerationUtils.EvalGroovyScript(sb.toString(), null, false, classLoader,
                 dslCreator) as Class<Getl>
-        def obj = dslCreator.callScript(classGenerated, [proc: this]).result as Getl
+        def obj = dslCreator.callScript(classGenerated, [proc: this], addVars).result as Getl
 
         return obj
     }

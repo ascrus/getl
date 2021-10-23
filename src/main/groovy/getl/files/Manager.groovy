@@ -1520,9 +1520,7 @@ FROM (
 		buildList(MapUtils.Copy(params, ['code']), p)
 	}
 
-	/**
-	 * Download files of list
-	 */
+	/** Build list of files */
 	void buildList(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> filter) {
 		buildList([:], filter)
 	}

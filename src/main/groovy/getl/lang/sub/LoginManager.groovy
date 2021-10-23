@@ -27,8 +27,6 @@ class LoginManager {
         if (!owner.storedLogins.containsKey(user))
             throw new ExceptionGETL("User \"$user\" not found in login repository!")
 
-        //def pwd = owner.storedLogins.get(user)
-
         def reconnect = (owner.login != user && owner.isConnected())
         if (reconnect) owner.disconnect()
         owner.login = user

@@ -45,6 +45,10 @@ class FileUtils {
 			return null
 
 		fileName = TransformFilePath(ConvertToDefaultOSPath(fileName), false)
+		def file = new File(fileName)
+		if (file.parent == null)
+			return false
+
 		return ValidPath(new File(fileName).parentFile, deleteOnExit)
 	}
 	
@@ -1166,7 +1170,7 @@ class FileUtils {
 	 * @return file object description
 	 */
 	static File CreateTempFile(String prefix = null, String suffix = null, String directory = null) {
-		def file = File.createTempFile(prefix?:'getl_', suffix?:'_temp', new File(directory?:TFS.systemPath))
+		def file = File.createTempFile(prefix?:'getl_', suffix?:'_temp', new File(directory?:TFS.storage.currentPath()))
 		file.deleteOnExit()
 		return file
 	}

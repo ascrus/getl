@@ -19,7 +19,10 @@ class FileTextSpec extends BaseSpec {
     /** Text file name */
     String getFileName() { params.fileName as String }
     /** Text file name */
-    void setFileName(String value) { saveParamValue('fileName', value) }
+    void setFileName(String value) {
+        saveParamValue('fileName', value)
+        _filePath = null
+    }
 
     /** Code page text file (default UTF-8) */
     String getCodePage() { (params.codePage as String)?:'UTF-8' }
@@ -47,8 +50,22 @@ class FileTextSpec extends BaseSpec {
     /** Count saved bytes */
     Long getCountBytes() { countBytes }
 
+    /** File path cache */
+    private String _filePath
+
     /** File path */
-    String filePath() { FileUtils.TransformFilePath(fileName) }
+    String filePath() {
+        if (_filePath != null)
+            return _filePath
+
+        def file = new File(FileUtils.TransformFilePath(fileName))
+        if (temporaryFile && file.parent == null)
+            _filePath = "${TFS.storage.currentPath()}/$fileName"
+        else
+            _filePath = file.absolutePath
+
+        return _filePath
+    }
 
     /** Write text buffer to file */
     @SuppressWarnings('SpellCheckingInspection')

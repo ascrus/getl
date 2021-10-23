@@ -48,8 +48,9 @@ class StringUtilsTest extends GetlTest {
         assertEquals('C:\\dir1\\file1.txt', StringUtils.EvalMacroString('{drive}{~div~}{dir}{~div~}{file}.{ext}',
                 ["~div~": '\\', drive:'C:', dir: 'dir1', file: 'file1', ext: 'txt']))
 
-        assertEquals('SELECT * FROM table1 LIMIT 20  OFFSET 10 ',
-                StringUtils.EvalMacroString('SELECT * FROM {table}{ LIMIT %limit% }{ OFFSET %offset% }', [table: 'table1', limit: 20, offset: 10]))
+        assertEquals('''SELECT * FROM table1 WHERE a = 'test \\{ok}\\' LIMIT 20 OFFSET 10''',
+                StringUtils.EvalMacroString('''SELECT * FROM {table} WHERE a = 'test \\\\\\{ok\\}\\\\'{ LIMIT %limit%}{ OFFSET %offset%}''',
+                        [table: 'table1', limit: 20, offset: 10]))
         assertEquals('SELECT * FROM table1 LIMIT 20 ',
                 StringUtils.EvalMacroString('SELECT * FROM {table}{ LIMIT %limit% }{ OFFSET %offset% }', [table: 'table1', limit: 20]))
         assertEquals('SELECT * FROM table1 OFFSET 10 ',

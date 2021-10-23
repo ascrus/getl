@@ -72,6 +72,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
 
             list.add(new MapTableSpec(own, p))
         }
+
         usedMapping = list
     }
 

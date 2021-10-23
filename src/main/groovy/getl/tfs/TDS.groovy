@@ -27,7 +27,7 @@ class TDS extends H2Connection {
 				if (inMemory) {
 					connectDatabase = "getl"
 				} else {
-					tempPath = TFS.systemPath
+					tempPath = TFS.storage.currentPath()
 					connectDatabase = "$tempPath/getl"
 					new File(connectDatabase + '.mv.db').deleteOnExit()
 					new File(connectDatabase + '.trace.db').deleteOnExit()
@@ -70,7 +70,7 @@ class TDS extends H2Connection {
 	}
 
     /** Temp path of database file */
-    private String tempPath = TFS.systemPath
+    private String tempPath = TFS.storage.currentPath()
 	/** Temp path of database file */
 	@JsonIgnore
 	String getTempPath() { tempPath }
@@ -118,7 +118,7 @@ class TDS extends H2Connection {
 				connectURL = null
 				connectDatabase = "getl"
 			} else {
-				tempPath = TFS.systemPath
+				tempPath = TFS.storage.currentPath()
 				connectDatabase = "$tempPath/getl"
 				new File(connectDatabase + '.mv.db').deleteOnExit()
 				new File(connectDatabase + '.trace.db').deleteOnExit()

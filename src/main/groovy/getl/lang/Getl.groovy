@@ -338,7 +338,7 @@ Examples:
                         eng.repositoryStorageManager {
                             readObjectFromFile(repository(RepositoryWorkflows), workflowFileName, null, workflow)
                         }
-                        workflow.execute()
+                        workflow.execute(eng.configuration.manager.vars)
                     }
                     else
                         eng.models.workflow(workflowName).execute(eng.configuration.manager.vars)
@@ -389,6 +389,8 @@ Examples:
                             MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
 
                 logFinest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
+                if (unitTestMode)
+                    logFine('Unit tests allowed')
 
                 def procs = [:] as Map<String, Closure>
                 procs.logging = { Map<String, Object> en ->
@@ -2516,12 +2518,16 @@ Examples:
                             value = value.toString().toCharacter()
 
                         break
-                    case String:
-                        if (value instanceof GetlRepository) {
+                    case String: case GString:
+                        if (value instanceof GetlRepository)
                             value = (value as GetlRepository).dslNameObject
-                        } else if (!(value instanceof String)) {
+                        else if (!(value instanceof String || value instanceof GString))
                             value = value.toString()
-                        }
+                        else if (script instanceof Getl)
+                            value = StringUtils.EvalMacroString(value.toString(),
+                                    [environment: configuration.environment] + (script as Getl).scriptExtendedVars, false)
+                        else
+                            value = value.toString()
 
                         break
                     case Short:

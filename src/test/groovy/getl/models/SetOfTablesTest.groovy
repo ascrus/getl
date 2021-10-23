@@ -18,7 +18,10 @@ class SetOfTablesTest extends TestRepository {
                     assertEquals(Field.integerFieldType, sourceTable.field('id').type)
                 }
                 cloneDataset('h2:table2', embeddedTable('h2:table1'))
-                table('h2:table2')
+                table('h2:table2') {
+                    map.name = 'Upper(name)'
+                }
+                assertEquals('Upper(name)', table('h2:table2').map.name)
 
                 assertEquals(['h2:table1', 'h2:table2'], findModelDatasets())
                 assertEquals(['h2:table1', 'h2:table2'], findModelDatasets(['h2:*']))

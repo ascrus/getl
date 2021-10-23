@@ -37,16 +37,23 @@ class TFS extends CSVConnection {
 	@Override
 	protected void validParams() {
 		super.validParams()
-		if (params.fieldDelimiter == null) fieldDelimiter = "|"
-		if (params.rowDelimiter == null) rowDelimiter = "\n"
-		if (params.autoSchema == null) autoSchema = true
-		if (params.extenstion == null) extension = 'csv'
-		if (params.escaped == null) escaped = false
-		if (params.header == null) header = false
+		if (params.fieldDelimiter == null)
+			fieldDelimiter = "|"
+		if (params.rowDelimiter == null)
+			rowDelimiter = "\n"
+		if (params.autoSchema == null)
+			autoSchema = true
+		if (params.extenstion == null)
+			extension = 'csv'
+		if (params.escaped == null)
+			escaped = false
+		if (params.header == null)
+			header = false
 
-		if (params.deleteOnExit == null) params.deleteOnExit = true
-		if (params.path == null) params.path = "$systemPath/tfs-files.getl"
-		//setPath((params.path as String)?:"$systemPath/tfs-files.getl")
+		if (params.deleteOnExit == null)
+			params.deleteOnExit = true
+		if (params.path == null)
+			params.path = "$systemPath/tfs-files.getl"
 	}
 
 	@Override

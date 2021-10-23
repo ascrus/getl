@@ -63,7 +63,7 @@ abstract class FileListProcessing implements GetlRepository {
     void setIgnoreStory(Boolean value) { params.ignoreStory = value }
 
     /** Temporary directory path */
-    String getTempPath() { (params.tempPath as String)?:TFS.systemPath }
+    String getTempPath() { (params.tempPath as String)?:TFS.storage.currentPath() }
     /** Temporary directory path */
     void setTempPath(String value) { params.tempPath = value }
 

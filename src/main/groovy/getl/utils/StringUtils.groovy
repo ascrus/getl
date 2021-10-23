@@ -92,6 +92,8 @@ class StringUtils {
 
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
+		value = value.replace('\\\\', '\u0001').replace('\\{', '\u0002').replace('\\}', '\u0003')
+
 		//def matcher = Pattern.compile('(?i)([{][~]*[a-z0-9._-]+[~]*[}])').matcher(value)
 		def matcher = EvalMacroStringPattern1.matcher(value)
 
@@ -149,7 +151,7 @@ class StringUtils {
 		if (pos < value.length())
 			sb.append(value, pos, value.length())
 
-		return sb.toString()
+		return sb.toString().replace('\u0001', '\\').replace('\u0002', '{').replace('\u0003', '}')
 	}
 
 	/** Replicate character */

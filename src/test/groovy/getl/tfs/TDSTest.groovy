@@ -25,11 +25,11 @@ class TDSTest extends getl.test.GetlTest {
 
     @Test
     void testConnectToStaticFile () {
-        def con = new TDS(inMemory: false, connectDatabase: "${TFS.systemPath}/getl_test_static")
+        def con = new TDS(inMemory: false, connectDatabase: "${TFS.storage.currentPath()}/getl_test_static")
         con.connected = true
         assertTrue(con.connected)
         assertFalse(con.inMemory)
-        assertEquals("${TFS.systemPath}/getl_test_static".toString(), con.connectDatabase)
+        assertEquals("${TFS.storage.currentPath()}/getl_test_static".toString(), con.connectDatabase)
         def dbFileName = "${con.connectDatabase}.mv.db"
         assertTrue(new File(dbFileName).exists())
         con.connected = false

@@ -144,7 +144,7 @@ class KafkaDriver extends Driver {
             throw e
         }
 
-        def jsonDirName = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
+        def jsonDirName = "${TFS.storage.currentPath()}/${FileUtils.UniqueFileName()}"
         def jsonDirFile = new File(jsonDirName)
         FileUtils.ValidPath(jsonDirFile, true)
         def jsonName = "$jsonDirFile/kafka."

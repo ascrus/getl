@@ -53,6 +53,7 @@ dependencies {
 	implementation 'org.apache.hadoop:hadoop-auth:3.3.1'
 	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.1'
 	implementation 'org.apache.hadoop:hadoop-common:3.3.1'
+	implementation 'javax.servlet:javax.servlet-api:4.0.1'
 
 	implementation 'com.monitorjbl:xlsx-streamer:2.2.0'
 
