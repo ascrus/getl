@@ -195,18 +195,29 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	/** Description of manager */
 	void setDescription(String value) { params.description = value }
 
-	/** Clone current dataset on specified connection */
+	/** Clone current manager */
 	@Synchronized
-	HistoryPointManager cloneHistoryPointManager(Map otherParams = [:], Getl getl = null) {
+	HistoryPointManager cloneHistoryPointManager(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
+
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
 		def res = getClass().newInstance() as HistoryPointManager
 		res.sysParams.dslCreator = dslCreator?:getl
+		res.sysParams.dslNameObject = dslNameObject
+		if (con != null)
+			res.historyTable = historyTable.cloneDataset(con) as TableDataset
+
 		res.params.putAll(p)
 
 		return res
+	}
+
+	/** Clone current manager */
+	@Synchronized
+	HistoryPointManager cloneHistoryPointManagerConnection(Map otherParams = [:], Getl getl = null) {
+		cloneHistoryPointManager(historyTable?.connection?.cloneConnection() as JDBCConnection, otherParams, getl)
 	}
 
 	/** Checked before first use */

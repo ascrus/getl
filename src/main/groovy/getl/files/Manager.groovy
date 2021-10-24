@@ -134,13 +134,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 	Manager cloneManager(Map otherParams = null, Getl getl = null) {
 		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false, ignoreCloneClasses())
+
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
+
 		def res = CreateManagerInternal([manager: className] + p)
 		if (fileListConnection != null)
 			res.fileListConnection = fileListConnection.cloneConnection(null, dslCreator?:getl) as JDBCConnection
+
 		res.sysParams.dslCreator = dslCreator?:getl
+		res.sysParams.dslNameObject = dslNameObject
+
 		res.afterClone(this)
+
 		return res
 	}
 

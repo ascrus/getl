@@ -1556,14 +1556,23 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	@Synchronized
 	Dataset cloneDataset(Connection newConnection = null, Map otherParams = [:], Getl getl = null) {
-		if (newConnection == null) newConnection = this.connection
+		if (newConnection == null)
+			newConnection = this.connection
+
 		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		p.remove('manualSchema')
-		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
+
+		if (otherParams != null)
+			MapUtils.MergeMap(p, otherParams)
+
 		Dataset ds = CreateDatasetInternal([dataset: className] + p)
 		ds.sysParams.dslCreator = dslCreator?:getl
-		if (newConnection != null) ds.connection = newConnection
+		ds.sysParams.dslNameObject = dslNameObject
+
+		if (newConnection != null)
+			ds.connection = newConnection
+
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema
 

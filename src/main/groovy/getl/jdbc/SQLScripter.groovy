@@ -706,12 +706,21 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @return cloned object
 	 */
 	SQLScripter cloneSQLScripter(JDBCConnection newConnection = null, JDBCConnection newPointConnection = null) {
-		if (newConnection == null) newConnection = this.connection
-		if (newPointConnection == null) newPointConnection = this.pointConnection
+		if (newConnection == null)
+			newConnection = this.connection
+		if (newPointConnection == null)
+			newPointConnection = this.pointConnection
+
 		def className = this.getClass().name
 		def res = Class.forName(className).newInstance() as SQLScripter
-		if (newConnection != null) res.connection = newConnection
-		if (newPointConnection != null) res.pointConnection = newPointConnection
+
+		if (newConnection != null)
+			res.connection = newConnection
+		if (newPointConnection != null)
+			res.pointConnection = newPointConnection
+
+		res.dslCreator = dslCreator
+		res.dslNameObject = dslNameObject
 		res.script = this.script
 		res.logEcho = this.logEcho
 		res.vars = CloneUtils.CloneMap(vars)

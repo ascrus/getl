@@ -140,7 +140,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** Sequence name */
 	void setName(String value) { params.name = value }
 
-	/** Sequence name */
+	/** Sequence schema */
 	String getSchema() {
 		def res = params.schema as String
 		if (res  == null && name?.indexOf('.') == -1)
@@ -148,7 +148,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 
 		return res
 	}
-	/** Sequence name */
+	/** Sequence schema */
 	void setSchema(String value) { params.schema = value }
 
 	/** Database name */
@@ -185,12 +185,15 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	@Synchronized
 	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
+
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
 		def res = getClass().newInstance() as Sequence
 		res.sysParams.dslCreator = dslCreator?:getl
+		res.sysParams.dslNameObject = dslNameObject
 		res.params.putAll(p)
+
 		if (con != null)
 			res.connection = con
 

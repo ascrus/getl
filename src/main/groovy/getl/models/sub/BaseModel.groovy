@@ -337,6 +337,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     Object clone() {
         def res = super.clone() as BaseModel
         res.dslCreator = dslCreator
+        res.dslNameObject = dslNameObject
         return res
     }
 

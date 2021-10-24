@@ -4950,7 +4950,20 @@ Examples:
         if (point == null)
             throw new ExceptionDSL('Need object value!')
 
-        return point.cloneHistoryPointManager(null, this) as HistoryPointManager
+        return point.cloneHistoryPointManager(null, null, this) as HistoryPointManager
+    }
+
+    /**
+     * Clone history point manager
+     * @param point original history point manager to clone
+     * @return cloned history point manager
+     */
+    HistoryPointManager cloneHistorypointConnection(HistoryPointManager point) {
+        if (point == null)
+            throw new ExceptionDSL('Need object value!')
+
+        return point.cloneHistoryPointManager(point.historyTable?.connection?.cloneConnection() as JDBCConnection,
+                null, this) as HistoryPointManager
     }
 
     /**

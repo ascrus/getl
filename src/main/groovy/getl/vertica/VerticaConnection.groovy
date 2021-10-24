@@ -321,27 +321,37 @@ ORDER BY name
 
 		def res = 0
 		analyzeRows.each { row ->
-			if ((row.tuning_description as String).substring(0, 18).toLowerCase() == 'analyze statistics') {
-				def t = (row.tuning_parameter as String).toLowerCase()
-				if (t.matches(".*[.].*[.].*"))
-					t = t.substring(0, t.lastIndexOf("."))
+			if (row.tuning_command != null && (row.tuning_command as String).length() > 0) {
+				if ((row.tuning_description as String).substring(0, 18).toLowerCase() == 'analyze statistics') {
+					def t = (row.tuning_parameter as String).toLowerCase()
+					if (t.matches(".*[.].*[.].*"))
+						t = t.substring(0, t.lastIndexOf("."))
 
-				if (!(t in tempTables)) {
+					if (!(t in tempTables)) {
+						def ptw = new ProcessTime(dslCreator: dslCreator, name: row.tuning_description, debug: true)
+						def queryStat = (row.tuning_command as String).replace('"', '')
+						try {
+							executeCommand(command: queryStat)
+							ptw.finish()
+							logger.info("Rebuild statistics for $t complete")
+							res++
+						}
+						catch (Exception e) {
+							logger.severe("Found error for $t: ${e.message}")
+						}
+					}
+				} else if ((row.tuning_parameter?:'' == '' || !((row.tuning_parameter as String).toLowerCase() in tempTables))) {
 					def ptw = new ProcessTime(dslCreator: dslCreator, name: row.tuning_description, debug: true)
-					def queryStat = (row.tuning_command as String).replace('"', '')
 					try {
-						executeCommand(command: queryStat)
+						executeCommand(command: row.tuning_command)
 						ptw.finish()
-						logger.info("Rebuild statistics for $t complete")
+						logger.info("Complete ${row.tuning_description}")
 						res++
 					}
 					catch (Exception e) {
-						logger.severe("Found error for $t: ${e.message}")
+						logger.severe("${row.tuning_description}: ${e.message}")
 					}
 				}
-			}
-			else {
-				logger.fine("Skip recommendation ${row.tuning_description}")
 			}
 		}
 

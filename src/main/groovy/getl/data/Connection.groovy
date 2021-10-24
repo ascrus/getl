@@ -611,6 +611,7 @@ class Connection implements Cloneable, GetlRepository {
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def res = CreateConnectionInternal([connection: className] + p)
 		res.sysParams.dslCreator = dslCreator?:getl
+		res.sysParams.dslNameObject = dslNameObject
 		res.afterClone(this)
 		return res
 	}
