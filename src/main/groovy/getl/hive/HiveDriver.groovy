@@ -245,7 +245,7 @@ class HiveDriver extends JDBCDriver {
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
-        def expression = ListUtils.NotNullValue([bulkParams.expression, [:]]) as Map<String, Object>
+        def expression = ListUtils.NotNullValue([bulkParams.expression, [:]]) as Map<String, Object> /*TODO: refactoring */
         expression.each { String fieldName, expr ->
             if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
         }

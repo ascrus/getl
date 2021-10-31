@@ -5078,11 +5078,23 @@ Examples:
 
     /**
      * Run code if working in unit test mode
-     * @param cl
+     * @param cl user code
      */
-    void ifUnitTestMode(Closure cl) {
-        if (unitTestMode)
-            cl.call()
+    void ifUnitTestMode(@DelegatesTo(GetlTest)
+                        @ClosureParams(value = SimpleType, options = ['getl.test.GetlTest']) Closure cl) {
+        ifUnitTestMode(null, cl)
+    }
+
+    /**
+     * Run code if working in unit test mode in specified environment
+     * @param env environment
+     * @param cl user code
+     */
+    void ifUnitTestMode(String env,
+                        @DelegatesTo(GetlTest)
+                        @ClosureParams(value = SimpleType, options = ['getl.test.GetlTest']) Closure cl) {
+        if (unitTestMode && (env == null || configuration.environment == env))
+            testCase(cl)
     }
 
     /**
@@ -5102,5 +5114,23 @@ Examples:
     /** Converting code variables to a map */
     Map<String, Object> toVars(Closure cl) {
         return MapUtils.Closure2Map(configuration.environment?:'prod', cl)
+    }
+
+    /**
+     * Format with group delimiter
+     * @param value number value
+     * @return formatted string
+     */
+    static String Numeric2String(Number value) {
+        return StringUtils.WithGroupSeparator(value)
+    }
+
+    /**
+     * Convert length to byte measurements
+     * @param bytes size of bytes
+     * @return formatted string
+     */
+    static String Size2String(Long bytes) {
+        return FileUtils.SizeBytes(bytes)
     }
 }

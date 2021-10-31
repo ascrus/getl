@@ -112,7 +112,7 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Sql filter expressions on a list of files */
     String getWhereFiles() { params.filter as String }
     /** Sql filter expressions on a list of files */
-    void setWhereFiles() { saveParamValue('filter', value) }
+    void setWhereFiles(String value) { saveParamValue('filter', value) }
 
     /** Sort order of the file list */
     List<String> getSortOrder() { params.fileListSortOrder as List<String> }

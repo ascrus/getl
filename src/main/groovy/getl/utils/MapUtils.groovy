@@ -1153,7 +1153,7 @@ class MapUtils {
 				EmptyValue2Null(value as Map)
 			else if (value instanceof List)
 				ListUtils.EmptyValue2Null(value as List)
-			else if (value instanceof String && value.length() == 0)
+			else if (value instanceof String && value.trim().length() == 0)
 				map.put(name, null)
 		}
 	}

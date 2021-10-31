@@ -1,5 +1,6 @@
 package getl.h2
 
+import getl.jdbc.sub.BulkLoadMapping
 import groovy.transform.InheritConstructors
 
 import getl.csv.*
@@ -28,7 +29,7 @@ class H2Driver extends JDBCDriver {
 		super.initParams()
 
 		commitDDL = false
-
+		allowExpressions = true
 		caseObjectName = "UPPER"
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
@@ -98,48 +99,51 @@ class H2Driver extends JDBCDriver {
 
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		if (params.compressed != null) throw new ExceptionGETL("H2 bulk load dont support compression files")
+		if (params.compressed != null)
+			throw new ExceptionGETL("H2 bulk load dont support compression files")
 
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
-
-		def map = params.map as List<Map>
-
-		Map<String, String> expression = (params.expression?:[:]) as Map<String, String>
-		expression.each { String fieldName, String expr ->
-			if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
-		}
+		def map = params.map as List<BulkLoadMapping>
 
 		StringBuilder sb = new StringBuilder()
-		List<String> columns = []
-		List<String> fields = []
+
+		List<String> fieldList = []
+		List<String> csvFieldList = []
 		List<String> headers = []
 		List<String> fParams = []
-		map.each { Map<String, Object> m ->
-			Field f = m.field as Field
-			if (f != null && !f.isReadOnly) {
-				headers << f.name.toUpperCase().replace('\'', '\'\'')
-				columns << fieldPrefix + f.name.toUpperCase() + fieldPrefix
-				def expr = expression.get(f.name.toLowerCase())
-				if (expr == null) {
-					fields << fieldPrefix + f.name.toUpperCase() + fieldPrefix
-				} else {
-					fields << expr
-				}
+
+		map.each { rule ->
+			if (rule.sourceFieldName != null)
+				headers.add(rule.sourceFieldName.toUpperCase().replace('\'', '\'\''))
+
+			if (rule.destinationFieldName == null)
+				return
+
+			Field destField = dest.fieldByName(rule.destinationFieldName)
+			if (!destField.isReadOnly && destField.compute == null) {
+				fieldList.add(fieldPrefix + rule.destinationFieldName.toUpperCase() + fieldPrefix)
+				if (rule.expression != null)
+					csvFieldList.add((rule.expression.length() > 0)?rule.expression:'NULL')
+				else if (rule.sourceFieldName != null)
+					csvFieldList.add(fieldPrefix + rule.sourceFieldName.toUpperCase() + fieldPrefix)
 			}
 		}
-		def cols = columns.join(', ')
-		def csvFields = fields.join(', ')
+
+		def tableFields = fieldList.join(', ')
+		def csvFields = csvFieldList.join(', ')
 		def heads = (!source.isHeader()) ? "'" + headers.join(source.fieldDelimiter()) + "'" : "null"
 		fParams << "charset=${source.codePage()}".toString()
 		fParams << "fieldSeparator=${source.fieldDelimiter()}".toString()
-		if (source.quoteStr() != null) fParams << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
+		if (source.quoteStr() != null)
+			fParams << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
 		def functionParams = fParams.join(" ")
 
 		sb <<
 """INSERT INTO ${fullNameDataset(dest)} (
-$cols
+  $tableFields
 )
-SELECT $csvFields 
+SELECT 
+  $csvFields 
 FROM CSVREAD('{file_name}', ${heads}, '${functionParams}')
 """
         def sql = sb.toString()

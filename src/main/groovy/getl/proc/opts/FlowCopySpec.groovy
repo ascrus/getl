@@ -19,10 +19,14 @@ class FlowCopySpec extends FlowBaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
-        if (params.destParams == null) params.destParams = [:] as Map<String, Object>
-        if (params._childs == null) params._childs = [:] as Map<String, FlowCopyChildSpec>
-        if (params.map == null) params.map = [:] as HashMap<String, String>
+        if (params.sourceParams == null)
+            params.sourceParams = [:] as Map<String, Object>
+        if (params.destParams == null)
+            params.destParams = [:] as Map<String, Object>
+        if (params._childs == null)
+            params._childs = [:] as Map<String, FlowCopyChildSpec>
+        if (params.map == null)
+            params.map = [:] as HashMap<String, String>
     }
 
     /** Source dataset */

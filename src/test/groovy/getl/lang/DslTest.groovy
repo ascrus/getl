@@ -1,3 +1,4 @@
+//file:noinspection SpellCheckingInspection
 package getl.lang
 
 import getl.csv.CSVConnection
@@ -112,15 +113,17 @@ environments {
                 path = this.tempPath
                 load'getl.conf', 'prod'
             }
-            assertTrue(configContent.datasets?.isEmpty())
+
+            def cds = configContent.datasets as Map
+            assertTrue(cds?.isEmpty())
 
             configuration {
                 load'getl.conf'
             }
 
-            assertEquals(this.csvFileName1, configContent.datasets?.file1?.fileName)
-            assertEquals(this.csvFileName2, configContent.datasets?.file2?.fileName)
-            assertEquals(this.h2TableName, configContent.datasets?.table1?.tableName)
+            assertEquals(this.csvFileName1, cds?.file1?.fileName)
+            assertEquals(this.csvFileName2, cds?.file2?.fileName)
+            assertEquals(this.h2TableName, cds?.table1?.tableName)
 
             def enmap_dev = [logins: [user1: '000', user2: '000']]
             def enmap_prod = [logins: [user1: '1234567890', user2: 'abcdefghij']]
@@ -290,14 +293,14 @@ environments {
 
             etl.copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
                 copyRow { t, f ->
-                    f.name = StringUtils.ToCamelCase(t.name)
+                    f.name = StringUtils.ToCamelCase(t.name as String)
                     f.dt = DateUtils.now
                 }
                 assertEquals(this.table1_rows, countRow)
             }
 
-            def c = csvTemp('#file', true)
-            def t = h2Table('#table', true) { tableName = this.h2TableName }
+            csvTemp('#file', true)
+            h2Table('#table', true) { tableName = this.h2TableName }
             thread {
                 addThread { etl.copyRows(h2Table('#table'), csvTemp('#file')) { inheritFields = true } }
                 exec()
@@ -499,7 +502,7 @@ ORDER BY t1.id"""
             etl.copyRows(h2Table('getl.testdsl.h2:table1'), csv)
             assertEquals(4, csv.countWritePortions)
 
-            TableDataset list
+            TableDataset list = null
             files {
                 rootPath = (csv.connection as CSVConnection).currentPath()
                 list = buildListFiles('file.split.{num}.*')
@@ -553,7 +556,7 @@ ORDER BY t1.id"""
             etl.copyRows(h2Table('getl.testdsl.h2:table1'), csv)
             assertEquals(4, csv.countWritePortions)
 
-            TableDataset list
+            TableDataset list = null
             files {
                 rootPath = (csv.connection as CSVConnection).currentPath()
                 list = buildListFiles('file.temp.split.{num}.*')
@@ -567,7 +570,7 @@ ORDER BY t1.id"""
 
                 bulkLoadCsv(csv) {
                     files = []
-                    list.eachRow { files << it.filename }
+                    listFiles = list.rows().collect { it.filename as String }
                     inheritFields = true
                     removeFile = true
                 }
@@ -847,7 +850,7 @@ ORDER BY t1.id"""
                     it != this.h2Table2Name
                 }
                 runWithElements {
-                    etl.copyRows(h2Table(it.source), csvTemp(it.destination)) {
+                    etl.copyRows(h2Table(it.source as String), csvTemp(it.destination as String)) {
                         copyRow()
                         assertEquals(source.readRows, destination.writeRows)
                     }
@@ -1107,6 +1110,7 @@ ORDER BY t1.id"""
         Dsl(this) {
             ifUnitTestMode {
                 configContent.testMode = 'debug'
+                assertEquals('debug', configContent.testMode)
             }
             testCase {
                 assertEquals('debug', configContent.testMode)
@@ -1124,7 +1128,7 @@ ORDER BY t1.id"""
     @Test
     void test99_07SaveOptions() {
         Dsl(this) {
-            def t = embeddedTable {
+            embeddedTable {
                 createOpts {
                     type = localTemporaryTableType
                     onCommit = true
@@ -1140,7 +1144,7 @@ ORDER BY t1.id"""
                     assertTrue(onCommit)
                 }
 
-                this.shouldFail {
+                shouldFail {
                     createOpts {
                         pullOptions()
                     }

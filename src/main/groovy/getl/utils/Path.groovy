@@ -1013,6 +1013,6 @@ class Path implements Cloneable, GetlRepository {
 	 */
 	@SuppressWarnings('unused')
 	void prepareStoryTable(TableDataset table) {
-		FileManager.prepareStoryTable(table, this)
+		FileManager.PrepareStoryTable(table, this)
 	}
 }

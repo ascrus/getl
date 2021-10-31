@@ -23,7 +23,8 @@ class H2DriverTest extends JDBCDriverProto {
 
     @Override
     protected JDBCConnection newCon() {
-		if (FileUtils.ExistsFile(configName)) Config.LoadConfig(fileName: configName)
+		if (FileUtils.ExistsFile(configName))
+            Config.LoadConfig(fileName: configName)
         needCatalog = 'GETL'
 		return new TDS()
 	}
@@ -105,6 +106,83 @@ class H2DriverTest extends JDBCDriverProto {
                 }
                 view.drop()
                 tab.drop()
+            }
+        }
+    }
+
+    @Test
+    void testBulkLoadMap() {
+        Getl.Dsl {
+            def table1 = embeddedTable {
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('value') { type = numericFieldType; length = 12; precision = 2 }
+                create()
+            }
+
+            def file1 = csvTempWithDataset(table1) {
+                field('description') { length = 50 }
+                etl.rowsTo {
+                    writeRow { add ->
+                        (1..10).each { add id: it, name: "Name $it", value: it * 1.23, description: "Description $it" }
+                    }
+                }
+            }
+
+            table1.bulkLoadCsv(file1)
+            assertEquals(10, table1.countRow())
+            def i = 0
+            table1.eachRow(order: ['id']) { row ->
+                i++
+                assertEquals(i, row.id)
+                assertEquals("Name $i".toString(), row.name)
+                assertEquals(i * 1.23, row.value)
+            }
+
+            table1.truncate()
+            table1.bulkLoadCsv(file1) {
+                map.name = 'description'
+            }
+            i = 0
+            table1.eachRow(order: ['id']) { row ->
+                i++
+                assertEquals(i, row.id)
+                assertEquals("Description $i".toString(), row.name)
+                assertEquals(i * 1.23, row.value)
+            }
+
+            table1.truncate()
+            shouldFail {
+                table1.bulkLoadCsv(file1) {
+                    allowExpressions = false
+                    map.name = 'Upper(name)'
+                }
+            }
+
+            table1.truncate()
+            table1.bulkLoadCsv(file1) {
+                map.name = 'Upper(name)'
+                map.value = '#'
+            }
+            i = 0
+            table1.eachRow(order: ['id']) { row ->
+                i++
+                assertEquals(i, row.id)
+                assertEquals("NAME $i".toString(), row.name)
+                assertNull(row.value)
+            }
+
+            table1.truncate()
+            table1.bulkLoadCsv(file1) {
+                map.name = 'Upper(description)'
+                map.value = 'Cast(value as Numeric(12, 2)) * 10'
+            }
+            i = 0
+            table1.eachRow(order: ['id']) { row ->
+                i++
+                assertEquals(i, row.id)
+                assertEquals("DESCRIPTION $i".toString(), row.name)
+                assertEquals((i * 1.23) * 10, row.value)
             }
         }
     }

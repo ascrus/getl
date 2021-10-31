@@ -1,5 +1,7 @@
+//file:noinspection GrMethodMayBeStatic
 package getl.vertica
 
+import getl.jdbc.sub.BulkLoadMapping
 import groovy.transform.CompileStatic
 import getl.csv.CSVDataset
 import getl.data.*
@@ -8,6 +10,8 @@ import getl.exception.ExceptionGETL
 import getl.utils.*
 import getl.jdbc.*
 import groovy.transform.InheritConstructors
+
+import java.util.regex.Pattern
 
 /**
  * Vertica driver class
@@ -25,8 +29,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
-				 'expression', 'location', 'formatDate', 'formatTime', 'formatDateTime',
-				 'parser', 'streamName', 'files'])
+				 'location', 'formatDate', 'formatTime', 'formatDateTime', 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
 		methodParams.register('createView', ['privileges'])
@@ -38,7 +41,7 @@ class VerticaDriver extends JDBCDriver {
 
 		defaultSchemaName = 'public'
 		tempSchemaName = 'v_temp_schema'
-
+		allowExpressions = true
         addPKFieldsToUpdateStatementFromMerge = true
 
 		sqlExpressions.ddlCreateView = '{create} {temporary} VIEW {name} {privileges} AS\n{select}'
@@ -80,7 +83,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected List<Map> getIgnoreWarning () {
 		List<Map> res = []
-		res << [errorCode: 4486, sqlState: '0A000']
+		res.add([errorCode: 4486, sqlState: '0A000'])
 
 		return res
 	}
@@ -123,16 +126,44 @@ class VerticaDriver extends JDBCDriver {
 			def ch = value.chars[i]
 			def bt = value.bytes[i]
 			if (ch < '\u0020'.chars[0] || ch > '\u007E'.chars[0])
-				sb << '\\' + StringUtils.AddLedZeroStr(Integer.toHexString(bt), 4)
+				sb.append('\\' + StringUtils.AddLedZeroStr(Integer.toHexString(bt), 4))
 			else if (ch == '\''.chars[0])
-				sb << '\'\''
+				sb.append('\'\'')
 			else if (ch == '\\'.chars[0])
-				sb << '\\\\'
+				sb.append('\\\\')
 			else
-				sb << ch
+				sb.append(ch)
 		}
 
 		return 'U&\'' + sb.toString() + '\''
+	}
+
+	String copyFormatField(CSVDataset ds, Field field, String fieldName, String formatDate, String formatTime, String formatDateTime) {
+		String res = null
+		switch (field.type) {
+			case Field.Type.BLOB:
+				res = "$fieldName format 'hex'"
+				break
+
+			case Field.Type.DATE:
+				def format = field.format?:formatDate?:ds.formatDate?:ds.currentCsvConnection.formatDate
+				if (format != null && format.length() > 0)
+					res = "$fieldName format '$format'"
+				break
+
+			case Field.Type.TIME:
+				def format = field.format?:formatTime?:ds.formatTime?:ds.currentCsvConnection.formatTime
+				if (format != null && format.length() > 0)
+					res = "$fieldName format '$format'"
+				break
+
+			case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
+				def format = field.format?:formatDateTime?:ds.formatDateTime?:ds.currentCsvConnection.formatDateTime
+				if (format != null && format.length() > 0)
+					res = "$fieldName format '$format'"
+		}
+
+		return res
 	}
 
 	@Override
@@ -140,22 +171,24 @@ class VerticaDriver extends JDBCDriver {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
 		def rowDelimiterChar = source.rowDelimiter()
-		if (rowDelimiterChar == '\r\n') rowDelimiterChar = '\n'
+		if (rowDelimiterChar == '\r\n')
+			rowDelimiterChar = '\n'
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
 		def useExternalParser = (params.parser != null && !(params.parser as Map).isEmpty())
 		if (useExternalParser) {
 			String parserFunc = (params.parser as Map).function
-			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
+			if (parserFunc == null)
+				throw new ExceptionGETL('Required parser function name')
 			def parserOptions = (params.parser as Map).options as Map<String, Object>
 			if (parserOptions != null && !parserOptions.isEmpty()) {
 				def ol = []
 				parserOptions.each { String name, def value ->
 					if (value instanceof String) {
-						ol << "$name='$value'"
+						ol.add("$name='$value'")
 					}
 					else {
-						ol << "$name=$value"
+						ol.add("$name=$value")
 					}
 				}
 				parserText = "\nWITH PARSER $parserFunc(${ol.join(', ')})"
@@ -168,7 +201,8 @@ class VerticaDriver extends JDBCDriver {
 				fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
 				rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
 				quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
-				if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+				if (source.nullAsValue() != null)
+					nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 			}
 		}
 		else if (!source.escaped()) {
@@ -192,7 +226,8 @@ class VerticaDriver extends JDBCDriver {
 			]
 
 			parserText = "\nWITH PARSER public.fcsvparser(${opts.join(', ')})"
-			if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+			if (source.nullAsValue() != null)
+				nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 		}
 
 		if (parserText.length() == 0) {
@@ -203,17 +238,20 @@ class VerticaDriver extends JDBCDriver {
 			if (source.quoteStr() == null || source.quoteStr().length() != 1)
 				throw new ExceptionGETL('Required one char quote str')
 
-			if (source.fieldDelimiter() != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
-			if (rowDelimiterChar != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
-			if (source.quoteStr() != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
-			if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+			if (source.fieldDelimiter() != null)
+				fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
+			if (rowDelimiterChar != null)
+				rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
+			if (source.quoteStr() != null)
+				quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
+			if (source.nullAsValue() != null)
+				nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 		}
 
 		def header = source.isHeader()
 		def isGzFile = source.isGzFile()
 
-		def map = params.map as List<Map>
-		def expressions = (params.expression as Map<String, String>)?:[:]
+		def map = params.map as List<BulkLoadMapping>
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
 		def enforceLength = (!useExternalParser && BoolUtils.IsValue(params.enforceLength, true))
 		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
@@ -231,97 +269,113 @@ class VerticaDriver extends JDBCDriver {
 		if (params.files != null) {
 			if (!(params.files instanceof List))
 				throw new ExceptionGETL('Parameter files must be of type List')
-			def f = []
+			def f = [] as List<String>
 			(params.files as List<String>).each {
 				def s = "'" + it + "'"
 				s += onNode
-				if (compressed != null) s += ' ' + compressed
-				f << s
+				if (compressed != null)
+					s += ' ' + compressed
+				f.add(s)
 			}
 			fileName = f.join(', ')
 		}
 		else {
 			fileName = "'${source.fullFileName().replace("\\", "/")}'"
 			fileName += onNode
-			if (compressed != null) fileName += ' ' + compressed
+			if (compressed != null)
+				fileName += ' ' + compressed
 		}
 
-		if (exceptionPath != null && location == null) FileUtils.ValidFilePath(exceptionPath)
-		if (rejectedPath != null && location == null) FileUtils.ValidFilePath(rejectedPath)
+		if (exceptionPath != null && location == null)
+			FileUtils.ValidFilePath(exceptionPath)
+		if (rejectedPath != null && location == null)
+			FileUtils.ValidFilePath(rejectedPath)
 
 		StringBuilder sb = new StringBuilder()
-		sb << "COPY ${fullNameDataset(dest)} (\n"
+		sb.append("COPY ${fullNameDataset(dest)} (\n")
 
-		def table = dest as TableDataset
+		def table = dest as VerticaTable
 		String formatDate = ListUtils.NotNullValue([params.formatDate, table.bulkLoadDirective.formatDate])
 		String formatTime = ListUtils.NotNullValue([params.formatTime, table.bulkLoadDirective.formatTime])
 		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, table.bulkLoadDirective.formatDateTime])
 
-		List columns = []
-		List options = []
-		map.each { Map f ->
-			if (f.field != null) {
-				def fieldName = table.sqlObjectName((f.field as Field).name)
-				columns << fieldName
-				switch ((f.field as Field).type) {
-					case Field.Type.BLOB:
-						options << "$fieldName format 'hex'"
-						break
-					case Field.Type.DATE:
-						if (f.format != null && f.format != '')
-							options << "$fieldName format '${f.format}'"
-						else
-							if (formatDate != null) options << "$fieldName format '$formatDate'"
-						break
-					case Field.Type.TIME:
-						if (f.format != null && f.format != '')
-							options << "$fieldName format '${f.format}'"
-						else
-							if (formatTime != null) options << "$fieldName format '$formatTime'"
-						break
-					case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
-						if (f.format != null && f.format != '')
-							options << "$fieldName format '${f.format}'"
-						else
-							if (formatDateTime != null) options << "$fieldName format '$formatDateTime'"
+		// Find filled columns
+		def filledCols = [] as List<String>
+		def patternFilledCols = [:] as Map<String, Pattern>
+		map.each { node ->
+			if (node.sourceFieldName != null && (node.destinationFieldName == null || node.expression != null)) {
+				def sourceFieldName = node.sourceFieldName.toLowerCase()
+				filledCols.add(sourceFieldName)
+				def pattern = Pattern.compile("(\\b${sourceFieldName}\\b)", Pattern.CASE_INSENSITIVE)
+				patternFilledCols.put(sourceFieldName, pattern)
+			}
+		}
+
+		// Replace filled columns in expressions
+		map.findAll { node -> node.expression != null && node.expression.length() > 0 }.each { node ->
+			def expr = node.expression
+			patternFilledCols.each { sourceFieldName, pattern ->
+				def matcher = pattern.matcher(expr)
+				expr = matcher.replaceAll("_filled_$sourceFieldName")
+			}
+			node.expression = expr
+		}
+
+		def columns = [] as List<String>
+		def options = [] as List<String>
+		map.each { rule ->
+			def sourceFieldName = rule.sourceFieldName?.toLowerCase()
+
+			if (sourceFieldName in filledCols) {
+				def fillFieldName = table.sqlObjectName("_filled_$sourceFieldName")
+				def sourceField = source.fieldByName(sourceFieldName)
+				def sourceType = table.currentVerticaConnection.currentVerticaDriver.type2sqlType(sourceField, false)
+				columns.add("  $fillFieldName FILLER $sourceType")
+
+				def format = copyFormatField(source, sourceField, fillFieldName, formatDate, formatTime, formatDateTime)
+				if (format != null)
+					options.add('  ' + format)
+			}
+
+			if (rule.destinationFieldName != null) {
+				def destFieldName = table.sqlObjectName(rule.destinationFieldName)
+				if (rule.expression != null) {
+					if (rule.expression.length() > 0)
+						columns.add("  $destFieldName AS ${rule.expression}")
 				}
-			}
-			else if (f.alias != null) {
-				columns << f.alias
-			}
-			else {
-				columns << "${fieldPrefix}__notfound__${f.column}${fieldPrefix} FILLER varchar(8000)"
+				else
+					columns.add("  $destFieldName")
 			}
 		}
 
-		expressions.each { String col, String expr ->
-			if (table.fieldByName(col) == null) throw new ExceptionGETL("Expression field \"$col\" not found")
-			if (expr != null) {
-				col = table.sqlObjectName(col)
-				columns << "$col AS $expr"
-			}
-		}
-
-		sb << columns.join(',\n')
-		sb << '\n)\n'
+		sb.append(columns.join(',\n'))
+		sb.append('\n)\n')
 
 		if (!options.isEmpty()) {
-			sb << 'COLUMN OPTION (\n'
-			sb << options.join(',\n')
-			sb << '\n)\n'
+			sb.append('COLUMN OPTION (\n')
+			sb.append(options.join(',\n'))
+			sb.append('\n)\n')
 		}
 
-		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName $parserText $fieldDelimiter$nullAsValue$quoteStr$rowDelimiter
-"""
-		if (header && parserText.length() == 0) sb << 'SKIP 1\n'
-		if (rejectMax != null) sb << "REJECTMAX ${rejectMax}\n"
-		if (exceptionPath != null) sb << "EXCEPTIONS '${exceptionPath}'$onNode\n"
-		if (rejectedPath != null) sb << "REJECTED DATA '${rejectedPath}'$onNode\n"
-		if (enforceLength) sb << 'ENFORCELENGTH\n'
-		if (abortOnError) sb << 'ABORT ON ERROR\n'
-		sb << "${loadMethod}\n"
-		if (streamName != null) sb << "STREAM NAME '$streamName'\n"
-		if (!autoCommit) sb << 'NO COMMIT\n'
+		sb.append("""FROM ${(location == null)?"LOCAL ":""}$fileName $parserText $fieldDelimiter$nullAsValue$quoteStr$rowDelimiter
+""")
+		if (header && parserText.length() == 0)
+			sb.append('SKIP 1\n')
+		if (rejectMax != null)
+			sb.append("REJECTMAX ${rejectMax}\n")
+		if (exceptionPath != null)
+			sb.append("EXCEPTIONS '${exceptionPath}'$onNode\n")
+		if (rejectedPath != null)
+			sb.append("REJECTED DATA '${rejectedPath}'$onNode\n")
+		if (enforceLength)
+			sb.append('ENFORCELENGTH\n')
+		if (abortOnError)
+			sb.append('ABORT ON ERROR\n')
+		sb.append("${loadMethod}\n")
+		if (streamName != null)
+			sb.append("STREAM NAME '$streamName'\n")
+		if (!autoCommit)
+			sb.append('NO COMMIT\n')
 
 		def sql = sb.toString()
 //		table.sysParams.sql = sql
@@ -340,7 +394,8 @@ class VerticaDriver extends JDBCDriver {
 		String res = null
 		//noinspection SqlNoDataSourceInspection
 		def rows = sqlConnect.rows('SELECT session_id FROM CURRENT_SESSION')
-		if (!rows.isEmpty()) res = rows[0].session_id as String
+		if (!rows.isEmpty())
+			res = rows[0].session_id as String
 
 		return res
 	}
@@ -428,8 +483,10 @@ class VerticaDriver extends JDBCDriver {
 
 	static String writeHints(Map params) {
 		def hints = [] as List<String>
-		if (params.direct != null) hints << (params.direct as String).toLowerCase()
-		if (params.label != null) hints << 'label(' + params.label + ')'
+		if (params.direct != null)
+			hints.add((params.direct as String).toLowerCase())
+		if (params.label != null)
+			hints.add('label(' + params.label + ')')
 		return (!hints.isEmpty())?('/*+' + hints.join(', ') + '*/'):''
 	}
 
@@ -450,7 +507,8 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected String syntaxDeleteStatement(JDBCDataset dataset, Map params){
 		def res = "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
-		if (params.where != null) res += " AND (${params.where})"
+		if (params.where != null)
+			res += " AND (${params.where})"
 		return res
 	}
 
@@ -487,12 +545,15 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected Map deleteRowsHint(TableDataset dataset, Map procParams) {
 		def res = super.deleteRowsHint(dataset, procParams)
-		def direct = procParams.direct?:dataset.writeDirective.direct
+		def direct = (procParams.direct?:dataset.writeDirective.direct) as String
 		def label = procParams.label?:dataset.writeDirective.label
-		def ad = []
-		if (direct != null) ad << direct
-		if (label != null) ad << "label(${label})"
-		if (!ad.isEmpty()) res.afterDelete = "/*+${ad.join(', ')}*/"
+		def ad = [] as List<String>
+		if (direct != null)
+			ad.add(direct)
+		if (label != null)
+			ad.add("label(${label})")
+		if (!ad.isEmpty())
+			res.afterDelete = "/*+${ad.join(', ')}*/"
 		return res
 	}
 
@@ -545,31 +606,31 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	void createSchema(String schemaName, Map<String, Object> createParams) {
-		def p = []
-		def ifNotExists = ''
+		def p = [] as List<String>
+		String ifNotExists = null
 		if (createParams != null) {
 			if (BoolUtils.IsValue(createParams.ifNotExists))
 				ifNotExists = 'IF NOT EXISTS'
 			if (createParams.containsKey('authorization'))
-				p << "AUTHORIZATION ${createParams.authorization}"
+				p.add("AUTHORIZATION ${createParams.authorization}")
 			if (createParams.containsKey('privileges'))
-				p << "DEFAULT ${createParams.privileges} SCHEMA PRIVILEGES"
+				p.add("DEFAULT ${createParams.privileges} SCHEMA PRIVILEGES")
 		}
-		jdbcConnection.executeCommand('CREATE SCHEMA {if_not_exists} {schema} {options}',
+		jdbcConnection.executeCommand('CREATE SCHEMA{ %if_not_exists%} {schema} {options}',
 				[queryParams: [schema: schemaName, if_not_exists: ifNotExists, options: p.join(' ')]])
 	}
 
 	@Override
 	void dropSchema(String schemaName, Map<String, Object> dropParams) {
-		def p = []
-		def ifExists = ''
+		def p = [] as List<String>
+		def ifExists = null
 		if (dropParams != null) {
 			if (BoolUtils.IsValue(dropParams.ifExists))
 				ifExists = 'IF EXISTS'
 			if (BoolUtils.IsValue(dropParams.cascade))
-				p << 'CASCADE'
+				p.add('CASCADE')
 		}
-		jdbcConnection.executeCommand('DROP SCHEMA {if_exists} {schema} {options}',
+		jdbcConnection.executeCommand('DROP SCHEMA{ %if_exists%} {schema} {options}',
 				[queryParams: [schema: schemaName, if_exists: ifExists, options: p.join(' ')]])
 	}
 

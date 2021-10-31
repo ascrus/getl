@@ -150,10 +150,13 @@ class ConvertUtils {
 			return null
 
 		def trimValue = value.trim()
+		def evalResult = false
 		Closure<String> analyzeList = { String div1, String div2 ->
 			if (trimValue.indexOf(div1) == 0) {
 				if (trimValue[trimValue.length() - 1] != div2)
 					throw new ExceptionDSL("The closing symbol \"$div2\" was not found in the expression \"$value\"!")
+
+				evalResult = true
 				return trimValue.substring(1, value.trim().length() - 1)
 			}
 			return null
@@ -168,11 +171,29 @@ class ConvertUtils {
 			val = value
 
 		def res
-		try {
-			res = Eval.me('[' + val + ']')
+
+		if (!evalResult && val.indexOf('"') == -1 && val.indexOf('\'') == -1) {
+			def list = val.split('[,]')
+			if (list[0].indexOf(':') == -1)
+				res = list.collect { str -> str.trim() }
+			else {
+				res = [:]
+				list.each { str ->
+					def i = str.indexOf(':')
+					def n = str.substring(0, i).trim()
+					def v = str.substring(i + 1).trim()
+
+					res.put(n, v)
+				}
+			}
 		}
-		catch (Exception e) {
-			throw new ExceptionGETL("Can't convert text \"$value\" to list: ${e.message}")
+		else {
+			try {
+				res = Eval.me('[' + val + ']')
+			}
+			catch (Exception e) {
+				throw new ExceptionGETL("Can't convert text \"$value\" to list: ${e.message}")
+			}
 		}
 
 		return res

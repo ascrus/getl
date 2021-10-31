@@ -18,8 +18,8 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.parser == null) params.parser = [:] as Map<String, String>
-        if (params.expression == null) params.expression = [:] as Map<String, String>
+        if (params.parser == null)
+            params.parser = [:] as Map<String, String>
     }
 
     /**
@@ -105,25 +105,6 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * <br>Default: true value
      */
     void setEnforceLength(Boolean value) { saveParamValue('enforceLength', value) }
-
-    /** Stop loading rows on any error (default true) */
-    //Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
-    /** Stop loading rows on any error (default true) */
-    //void setAbortOnError(Boolean value) { params.abortOnError = value }
-
-    /**
-     * Describes the SQL expression of loading file columns into table fields
-     * <br>Example: [file_column_1: 'FILLER varchar(50)', field_in_table: 'Upper(file_column_1)']
-     */
-    Map<String, String> getExpression() { params.expression as Map<String, String> }
-    /**
-     * Describes the expression of loading file columns into table fields
-     * <br>Example: [file_column_1: 'FILLER varchar(50)', field_in_table: 'Upper(file_column_1)']
-     */
-    void setExpression(Map<String, String> value) {
-        expression.clear()
-        if (value != null) expression.putAll(value)
-    }
 
     /**
      * Specifies the input format file

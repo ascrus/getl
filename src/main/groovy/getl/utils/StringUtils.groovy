@@ -514,12 +514,15 @@ class StringUtils {
 
 	/** Convert the string as regular expression */
 	static String String2RegExp(String expr) {
-		return expr.replace('(', '[(]').replace(')', '[)]').
-				replace('.', '[.]').replace('+', '[+]').
-				replace('*', '[*]').replace('~', '[~]').
-				replace('^', '[^]').replace('-', '[-]').
-				replace('$', '[$]').replace('%', '[%]').
-				replace('_', '[_]').replace('\\', '\\\\')
+		return expr.replace('\\', '\\\\')
+				.replace('[', '\\[').replace(']', '\\]')
+				.replace('(', '[(]').replace(')', '[)]')
+				.replace('{', '[{]').replace('}', '[}]')
+				.replace('.', '[.]').replace('+', '[+]')
+				.replace('*', '[*]').replace('~', '[~]')
+				.replace('^', '[^]').replace('-', '[-]')
+				.replace('$', '[$]').replace('%', '[%]')
+				.replace('_', '[_]')
 	}
 
 	/** Extract from the string the parent path relative to the specified part of the string */
@@ -619,38 +622,11 @@ class StringUtils {
 
 	/**
 	 * Format with group delimiter
-	 * @param value integer value
+	 * @param value number value
 	 * @return formatted string
 	 */
-	static String WithGroupSeparator(Integer value) {
+	static String WithGroupSeparator(Number value) {
 		return String.format('%,d', value)
-	}
-
-	/**
-	 * Format with group delimiter
-	 * @param value long value
-	 * @return formatted string
-	 */
-	static String WithGroupSeparator(Long value) {
-		return String.format('%,d', value)
-	}
-
-	/**
-	 * Format with group delimiter
-	 * @param value biginteger value
-	 * @return formatted string
-	 */
-	static String WithGroupSeparator(BigInteger value) {
-		return String.format('%,d', value.longValue())
-	}
-
-	/**
-	 * Format with group delimiter
-	 * @param value bigdecimal value
-	 * @return formatted string
-	 */
-	static String WithGroupSeparator(BigDecimal value) {
-		return String.format('%,d', value.longValue())
 	}
 
 	/**

@@ -15,10 +15,18 @@ class ConvertUtilsTest extends GetlTest {
 
         def l = [1,2,3]
         def s = '1,2,3'
-        assertEquals(l, ConvertUtils.String2Structure(s))
+        assertEquals(l, (ConvertUtils.String2Structure(s) as List<String>).collect { Integer.valueOf(it) })
         assertEquals(l, ConvertUtils.String2Structure('[' + s + ']'))
         assertEquals(l, ConvertUtils.String2Structure('{' + s + '}'))
         assertEquals(l, ConvertUtils.String2Structure('(' + s + ')'))
+
+        l = ['a', 'b', 'c']
+        s = 'a, b, c'
+        assertEquals(l, ConvertUtils.String2Structure(s))
+
+        m = [a: 'aaa', b: 'bbb', c: 'ccc']
+        t = 'a:aaa, b: bbb, c: ccc'
+        assertEquals(m, ConvertUtils.String2Structure(t))
     }
 
     @Test

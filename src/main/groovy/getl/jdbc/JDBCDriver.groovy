@@ -1,6 +1,7 @@
 package getl.jdbc
 
 import getl.jdbc.opts.SequenceCreateSpec
+import getl.jdbc.sub.BulkLoadMapping
 import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
 import groovy.transform.CompileStatic
@@ -42,7 +43,7 @@ class JDBCDriver extends Driver {
                                             'onSaveBatch', 'where', 'queryParams'])
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
-		methodParams.register('bulkLoadFile', ['allowMapAlias'])
+		methodParams.register('bulkLoadFile', ['allowExpressions'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
 		methodParams.register('executeCommand', ['historyText'])
@@ -59,6 +60,7 @@ class JDBCDriver extends Driver {
 		commitDDL = false
 		transactionalDDL = false
 		transactionalTruncate = false
+		allowExpressions = false
 		caseObjectName = "NONE" // LOWER OR UPPER
 		supportLocalTemporaryRetrieveFields = true
 		globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
@@ -994,6 +996,7 @@ class JDBCDriver extends Driver {
 	protected Boolean commitDDL
 	protected Boolean transactionalDDL
 	protected Boolean transactionalTruncate
+	protected Boolean allowExpressions
 	/** Case named object (NONE, LOWER, UPPER) */
 	protected String caseObjectName
 	protected String defaultDBName
@@ -1966,10 +1969,12 @@ $sql
 		}
 		else {
 			dataset.field.each { Field f ->
-				if (listFields.find { lf -> ((lf as String).toLowerCase() == f.name.toLowerCase()) } != null) fields << f
+				if (listFields.find { lf -> ((lf as String).toLowerCase() == f.name.toLowerCase()) } != null)
+					fields << f
 			}
 		}
-		if (fields.isEmpty()) throw new ExceptionGETL("Required fields from write to dataset")
+		if (fields.isEmpty())
+			throw new ExceptionGETL("Required fields from write to dataset")
 
 		return fields
 	}
@@ -1989,62 +1994,70 @@ $sql
 		}
 		
 		// List writable fields 
-		List<Field> fields = prepareFieldFromWrite(dest, prepareCode)
-		
-		// User mapping
-		Map map = (params.map != null)?MapUtils.MapToLower(params.map as Map<String, Object>):[:]
-		
-		// Allow aliases in map
-		def allowMapAlias = BoolUtils.IsValue(params.allowMapAlias, false)
-		
-		// Mapping column to field
-		List<Map> mapping = []
-		
-		// Auto mapping with field name 
-		def autoMap = BoolUtils.IsValue(params.autoMap, true)
-		
-		def isMap = false
-
-		// Columns for CSV		
-		source.field.each { Field cf ->
-			def cn = cf.name.toLowerCase()
-			
-			Map mc = [:]
-			mc.column = cn
-			
-			def m = map.get(cn) as String
-			if (m != null){
-				def df = fields.find { it.name.toLowerCase() == m.toLowerCase() }
-				if (df != null) {
-					mc.field = df
-				} 
-				else {
-					if (allowMapAlias) {
-						mc.alias = m
-					}
-					else {
-						throw new ExceptionGETL("Field ${m} in map column ${cf.name} not found in destination dataset")
-					}
-				}
-				
-				isMap = true
-			}
-			else if (autoMap) {
-				def df = fields.find { it.name.toLowerCase() == cn }
-				if (df != null) {
-					mc.field = df
-					isMap = true
-				}
-			}
-			
-			mapping << mc
+		def fields = prepareFieldFromWrite(dest, prepareCode)
+		def findDestField = { String name ->
+			name = name.toLowerCase()
+			return fields.find { it.name.toLowerCase() == name }
 		}
 		
-		if (mapping.isEmpty()) throw new ExceptionGETL("Can not build mapping for bulk load - csv columns is empty")
-		if (!isMap) throw new ExceptionGETL("Can not build mapping for bulk load - map columns to field not found")
+		// User mapping
+		def map = (params.map != null)?(MapUtils.MapToLower(params.map as Map) as Map<String, String>):([:] as Map<String, String>)
+		map.each { destFieldName, sourceFieldName ->
+			if (dest.fieldByName(destFieldName) == null)
+				throw new ExceptionGETL("Unknown field \"$destFieldName\" for destination \"$dest\" in the mapping!")
+		}
 		
+		// Allow aliases in map
+		def useExpressions = BoolUtils.IsValue(params.allowExpressions, this.allowExpressions)
+		
+		// Mapping column to field
+		def mapping = [] as List<BulkLoadMapping>
+
+		// Auto mapping with field name 
+		def autoMap = BoolUtils.IsValue(params.autoMap, true)
+
+		// Added source fields to list mapping
+		source.field.each { sourceField ->
+			def sourceFieldName = sourceField.name.toLowerCase()
+			mapping.add(new BulkLoadMapping(sourceFieldName: sourceFieldName))
+		}
+
+		// Process map rules
+		map.each { destFieldName, expr ->
+			if (expr == null || expr.length() == 0 || expr == '#')
+				return
+
+			destFieldName = destFieldName.toLowerCase()
+
+			def sourceFieldName = expr.toLowerCase()
+			def sourceRule = mapping.find { it.sourceFieldName == sourceFieldName }
+			if (sourceRule != null)
+				sourceRule.destinationFieldName = destFieldName
+			else if (useExpressions)
+				mapping.add(new BulkLoadMapping(destinationFieldName: destFieldName, expression: expr))
+			else
+				throw new ExceptionGETL("An unsupported expression was specified for field \"$destFieldName\" in destination \"$dest\"!")
+		}
+
+		// Auto map
+		if (autoMap) {
+			mapping.findAll { rule -> rule.destinationFieldName == null && rule.expression == null}.each { rule ->
+				if (findDestField(rule.sourceFieldName) != null &&
+						mapping.find { it.destinationFieldName == rule.sourceFieldName } == null &&
+						!map.containsKey(rule.sourceFieldName))
+					rule.destinationFieldName = rule.sourceFieldName
+			}
+		}
+
+		if (mapping.find { it.destinationFieldName != null} == null )
+			throw new ExceptionGETL("Failed to build mapping for destination \"$dest\" fields!")
+
 		Map res = MapUtils.CleanMap(params, ["autoMap", "map"])
 		res.map = mapping
+
+		/*println '-------'
+		println map
+		println mapping*/
 
 		return res
 	}

@@ -52,40 +52,25 @@ class H2Table extends TableDataset {
         genCreateTable(cl) as H2CreateSpec
     }
 
-    @Override
-    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        return new H2BulkLoadSpec(this, useExternalParams, opts)
-    }
-
-    /** Options for loading csv files to H2 table */
-    H2BulkLoadSpec getBulkLoadOpts() { new H2BulkLoadSpec(this, true, bulkLoadDirective) }
-
-    /** Options for loading csv files to H2 table */
-    H2BulkLoadSpec bulkLoadOpts(@DelegatesTo(H2BulkLoadSpec)
-                                @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
-                                        Closure cl = null) {
-        genBulkLoadDirective(cl) as H2BulkLoadSpec
-    }
-
     /**
      * Load specified csv files to H2 table
      * @param source File to load
      * @param cl Load setup code
      */
-    H2BulkLoadSpec bulkLoadCsv(CSVDataset source,
-                               @DelegatesTo(H2BulkLoadSpec)
-                               @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
+    BulkLoadSpec bulkLoadCsv(CSVDataset source,
+                               @DelegatesTo(BulkLoadSpec)
+                               @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.BulkLoadSpec'])
                                        Closure cl = null) {
-        doBulkLoadCsv(source, cl) as H2BulkLoadSpec
+        doBulkLoadCsv(source, cl) as BulkLoadSpec
     }
 
     /**
      * Load specified csv files to H2 table
      * @param cl Load setup code
      */
-    H2BulkLoadSpec bulkLoadCsv(@DelegatesTo(H2BulkLoadSpec)
-                               @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
+    BulkLoadSpec bulkLoadCsv(@DelegatesTo(BulkLoadSpec)
+                               @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.BulkLoadSpec'])
                                        Closure cl) {
-        doBulkLoadCsv(null, cl) as H2BulkLoadSpec
+        doBulkLoadCsv(null, cl) as BulkLoadSpec
     }
 }

@@ -1,13 +1,14 @@
+//file:noinspection unused
 package getl.jdbc.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
+import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
-import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.Path
 import groovy.transform.InheritConstructors
@@ -24,7 +25,10 @@ class BulkLoadSpec extends BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.orderProcess == null) params.orderProcess = [] as List<String>
+        if (params.orderProcess == null)
+            params.orderProcess = [] as List<String>
+        if (params.map == null)
+            params.map = [:] as Map<String, String>
     }
 
     /**
@@ -70,18 +74,18 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /**
-     * Run code before loading file (for loadAsPackage off)
+     * Run code before loading file (for loadAsPackage off and local loading)
      * <br>closure parameter: file path to load
      */
     @JsonIgnore
     Closure getOnBeforeBulkLoadFile() { params.beforeBulkLoadFile as Closure }
     /**
-     * Run code before loading file (for loadAsPackage off)
+     * Run code before loading file (for loadAsPackage off and local loading)
      * <br>closure parameter: file path to load
      */
     void setOnBeforeBulkLoadFile(Closure value) { saveParamValue('beforeBulkLoadFile', value) }
     /**
-     * Run code before loading file (for loadAsPackage off)
+     * Run code before loading file (for loadAsPackage off and local loading)
      * <br>closure parameter: file path to load
      */
     void beforeBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure cl) {
@@ -89,18 +93,18 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /**
-     * Run code after loading file (for loadAsPackage off)
+     * Run code after loading file (for loadAsPackage off and local loading)
      * <br>closure parameter: map file attributes
      */
     @JsonIgnore
     Closure getOnAfterBulkLoadFile() { params.afterBulkLoadFile as Closure }
     /**
-     * Run code after loading file (for loadAsPackage off)
+     * Run code after loading file (for loadAsPackage off and local loading)
      * <br>closure parameter: map file attributes
      */
     void setOnAfterBulkLoadFile(Closure value) { saveParamValue('afterBulkLoadFile', value) }
     /**
-     * Run code after loading file (for loadAsPackage off)
+     * Run code after loading file (for loadAsPackage off and local loading)
      * <br>closure parameter: map file attributes
      */
     void afterBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure cl) {
@@ -108,18 +112,18 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /**
-     * Run code before loading files (for loadAsPackage on)
+     * Run code before loading files (for loadAsPackage on and local loading)
      * <br>closure parameter: list of map file attributes
      */
     @JsonIgnore
     Closure getOnBeforeBulkLoadPackageFiles() { params.beforeBulkLoadPackageFiles as Closure }
     /**
-     * Run code before loading files (for loadAsPackage on)
+     * Run code before loading files (for loadAsPackage on and local loading)
      * <br>closure parameter: list of map file attributes
      */
     void setOnBeforeBulkLoadPackageFiles(Closure value) { saveParamValue('beforeBulkLoadPackageFiles', value) }
     /**
-     * Run code before loading files (for loadAsPackage on)
+     * Run code before loading files (for loadAsPackage on and local loading)
      * <br>closure parameter: list of map file attributes
      */
     void beforeBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options = ['java.util.ArrayList<java.util.Map>'])
@@ -128,18 +132,18 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /**
-     * Run code after loading files (for loadAsPackage on)
+     * Run code after loading files (for loadAsPackage on and local loading)
      * <br>closure parameter: list of map file attributes
      */
     @JsonIgnore
     Closure getOnAfterBulkLoadPackageFiles() { params.afterBulkLoadPackageFiles as Closure }
     /**
-     * Run code after loading files (for loadAsPackage on)
+     * Run code after loading files (for loadAsPackage on and local loading)
      * <br>closure parameter: list of file paths to load
      */
     void setOnAfterBulkLoadPackageFiles(Closure value) { saveParamValue('afterBulkLoadPackageFiles', value) }
     /**
-     * Run code after loading files (for loadAsPackage on)
+     * Run code after loading files (for loadAsPackage on and local loading)
      * <br>closure parameter: list of map file attributes
      */
     void afterBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options =  ['java.util.ArrayList<java.util.Map>'])
@@ -147,13 +151,13 @@ class BulkLoadSpec extends BaseSpec {
         setOnAfterBulkLoadPackageFiles(cl)
     }
 
-    /** Auto commit after bulk load files */
-    Boolean getLoadAsPackage() { BoolUtils.IsValue(params.loadAsPackage) }
-    /** Auto commit after bulk load files */
+    /** Load all files as one package (required true for remote loading) */
+    Boolean getLoadAsPackage() { params.loadAsPackage }
+    /** Load all files as one package (required true for remote loading)*/
     void setLoadAsPackage(Boolean value) { saveParamValue('loadAsPackage', value) }
 
     /** Remote files bulk load */
-    Boolean getRemoteLoad() { BoolUtils.IsValue(params.remoteLoad) }
+    Boolean getRemoteLoad() { params.remoteLoad }
     /** Remote files bulk load */
     void setRemoteLoad(Boolean value) { saveParamValue('remoteLoad', value) }
 
@@ -162,10 +166,19 @@ class BulkLoadSpec extends BaseSpec {
     /** Automatic linking by the file and table field names */
     void setAutoMap(Boolean value) { saveParamValue('autoMap', value) }
 
-    /** Using the field binding map */
-    Boolean getAllowMapAlias() { params.allowMapAlias as Boolean }
-    /** Using the field binding map */
-    void setAllowMapAlias(Boolean value) { saveParamValue('allowMapAlias', value) }
+    /** Allow to use expressions in mapping */
+    Boolean getAllowExpressions() { params.allowExpressions as Boolean }
+    /** Allow to use expressions in mapping */
+    void setAllowExpressions(Boolean value) { saveParamValue('allowExpressions', value) }
+
+    /** Mapping fields (dest_field: source_field) */
+    Map<String, String> getMap() { params.map as Map<String, String> }
+    /** Mapping fields (dest_field: source_field) */
+    void setMap(Map<String, String> value) {
+        map.clear()
+        if (value != null)
+            map.putAll(value)
+    }
 
     /** Auto commit after bulk load files */
     Boolean getAutoCommit() { params.autoCommit as Boolean }
@@ -173,7 +186,7 @@ class BulkLoadSpec extends BaseSpec {
     void setAutoCommit(Boolean value) { saveParamValue('autoCommit', value) }
 
     /** Stop loading files on any error */
-    Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
+    Boolean getAbortOnError() { params.abortOnError }
     /** Stop loading files on any error */
     void setAbortOnError(Boolean value) { saveParamValue('abortOnError', value) }
 
@@ -215,6 +228,21 @@ class BulkLoadSpec extends BaseSpec {
         saveParamValue('files', value)
     }
 
+    /** Name file for loading */
+    String getSingleFile() { params.files as String }
+    /** Name file for loading */
+    void setSingleFile(String value) { saveParamValue('files', value)}
+
+    /** List of file names for loading */
+    List<String> getListFiles() { params.files as List<String> }
+    /** List of file names for loading */
+    void setListFiles(List<String> value) { saveParamValue('files', value)}
+
+    /** Path mask files for loading */
+    Path getPathFiles() { params.files as Path }
+    /** Path mask files for loading */
+    void setPathFiles(Path value) { saveParamValue('files', value)}
+
     /** Names of sort fields for the order of loaded files */
     List<String> getOrderProcess() { params.orderProcess as List<String> }
     /** Names of sort fields for the order of loaded files */
@@ -225,7 +253,7 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /** Delete file after successful upload */
-    Boolean getRemoveFile() { BoolUtils.IsValue(params.removeFile) }
+    Boolean getRemoveFile() { params.removeFile }
     /** Delete file after successful upload */
     void setRemoveFile(Boolean value) { saveParamValue('removeFile', value) }
 
@@ -260,5 +288,24 @@ class BulkLoadSpec extends BaseSpec {
         }
         else
             setSourceDataset(null)
+    }
+
+    /** Story dataset */
+    @JsonIgnore
+    TableDataset getStoryDataset() { params.storyDataset as TableDataset }
+    /** Story dataset */
+    void setStoryDataset(TableDataset value) { saveParamValue('storyDataset', value) }
+
+    /** Story dataset name */
+    String getStoryDatasetName() { storyDataset?.dslNameObject }
+    /** Story dataset name */
+    void setStoryDatasetName(String value) {
+        def own = ownerObject as GetlRepository
+        GetlValidate.IsRegister(own)
+        if (value != null) {
+            setStoryDataset(own.dslCreator.jdbcTable(value))
+        }
+        else
+            setStoryDataset(null)
     }
 }

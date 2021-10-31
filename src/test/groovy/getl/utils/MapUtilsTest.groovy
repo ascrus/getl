@@ -279,10 +279,11 @@ class MapUtilsTest extends GetlTest {
         assertEquals([b: 2], MapUtils.RemoveKeys(m) { k, v -> k == 'c' } )
     }
 
+    @SuppressWarnings('Annotator')
     @Test
     void testEmptyValue2Null() {
-        def m = [a: 1, b: '', c: [1, '', 3], d: [a: 1, b: ''], c: [1, '', 3]]
+        def m = [a: 1, b: '', c: [1, '', 3], d: [a: 1, b: '', c: [1, '', 3]]]
         MapUtils.EmptyValue2Null(m)
-        assertEquals([a: 1, b: null, c: [1, null, 3], d: [a: 1, b: null], c: [1, null, 3]], m)
+        assertEquals([a: 1, b: null, c: [1, null, 3], d: [a: 1, b: null, c: [1, null, 3]]], m)
     }
 }

@@ -80,7 +80,7 @@ class TableSpec extends DatasetSpec {
         if (listDataset != null) {
             def name = listDataset.dslNameObject
             if (name == null)
-                throw new ExceptionModel("$sourceName: the dataset $listDataset must be registered in the repository!")
+                throw new ExceptionModel("$sourceTableName: the dataset $listDataset must be registered in the repository!")
 
             partitionsDatasetName = name
         }

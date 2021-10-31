@@ -613,7 +613,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Find field by name
 	 */
 	Integer indexOfField (String name) {
-		if (name == null) return -1
+		if (name == null)
+			return -1
 		name = name.toLowerCase()
 		return getField().findIndexOf { f -> (f.name?.toLowerCase() == name) }
 	}
@@ -723,7 +724,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * </ul>
 	 * @param params
 	 */
-	void bulkLoadFile (Map procParams = [:]) {
+	void bulkLoadFile(Map procParams = [:]) {
 		readRows = 0
         writeRows = 0
         updateRows = 0
@@ -732,7 +733,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
 			throw new ExceptionGETL("Driver not supported bulk load file!")
 		
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = [:]
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
 
 		def bulkLoadDir = directives('bulkLoad')?:[:]
@@ -768,7 +770,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				source.loadDatasetMetadata()
 			}
 			else {
-				if (source.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) source.retrieveFields()
+				if (source.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+					source.retrieveFields()
 			}
 		}
 		if (source.field.isEmpty())
@@ -782,7 +785,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def prepareFields = { List<Field> sourceFields ->
 			doInitFields(sourceFields)
 			List<String> result = []
-			if (prepareCode != null) result = prepareCode.call(source) as List<String>
+			if (prepareCode != null)
+				result = prepareCode.call(source) as List<String>
 			result
 		}
 		

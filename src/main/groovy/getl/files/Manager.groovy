@@ -1099,7 +1099,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@Synchronized('_synchCreate')
 	static Boolean createStoryTable(TableDataset storyTable, Path path = null,
 							 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
-		prepareStoryTable(storyTable, path, prepareField)
+		PrepareStoryTable(storyTable, path, prepareField)
 		if (!storyTable.exists) {
 			storyTable.create()
 			return true
@@ -1109,29 +1109,48 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/**
+	 * Build list of fields from story dataset
+	 * @param path
+	 * @param prepareField
+	 * @return
+	 */
+	static List<Field> StoryFieldsFromPath(Path path = null,
+										   @ClosureParams(value = SimpleType, options = ['getl.data.Field'])
+												   Closure prepareField = null) {
+		def res = [] as List<Field>
+		res.addAll(StoryFields)
+
+		if (path != null) {
+			if (!path.isCompile)
+				path.compile()
+
+			path.vars.each { key, attr ->
+				def varName = key.toUpperCase()
+				//noinspection SpellCheckingInspection
+				if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+					throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+
+				def ft = (attr.type as Field.Type)?:Field.Type.STRING
+				def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
+				def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
+				if (prepareField != null)
+					prepareField.call(field)
+				res.add(field)
+			}
+		}
+
+		return res
+	}
+
+	/**
 	 * Prepare structure of story table
 	 * @param storyTable table for preparing
 	 * @param path path mask
 	 * @param prepareField field processing code
 	 */
-	static void prepareStoryTable(TableDataset storyTable, Path path = null,
-							   @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
-		storyTable.field.clear()
-		AddFieldsToDS(storyTable)
-		if (path != null && !path.isCompile)
-			path.compile()
-		path?.vars?.each { key, attr ->
-			def varName = key.toUpperCase()
-			//noinspection SpellCheckingInspection
-			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
-				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
-
-			def ft = (attr.type as Field.Type)?:Field.Type.STRING
-			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
-			def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
-			if (prepareField != null) prepareField.call(field)
-			storyTable.field << field
-		}
+	static void PrepareStoryTable(TableDataset storyTable, Path path = null,
+								  @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
+		storyTable.field = StoryFieldsFromPath(path, prepareField)
 	}
 	
 	/**
@@ -1758,15 +1777,20 @@ WHERE
 		downloadFiles(parent.params)
 	}
 
+	/** List of system field from story table */
+	static public final List<Field> StoryFields = [
+			new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1),
+			new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2),
+			new Field(name: "FILEDATE", type: "DATETIME", isNull: false),
+			new Field(name: "FILESIZE", type: "BIGINT", isNull: false),
+			new Field(name: "FILELOADED", type: "DATETIME", isNull: false)
+	]
+
 	/**
 	 * Adding system fields to dataset for history table operations
 	 */
 	static void AddFieldsToDS(Dataset dataset) {
-		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1)
-		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2)
-		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
-		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
-		dataset.field << new Field(name: "FILELOADED", type: "DATETIME", isNull: false)
+		dataset.field = StoryFields
 	}
 	
 	/**

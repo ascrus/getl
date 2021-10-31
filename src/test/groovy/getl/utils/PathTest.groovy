@@ -1,12 +1,13 @@
 package getl.utils
 
 import getl.data.Field
+import getl.test.GetlTest
 import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
  */
-class PathTest extends getl.test.GetlTest {
+class PathTest extends GetlTest {
     static final def maskStr = '/root/{group}/{subgroup}/test_{date}_{num}.txt'
     static final Path path = new Path().with {
         mask = this.maskStr

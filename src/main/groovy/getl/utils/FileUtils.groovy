@@ -16,11 +16,9 @@ import net.lingala.zip4j.model.enums.AesKeyStrength
 import net.lingala.zip4j.model.enums.CompressionLevel
 import net.lingala.zip4j.model.enums.CompressionMethod
 import net.lingala.zip4j.model.enums.EncryptionMethod
-
 import java.nio.charset.Charset
 import java.nio.file.*
 import java.nio.channels.*
-import java.sql.Timestamp
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -1276,37 +1274,23 @@ class FileUtils {
 		return "$avgSpeed $speedName"
 	}
 
+	static private String[] _fileSizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+
 	/**
-	 * Return size in large units
+	 * Convert length to byte measurements
 	 * @param bytes size of bytes
-	 * @return
+	 * @return formatted string
 	 */
 	@CompileStatic
 	static String SizeBytes(Long bytes) {
-		def res = BigDecimal.valueOf(bytes)
-		def byteName = 'bytes'
-		if (bytes > 1024L * 1024 * 1024 * 1024 * 1024) {
-			res = NumericUtils.Round(res / 1024 / 1024 / 1024 / 1024 / 1024, 3)
-			byteName = 'PB'
-		}
-		else if (bytes > 1024L * 1024 * 1024 * 1024) {
-			res = NumericUtils.Round(res / 1024 / 1024 / 1024 / 1024, 3)
-			byteName = 'TB'
-		}
-		else if (bytes > 1024L * 1024 * 1024) {
-			res = NumericUtils.Round(res / 1024 / 1024 / 1024, 3)
-			byteName = 'GB'
-		}
-		else if (bytes > 1024L * 1024) {
-			res = NumericUtils.Round(res / 1024 / 1024, 1)
-			byteName = 'MB'
-		}
-		else if (bytes > 1024L) {
-			res = NumericUtils.Round(res / 1024, 0)
-			byteName = 'KB'
-		}
+		if (bytes == 0)
+			return '0 Byte'
 
-		return "$res $byteName"
+		Double x = Math.log(bytes) / Math.log(1024)
+		Integer i = Math.floor(x).toInteger()
+		if (i > _fileSizes.length - 1)
+			i = _fileSizes.length - 1
+		return "${(bytes.toDouble() / Math.pow(1024, i)).round(2)} ${_fileSizes[i]}"
 	}
 
 	static private LockManager fileLockManager = new LockManager(false)
