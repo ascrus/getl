@@ -47,7 +47,7 @@ class RepositoryStorageManager {
     /** Storage path for repository files */
     void setStoragePath(String value) {
         storagePath = value
-        isResourceStoragePath = FileUtils.IsResourceFileName(value)
+        isResourceStoragePath = FileUtils.IsResourceFileName(value, false)
     }
     /** Absolute storage path for repository files */
     String storagePath() {

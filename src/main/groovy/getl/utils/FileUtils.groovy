@@ -1208,8 +1208,10 @@ class FileUtils {
 			if (fileName.length() < 12)
 				throw new ExceptionGETL("Invalid path to repository file \"$fileName\"!")
 
-			def fn = "${getl.repositoryStorageManager.storagePath}/${fileName.substring(11)}"
-			res = ResourceFileName(fn, getl)
+			if (getl.repositoryStorageManager.isResourceStoragePath)
+				res = ResourceFileName("resource:${getl.repositoryStorageManager.storagePath()}${fileName.substring(11)}")
+			else
+				res = "${getl.repositoryStorageManager.storagePath()}${fileName.substring(11)}"
 		}
 		else {
 			res = fileName
