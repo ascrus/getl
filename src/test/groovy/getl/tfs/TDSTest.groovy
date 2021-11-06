@@ -14,7 +14,7 @@ class TDSTest extends getl.test.GetlTest {
         con.connected = true
         assertTrue(con.connected)
         assertTrue(con.inMemory)
-        assertFalse(con.autoCommit)
+        assertFalse(con.autoCommit())
         assertEquals('getl', con.connectDatabase)
         assertEquals(0, con.connectProperty.LOG)
         assertEquals(0, con.connectProperty.UNDO_LOG)

@@ -11,15 +11,15 @@ class SynchronizeObject {
 
 	/** Current counter value */
 	@Synchronized
-	Long getCount () { count }
+	Long getCount() { count }
 
 	/** Set new counter value */
 	@Synchronized
-	setCount (Long value) { count = value }
+	setCount(Long value) { count = value?:0 }
 
 	/** Clear counter value */
 	@Synchronized
-	clear  () {
+	clear() {
 		count = 0
 		text = null
 		date = null
@@ -28,7 +28,7 @@ class SynchronizeObject {
 
 	/** Increase counter value */
 	@Synchronized
-	Long nextCount () {
+	Long nextCount() {
 		count++
 		
 		return count
@@ -36,7 +36,7 @@ class SynchronizeObject {
 
 	/** Decrease counter value */
 	@Synchronized
-	Long prevCount () {
+	Long prevCount() {
 		count--
 		
 		return count
@@ -44,8 +44,9 @@ class SynchronizeObject {
 
 	/** Add number to counter value */
 	@Synchronized
-	Long addCount (Long value) {
-		count += value
+	Long addCount(Long value) {
+		if (value != null)
+			count += value
 
 		return count
 	}
@@ -55,7 +56,7 @@ class SynchronizeObject {
 
 	/** Text value */
 	@Synchronized
-	String getText () { text }
+	String getText() { text }
 
 	/** Text value */
 	@Synchronized
@@ -84,24 +85,32 @@ class SynchronizeObject {
 	/** Add node to array list by index */
 	@Synchronized
 	void addToList (Integer index, def value) {
-		list.add(index, value)
+		if (value != null)
+			list.add(index, value)
 	}
 
 	/** Append node to array list */
 	@Synchronized
-	Boolean addToList (def value) {
-		list.add(value)
+	Boolean addToList(def value) {
+		if (value != null)
+			list.add(value)
 	}
 
 	/** Append list to array list */
 	@Synchronized
 	static Boolean addAllToList (List list) {
+		if (list != null)
+			return false
+
 		return list.addAll(list)
 	}
 
 	/** Append list to array list by index */
 	@Synchronized
 	static Boolean addAllToList (Integer index, List list) {
+		if (list != null)
+			return false
+
 		return list.addAll(index, list)
 	}
 
@@ -113,13 +122,13 @@ class SynchronizeObject {
 
 	/** Check empty array list */
 	@Synchronized
-	Boolean isEmptyList () {
+	Boolean isEmptyList() {
 		list.isEmpty()
 	}
 
 	/** Array list */
 	@Synchronized
-	List getList () { list }
+	List getList() { list }
 
 	/** Index the item list by value */
 	@Synchronized

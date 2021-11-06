@@ -98,7 +98,7 @@ END FOR;"""
 		SQLScripter scripter = new SQLScripter(connection: connection, logEcho: "INFO")
 		scripter.vars.putAll(Config.content."vars" as Map)
 		scripter.loadFile(args."script" as String, "utf-8")
-		scripter.runSql()
+		scripter.runSql(true)
 		logger.info("Finish, ${scripter.rowCount} rows processed")
 	}
 }

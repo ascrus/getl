@@ -1392,12 +1392,12 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 				countDouble = newFiles.connection.executeCommand(command: sqlDetectDouble, isUpdate: true)
 			}
 			catch (Exception e) {
-				if (!newFiles.currentJDBCConnection.autoCommit)
+				if (!newFiles.currentJDBCConnection.autoCommit())
 					newFiles.connection.rollbackTran()
 
 				throw e
 			}
-			if (!newFiles.currentJDBCConnection.autoCommit)
+			if (!newFiles.currentJDBCConnection.autoCommit())
 				newFiles.connection.commitTran()
 			
 			if (countDouble > 0) {
@@ -1412,12 +1412,12 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 					countDelete = newFiles.connection.executeCommand(command: sqlDeleteDouble, isUpdate: true)
 				}
 				catch (Exception e) {
-					if (!newFiles.currentJDBCConnection.autoCommit)
+					if (!newFiles.currentJDBCConnection.autoCommit())
 						newFiles.connection.rollbackTran()
 
 					throw e
 				}
-				if (!newFiles.currentJDBCConnection.autoCommit)
+				if (!newFiles.currentJDBCConnection.autoCommit())
 					newFiles.connection.commitTran()
 				if (countDouble != countDelete)
 					throw new ExceptionGETL("Internal error on delete double files name for build list files in filemanager!")
@@ -1715,11 +1715,11 @@ WHERE
 			}
 			
 			if (useStory) ds.doneWrite()
-			if (useStory && !ds.currentJDBCConnection.autoCommit)
+			if (useStory && !ds.currentJDBCConnection.autoCommit())
 				ds.connection.commitTran()
 		}
 		catch (Exception e) {
-			if (useStory && ds.connection.connected && !ds.currentJDBCConnection.autoCommit)
+			if (useStory && ds.connection.connected && !ds.currentJDBCConnection.autoCommit())
 				ds.connection.rollbackTran()
 
 			throw e

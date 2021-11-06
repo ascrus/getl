@@ -49,7 +49,7 @@ sql {scripter ->
             def fn = ((path != null)?(path + '/'):'') + fileName
             if (ext != null)
                 vars = ext
-            runFile fn
+            runFile true, fn
             logInfo "SQL script file \"$fileName\" executed successfully"
             res.putAll(vars)
         }

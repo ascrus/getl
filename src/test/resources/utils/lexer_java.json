@@ -1,0 +1,383 @@
+{
+    "tokens": [
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "*\n  Java class\n  @author Alexsey Konstantinov\n",
+            "first": 0,
+            "last": 49
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "class",
+            "first": 51,
+            "last": 55
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "TestCommentlass",
+            "first": 57,
+            "last": 71
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "extend",
+            "first": 73,
+            "last": 78
+        },
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "Any",
+            "first": 84,
+            "last": 90
+        },
+        {
+            "type": "FUNCTION",
+            "value": "TestClass",
+            "first": 80,
+            "last": 522,
+            "list": [
+                {
+                    "type": "COMMENT",
+                    "comment_start": "/*",
+                    "comment_finish": "*/",
+                    "value": "* Class field ",
+                    "first": 101,
+                    "last": 118
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "private",
+                    "first": 122,
+                    "last": 128
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "String",
+                    "first": 130,
+                    "last": 135
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "field",
+                    "first": 137,
+                    "last": 141
+                },
+                {
+                    "type": "SEMICOLON",
+                    "value": ";",
+                    "first": 142,
+                    "last": 142
+                },
+                {
+                    "type": "SINGLE_COMMENT",
+                    "comment_start": "//",
+                    "comment_finish": "\n",
+                    "value": "Internal field",
+                    "first": 143,
+                    "last": 159
+                },
+                {
+                    "type": "COMMENT",
+                    "comment_start": "/*",
+                    "comment_finish": "*/",
+                    "value": "* Property getter <--> ",
+                    "first": 162,
+                    "last": 188
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "String",
+                    "first": 192,
+                    "last": 197
+                },
+                {
+                    "type": "FUNCTION",
+                    "value": "getField",
+                    "first": 199,
+                    "last": 228,
+                    "list": [
+                        {
+                            "type": "COMMENT",
+                            "comment_start": "/*",
+                            "comment_finish": "*/",
+                            "value": " not parameters ",
+                            "first": 208,
+                            "last": 227
+                        }
+                    ],
+                    "start": "(",
+                    "finish": ")"
+                },
+                {
+                    "type": "LIST",
+                    "start": "{",
+                    "finish": "}",
+                    "list": [
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "return",
+                            "first": 232,
+                            "last": 237
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "field",
+                            "first": 239,
+                            "last": 243
+                        },
+                        {
+                            "type": "SEMICOLON",
+                            "value": ";",
+                            "first": 244,
+                            "last": 244
+                        }
+                    ],
+                    "first": 230,
+                    "last": 246
+                },
+                {
+                    "type": "COMMENT",
+                    "comment_start": "/*",
+                    "comment_finish": "*/",
+                    "value": "* <--> Property setter ",
+                    "first": 250,
+                    "last": 276
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "void",
+                    "first": 280,
+                    "last": 283
+                },
+                {
+                    "type": "COMMENT",
+                    "comment_start": "/*",
+                    "comment_finish": "*/",
+                    "value": "Value",
+                    "first": 288,
+                    "last": 296
+                },
+                {
+                    "type": "FUNCTION",
+                    "value": "setField",
+                    "first": 285,
+                    "last": 315,
+                    "list": [
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "String",
+                            "first": 303,
+                            "last": 308
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "value",
+                            "first": 310,
+                            "last": 314
+                        }
+                    ],
+                    "start": "(",
+                    "finish": ")"
+                },
+                {
+                    "type": "LIST",
+                    "start": "{",
+                    "finish": "}",
+                    "list": [
+                        {
+                            "type": "SINGLE_COMMENT",
+                            "comment_start": "//",
+                            "comment_finish": "\n",
+                            "value": " body",
+                            "first": 319,
+                            "last": 326
+                        },
+                        {
+                            "type": "FUNCTION",
+                            "value": "if",
+                            "first": 331,
+                            "last": 368,
+                            "list": [
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "value",
+                                    "first": 335,
+                                    "last": 339
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "==",
+                                    "first": 341,
+                                    "last": 342
+                                },
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "null",
+                                    "first": 344,
+                                    "last": 347
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "||",
+                                    "first": 349,
+                                    "last": 350
+                                },
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "value.length",
+                                    "first": 352,
+                                    "last": 363
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "<",
+                                    "first": 365,
+                                    "last": 365
+                                },
+                                {
+                                    "type": "NUMBER",
+                                    "value": 1,
+                                    "first": 367,
+                                    "last": 367
+                                }
+                            ],
+                            "start": "(",
+                            "finish": ")"
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "throw",
+                            "first": 376,
+                            "last": 380
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "new",
+                            "first": 382,
+                            "last": 384
+                        },
+                        {
+                            "type": "FUNCTION",
+                            "value": "Exception",
+                            "first": 386,
+                            "last": 416,
+                            "list": [
+                                {
+                                    "type": "QUOTED_TEXT",
+                                    "quote": "\"",
+                                    "value": "Required value //!",
+                                    "first": 396,
+                                    "last": 415
+                                }
+                            ],
+                            "start": "(",
+                            "finish": ")"
+                        },
+                        {
+                            "type": "SEMICOLON",
+                            "value": ";",
+                            "first": 417,
+                            "last": 417
+                        },
+                        {
+                            "type": "FUNCTION",
+                            "value": "if",
+                            "first": 424,
+                            "last": 456,
+                            "list": [
+                                {
+                                    "type": "FUNCTION",
+                                    "value": "value.toUpperCase",
+                                    "first": 428,
+                                    "last": 446,
+                                    "list": [
+                                        
+                                    ],
+                                    "start": "(",
+                                    "finish": ")"
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "!=",
+                                    "first": 448,
+                                    "last": 449
+                                },
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "value",
+                                    "first": 451,
+                                    "last": 455
+                                }
+                            ],
+                            "start": "(",
+                            "finish": ")"
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "value",
+                            "first": 464,
+                            "last": 468
+                        },
+                        {
+                            "type": "OPERATOR",
+                            "value": "=",
+                            "first": 470,
+                            "last": 470
+                        },
+                        {
+                            "type": "FUNCTION",
+                            "value": "value.toUpperCase",
+                            "first": 472,
+                            "last": 490,
+                            "list": [
+                                
+                            ],
+                            "start": "(",
+                            "finish": ")"
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "field",
+                            "first": 497,
+                            "last": 501
+                        },
+                        {
+                            "type": "OPERATOR",
+                            "value": "=",
+                            "first": 503,
+                            "last": 503
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "value",
+                            "first": 505,
+                            "last": 509
+                        },
+                        {
+                            "type": "COMMENT",
+                            "comment_start": "/*",
+                            "comment_finish": "*/",
+                            "value": "!",
+                            "first": 511,
+                            "last": 515
+                        },
+                        {
+                            "type": "SEMICOLON",
+                            "value": ";",
+                            "first": 516,
+                            "last": 516
+                        }
+                    ],
+                    "first": 317,
+                    "last": 520
+                }
+            ],
+            "start": "{",
+            "finish": "}"
+        }
+    ]
+}

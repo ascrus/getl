@@ -176,7 +176,7 @@ class TableDataset extends JDBCDataset {
 		validTableName()
 
 		Long res = 0
-		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit)
+		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
 			currentJDBCConnection.transaction {
 				res = currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
 			}
@@ -527,7 +527,7 @@ class TableDataset extends JDBCDataset {
 		def autoTran = connection.isSupportTran
 		if (autoTran) {
 			autoTran = BoolUtils.IsValue(parent.autoCommit,
-					(!BoolUtils.IsValue(currentJDBCConnection.autoCommit) && currentJDBCConnection.tranCount == 0))
+					(!BoolUtils.IsValue(currentJDBCConnection.autoCommit()) && currentJDBCConnection.tranCount == 0))
 		}
 
 		if (autoTran)
@@ -541,7 +541,7 @@ class TableDataset extends JDBCDataset {
 
 		def countRow = 0L
 		def sizeFiles = 0L
-        def abortOnError = BoolUtils.IsValue(parent.abortOnError)
+        def abortOnError = BoolUtils.IsValue(parent.abortOnError, true)
 
 		Closure beforeLoad = parent.onBeforeBulkLoadFile
 		Closure afterLoad = parent.onAfterBulkLoadFile
@@ -783,7 +783,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	Long copyTo(TableDataset dest, Map<String, String> map = [:]) {
 		Long res = 0
-		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit)
+		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
 			currentJDBCConnection.transaction {
 				res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
 			}

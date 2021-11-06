@@ -1,0 +1,20 @@
+/**
+  Java class
+  @author Alexsey Konstantinov
+*/
+class TestCommentlass extend Test/*Any*/Class {
+  /** Class field */
+  private String field;//Internal field
+  /** Property getter <--> */
+  String getField(/* not parameters */) { return field; }
+  /** <--> Property setter */
+  void set/*Value*/Field(String value) { // body
+    if (value == null || value.length < 1)
+      throw new Exception("Required value //!");
+
+    if (value.toUpperCase() != value)
+      value = value.toUpperCase()
+
+    field = value /*!*/;
+  }
+}

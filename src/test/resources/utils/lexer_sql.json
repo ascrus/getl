@@ -1,0 +1,395 @@
+{
+    "tokens": [
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "\n\tSql script\n\tauthor: Alexsey Konstantinov\n",
+            "first": 0,
+            "last": 46
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "WITH",
+            "first": 48,
+            "last": 51
+        },
+        {
+            "type": "FUNCTION",
+            "value": "a",
+            "first": 53,
+            "last": 116,
+            "list": [
+                {
+                    "type": "SINGLE_COMMENT",
+                    "comment_start": "--",
+                    "comment_finish": "\n",
+                    "value": " parameters",
+                    "first": 57,
+                    "last": 70
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "SELECT",
+                    "first": 72,
+                    "last": 77
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "id",
+                    "first": 79,
+                    "last": 80,
+                    "delimiter": {
+                        "type": "COMMA",
+                        "value": ","
+                    }
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "type",
+                    "first": 83,
+                    "last": 86
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "FROM",
+                    "first": 89,
+                    "last": 92
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "table1",
+                    "first": 94,
+                    "last": 99
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "WHERE",
+                    "first": 102,
+                    "last": 106
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "id",
+                    "first": 108,
+                    "last": 109
+                },
+                {
+                    "type": "OPERATOR",
+                    "value": "=",
+                    "first": 111,
+                    "last": 111
+                },
+                {
+                    "type": "NUMBER",
+                    "value": 10,
+                    "first": 113,
+                    "last": 114
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "SELECT",
+            "first": 118,
+            "last": 123
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "a.id",
+            "first": 125,
+            "last": 128,
+            "delimiter": {
+                "type": "COMMA",
+                "value": ","
+            }
+        },
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "old",
+            "first": 132,
+            "last": 138
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "b.*",
+            "first": 131,
+            "last": 140
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "INTO",
+            "first": 142,
+            "last": 145
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "table_new",
+            "first": 147,
+            "last": 155
+        },
+        {
+            "type": "SINGLE_COMMENT",
+            "comment_start": "--",
+            "comment_finish": "\n",
+            "value": " write table",
+            "first": 157,
+            "last": 171
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "FROM",
+            "first": 172,
+            "last": 175
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "a",
+            "first": 177,
+            "last": 177
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "INNER",
+            "first": 180,
+            "last": 184
+        },
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "+join ",
+            "first": 186,
+            "last": 195
+        },
+        {
+            "type": "FUNCTION",
+            "value": "JOIN",
+            "first": 197,
+            "last": 351,
+            "list": [
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "SELECT",
+                    "first": 206,
+                    "last": 211
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "b.type",
+                    "first": 213,
+                    "last": 218,
+                    "delimiter": {
+                        "type": "COMMA",
+                        "value": ","
+                    }
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "CASE",
+                    "first": 221,
+                    "last": 224
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "b.type",
+                    "first": 226,
+                    "last": 231
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "WHEN",
+                    "first": 233,
+                    "last": 236
+                },
+                {
+                    "type": "NUMBER",
+                    "value": 1,
+                    "first": 238,
+                    "last": 238
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "THEN",
+                    "first": 240,
+                    "last": 243
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "b.value1",
+                    "first": 245,
+                    "last": 252
+                },
+                {
+                    "type": "OPERATOR",
+                    "value": "||",
+                    "first": 254,
+                    "last": 255
+                },
+                {
+                    "type": "QUOTED_TEXT",
+                    "quote": "'",
+                    "value": "--comment",
+                    "first": 257,
+                    "last": 267
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "ELSE",
+                    "first": 269,
+                    "last": 272
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "b.value2",
+                    "first": 274,
+                    "last": 281
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "END",
+                    "first": 283,
+                    "last": 285
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "AS",
+                    "first": 287,
+                    "last": 288
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "value",
+                    "first": 290,
+                    "last": 294
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "FROM",
+                    "first": 298,
+                    "last": 301
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "table2",
+                    "first": 303,
+                    "last": 308
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "b",
+                    "first": 310,
+                    "last": 310
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "INNER",
+                    "first": 315,
+                    "last": 319
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "JOIN",
+                    "first": 321,
+                    "last": 324
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "table3",
+                    "first": 326,
+                    "last": 331
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "c",
+                    "first": 333,
+                    "last": 333
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "ON",
+                    "first": 335,
+                    "last": 336
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "c.id",
+                    "first": 338,
+                    "last": 341
+                },
+                {
+                    "type": "OPERATOR",
+                    "value": "=",
+                    "first": 343,
+                    "last": 343
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "b.id",
+                    "first": 345,
+                    "last": 348
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "b",
+            "first": 353,
+            "last": 353
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "ON",
+            "first": 355,
+            "last": 356
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "b.type",
+            "first": 358,
+            "last": 363
+        },
+        {
+            "type": "OPERATOR",
+            "value": "=",
+            "first": 365,
+            "last": 365
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "a.type",
+            "first": 367,
+            "last": 372
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "ORDER",
+            "first": 374,
+            "last": 378
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "BY",
+            "first": 380,
+            "last": 381
+        },
+        {
+            "type": "NUMBER",
+            "value": 1,
+            "first": 383,
+            "last": 383
+        },
+        {
+            "type": "SEMICOLON",
+            "value": ";",
+            "first": 384,
+            "last": 384
+        }
+    ]
+}

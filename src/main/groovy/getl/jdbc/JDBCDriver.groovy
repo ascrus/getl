@@ -547,7 +547,7 @@ class JDBCDriver extends Driver {
 			con.sysParams."currentConnectURL" = url
 			if (server != null) con.sysParams."balancerServer" = server
 
-			sql.getConnection().setAutoCommit(con.autoCommit)
+			sql.getConnection().setAutoCommit(con.autoCommit())
 			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
 			sql.withStatement{ stmt -> 
 				if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
@@ -956,7 +956,7 @@ class JDBCDriver extends Driver {
         if (!isSupport(Support.TRANSACTIONAL))
 			return
 
-		if (con.autoCommit)
+		if (con.autoCommit())
 			throw new ExceptionGETL("Cannot use commit while connection is in auto-commit mode")
 
 		if (con == null)
@@ -978,7 +978,7 @@ class JDBCDriver extends Driver {
         if (!isSupport(Support.TRANSACTIONAL))
 			return
 
-		if (con.autoCommit)
+		if (con.autoCommit())
 			throw new ExceptionGETL("Cannot use rollback while connection is in auto-commit mode")
 
 		if (con == null)
@@ -1102,7 +1102,7 @@ class JDBCDriver extends Driver {
 
 		def con = jdbcConnection
 		
-		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit)) con.startTran()
+		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit())) con.startTran()
 		try {
 			def varsCT = [
 					type: tableTypeName,
@@ -1134,7 +1134,7 @@ class JDBCDriver extends Driver {
 					]
 					def sqlCodeCI = sqlExpressionValue('ddlCreateIndex', varsCI)
 
-					if (commitDDL && !(jdbcConnection.autoCommit)) {
+					if (commitDDL && !(jdbcConnection.autoCommit())) {
 						if (transactionalDDL) {
 							con.commitTran()
 							con.startTran()
@@ -1148,13 +1148,13 @@ class JDBCDriver extends Driver {
 			}
 		}
 		catch (Exception e) {
-			if (commitDDL && !(jdbcConnection.autoCommit)) {
+			if (commitDDL && !(jdbcConnection.autoCommit())) {
 				if (transactionalDDL) con.rollbackTran()
 			}
 			throw e
 		}
 		
-		if (commitDDL && !(jdbcConnection.autoCommit)) {
+		if (commitDDL && !(jdbcConnection.autoCommit())) {
 			if (transactionalDDL)
 				con.commitTran()
 			else
@@ -1366,20 +1366,20 @@ class JDBCDriver extends Driver {
 
 		def con = jdbcConnection
 
-		if (commitDDL && transactionalDDL && !(con.autoCommit))
+		if (commitDDL && transactionalDDL && !(con.autoCommit()))
 			con.startTran()
 
 		try {
 			executeCommand(q, [:])
 		}
 		catch (Exception err) {
-			if (commitDDL && !(jdbcConnection.autoCommit)) {
+			if (commitDDL && !(jdbcConnection.autoCommit())) {
 				if (transactionalDDL) con.rollbackTran()
 			}
 			throw err
 		}
 
-		if (commitDDL && !(jdbcConnection.autoCommit)) {
+		if (commitDDL && !(jdbcConnection.autoCommit())) {
 			if (transactionalDDL) {
 				con.commitTran()
 			} else {
@@ -2635,7 +2635,7 @@ $sql
 		Long count
 		def autoTran = isSupport(Support.TRANSACTIONAL)
 		if (autoTran) {
-			autoTran = (!con.autoCommit && !con.isTran())
+			autoTran = (!con.autoCommit() && !con.isTran())
 		}
 
 		if (autoTran)

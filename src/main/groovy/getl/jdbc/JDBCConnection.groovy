@@ -93,7 +93,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	protected void doDoneConnect() {
 		super.doDoneConnect()
 		sysParams.sessionID = currentJDBCDriver.sessionID()
-		currentJDBCDriver.saveToHistory("-- USER CONNECTED (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
+		currentJDBCDriver.saveToHistory("-- USER CONNECTED (URL: ${sysParams."currentConnectURL"})${(autoCommit())?' WITH AUTOCOMMIT':''}")
         if (!sessionProperty.isEmpty()) {
 			currentJDBCDriver.initSessionProperties()
         }
@@ -164,76 +164,64 @@ class JDBCConnection extends Connection implements UserLogins {
 	@Override
 	void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 	
-	/**
-	 * Auto commit transaction
-	 */
-	Boolean getAutoCommit() { BoolUtils.IsValue(params.autoCommit, false) }
-	/**
-	 * Auto commit transaction
-	 */
+	/** Auto commit transaction (default false) */
+	Boolean getAutoCommit() { params.autoCommit }
+	/** Auto commit transaction (default false) */
 	void setAutoCommit(Boolean value) {
 		params.autoCommit = value
-		if (connected) currentJDBCDriver.setAutoCommit(value)
+		if (connected)
+			currentJDBCDriver.setAutoCommit(value)
 	}
+	/** Auto commit transaction (default false) */
+	Boolean autoCommit() { BoolUtils.IsValue(params.autoCommit, false) }
+
+	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
+	Boolean getExtensionForSqlScripts() { params.extensionForSqlScripts as Boolean }
+	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
+	void setExtensionForSqlScripts(Boolean value) { params.getExtensionForSqlScripts = value }
+	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
+	Boolean extensionForSqlScripts() { BoolUtils.IsValue(params.extensionForSqlScripts, false) }
 	
-	/**
-	 * Database name from access to objects in datasets
-	 */
+	/** Database name from access to objects in datasets */
 	String getDbName() { params.dbName as String }
-	/**
-	 * Database name from access to objects in datasets
-	 */
+	/** Database name from access to objects in datasets */
 	void setDbName(String value) { params.dbName = value }
 
-	/**
-	 * Schema name from access to objects in datasets
-	 */
+	/** Schema name from access to objects in datasets */
 	String getSchemaName() { params.schemaName as String }
-	/**
-	 * Schema name from access to objects in datasets
-	 */
+	/** Schema name from access to objects in datasets */
 	void setSchemaName(String value) { params.schemaName = value }
 	
-	/**
-	 * Extend connection properties
-	 */
+	/** Extend connection properties */
 	Map getConnectProperty() {
-		if (params.connectProperty == null) params.connectProperty = [:]
+		if (params.connectProperty == null)
+			params.connectProperty = [:]
+
 		return params.connectProperty as Map
 	}
-	/**
-	 * Extend connection properties
-	 */
+	/** Extend connection properties */
 	void setConnectProperty(Map value) {
 		connectProperty.clear()
 		addConnectionProperty(value)
 	}
 
-	/**
-	 * Merge connection properties
-	 */
+	/** Merge connection properties */
 	void addConnectionProperty(Map value) {
 		connectProperty.putAll(value)
 	}
 	
-	/**
-	 * Session properties
-	 */
+	/** Session properties */
 	Map<String, Object> getSessionProperty() {
 		if (params.sessionProperty == null) params.sessionProperty = [:] as Map<String, Object>
 		return params.sessionProperty as Map<String, Object>
 	}
-	/**
-	 * Session properties
-	 */
+	/** Session properties */
 	void setSessionProperty(Map<String, Object> value) {
 		sessionProperty.clear()
 		addSessionProperty(value)
 	}
 
-	/**
-	 * Merge session properties
-	 */
+	/** Add session properties */
 	void addSessionProperty(Map value) {
 		sessionProperty.putAll(value)
 	}
@@ -245,6 +233,7 @@ class JDBCConnection extends Connection implements UserLogins {
         params.sqlHistoryFile = value
         fileNameSqlHistory = null
     }
+	/** Name of file history sql commands */
 	String sqlHistoryFile() {
 		def res = sqlHistoryFile
 		if (res == null && dslCreator != null && dslNameObject != null) {
@@ -257,74 +246,51 @@ class JDBCConnection extends Connection implements UserLogins {
 		return FileUtils.ConvertToDefaultOSPath(res)
 	}
 
-    /**
-     * Output server warning messages to log
-     */
+    /** Output server warning messages to log (default false) */
     Boolean getOutputServerWarningToLog() { BoolUtils.IsValue(params.outputServerWarningToLog, false) }
-	/**
-	 * Output server warning messages to log
-	 */
+	/** Output server warning messages to log (default false) */
     void setOutputServerWarningToLog(Boolean value) { params.outputServerWarningToLog = value }
 
-    /**
-     * Output sql commands to console
-     */
+    /** Output sql commands to console (default false) */
     Boolean getSqlHistoryOutput() { BoolUtils.IsValue(params.sqlHistoryOutput, false) }
-	/**
-	 * Output sql commands to console
-	 */
+	/** Output sql commands to console (default false) */
     void setSqlHistoryOutput(Boolean value) {
         params.sqlHistoryOutput = value
     }
 	
-	/**
-	 * Fetch size records for read query 
-	 */
+	/** Fetch size records for read query */
 	Integer getFetchSize() { params.fetchSize as Integer }
-	/**
-	 * Fetch size records for read query
-	 */
+	/** Fetch size records for read query */
 	void setFetchSize(Integer value) {
 		if (value != null && value < 0)
 			throw new ExceptionGETL('The fetch size must be equal or greater than zero!')
+
 		params.fetchSize = value
 	}
 	
-	/**
-	 * Set login timeout for connection driver (in seconds) 
-	 */
+	/** Set login timeout for connection driver (in seconds) */
 	Integer getLoginTimeout() { params.loginTimeout as Integer }
-	/**
-	 * Set login timeout for connection driver (in seconds)
-	 */
+	/** Set login timeout for connection driver (in seconds) */
 	void setLoginTimeout(Integer value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('The login timeout must be greater than zero!')
 		params.loginTimeout = value
 	}
-	
-	/**
-	 * Set statement timeout for connection driver (in seconds)
-	 */
+
+	/** Set statement timeout for connection driver (in seconds) */
 	Integer getQueryTimeout() { params.queryTimeout as Integer }
-	/**
-	 * Set statement timeout for connection driver (in seconds)
-	 */
+	/** Set statement timeout for connection driver (in seconds) */
 	void setQueryTimeout(Integer value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('The query timeout must be greater than zero!')
 		params.queryTimeout = value
 	}
 	
-	/**
-	 * Return using groovy SQL connection
-	 */
+	/** Return using groovy SQL connection */
 	@JsonIgnore
 	Sql getSqlConnection() { sysParams.sqlConnect as Sql }
 	
-	/**
-	 * Return session ID (if supported RDBMS driver)
-	 */
+	/** Return session ID (if supported RDBMS driver) */
 	@JsonIgnore
 	String getSessionID() { sysParams.sessionID as String }
 

@@ -257,6 +257,7 @@ class FileProcessing extends FileListProcessing {
         }
 
         Manager man
+        TableDataset story
         TDSTable delTable
         Boolean isFree = true
         String curPath = ''
@@ -270,10 +271,10 @@ class FileProcessing extends FileListProcessing {
 
             if (man != null) {
                 disconnectFrom([man])
-                if (man.story != null) {
-                    man.story.connection.connected = false
-                    man.story.connection = null
-                    man.story = null
+                if (story != null) {
+                    story.connection.connected = false
+                    story.connection = null
+                    story = null
                 }
                 man = null
             }
@@ -376,15 +377,14 @@ class FileProcessing extends FileListProcessing {
         def sourceList = [] as List<ListPoolElement>
         (1..countOfThreadProcessing).each {
             def src = source.cloneManager([localDirectory: source.localDirectory], dslCreator)
-            if (currentStory != null)
-                src.story = currentStory?.cloneDatasetConnection() as TableDataset
+            src.story = null
             ConnectTo([src], numberAttempts, timeAttempts)
 
             def element = new ListPoolElement(src)
-            if (delFilesTable != null) {
-                def delTable = delFilesTable.cloneDatasetConnection() as TDSTable
-                element.delTable = delTable
-            }
+            if (currentStory != null)
+                element.story = currentStory?.cloneDatasetConnection() as TableDataset
+            if (delFilesTable != null)
+                element.delTable = delFilesTable.cloneDatasetConnection() as TDSTable
 
             sourceList << element
         }
@@ -447,9 +447,9 @@ class FileProcessing extends FileListProcessing {
                 logger.fine("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
                 sourceList.each { element ->
-                    if (element.man.story != null) {
-                        element.man.story.connection.startTran(true)
-                        element.man.story.openWrite(operation: 'INSERT')
+                    if (element.story != null) {
+                        element.story.connection.startTran(true)
+                        element.story.openWrite(operation: 'INSERT')
                     }
                     if (element.delTable != null) {
                         element.delTable.connection.startTran(true)
@@ -579,8 +579,8 @@ class FileProcessing extends FileListProcessing {
                                     if (procResult == null) {
                                         throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
                                     } else if (procResult == FileProcessingElement.completeResult) {
-                                        if (sourceElement.man.story != null) {
-                                            sourceElement.man.story.write(file + [fileloaded: new Date()])
+                                        if (sourceElement.story != null) {
+                                            sourceElement.story.write(file + [fileloaded: new Date()])
                                         }
 
                                         if (processedElement != null && fileDesc != null)
@@ -642,20 +642,20 @@ class FileProcessing extends FileListProcessing {
                 }
                 catch (Exception e){
                     sourceList.each { element ->
-                        if (element.man.story != null) {
+                        if (element.story != null) {
                             if (!isCachedMode)
-                                element.man.story.doneWrite()
-                            element.man.story.closeWrite()
-                            if (!element.man.story.currentJDBCConnection.autoCommit) {
+                                element.story.doneWrite()
+                            element.story.closeWrite()
+                            if (!element.story.currentJDBCConnection.autoCommit()) {
                                 if (!isCachedMode)
-                                    element.man.story.connection.commitTran(true)
+                                    element.story.connection.commitTran(true)
                                 else
-                                    element.man.story.connection.rollbackTran(true)
+                                    element.story.connection.rollbackTran(true)
                             }
                         }
                         if (element.delTable != null) {
                             element.delTable.closeWrite()
-                            if (!element.delTable.currentJDBCConnection.autoCommit)
+                            if (!element.delTable.currentJDBCConnection.autoCommit())
                                 element.delTable.connection.rollbackTran(true)
                         }
                     }
@@ -670,16 +670,16 @@ class FileProcessing extends FileListProcessing {
                 }
 
                 sourceList.each { element ->
-                    if (element.man.story != null) {
-                        element.man.story.doneWrite()
-                        element.man.story.closeWrite()
-                        if (!element.man.story.currentJDBCConnection.autoCommit)
-                            element.man.story.connection.commitTran(true)
+                    if (element.story != null) {
+                        element.story.doneWrite()
+                        element.story.closeWrite()
+                        if (!element.story.currentJDBCConnection.autoCommit())
+                            element.story.connection.commitTran(true)
                     }
                     if (element.delTable != null) {
                         element.delTable.doneWrite()
                         element.delTable.closeWrite()
-                        if (!element.delTable.currentJDBCConnection.autoCommit)
+                        if (!element.delTable.currentJDBCConnection.autoCommit())
                             element.delTable.connection.commitTran(true)
                     }
                 }

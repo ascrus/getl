@@ -169,88 +169,41 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		if (script == null) 
 			throw new ExceptionGETL("SQLScripter: need script in prepareSql method")
 			
-		def varNames = [] as List<String>
-		def locVars = allVars
-		locVars.keySet().toArray().each { varNames << (it as String) }
-		
-		Pattern p
-		Matcher m
-		
-		// Compile vars
-		p = Pattern.compile('(?i)([{][a-z0-9._-]+[}])')
-		m = p.matcher(script)
-		def b = new StringBuilder()
-
-		def pos = 0
-		while (m.find()) {
-			b.append(script, pos, m.start())
-			pos = m.end()
-
-			def groupName = m.group(1) as String
-			def vn = groupName.substring(1, groupName.length() - 1).trim().toLowerCase()
-			
-			def varName = varNames.find { String s -> vn == s.toLowerCase() }
-			
-			if (varName == null) {
-				b.append(groupName)
-				continue
-			}
-
-			def val = locVars.get(varName)
-			String valStr
-			if (val == null) {
-				valStr = "null"
-			}
-			else if (val instanceof List) {
-				valStr = (val as List).join(', ')
-			}
-			else {
-				if (val instanceof Date)
-					valStr = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', val)
-				else
-					valStr = val
-			}
-
-			b.append(valStr)
-		}
-		if (pos < script.length())
-			b.append(script, pos, script.length())
-
-		sql = b.toString().trim()
+		sql = StringUtils.EvalMacroString(script, allVars, false)
 		scriptLabel = null
 
 		def startCommand = StringUtils.DetectStartSQLCommand(sql)
 		if (startCommand == -1) return false
 		def cs = sql.substring(startCommand).trim()
 		
-		if (cs.matches("(?is)set\\s.*")) {
+		if (cs.matches("(?is)[@]{0,1}set\\s.*")) {
 			sql = removeFirstOperator(sql, 'SET', startCommand)
 			typeSql = TypeCommand.SET
-		} else if (cs.matches("(?is)echo\\s.*")) {
+		} else if (cs.matches("(?is)[@]{0,1}echo\\s.*")) {
 			sql = StringUtils.RemoveSQLComments(sql)
 			sql = removeFirstOperator(sql, 'ECHO', 0)
 			typeSql = TypeCommand.ECHO
-		} else if (cs.matches("(?is)for\\s+select\\s.*") || sql.matches("(?is)for\\s+with\\s.*")) {
+		} else if (cs.matches("(?is)[@]{0,1}for\\s+select\\s.*") || sql.matches("(?is)for\\s+with\\s.*")) {
 			sql = removeFirstOperator(sql, 'FOR', startCommand)
 			typeSql = TypeCommand.FOR
-		} else if (cs.matches("(?is)if\\s.*")) {
+		} else if (cs.matches("(?is)[@]{0,1}if\\s.*")) {
 			def from = ((connection.driver as JDBCDriver).sysDualTable != null)?"FROM ${(connection.driver as JDBCDriver).sysDualTable}":''
 			sql = "SELECT 1 AS result $from WHERE " + removeFirstOperator(sql, 'IF', startCommand)
 			typeSql = TypeCommand.IF
-		} else if (cs.matches("(?is)error\\s.*")) {
+		} else if (cs.matches("(?is)[@]{0,1}error\\s.*")) {
 			sql = StringUtils.RemoveSQLComments(sql)
 			sql = removeFirstOperator(sql, 'ERROR', 0)
 			typeSql = TypeCommand.ERROR
-		} else if (cs.matches("(?is)exit")) {
+		} else if (cs.matches("(?is)[@]{0,1}exit")) {
 			sql = StringUtils.RemoveSQLComments(sql)
 			typeSql = TypeCommand.EXIT
-		} else if (cs.matches("(?is)load_point\\s+.*")) {
+		} else if (cs.matches("(?is)[@]{0,1}load_point\\s+.*")) {
 			sql = StringUtils.RemoveSQLComments(sql)
 			typeSql = TypeCommand.LOAD_POINT
-		} else if (cs.matches("(?is)save_point\\s+.*")) {
+		} else if (cs.matches("(?is)[@]{0,1}save_point\\s+.*")) {
 			sql = StringUtils.RemoveSQLComments(sql)
 			typeSql = TypeCommand.SAVE_POINT
-		} else if (cs.matches("(?is)begin\\s+block\\s*")) {
+		} else if (cs.matches("(?is)[@]{0,1}begin\\s+block\\s*")) {
 			sql = cs
 			typeSql = TypeCommand.BLOCK
 		} else {
@@ -293,7 +246,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		return str
 	}
 	
-	private void doLoadPoint (List<String> st, Integer i) {
+	private void doLoadPoint(List<String> st, Integer i) {
 		def m = sql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
 		if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator LOAD_POINT: \"$sql\"")
 		//noinspection GroovyAssignabilityCheck
@@ -450,7 +403,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
                 ns.vars.put(fieldName, fieldValue)
 			}
 			try {
-				ns.runSql()
+				ns.runSql(true)
 				if (ns.isRequiredExit()) {
 					isExit = true
 					requiredExit = true
@@ -499,7 +452,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho,
 				vars: vars, extVars: extVars)
 		try {
-			ns.runSql()
+			ns.runSql(true)
 			if (ns.isRequiredExit()) {
 				requiredExit = true
 			}
@@ -555,14 +508,17 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 
 	/**
 	 * Run SQL script
-	 * @param useParsing enable script command parsing
+	 * @param useParsing enable script command parsing (defaults to extensionForSqlScripts from connection)
 	 */
-	void runSql(Boolean useParsing = true) {
+	void runSql(Boolean useParsing = null) {
 		if (connection == null)
 			throw new ExceptionGETL('Not defined jdbc connection for work!')
 
 		if (script == null)
 			throw new ExceptionGETL('No script was specified to execute!')
+
+		if (useParsing == null)
+			useParsing = connection.extensionForSqlScripts()
 
 		if (!useParsing) {
 			sql = StringUtils.EvalMacroString(script, allVars)
@@ -574,8 +530,10 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		def st = BatchSQL2List(script, ";")
 		rowCount = 0
 		for (Integer i = 0; i < st.size(); i++) {
-			if (requiredExit) return
-			if (!prepareSql(st[i])) continue
+			if (requiredExit)
+				return
+			if (!prepareSql(st[i]))
+				continue
 			
 			switch (typeSql) {
 				case TypeCommand.UPDATE:
@@ -622,7 +580,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
 	 * @param codePage text encoding (default utf-8)
 	 */
-	void runFile (String fileName, String codePage = 'utf-8') {
+	void runFile(String fileName, String codePage = 'utf-8') {
 		loadFile(fileName, codePage)
 		runSql()
 	}
@@ -633,7 +591,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
 	 * @param codePage text encoding (default utf-8)
 	 */
-	void runFile (Boolean useParsing, String fileName, String codePage = 'utf-8') {
+	void runFile(Boolean useParsing, String fileName, String codePage = 'utf-8') {
 		loadFile(fileName, codePage)
 		runSql(useParsing)
 	}

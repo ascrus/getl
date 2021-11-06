@@ -541,7 +541,8 @@ abstract class JDBCDriverProto extends GetlTest {
         con.startTran()
         def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET ${table.sqlObjectName('double')} = ${table.sqlObjectName('double')} + 1", isUpdate: true)
         assertEquals(countRows, count)
-        if (!con.autoCommit) con.commitTran()
+        if (!con.autoCommit())
+            con.commitTran()
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('double')} IS NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
@@ -630,12 +631,12 @@ ECHO For id1={id1} then id2={id2}
 END FOR;
 """
         def scripter = new SQLScripter(connection: table.connection, script: sql)
-        scripter.runSql()
+        scripter.runSql(true)
 
         scripter.loadFile('resource:/sql/test_scripter.sql')
         scripter.vars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
         scripter.vars.func = currentTimestampFuncName
-        scripter.runSql()
+        scripter.runSql(true)
     }
 
     protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP()' }

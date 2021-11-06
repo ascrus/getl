@@ -70,7 +70,7 @@ class StringUtils {
 		return s.toString().padLeft(len, '0')
 	}
 
-	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[{]([^}{]+)[}]')
+	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[$]{0,1}[{]([^}{]+)[}]')
 	static private final Pattern EvalMacroStringPattern2 = Pattern.compile('[%]([^%]+)[%]')
 
 	/**
@@ -92,7 +92,8 @@ class StringUtils {
 
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
-		value = value.replace('\\\\', '\u0001').replace('\\{', '\u0002').replace('\\}', '\u0003')
+		value = value.replace('\\\\', '\u0001')
+				.replace('\\{', '\u0002').replace('\\}', '\u0003').replace('\\$', '\u0004')
 
 		//def matcher = Pattern.compile('(?i)([{][~]*[a-z0-9._-]+[~]*[}])').matcher(value)
 		def matcher = EvalMacroStringPattern1.matcher(value)
@@ -151,7 +152,8 @@ class StringUtils {
 		if (pos < value.length())
 			sb.append(value, pos, value.length())
 
-		return sb.toString().replace('\u0001', '\\').replace('\u0002', '{').replace('\u0003', '}')
+		return sb.toString().replace('\u0001', '\\')
+				.replace('\u0002', '{').replace('\u0003', '}').replace('\u0004', '$')
 	}
 
 	/** Replicate character */

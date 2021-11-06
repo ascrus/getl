@@ -161,7 +161,7 @@ environments {
 
                 // Test sql with inner connection
                 sql {
-                    exec 'SET SELECT SESSION_ID() AS session_id'
+                    exec true, 'SET SELECT SESSION_ID() AS session_id'
                     assertNotNull(vars.session_id)
                 }
             }
@@ -833,7 +833,7 @@ ORDER BY t1.id"""
                 useList (1..9)
                 run { id ->
                     sql {
-                        exec "SET SELECT ID FROM $tableName WHERE ID = $id"
+                        exec true, "SET SELECT ID FROM $tableName WHERE ID = $id"
                         assertEquals(id, vars.id)
                     }
                 }

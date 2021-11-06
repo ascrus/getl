@@ -1,6 +1,7 @@
 package getl.jdbc
 
 import getl.lang.Getl
+import getl.test.GetlTest
 import getl.utils.DateUtils
 import getl.utils.GenerationUtils
 import getl.utils.SynchronizeObject
@@ -8,7 +9,7 @@ import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class JDBCTest extends getl.test.GetlTest {
+class JDBCTest extends GetlTest {
     @Test
     void testFields() {
         Getl.Dsl(this) {
@@ -184,12 +185,14 @@ class JDBCTest extends getl.test.GetlTest {
             }
 
             sql(embeddedConnection()) {
-                exec '''SELECT *, '-' AS test FROM test_sqlscripter WHERE id = 1
+                vars.char = '-'
+                vars.null_var = null
+                exec(true, '''SELECT *, '{char}' AS test, {null_var} AS null_test FROM test_sqlscripter WHERE id = 1
 -- SELECT 1;
 UNION ALL -- SELECT 1;
-SELECT *, '-' AS test -- Comment; 
+SELECT *, '${char}' AS test, ${null_var} AS null_test  -- Comment; 
 FROM test_sqlscripter WHERE id = 2;
-'''
+''')
             }
         }
     }

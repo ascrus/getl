@@ -1,0 +1,18 @@
+/*
+	Sql script
+	author: Alexsey Konstantinov
+*/
+WITH a ( -- parameters
+	SELECT id, type
+	FROM table1
+	WHERE id = 10
+)
+SELECT a.id, b/*old*/.*
+INTO table_new -- write table
+FROM a
+	INNER /*+join */ JOIN (
+		SELECT b.type, CASE b.type WHEN 1 THEN b.value1 || '--comment' ELSE b.value2 END AS value
+		FROM table2 b
+			INNER JOIN table3 c ON c.id = b.id
+	) b ON b.type = a.type
+ORDER BY 1;

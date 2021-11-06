@@ -1,0 +1,311 @@
+{
+    "tokens": [
+        {
+            "type": "SINGLE_WORD",
+            "value": "static",
+            "first": 1,
+            "last": 6
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "public",
+            "first": 8,
+            "last": 13
+        },
+        {
+            "type": "SINGLE_WORD",
+            "value": "int",
+            "first": 15,
+            "last": 17
+        },
+        {
+            "type": "FUNCTION",
+            "value": "test",
+            "first": 19,
+            "last": 47,
+            "list": [
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "def",
+                    "first": 25,
+                    "last": 27
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "param1",
+                    "first": 29,
+                    "last": 34,
+                    "delimiter": {
+                        "type": "COMMA",
+                        "value": ","
+                    }
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "def",
+                    "first": 37,
+                    "last": 39
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "param2",
+                    "first": 41,
+                    "last": 46
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        },
+        {
+            "type": "LIST",
+            "start": "{",
+            "finish": "}",
+            "list": [
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "int",
+                    "first": 55,
+                    "last": 57
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "res",
+                    "first": 59,
+                    "last": 61
+                },
+                {
+                    "type": "OPERATOR",
+                    "value": "=",
+                    "first": 63,
+                    "last": 63
+                },
+                {
+                    "type": "OPERATOR",
+                    "value": "-",
+                    "first": 65,
+                    "last": 65
+                },
+                {
+                    "type": "NUMBER",
+                    "value": 1,
+                    "first": 66,
+                    "last": 66
+                },
+                {
+                    "type": "FUNCTION",
+                    "value": "if",
+                    "first": 72,
+                    "last": 90,
+                    "list": [
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "param1",
+                            "first": 76,
+                            "last": 81
+                        },
+                        {
+                            "type": "OPERATOR",
+                            "value": "!=",
+                            "first": 83,
+                            "last": 84
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "null",
+                            "first": 86,
+                            "last": 89
+                        }
+                    ],
+                    "start": "(",
+                    "finish": ")"
+                },
+                {
+                    "type": "LIST",
+                    "start": "{",
+                    "finish": "}",
+                    "list": [
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "def",
+                            "first": 102,
+                            "last": 104
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "list",
+                            "first": 106,
+                            "last": 109
+                        },
+                        {
+                            "type": "OPERATOR",
+                            "value": "=",
+                            "first": 111,
+                            "last": 111
+                        },
+                        {
+                            "type": "LIST",
+                            "start": "[",
+                            "finish": "]",
+                            "list": [
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "param1",
+                                    "first": 114,
+                                    "last": 119,
+                                    "delimiter": {
+                                        "type": "COMMA",
+                                        "value": ","
+                                    }
+                                },
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "param2",
+                                    "first": 122,
+                                    "last": 127
+                                }
+                            ],
+                            "first": 113,
+                            "last": 128
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "res",
+                            "first": 138,
+                            "last": 140
+                        },
+                        {
+                            "type": "OPERATOR",
+                            "value": "=",
+                            "first": 142,
+                            "last": 142
+                        },
+                        {
+                            "type": "FUNCTION",
+                            "value": "list.find",
+                            "first": 144,
+                            "last": 166,
+                            "list": [
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "it",
+                                    "first": 156,
+                                    "last": 157
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "==",
+                                    "first": 159,
+                                    "last": 160
+                                },
+                                {
+                                    "type": "NUMBER",
+                                    "value": 100,
+                                    "first": 162,
+                                    "last": 164
+                                }
+                            ],
+                            "start": "{",
+                            "finish": "}"
+                        }
+                    ],
+                    "first": 92,
+                    "last": 172
+                },
+                {
+                    "type": "FUNCTION",
+                    "value": "else",
+                    "first": 178,
+                    "last": 242,
+                    "list": [
+                        {
+                            "type": "FUNCTION",
+                            "value": "if",
+                            "first": 193,
+                            "last": 228,
+                            "list": [
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "param2",
+                                    "first": 197,
+                                    "last": 202
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "!=",
+                                    "first": 204,
+                                    "last": 205
+                                },
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "null",
+                                    "first": 207,
+                                    "last": 210
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "&&",
+                                    "first": 212,
+                                    "last": 213
+                                },
+                                {
+                                    "type": "SINGLE_WORD",
+                                    "value": "param2",
+                                    "first": 215,
+                                    "last": 220
+                                },
+                                {
+                                    "type": "OPERATOR",
+                                    "value": "==",
+                                    "first": 222,
+                                    "last": 223
+                                },
+                                {
+                                    "type": "NUMBER",
+                                    "value": 100,
+                                    "first": 225,
+                                    "last": 227
+                                }
+                            ],
+                            "start": "(",
+                            "finish": ")"
+                        },
+                        {
+                            "type": "SINGLE_WORD",
+                            "value": "res",
+                            "first": 230,
+                            "last": 232
+                        },
+                        {
+                            "type": "OPERATOR",
+                            "value": "=",
+                            "first": 234,
+                            "last": 234
+                        },
+                        {
+                            "type": "NUMBER",
+                            "value": 1,
+                            "first": 236,
+                            "last": 236
+                        }
+                    ],
+                    "start": "{",
+                    "finish": "}"
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "return",
+                    "first": 249,
+                    "last": 254
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "res",
+                    "first": 256,
+                    "last": 258
+                }
+            ],
+            "first": 49,
+            "last": 260
+        }
+    ]
+}

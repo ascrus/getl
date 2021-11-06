@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -10,22 +11,73 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class Lexer {
-	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT}
+	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT, SINGLE_COMMENT, NUMBER}
 
 	/**
 	 * Type of use parse command
 	 */
-	static private enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, OPERATOR, COMMENT}
+	static private enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, OPERATOR, COMMENT, SINGLE_COMMENT}
+
+	/** Type language in the script */
+	enum ScriptType {JAVA, SQL}
+	/** Java script */
+	public static ScriptType javaScriptType = ScriptType.JAVA
+	/** SQL script */
+	public static ScriptType sqlScriptType = ScriptType.SQL
+
+	/** Create new lexer */
+	Lexer() { }
+
+	/** 
+	 * Create new lexer
+	 * @param reader input reader
+	 */
+	Lexer(Reader reader) {
+		this.input = reader
+	}
 
 	/**
-	 * Input text stream
+	 * Create new lexer
+	 * @param text input text
+	 * @param typeComments use specified type comments
 	 */
-	public Reader input
+	Lexer(String text, ScriptType typeComments = null) {
+		this.input = new StringReader(text)
+		this.scriptType = typeComments
+		try {
+			parse()
+		}
+		finally {
+			input.close()
+		}
+	}
 
-	/**
-	 * Result tokens
-	 */
-	public List<Map> tokens
+	/** Comments in the script */
+	private ScriptType scriptType
+	/** Comments in the script */
+	ScriptType getScriptType() { scriptType }
+	/** Comments in the script */
+	void setScriptType(ScriptType value) { scriptType }
+
+	/** Input text stream */
+	private Reader input
+	/** Input text stream */
+	Reader getInput() { input }
+	/** Input text stream */
+	void setInput(Reader value) {
+		if (!value.ready())
+			throw new ExceptionGETL("Input reader not ready!")
+
+		input = value
+	}
+
+	/** Result tokens */
+	private List<Map> tokens
+	/** Result tokens */
+	List<Map> getTokens() { tokens }
+
+	/** Parsed script */
+	String getScript() { script }
 
 	/**
 	 * Parameter of command
@@ -33,164 +85,219 @@ class Lexer {
 	 *
 	 */
 	class CommandParam {
+		/** Command type */
 		CommandType type
+		/** Value in operator */
 		Integer value
+		/** Start character*/
 		Integer start
+		/** Finish character */
 		Integer finish
+		/** First position in script */
+		Long first
+		/** Text buffer */
+		StringBuilder sb
 	}
 
-	/**
-	 * Current parse command
-	 */
+	/** Current parse command */
 	private CommandParam command
 
-	/**
-	 * Stack running of commands
-	 */
+	/**	 Stack running of commands */
 	private Stack commands
 
-	/**
-	 * Current text
-	 */
+	/** Current text buffer */
 	private StringBuilder sb
 
-	/**
-	 * Stack tokens by lists
-	 */
+	/** Script text buffer */
+	private StringBuilder scriptBuf
+
+	/** Parsed script */
+	private String script
+
+	/** Stack tokens by lists */
 	private Stack stackTokens
 
-	/**
-	 * Current column number in line
-	 */
+	/** Current column number in line */
 	private Integer curNum
 
-	/**
-	 * Current line
-	 */
+	/** Current line */
 	private Integer curLine
 
-	/**
-	 * Parse input stream
-	 */
-	void parse () {
+	/** Current position in parsed script */
+	private Long curPosition
+
+	/** Parse input stream */
+	void parse() {
 		tokens = []
 		command = new CommandParam()
 		command.type = CommandType.NONE
 		commands = new Stack()
 		stackTokens = new Stack()
 		sb = new StringBuilder()
+		scriptBuf = new StringBuilder()
 
 		curNum = 0
 		curLine = 1
+		curPosition = -1
 
 		def c = input.read()
 		while (c != -1) {
 			curNum++
+			curPosition++
 			switch (c) {
-				// Tab
-				case 9:
-					curNum += 3
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) addChar(c) else gap(c)
-					break
-				// Space
-				case 32:
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) addChar(c) else gap(c)
-					break
-                case { Character.getType(c) == Character.MATH_SYMBOL }: // for operator chars, such as: +, -, >, <, =
-                case [33, 37, 38, 45]: // for !, %, &, - chars
-                    if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) addChar(c)
-                    else {
-                        gap(c)
-                        operator(c)
-                    }
-                    break
-				// special rules for (*) operator
-				case 42:
-					input.mark(1)
-					def nextChar = input.read()
-
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT] && nextChar != 47) {
-						input.reset()
-						addChar(c)
-					} else if (command.type == CommandType.COMMENT && nextChar == 47) {
-						comment_finish(nextChar)
-					} else {
-						input.reset()
-						gap(c)
-						operator(c)
-					}
-					break
-				// Single and double quote <'">
-				case 39: case 34:
-					quote(c)
-					break
-				// opening bracket <(>
-				case 40:
-					level_start(c, 41)
-					break
-				// opening bracket <[>
-				case 91:
-					level_start(c, 93)
-					break
-				// opening bracket <{>
-				case 123:
-					level_start(c, 125)
-					break
-				// closing bracket <)>
-				case 41:
-					level_finish(40, c)
-					break
-				// closing bracket <]>
-				case 93:
-					level_finish(91, c)
-					break
-				// closing bracket <}>
-				case 125:
-					level_finish(123, c)
-					break
-				// (/) comment character
-				case 47:
-					input.mark(1)
-					def nextChar = input.read()
-
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
-						input.reset()
-						addChar(c)
-					} else if (nextChar == 42) {
-						input.reset()
-						comment_start(c)
-					} else {
-						input.reset()
-						gap(c)
-						operator(c)
-					}
-					break
-				// comma (,)
-				case 44:
-					comma(c)
-					break
-				// semicolon (;)
-				case 59:
-					semicolon(c)
-					break
-				// carriage return
-				case 13:
-					curNum--
-					break
-				// line feed
-				case 10:
-					curNum = 0
-					curLine++
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT])
+				case 9: // Tabulation
+					curNum += 1
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
 						addChar(c)
 					else
-						gap(c)
+						gap(c, true)
+
 					break
+
+				case 32: // Space
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
+						addChar(c)
+					else
+						gap(c, true)
+
+					break
+
+                case { Character.getType(c) == Character.MATH_SYMBOL }: // for operator chars, such as: +, -, >, <, = or single sql comment --
+                case [33, 37, 38, 45]: // for !, %, &, - chars
+                    if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
+						addChar(c)
+                    else if (scriptType == sqlScriptType && c == 45) {
+						input.mark(1)
+						def nextChar = input.read()
+						input.reset()
+
+						if (nextChar == 45) {
+							input.read()
+							curNum++
+							comment_start(true)
+							curPosition++
+						}
+						else {
+							gap(c, true)
+							operator(c)
+						}
+					}
+					else {
+                        gap(c, true)
+                        operator(c)
+                    }
+
+                    break
+
+				case 42: // finish comment */ or multiplication *
+					input.mark(1)
+					def nextChar = input.read()
+					input.reset()
+
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT] && nextChar != 47) {
+						addChar(c)
+					} else if (command.type == CommandType.COMMENT && nextChar == 47) {
+						input.read()
+						curNum++
+						curPosition++
+						comment_finish()
+					} else if (scriptType == sqlScriptType && command.type == CommandType.WORD &&
+							sb.length() > 0 && sb.charAt(sb.length() - 1) == (char)'.') {
+						addChar(c)
+					}
+					else {
+						gap(c)
+						operator(c)
+					}
+
+					break
+
+				case 39: case 34: // Single and double quote <'">
+					quote(c)
+					break
+
+				case 40: // opening bracket <(>
+					level_start(c, 41)
+					break
+
+				case 91: // opening bracket <[>
+					level_start(c, 93)
+					break
+
+				case 123: // opening bracket <{>
+					level_start(c, 125)
+					break
+
+				case 41: // closing bracket <)>
+					level_finish(40, c)
+					break
+
+				case 93: // closing bracket <]>
+					level_finish(91, c)
+					break
+
+				case 125: // closing bracket <}>
+					level_finish(123, c)
+					break
+
+				case 47: // start comment /* or single comment // or dividing /
+					input.mark(1)
+					def nextChar = input.read()
+					input.reset()
+
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
+						addChar(c)
+					} else if (nextChar == 42 && scriptType != null) {
+						input.read()
+						curNum++
+						comment_start(false)
+						curPosition++
+					}
+					else if (scriptType == javaScriptType && nextChar == 47) {
+						input.read()
+						curNum++
+						comment_start(true)
+						curPosition++
+					}
+					else {
+						gap(c)
+						operator(c)
+					}
+
+					break
+
+				case 44: // comma (,)
+					comma(c)
+					break
+
+				case 59: // semicolon (;)
+					semicolon(c)
+					break
+
+				case 13: // carriage return
+					curNum--
+					break
+
+				case 10: // line feed
+					curNum = 0
+					curLine++
+					if (command.type == CommandType.SINGLE_COMMENT) {
+						comment_finish()
+					}
+					else if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
+						addChar(c)
+					else
+						gap(c, true)
+
+					break
+
 				default:
-					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME, CommandType.OPERATOR, CommandType.COMMENT])) {
+					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME, CommandType.OPERATOR,
+										   CommandType.COMMENT, CommandType.SINGLE_COMMENT])) {
 						commands.push(command)
 						command = new CommandParam()
 						command.type = CommandType.WORD
+						command.first = curPosition
 					}
 					addChar(c)
 			}
@@ -198,11 +305,16 @@ class Lexer {
 			c = input.read()
 		}
 
-        if (sb.length() > 0) gap(c)
+        if (sb.length() > 0)
+			gap(c)
+
+		script = scriptBuf.toString()
+		sb = null
+		scriptBuf = null
 	}
 
 	private void addChar(Integer c) {
-		sb << (char)(c as int)
+		sb.append((char)(c as int))
 	}
 
 	/**
@@ -210,23 +322,52 @@ class Lexer {
 	 * @param c
 	 * @return
 	 */
-	private Boolean gap (Integer c) {
+	private Boolean gap(Integer c, Boolean div = false) {
+		def res = false
+		def lastPos = curPosition + ((div)?-1:0)
 		if (command.type in [CommandType.WORD]) {
-			if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
+			if (sb.length() > 0) {
+				def str = sb.toString()
+				if (str.isNumber()) {
+					def val = null
+					if (str.isInteger())
+						val = str.toInteger()
+					else if (str.isLong())
+						val = str.toLong()
+					else if (str.isBigDecimal())
+						val = str.toBigDecimal()
+					else if (str.isFloat())
+						val = str.toFloat()
+					else if (str.isDouble())
+						val = str.toDouble()
+					else
+						error("unknown number \"$str\"")
+					tokens << [type: TokenType.NUMBER, value: val, first: command.first, last: lastPos]
+				}
+				else
+					tokens << [type: TokenType.SINGLE_WORD, value: str, first: command.first, last: lastPos]
+			}
+
 			command = commands.pop() as CommandParam
 			sb = new StringBuilder()
 
-			return true
+			res = true
 		}
 		else if (command.type == CommandType.OBJECT_NAME) {
-			if (sb.length() > 0) tokens << [type: TokenType.OBJECT_NAME, value: sb.toString()]
+			if (sb.length() > 0)
+				tokens << [type: TokenType.OBJECT_NAME, value: sb.toString(), first: command.first, last: lastPos]
+
 			command = commands.pop() as CommandParam
 			sb = new StringBuilder()
 
-			return true
+			res = true
+		}
+		else if (command.type in [CommandType.SINGLE_COMMENT, CommandType.COMMENT]) {
+			comment_finish()
+			res = true
 		}
 
-		return false
+		return res
 	}
 
     /**
@@ -239,26 +380,34 @@ class Lexer {
             commands.push(command)
             command = new CommandParam()
             command.type = CommandType.OPERATOR
+			command.first = curPosition
             command.value = c
             addChar(c)
         }
 
         input.mark(2)
-        def n = input.read()
-        if (Character.getType(n) == Character.MATH_SYMBOL || n in [37, 38, 42]) {
+        def n1 = input.read()
+		def n2 = input.read()
+		input.reset()
+        if (Character.getType(n1) == Character.MATH_SYMBOL || (n1 in [37, 38, 42])) {
+			input.read()
             curNum++
-            addChar(n)
-        } else input.reset()
-
-        if (n == 42) {
-            n = input.read()
-            if (Character.getType(n) == Character.MATH_SYMBOL || n in [37, 38, 42]) {
-                curNum++
-                addChar(n)
-            } else input.reset()
+			curPosition++
+            addChar(n1)
         }
 
-        if (sb.length() > 0) tokens << [type: TokenType.OPERATOR, value: sb.toString()]
+        if (n1 == 42) {
+            if (Character.getType(n2) == Character.MATH_SYMBOL || (n2 in [37, 38, 42])) {
+				input.read()
+                curNum++
+				curPosition++
+                addChar(n2)
+            }
+        }
+
+        if (sb.length() > 0)
+			tokens << [type: TokenType.OPERATOR, value: sb.toString(), first: command.first, last: curPosition]
+
         command = commands.pop() as CommandParam
         sb = new StringBuilder()
     }
@@ -288,6 +437,7 @@ class Lexer {
 			commands.push(command)
 			command = new CommandParam()
 			command.type = CommandType.QUOTE
+			command.first = curPosition
 			command.value = c
 			return
 		}
@@ -299,21 +449,27 @@ class Lexer {
 
 		input.mark(1)
 		def n = input.read()
+		input.reset()
 		if (c == n) {
+			input.read()
 			curNum++
+			curPosition++
 			addChar(n)
 			return
 		}
 		// If point, change to object name
 		else if (n == 46) {
+			input.read()
 			curNum++
+			curPosition++
 			addChar(n)
 			command.type = CommandType.OBJECT_NAME
 			return
 		}
-		input.reset()
 
-		if (sb.length() >= 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString()]
+		if (sb.length() >= 0)
+			tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString(), first: command.first, last: curPosition]
+
 		command = commands.pop() as CommandParam
 		sb = new StringBuilder()
 	}
@@ -321,30 +477,35 @@ class Lexer {
 	/**
 	 * Start comments block
 	 */
-	private void comment_start(Integer c) {
-		input.mark(1)
-		def n1 = input.read()
-
-		if (command.type == CommandType.QUOTE || n1 != 42) {
-			input.reset()
-			addChar(c)
-			return
-		}
-
+	private void comment_start(/*Integer c, Integer nextChar, */Boolean singleComment) {
 		commands.push(command)
 		command = new CommandParam()
-		command.type = CommandType.COMMENT
-		command.start = c
-		command.finish = c
+		command.type = (singleComment)?CommandType.SINGLE_COMMENT:CommandType.COMMENT
+		command.first = curPosition
+		if (!singleComment && sb.length() > 0) {
+			command.sb = sb
+			sb = new StringBuilder()
+		}
 	}
 
-	/**
-	 * Finish comments block
-	 */
-	private void comment_finish(Integer c) {
-		if (sb.length() >= 0) tokens << [type: TokenType.COMMENT, comment_start: "/*", comment_finish: "*/", value: sb.toString()]
+	/** Finish comments block */
+	private void comment_finish() {
+		if (sb.length() >= 0) {
+			if (command.type == CommandType.COMMENT)
+				tokens << [type: TokenType.COMMENT, comment_start: "/*", comment_finish: "*/", value: sb.toString(), first: command.first, last: curPosition]
+			else if (scriptType == javaScriptType)
+				tokens << [type: TokenType.SINGLE_COMMENT, comment_start: "//", comment_finish: '\n', value: sb.toString(), first: command.first, last: curPosition]
+			else if (scriptType == sqlScriptType)
+				tokens << [type: TokenType.SINGLE_COMMENT, comment_start: "--", comment_finish: '\n', value: sb.toString(), first: command.first, last: curPosition]
+			else
+				throw new ExceptionGETL("Unknown comment type \"$scriptType\"!")
+		}
+		if (command.sb != null)
+			sb = command.sb
+		else
+			sb = new StringBuilder()
+
 		command = commands.pop() as CommandParam
-		sb = new StringBuilder()
 	}
 
 	/**
@@ -353,83 +514,92 @@ class Lexer {
 	 * @param type
 	 */
 	private void level_start (Integer c1, Integer c2) {
-		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
+		if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
 			addChar(c1)
 			return
 		}
 
-		gap(c1)
+		gap(c1, true)
 
 		if (tokens.size() > 0) {
-			Map token = (Map)tokens[tokens.size() - 1]
-			Map tokenDelimiterType = (Map) token."delimiter"
-			if (token."type" == TokenType.SINGLE_WORD && tokenDelimiterType?."type" != TokenType.COMMA) {
-				token."type" = TokenType.FUNCTION
+			def token = tokens[tokens.size() - 1] as Map
+			def tokenDelimiterType = token.delimiter as Map
+			if (token.type == TokenType.SINGLE_WORD && tokenDelimiterType?.type != TokenType.COMMA) {
+				token.type = TokenType.FUNCTION
 			}
 		}
 
 		commands.push(command)
 		command = new CommandParam()
 		command.type = CommandType.BRACKET
+		command.first = curPosition
 		command.start = c1
 		command.finish = c2
 
 		stackTokens.push(tokens)
-		tokens = []
+		tokens = [] as List<Map>
 	}
 
 	private void level_finish (Integer c1, Integer c2) {
-		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
+		if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
 			addChar(c2)
 			return
 		}
 
-		gap(c2)
+		gap(c2, true)
 
-		if (command.type != CommandType.BRACKET || command.start != c1 || command.finish != c2) error("opening bracket not found")
+		if (command.type != CommandType.BRACKET || command.start != c1 || command.finish != c2)
+			error("opening bracket not found")
 
 		List curTokens = tokens
 		tokens = stackTokens.pop() as List
 
 		Map prevToken = [:]
-		if (tokens.size() != 0) prevToken = (Map) tokens.get(tokens.size() - 1)
+		if (tokens.size() != 0)
+			prevToken = (Map) tokens.get(tokens.size() - 1)
 
-		if (tokens.size() > 0 && prevToken."type" == TokenType.FUNCTION && (prevToken?."delimiter" as Map)?."type" != TokenType.COMMA) {
-			prevToken."list" = curTokens
-			prevToken."start" = ((char)(c1 as int)).toString()
-			prevToken."finish" = ((char)(c2 as int)).toString()
+		if (tokens.size() > 0 && prevToken.type == TokenType.FUNCTION && prevToken.list == null && (prevToken?.delimiter as Map)?.type != TokenType.COMMA) {
+			prevToken.list = curTokens
+			prevToken.start = ((char)(c1 as int)).toString()
+			prevToken.finish = ((char)(c2 as int)).toString()
+			prevToken.last = curPosition
 		}
 		else {
-			tokens << [type: TokenType.LIST, start: ((char)(c1 as int)).toString(), finish: ((char)(c2 as int)).toString(), list: curTokens]
+			tokens << [type: TokenType.LIST, start: ((char)(c1 as int)).toString(), finish: ((char)(c2 as int)).toString(), list: curTokens, first:
+					command.first, last: curPosition]
 		}
 
 		command = commands.pop() as CommandParam
 	}
 
 	private void comma(Integer c) {
-		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
+		if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
 			addChar(c)
 			return
 		}
 
-		if (!gap(c) && !(command.type in [CommandType.NONE, CommandType.BRACKET])) error("unexpected comma")
+		if (!gap(c, true) && !(command.type in [CommandType.NONE, CommandType.BRACKET]))
+			error("unexpected comma")
+
 		Map m = [type: TokenType.COMMA, value: ((char)(c as int)).toString()]
-		tokens[tokens.size() - 1]."delimiter" = m
+		def token = tokens[tokens.size() - 1]
+		token.delimiter = m
 	}
 
 	private void semicolon(Integer c) {
-		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
+		if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
 			addChar(c)
 			return
 		}
 
-		gap(c)
+		gap(c, true)
 
-		tokens << [type: TokenType.SEMICOLON, value: ((char)(c as int)).toString()]
+		tokens << [type: TokenType.SEMICOLON, value: ((char)(c as int)).toString(), first: curPosition, last: curPosition]
 	}
 
 	protected error(String message) {
-		throw new ExceptionGETL("Syntax error line $curLine, col $curNum: $message, current command: type=${command.type};value=${command.value};start=${command.start};finish=${command.finish};buffer=${sb.toString()}")
+		throw new ExceptionGETL("Syntax error line $curLine, col $curNum: $message, current command: type=${command.type};value=${command.value};" +
+				"start=${command.start};finish=${command.finish};buffer=${sb.toString()}")
 	}
 
 	@Override
@@ -441,139 +611,197 @@ class Lexer {
 	 * Return list of statements separated by a semicolon
 	 * @return
 	 */
-	List<List<Map>> statements () {
+	List<List<Map>> statements() {
 		List<List<Map>> res = []
 		def cur = 0
-		def pos = findByType(tokens, TokenType.SEMICOLON, 0)
+		def pos = FindByType(tokens, TokenType.SEMICOLON, 0)
 		while (pos != -1) {
-			if (pos >= cur) res << tokens.subList(cur, pos)
+			if (pos >= cur)
+				res << tokens.subList(cur, pos)
+
 			cur = pos + 1
-			pos = findByType(tokens, TokenType.SEMICOLON, cur)
+			pos = FindByType(tokens, TokenType.SEMICOLON, cur)
 		}
 
-		res
+		return res
 	}
 
 	/**
 	 * Return key words for start token while words is single word
-	 * @param start
-	 * @return
+	 * @param start start position by token (default 1)
+	 * @param max maximum number (null for all)
+	 * @return word string
 	 */
-	static String keyWords(List<Map> tokens, Integer start, Integer max) {
+	String keyWords(Integer start = 0, Integer max = null) {
+		KeyWords(tokens, start, max)
+	}
+
+	/**
+	 * Return key words for start token while words is single word
+	 * @param tokens list of tokens
+	 * @param start start position by token
+	 * @param max maximum number (null for all)
+	 * @return word string
+	 */
+	static String KeyWords(List<Map> tokens, Integer start = 0, Integer max = null) {
 		StringBuilder sb = new StringBuilder()
 		def i = 0
-		while (start < tokens.size() && tokens[start]."type" == TokenType.SINGLE_WORD && (max == null || i < max)) {
-			i++
-			sb << tokens[start]."value"
-			sb << " "
+		while (start < tokens.size() && (max == null || i < max)) {
+			if ((tokens[start].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME, TokenType.FUNCTION]) {
+				i++
+				sb << tokens[start].value
+				sb << " "
+			}
 			start++
 		}
 
-		(sb.length() > 0)?sb.substring(0, sb.length() - 1):""
+		return (sb.length() > 0)?sb.substring(0, sb.length() - 1):""
 	}
 
 	/**
 	 * Return list for position token
-	 * @param position
-	 * @return
+	 * @param position position in tokens
+	 * @return list elements
 	 */
-	static List<Map> list (List<Map> tokens, Integer position) {
-		(List<Map>)((tokens[position]."type" == TokenType.LIST)?tokens[position]."list":null)
+	List<Map> list(Integer position) {
+		List(tokens, position)
+	}
+
+	/**
+	 * Return list for position token
+	 * @param tokens list of tokens
+	 * @param position position in tokens
+	 * @return list elements
+	 */
+	static List<Map> List(List<Map> tokens, Integer position) {
+		return (List<Map>)((tokens[position].type == TokenType.LIST)?tokens[position].list:null)
 	}
 
 	/**
 	 * Return function name and parameters for position token
-	 * @param tokens
-	 * @param position
-	 * @return
+	 * @param position position in tokens
+	 * @return list elements
 	 */
-	static Map function (List<Map> tokens, Integer position) {
-		Map token = tokens[position]
-		if (token."type" != TokenType.FUNCTION) return null
+	Map function(Integer position) {
+		Function(tokens, position)
+	}
 
-		token
+	/**
+	 * Return function name and parameters for position token
+	 * @param tokens list of tokens
+	 * @param position position in tokens
+	 * @return list elements
+	 */
+	static Map Function(List<Map> tokens, Integer position) {
+		Map token = tokens[position]
+		if (token.type != TokenType.FUNCTION)
+			return null
+
+		return token
 	}
 
 	/**
 	 * Return object name for start token while has single or double quoted word delimiters by point
-	 * @param start
-	 * @param res
-	 * @return - next token after object name
+	 * @param position start position in tokens
+	 * @return - object elements
 	 */
-	static List object (List<Map> tokens, Integer start) {
-		if (!((tokens[start]."type" as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
+	List object(Integer position) {
+		Object(tokens, position)
+	}
+
+	/**
+	 * Return object name for start token while has single or double quoted word delimiters by point
+	 * @param tokens list of tokens
+	 * @param position start position in tokens
+	 * @return - object elements
+	 */
+	static List Object(List<Map> tokens, Integer position) {
+		if (!((tokens[position].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
 			return null
 		}
 
-		((String)tokens[start]."value").split("[.]").toList()
+		return ((String)tokens[position].value).split("[.]").toList()
 	}
 
 	/**
 	 * Return token type
-	 * @param position
-	 * @return
+	 * @param position position in tokens
+	 * @return token type
 	 */
-	static TokenType type (List<Map> tokens, Integer position) {
-		(TokenType)((position < tokens.size())?tokens[position]."type":null)
+	TokenType type(Integer position) {
+		Type(tokens, position)
+	}
+
+	/**
+	 * Return token type
+	 * @param tokens list of tokens
+	 * @param position position in tokens
+	 * @return token type
+	 */
+	static TokenType Type(List<Map> tokens, Integer position) {
+		return (TokenType)((position < tokens.size())?tokens[position].type:null)
 	}
 
 	/**
 	 * Find token by type
-	 * @param type
-	 * @param start
-	 * @return
+	 * @param type token type
+	 * @param start start position in tokens
+	 * @return token number
 	 */
-	static Integer findByType (List<Map> tokens, TokenType type, Integer start) {
+	Integer findByType(TokenType type, Integer start = 0) {
+		FindByType(tokens, type, start)
+	}
+
+	/**
+	 * Find token by type
+	 * @param tokens list of tokens
+	 * @param type token type
+	 * @param start start position in tokens
+	 * @return token number
+	 */
+	static Integer FindByType(List<Map> tokens, TokenType type, Integer start = 0) {
 		for (Integer i = start; i < tokens.size(); i++) {
-			if (tokens[i]."type" == type) return i
+			if (tokens[i].type == type)
+				return i
 		}
+
 		return -1
 	}
 
-
 	/**
 	 * Convert tokens with comma separate to list
-	 * @param tokens
-	 * @param start
-	 * @param finish
-	 * @return
+	 * @param tokens list of tokens
+	 * @param start start position in tokens
+	 * @param finish finish position in tokens
+	 * @param delimiter list delimiter
+	 * @return list elements
 	 */
-	static List<List<Map>> toList (List<Map> tokens, Integer start, Integer finish) {
-		List<List<Map>> res = new ArrayList<List<Map>>()
-		List<Map> cur = new ArrayList<Map>()
-		while (start <= finish && tokens[start]."type"  != TokenType.SEMICOLON) {
-			def token = tokens[start]
-			cur << token
-			Map m = (Map)token."delimiter"
-			if (m?."type" == TokenType.COMMA || start == finish) {
-				res << cur
-				cur = new ArrayList<Map>()
-			}
-
-			start++
-		}
-		if (!cur.isEmpty()) res << cur
-
-		res
+	List<List<Map>> toList(Integer start = 0, Integer finish = null, String delimiter = ',') {
+		ToList(tokens, start, finish, delimiter)
 	}
 
 	/**
-	 * Convert tokens with key word delimiter to list
-	 * @param tokens
-	 * @param start
-	 * @param finish
-	 * @param delimiter
-	 * @return
+	 * Convert tokens with comma separate to list
+	 * @param tokens list of tokens
+	 * @param start start position in tokens
+	 * @param finish finish position in tokens
+	 * @param delimiter list delimiter
+	 * @return list elements
 	 */
-	static List<List<Map>> toList (List<Map> tokens, Integer start, Integer finish, String delimiter) {
+	static List<List<Map>> ToList(List<Map> tokens, Integer start = 0, Integer finish = null, String delimiter = ',') {
 		delimiter = delimiter.toUpperCase()
-		List<List<Map>> res = new ArrayList<List<Map>>()
-		List<Map> cur = new ArrayList<Map>()
-		while (start <= finish && tokens[start]."type"  != TokenType.SEMICOLON) {
+		if (finish == null)
+			finish = tokens.size() - 1
+		List<List<Map>> res = [] as List<List<Map>>
+		def cur = [] as List<Map>
+		while (start <= finish && tokens[start].type  != TokenType.SEMICOLON) {
 			def token = tokens[start]
-			if ((token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == delimiter)) {
+			if (((token.type as TokenType) in [TokenType.SINGLE_WORD, TokenType.FUNCTION, TokenType.NUMBER]) &&
+					((token.value as String).toUpperCase() == delimiter || (token.delimiter as Map)?.value == delimiter)) {
+				if (token.delimiter != null)
+					cur << token
 				res << cur
-				cur = new ArrayList<Map>()
+				cur = [] as List<Map>
 			}
 			else {
 				cur << token
@@ -581,23 +809,36 @@ class Lexer {
 
 			start++
 		}
-		if (!cur.isEmpty()) res << cur
+		if (!cur.isEmpty())
+			res << cur
 
-		res
+		return res
 	}
 
 	/**
 	 * Return position key word by start position
-	 * @param tokens
-	 * @param start
-	 * @param keyWord
-	 * @return
+	 * @param tokens list of tokens
+	 * @param start start position in tokens
+	 * @param keyWord key word
+	 * @return position number
 	 */
-	static Integer findKeyWord(List<Map> tokens, Integer start, String keyWord) {
+	Integer findKeyWord(String keyWord, Integer start = 0) {
+		FindKeyWord(tokens, keyWord, start)
+	}
+
+	/**
+	 * Return position key word by start position
+	 * @param tokens list of tokens
+	 * @param start start position in tokens
+	 * @param keyWord key word
+	 * @return position number
+	 */
+	static Integer FindKeyWord(List<Map> tokens, String keyWord, Integer start = 0) {
 		keyWord = keyWord.toUpperCase()
 		for (Integer i = start; i < tokens.size(); i++) {
 			def token = tokens[i]
-			if (token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == keyWord) return i
+			if (token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == keyWord)
+				return i
 		}
 
 		return -1
