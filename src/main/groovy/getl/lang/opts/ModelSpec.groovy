@@ -457,4 +457,64 @@ class ModelSpec extends BaseSpec {
                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         repository(RepositoryWorkflows).processObjects(mask, null, cl)
     }
+
+    /** Find model in repository */
+    String findMapTable(MapTables model) {
+        (getl.repositoryStorageManager.repository(RepositoryMapTables) as RepositoryMapTables).find(model)
+    }
+
+    /** Find model in repository by name */
+    MapTables findMapTable(String name) {
+        (getl.repositoryStorageManager.repository(RepositoryMapTables) as RepositoryMapTables).find(name)
+    }
+
+    /** Find model in repository */
+    String findMonitorRules(MonitorRules model) {
+        (getl.repositoryStorageManager.repository(RepositoryMonitorRules) as RepositoryMonitorRules).find(model)
+    }
+
+    /** Find model in repository by name */
+    MonitorRules findMonitorRules(String name) {
+        (getl.repositoryStorageManager.repository(RepositoryMonitorRules) as RepositoryMonitorRules).find(name)
+    }
+
+    /** Find model in repository */
+    String findReferenceFiles(ReferenceFiles model) {
+        (getl.repositoryStorageManager.repository(RepositoryMapTables) as RepositoryReferenceFiles).find(model)
+    }
+
+    /** Find model in repository by name */
+    ReferenceFiles findReferenceFiles(String name) {
+        (getl.repositoryStorageManager.repository(RepositoryReferenceFiles) as RepositoryReferenceFiles).find(name)
+    }
+
+    /** Find model in repository */
+    String findReferenceVerticaTables(ReferenceVerticaTables model) {
+        (getl.repositoryStorageManager.repository(RepositoryReferenceVerticaTables) as RepositoryReferenceVerticaTables).find(model)
+    }
+
+    /** Find model in repository by name */
+    ReferenceVerticaTables findReferenceVerticaTables(String name) {
+        (getl.repositoryStorageManager.repository(RepositoryReferenceVerticaTables) as RepositoryReferenceVerticaTables).find(name)
+    }
+
+    /** Find model in repository */
+    String findSetOfTables(SetOfTables model) {
+        (getl.repositoryStorageManager.repository(RepositorySetOfTables) as RepositorySetOfTables).find(model)
+    }
+
+    /** Find model in repository by name */
+    SetOfTables findSetOfTables(String name) {
+        (getl.repositoryStorageManager.repository(RepositorySetOfTables) as RepositorySetOfTables).find(name)
+    }
+
+    /** Find model in repository */
+    String findWorkflow(Workflows model) {
+        (getl.repositoryStorageManager.repository(RepositoryWorkflows) as RepositoryWorkflows).find(model)
+    }
+
+    /** Find model in repository by name */
+    Workflows findWorkflow(String name) {
+        (getl.repositoryStorageManager.repository(RepositoryWorkflows) as RepositoryWorkflows).find(name)
+    }
 }

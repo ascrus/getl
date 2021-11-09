@@ -70,7 +70,7 @@ class StringUtils {
 		return s.toString().padLeft(len, '0')
 	}
 
-	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[$]{0,1}[{]([^}{]+)[}]')
+	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[$]?[{]([^}{]+)[}]')
 	static private final Pattern EvalMacroStringPattern2 = Pattern.compile('[%]([^%]+)[%]')
 
 	/**
@@ -126,9 +126,9 @@ class StringUtils {
 			}
 
 			def varValue = vars.get(vn)
-			if (!vars.containsKey(vn) || (varValue instanceof Map) || (varValue instanceof Collection)) {
+			if (!vars.containsKey(vn) || (varValue instanceof Map)) {
 				if (errorWhenUndefined)
-					throw new ExceptionGETL("Unknown variable in \"$vn\", " +
+					throw new ExceptionGETL("Unknown variable \"$vn\", " +
 							"known vars: ${vars.keySet().toList().join(', ')}")
 
 				sb.append(varName)
@@ -146,6 +146,16 @@ class StringUtils {
 				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', varValue as Date)
 			else if (varValue instanceof Date)
 				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
+			else if (varValue instanceof Collection) {
+				def list = [] as List<String>
+				(varValue as Collection).each { val ->
+					if (val instanceof String || val instanceof GString)
+						list.add('\'' + val + '\'')
+					else
+						list.add(val.toString())
+				}
+				varValue = list.join(', ')
+			}
 
 			sb.append(varValue)
 		}

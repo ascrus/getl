@@ -9,6 +9,12 @@
             "last": 49
         },
         {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 50,
+            "last": 50
+        },
+        {
             "type": "SINGLE_WORD",
             "value": "class",
             "first": 51,

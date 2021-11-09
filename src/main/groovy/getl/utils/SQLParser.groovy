@@ -3,6 +3,7 @@ package getl.utils
 
 import getl.exception.ExceptionParser
 import groovy.transform.CompileStatic
+import javassist.compiler.Lex
 
 /**
  * SQL parser
@@ -13,8 +14,8 @@ import groovy.transform.CompileStatic
 class SQLParser {
 	/** List of type statements */
 	static enum StatementType {
-		SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP,
-		GETL_ECHO, GETL_IF, GETL_SET, GETL_FOR, GETL_BLOCK, GETL_EXIT,
+		SELECT, INSERT, UPDATE, DELETE, MERGE, TRUNCATE, CREATE, ALTER, DROP, COMMIT, ROLLBACK, START_TRANSACTION,
+		GETL_ECHO, GETL_IF, GETL_SET, GETL_FOR, GETL_COMMAND, GETL_EXIT,
 		GETL_ERROR, GETL_LOAD_POINT, GETL_SAVE_POINT
 	}
 
@@ -41,32 +42,28 @@ class SQLParser {
 	Lexer getLexer() { lexer }
 
 	private Map<String, String> regexp = [
-			GETL_ECHO: '(?i)[@]{0,1}ECHO\\s+.+',
-			GETL_IF: '(?i)[@]{0,1}IF\\s*.*',
-			GETL_SET: '(?i)[@]{0,1}SET\\s+.+',
-			GETL_FOR: '(?i)[@]{0,1}FOR\\s+.+',
-			GETL_BLOCK: '(?i)[@]{0,1}BLOCK',
+			GETL_ECHO: '(?i)[@]{0,1}ECHO .+',
+			GETL_IF: '(?i)[@]{0,1}IF DO',
+			GETL_SET: '(?i)[@]{0,1}SET .+',
+			GETL_FOR: '(?i)[@]{0,1}FOR DO',
+			GETL_COMMAND: '(?i)[@]{0,1}COMMAND',
 			GETL_EXIT: '(?i)[@]{0,1}EXIT',
-			GETL_ERROR: '(?i)[@]{0,1}ERROR\\s+.+',
-			GETL_LOAD_POINT: '(?i)[@]{0,1}LOAD\\s+POINT\\s+.+TO\\s+.+',
-			GETL_SAVE_POINT: '(?i)[@]{0,1}SAVE\\s+POINT\\s+.+FROM\\s+.+',
-	        INSERT: '(?i)INSERT\\s+INTO\\s+(.+)\\s+VALUES',
-			UPDATE: '(?i)UPDATE\\s+(.+)\\s+SET\\s+.+',
-			DELETE: '(?i)DELETE\\s+FROM(.+)\\s+WHERE\\s+.+',
-			CREATE: '(?i)CREATE\\s+(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA)\\s+.+',
-			ALTER: '(?i)ALTER\\s+(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA)\\s+.+',
-			DROP: '(?i)DROP\\s+(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA)\\s+.+',
-			SELECT: '(?i).*SELECT (?!(.+ INTO ){1}).+ FROM .+'
+			GETL_ERROR: '(?i)[@]{0,1}ERROR .+',
+			GETL_LOAD_POINT: '(?i)[@]{0,1}LOAD[_]POINT .+ TO .+ WITH (INSERT|MERGE)',
+			GETL_SAVE_POINT: '(?i)[@]{0,1}SAVE[_]POINT .+ FROM .+ WITH (INSERT|MERGE)',
+	        INSERT: '(?i)INSERT INTO\\s+.+\\s+VALUES',
+			UPDATE: '(?i)UPDATE .+\\s+SET\\s+.+',
+			DELETE: '(?i)DELETE FROM.+\\s+WHERE\\s+.+',
+			MERGE: '(?i)MERGE INTO\\s+.+',
+			TRUNCATE: '(?i)TRUNCATE TABLE\\s+.+',
+			START_TRANSACTION: '(?i)^(START|BEGIN) TRAN(SACTION)?$',
+			COMMIT: 'COMMIT',
+			ROLLBACK: 'ROLLBACK',
+			CREATE: '(?i)CREATE (\\w+[ ]){0,2}(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
+			ALTER: '(?i)ALTER (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
+			DROP: '(?i)DROP (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
+			SELECT: '(?i)(WITH)?.*SELECT(?!(.+ INTO ){1}).* FROM .+'
 	]
-
-	static private final Integer minSizeInsertStatement = 5
-	static private final String insertKeyWord = 'INSERT INTO'
-	
-	static private final Integer minSizeUpdateStatement = 8
-	static private final String updateKeyWord = 'UPDATE'
-	
-	static private final Integer minSizeDeleteStatement = 6
-	static private final String deleteKeyWord = 'DELETE FROM'
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	StatementType statementType(List tokens = lexer.tokens) {
@@ -86,208 +83,103 @@ class SQLParser {
 
 		return res
 	}
-	
+
 	/**
-	 * Parse insert statement
-	 * @param tokens
-	 * @return
+	 * Generate list of sql script for lexer tokens
+	 * @return sql scripts
 	 */
-	Map parseInsertStatement(List<Map> tokens = lexer.tokens) {
-		if (lexer == null)
-			throw new ExceptionParser('Required lexer for parsing!', tokens)
-		
-		if (tokens == null || tokens.size() < minSizeInsertStatement)
-			throw new ExceptionParser('Invalid insert DML operator!', tokens)
-		if (lexer.KeyWords(tokens, 0, 2).toUpperCase() != insertKeyWord)
-			throw new ExceptionParser("Expected \"$insertKeyWord\"!", tokens)
-		
-		def start = 3
-		def object = lexer.Object(tokens, 2)
-		
-		if (object == null || object.isEmpty() || object.size() > 3)
-			throw new ExceptionParser('Expected table name!', tokens)
-		def tableName = object[object.size() - 1]
-		def schemaName = (object.size() > 1)?object[object.size() - 2]:null
-		def dbName = (object.size() > 2)?object[object.size() - 3]:null
-		
-		
-		def res = [:]
-		res.tableName = tableName
-		if (schemaName != null)
-			res.schemaName = schemaName
-		if (dbName != null)
-			res.dbName = schemaName
-		
-		def fields = lexer.List(tokens, start)
-		if (fields == null)
-			throw new ExceptionParser('Expected list of field!', tokens)
-		
-		start++
-		def valParams = lexer.Function(tokens, start)
-		if (valParams == null || ((String)valParams.value).toUpperCase() != "VALUES")
-			throw new ExceptionParser("Expected VALUES!", tokens)
-		
-		List<String> values = valParams.list as List<String>
-		if (fields.size() != values.size())
-			throw new ExceptionParser('Number of values does not correspond to the number of specified fields!', tokens)
-		def fv = [:]
-		res.put("values", fv)
-		for (Integer i = 0; i < fields.size(); i++) {
-			fv.put(fields[i].value, values[i])
-		}
-		
-		start++
-		if (start < tokens.size()) {
-			if (lexer.Type(tokens, start) == Lexer.TokenType.SEMICOLON) start++
-		}
-		if (start < tokens.size()) {
-			println tokens[start]
-			throw new ExceptionParser("Expected end statement!", tokens)
-		}
-		
-		return res
-	}
-	
-	/**
-	 * Parse update statement
-	 * @param tokens
-	 * @return
-	 */
-	Map parseUpdateStatement(List<Map> tokens = lexer.tokens) {
-		if (lexer == null)
-			throw new ExceptionParser("Required lexer for parsing!", tokens)
-		
-		if (tokens == null || tokens.size() < minSizeUpdateStatement)
-			throw new ExceptionParser("Invalid update DML operator!", tokens)
-		if (lexer.KeyWords(tokens, 0, 1).toUpperCase() != updateKeyWord)
-			throw new ExceptionParser("Expected \"$updateKeyWord\"!", tokens)
-		
-		def start = 2
-		def object = lexer.Object(tokens, 1)
-		
-		if (object.isEmpty() || object.size() > 3)
-			throw new ExceptionParser("Expected table name!", tokens)
-		def tableName = object[object.size() - 1]
-		def schemaName = (object.size() > 1)?object[object.size() - 2]:null
-		def dbName = (object.size() > 2)?object[object.size() - 3]:null
-		
-		def res = [:]
-		res."tableName" = tableName
-		if (schemaName != null)
-			res."schemaName" = schemaName
-		if (dbName != null)
-			res."dbName" = schemaName
-		
-		if (lexer.KeyWords(tokens, start, 1).toUpperCase() != "SET")
-			throw new ExceptionParser('Expected "SET" in statement!', tokens)
-
-		start++
-		
-		def wherePos = lexer.FindKeyWord(tokens, 'WHERE', start)
-		if (wherePos == -1)
-			throw new ExceptionParser('Expected "WHERE" in statement!', tokens)
-		def setFinishPos = wherePos - 1 
-		
-		Map values = [:]
-		res.put("values", values)
-		def valueList = lexer.ToList(tokens, start, setFinishPos)
-		valueList.each { List<Map> setToken ->
-			if (setToken.size() != 3)
-				throw new ExceptionParser('Invalid set operator!', setToken)
-			def token = setToken[1]
-			if (token."type" != Lexer.TokenType.OPERATOR || token.value != '=')
-				throw new ExceptionParser('Invalid field in set operator!', setToken)
-			token = setToken[0]
-			if (!(token."type" == Lexer.TokenType.SINGLE_WORD || (token.type == Lexer.TokenType.QUOTED_TEXT && token.quote == '"')))
-				throw new ExceptionParser('Invalid set operator!', setToken)
-			values.put(token."value", setToken[2])
-		}
-
-		Map where = [:]
-		res.where = where
-		def whereList = lexer.ToList(tokens, wherePos + 1, tokens.size() - 1, 'AND')
-		whereList.each { List<Map> whereToken ->
-			def token = whereToken[0]
-			if (!(token.type == Lexer.TokenType.SINGLE_WORD || (token.type == Lexer.TokenType.QUOTED_TEXT && token.quote == '"')))
-				throw new ExceptionParser('Invalid where operator!', whereToken)
-			def fieldName = token."value"
-			
-			token = whereToken[1]
-			def value
-			if (token."type" == Lexer.TokenType.OPERATOR && token."value" == "=") {
-				value = whereToken.subList(2, whereToken.size())
-			} 
-			else {
-				value = whereToken.subList(1, whereToken.size())
-			}
-			
-			where.put(fieldName, value)
-		}
-		
-		return res
-	}
-
-	Map parseDeleteStatement(List<Map> tokens = lexer.tokens) {
-		if (lexer == null)
-			throw new ExceptionParser('Required lexer for parsing!', tokens)
-		
-		if (tokens == null || tokens.size() < minSizeDeleteStatement)
-			throw new ExceptionParser('Invalid delete DML operator!', tokens)
-		if (lexer.KeyWords(tokens, 0, 2).toUpperCase() != deleteKeyWord)
-			throw new ExceptionParser("Expected \"$deleteKeyWord\"!", tokens)
-		
-		def start = 3
-		def object = lexer.Object(tokens, 2)
-		
-		if (object.isEmpty() || object.size() > 3)
-			throw new ExceptionParser('Expected table name!', tokens)
-		def tableName = object[object.size() - 1]
-		def schemaName = (object.size() > 1)?object[object.size() - 2]:null
-		def dbName = (object.size() > 2)?object[object.size() - 3]:null
-		
-		def res = [:]
-		res.tableName = tableName
-		if (schemaName != null)
-			res.schemaName = schemaName
-		if (dbName != null)
-			res.dbName = schemaName
-		
-		if (lexer.KeyWords(tokens, start, 1).toUpperCase() != 'WHERE')
-			throw new ExceptionParser('Expected "WHERE" in statement!', tokens)
-		start++
-
-		Map where = [:]
-		res.where = where
-		def whereList = lexer.ToList(tokens, start, tokens.size() - 1, 'AND')
-		whereList.each { List<Map> whereToken ->
-			def token = whereToken[0]
-			if (!(token."type" == Lexer.TokenType.SINGLE_WORD || (token.type == Lexer.TokenType.QUOTED_TEXT && token.quote == '"')))
-				throw new ExceptionParser('Invalid where operator!', whereToken)
-
-			def fieldName = token.value
-			
-			token = whereToken[1]
-			def value
-			if (token.type == Lexer.TokenType.OPERATOR && token.value == '=') {
-				value = whereToken.subList(2, whereToken.size())
-			}
-			else {
-				value = whereToken.subList(1, whereToken.size())
-			}
-			
-			where.put(fieldName, value)
-		}
-		
-		return res
-	}
-
-	List<List<Map>> scripts() {
+	List<String> scripts() {
 		if (lexer == null)
 			throw new ExceptionParser('Required lexer for parsing!', null)
 
 		if (lexer.tokens == null)
 			throw new ExceptionParser('Lexer not parsing!', null)
 
-		return lexer.statements()
+		def res = [] as List<String>
+		def addToRes = { String text ->
+			if (text.trim().length() > 0)
+				res.add(text)
+		}
+
+		def stats = lexer.statements()
+		def countStats = stats.size()
+		for (int curStat = 0; curStat < countStats; curStat++) {
+			def tokens = stats[curStat] as List<Map>
+			def curPos = tokens[0].first as Integer
+
+			for (int i = 0; i < tokens.size(); i++) {
+				def token = tokens[i] as Map
+				def type = token.type as Lexer.TokenType
+				def value = token.value as String
+				if (type in [Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION]) {
+					if (value.toUpperCase() in ['ECHO', '@ECHO']) {
+						def newPos = token.first as Integer
+						if (newPos > curPos)
+							addToRes.call(lexer.script.substring(curPos, newPos))
+
+						i = lexer.FindByType(tokens, Lexer.TokenType.LINE_FEED, i)
+						if (i == -1)
+							i = tokens.size() - 1
+
+						token = tokens[i]
+						def lastPos = (token.last as Integer)
+						res.add(lexer.script.substring(newPos, lastPos + 1).trim())
+						curPos = lastPos + 1
+					}
+					else if (value.toUpperCase() in ['IF', '@IF', 'FOR', '@FOR']) {
+						def newPos = token.first as Integer
+						if (newPos > curPos) {
+							def x = i - 1
+							while (x >= 0) {
+								if ((tokens[x].type as Lexer.TokenType) in [Lexer.TokenType.SINGLE_COMMENT, Lexer.TokenType.COMMENT])
+									newPos = tokens[x].first as Integer
+								else if ((tokens[x].type as Lexer.TokenType) != Lexer.TokenType.LINE_FEED)
+									break
+
+								x--
+							}
+							if (newPos > curPos)
+								addToRes.call(lexer.script.substring(curPos, newPos))
+						}
+
+						i = lexer.FindFunction(tokens, 'DO', i)
+						if (i == -1 || tokens[i].type != Lexer.TokenType.FUNCTION)
+							throw new ExceptionParser("For the \"IF\" statement at position $newPos, the  \"DO\" block was not found!", tokens)
+
+						token = tokens[i]
+						def lastPos = (token.last as Integer)
+						res.add(lexer.script.substring(newPos, lastPos + 1).trim())
+						curPos = lastPos + 1
+					}
+					else if (type == Lexer.TokenType.FUNCTION && value.toUpperCase() in ['COMMAND', '@COMMAND']) {
+						def newPos = token.first as Integer
+						if (newPos > curPos) {
+							def x = i - 1
+							while (x >= 0) {
+								if ((tokens[x].type as Lexer.TokenType) in [Lexer.TokenType.SINGLE_COMMENT, Lexer.TokenType.COMMENT])
+									newPos = tokens[x].first as Integer
+								else if ((tokens[x].type as Lexer.TokenType) != Lexer.TokenType.LINE_FEED)
+									break
+
+								x--
+							}
+							if (newPos > curPos)
+								addToRes.call(lexer.script.substring(curPos, newPos))
+						}
+
+						def lastPos = (token.last as Integer)
+						res.add(lexer.script.substring(newPos, lastPos + 1).trim())
+						curPos = lastPos + 1
+					}
+				}
+			}
+
+			if (curPos < (tokens[tokens.size() - 1].first as Integer)) {
+				def lastPos = (tokens[tokens.size() - 1].last as Integer)
+				addToRes.call(lexer.script.substring(curPos, lastPos + 1))
+			}
+		}
+
+		return res
 	}
 }

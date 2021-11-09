@@ -184,15 +184,75 @@ class JDBCTest extends GetlTest {
                 }
             }
 
+            embeddedConnection() {
+                extensionForSqlScripts = true
+            }
+
             sql(embeddedConnection()) {
                 vars.char = '-'
                 vars.null_var = null
-                exec(true, '''SELECT *, '{char}' AS test, {null_var} AS null_test FROM test_sqlscripter WHERE id = 1
+                exec'''SELECT *, '{char}' AS test, {null_var} AS null_test FROM test_sqlscripter WHERE id = 1 /* ; */
 -- SELECT 1;
 UNION ALL -- SELECT 1;
 SELECT *, '${char}' AS test, ${null_var} AS null_test  -- Comment; 
 FROM test_sqlscripter WHERE id = 2;
-''')
+'''
+            }
+
+            sql(embeddedConnection()) {
+                vars.list_id = [1,2,3,4,5,6]
+                debugMode = true
+                exec '''ECHO Test SQL scripter
+CREATE TABLE test_sqlscripter_result (id int PRIMARY KEY);
+ALTER TABLE test_sqlscripter_result ADD name varchar(50) NOT NULL;
+CREATE INDEX test_sqlscripter_result_name ON test_sqlscripter_result (name);
+COMMAND {
+    DELETE FROM test_sqlscripter_result
+} 
+COMMAND {
+    TRUNCATE TABLE test_sqlscripter_result;
+}
+FOR (SELECT id, Name FROM test_sqlscripter WHERE id IN ({list_id})) DO {
+    ECHO Process {id} id ...
+    IF ({id} % 2 = 0) DO {
+        SET SELECT {id} AS var_id, '{name}' AS var_name;
+        
+        /*:rows*/
+        SELECT * 
+        FROM test_sqlscripter 
+        WHERE id = {var_id} AND name = '{var_name}';
+        
+        /*:count_rows*/
+        INSERT INTO test_sqlscripter_result(id, name) VALUES ({var_id}, '{var_name}');
+        
+        IF ({count_rows} = 0) DO {
+            ERROR Invalid insert {var_id}!
+        }
+    }
+}
+COMMIT;
+TRUNCATE TABLE test_sqlscripter;
+DROP TABLE test_sqlscripter_result;
+'''
+                def cmd = historyCommands.readLines()
+                assertEquals('DELETE FROM test_sqlscripter_result;', cmd[0])
+                assertEquals('TRUNCATE TABLE test_sqlscripter_result;', cmd[1])
+
+                def dml = historyDML.readLines()
+                assertEquals('/*:count_rows*/', dml[0])
+                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (2, \'test 2\');', dml[1])
+                assertEquals('/*:count_rows*/', dml[2])
+                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (4, \'test 4\');', dml[3])
+                assertEquals('/*:count_rows*/', dml[4])
+                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (6, \'test 6\');', dml[5])
+                assertEquals('COMMIT;', dml[6])
+                assertEquals('TRUNCATE TABLE test_sqlscripter;', dml[7])
+
+                def ddl = historyDDL.readLines()
+                assertEquals('CREATE TABLE test_sqlscripter_result (id int PRIMARY KEY);', ddl[0])
+                assertEquals('ALTER TABLE test_sqlscripter_result ADD name varchar(50) NOT NULL;', ddl[1])
+                assertEquals('CREATE INDEX test_sqlscripter_result_name ON test_sqlscripter_result (name);', ddl[2])
+                assertEquals('DROP TABLE test_sqlscripter_result;', ddl[3])
             }
         }
     }

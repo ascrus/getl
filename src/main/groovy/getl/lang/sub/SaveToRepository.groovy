@@ -22,4 +22,10 @@ import java.lang.annotation.Target
 
     /** Save other types  (use comma separator) */
     String otherTypes() default ''
+
+    /** Clear repositories before run method */
+    boolean clear() default false
+
+    /** Allow check in over existing repository objects */
+    boolean overwrite() default false
 }

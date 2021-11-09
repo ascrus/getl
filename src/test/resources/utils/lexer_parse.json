@@ -1,6 +1,12 @@
 {
     "tokens": [
         {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 0,
+            "last": 0
+        },
+        {
             "type": "SINGLE_WORD",
             "value": "static",
             "first": 1,
@@ -90,6 +96,12 @@
                     "value": 1,
                     "first": 66,
                     "last": 66
+                },
+                {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 67,
+                    "last": 67
                 },
                 {
                     "type": "FUNCTION",
@@ -286,6 +298,12 @@
                             "value": 1,
                             "first": 236,
                             "last": 236
+                        },
+                        {
+                            "type": "LINE_FEED",
+                            "value": "\n",
+                            "first": 237,
+                            "last": 237
                         }
                     ],
                     "start": "{",
@@ -302,10 +320,22 @@
                     "value": "res",
                     "first": 256,
                     "last": 258
+                },
+                {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 259,
+                    "last": 259
                 }
             ],
             "first": 49,
             "last": 260
+        },
+        {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 261,
+            "last": 261
         }
     ]
 }

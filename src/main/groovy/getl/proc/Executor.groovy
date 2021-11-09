@@ -835,20 +835,31 @@ class Executor implements GetlRepository {
 	Long getCountProcessed() { counterProcessed.count }
 
 	private String _dslNameObject
+	@JsonIgnore
 	@Override
 	String getDslNameObject() { _dslNameObject }
 	@Override
 	void setDslNameObject(String value) { _dslNameObject = value }
 
 	private Getl _dslCreator
+	@JsonIgnore
 	@Override
 	Getl getDslCreator() { _dslCreator }
 	@Override
 	void setDslCreator(Getl value) { _dslCreator = value }
+
+	private Date _dslRegistrationTime
+	@JsonIgnore
+	@Override
+	Date getDslRegistrationTime() { _dslRegistrationTime }
+	@Override
+	void setDslRegistrationTime(Date value) { _dslRegistrationTime = value }
+
 	@Override
 	void dslCleanProps() {
 		_dslNameObject = null
 		_dslCreator = null
+		_dslRegistrationTime = null
 	}
 
 	/** Current logger */

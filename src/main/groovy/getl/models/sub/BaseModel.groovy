@@ -24,30 +24,37 @@ import java.util.concurrent.CopyOnWriteArrayList
 @SuppressWarnings(['UnnecessaryQualifiedReference', 'unused'])
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
-    private String dslNameObject
+    private String _dslNameObject
     @JsonIgnore
     @Override
-    String getDslNameObject() { dslNameObject }
+    String getDslNameObject() { _dslNameObject }
     @Override
-    void setDslNameObject(String value) { dslNameObject = value }
+    void setDslNameObject(String value) { _dslNameObject = value }
 
-    private Getl dslCreator
-
+    private Getl _dslCreator
     @JsonIgnore
     @Override
-    Getl getDslCreator() { dslCreator }
+    Getl getDslCreator() { _dslCreator }
     @Override
-    void setDslCreator(Getl value) { dslCreator = value }
+    void setDslCreator(Getl value) { _dslCreator = value }
+
+    private Date _dslRegistrationTime
+    @JsonIgnore
+    @Override
+    Date getDslRegistrationTime() { _dslRegistrationTime }
+    @Override
+    void setDslRegistrationTime(Date value) { _dslRegistrationTime = value }
 
     @Override
     void dslCleanProps() {
-        dslNameObject = null
-        dslCreator = null
+        _dslNameObject = null
+        _dslCreator = null
+        _dslRegistrationTime = null
     }
 
     /** Repository model name */
     @JsonIgnore
-    String getRepositoryModelName() { dslNameObject?:'noname' }
+    String getRepositoryModelName() { _dslNameObject?:'noname' }
 
     /** Description of model */
     String getDescription() { params.description as String }
@@ -252,7 +259,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     protected void setStoryDatasetName(String value) { useStoryDatasetName(value) }
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
-    protected Dataset getStoryDataset() { (storyDatasetName != null)?dslCreator.dataset(storyDatasetName):null }
+    protected Dataset getStoryDataset() { (storyDatasetName != null)?_dslCreator.dataset(storyDatasetName):null }
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
@@ -263,7 +270,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Synchronized('synchStoryDataset')
     protected void useStoryDatasetName(String datasetName) {
         if (datasetName != null)
-            dslCreator.dataset(datasetName)
+            _dslCreator.dataset(datasetName)
 
         saveParamValue('storyDatasetName', datasetName)
     }
@@ -324,7 +331,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         }
 
         if (!unknownKeys.isEmpty())
-            throw new ExceptionDSL("Unknown attributes were detected in model \"$dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
+            throw new ExceptionDSL("Unknown attributes were detected in model \"$_dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
 
         if (checkObjects) {
             usedObjects.each { node ->
@@ -336,8 +343,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Override
     Object clone() {
         def res = super.clone() as BaseModel
-        res.dslCreator = dslCreator
-        res.dslNameObject = dslNameObject
+        res.dslCreator = _dslCreator
+        res.dslNameObject = _dslNameObject
         return res
     }
 

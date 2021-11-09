@@ -9,6 +9,12 @@
             "last": 46
         },
         {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 47,
+            "last": 47
+        },
+        {
             "type": "SINGLE_WORD",
             "value": "WITH",
             "first": 48,
@@ -51,6 +57,12 @@
                     "last": 86
                 },
                 {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 87,
+                    "last": 87
+                },
+                {
                     "type": "SINGLE_WORD",
                     "value": "FROM",
                     "first": 89,
@@ -61,6 +73,12 @@
                     "value": "table1",
                     "first": 94,
                     "last": 99
+                },
+                {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 100,
+                    "last": 100
                 },
                 {
                     "type": "SINGLE_WORD",
@@ -85,10 +103,22 @@
                     "value": 10,
                     "first": 113,
                     "last": 114
+                },
+                {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 115,
+                    "last": 115
                 }
             ],
             "start": "(",
             "finish": ")"
+        },
+        {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 117,
+            "last": 117
         },
         {
             "type": "SINGLE_WORD",
@@ -121,6 +151,12 @@
             "last": 140
         },
         {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 141,
+            "last": 141
+        },
+        {
             "type": "SINGLE_WORD",
             "value": "INTO",
             "first": 142,
@@ -151,6 +187,12 @@
             "value": "a",
             "first": 177,
             "last": 177
+        },
+        {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 178,
+            "last": 178
         },
         {
             "type": "SINGLE_WORD",
@@ -268,6 +310,12 @@
                     "last": 294
                 },
                 {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 295,
+                    "last": 295
+                },
+                {
                     "type": "SINGLE_WORD",
                     "value": "FROM",
                     "first": 298,
@@ -284,6 +332,12 @@
                     "value": "b",
                     "first": 310,
                     "last": 310
+                },
+                {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 311,
+                    "last": 311
                 },
                 {
                     "type": "SINGLE_WORD",
@@ -332,6 +386,12 @@
                     "value": "b.id",
                     "first": 345,
                     "last": 348
+                },
+                {
+                    "type": "LINE_FEED",
+                    "value": "\n",
+                    "first": 349,
+                    "last": 349
                 }
             ],
             "start": "(",
@@ -368,6 +428,12 @@
             "last": 372
         },
         {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 373,
+            "last": 373
+        },
+        {
             "type": "SINGLE_WORD",
             "value": "ORDER",
             "first": 374,
@@ -390,6 +456,12 @@
             "value": ";",
             "first": 384,
             "last": 384
+        },
+        {
+            "type": "LINE_FEED",
+            "value": "\n",
+            "first": 385,
+            "last": 385
         }
     ]
 }

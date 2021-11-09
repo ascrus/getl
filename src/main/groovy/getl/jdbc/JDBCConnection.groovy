@@ -178,7 +178,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
 	Boolean getExtensionForSqlScripts() { params.extensionForSqlScripts as Boolean }
 	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
-	void setExtensionForSqlScripts(Boolean value) { params.getExtensionForSqlScripts = value }
+	void setExtensionForSqlScripts(Boolean value) { params.extensionForSqlScripts = value }
 	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
 	Boolean extensionForSqlScripts() { BoolUtils.IsValue(params.extensionForSqlScripts, false) }
 	

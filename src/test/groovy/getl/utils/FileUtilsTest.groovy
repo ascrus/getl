@@ -371,12 +371,12 @@ println time() + 'finish' '''
 
     @Test
     void testSizeBytes() {
-        assertEquals('1000 bytes', FileUtils.SizeBytes(1000))
-        assertEquals('1 KB', FileUtils.SizeBytes(1024L + 200))
+        assertEquals('1000.0 bytes', FileUtils.SizeBytes(1000))
+        assertEquals('1.2 KB', FileUtils.SizeBytes(1024L + 200))
         assertEquals('1.1 MB', FileUtils.SizeBytes(1024L * 1024 + 105000))
-        assertEquals('1.001 GB', FileUtils.SizeBytes(1024L * 1024 * 1024 + 1024L * 1024))
-        assertEquals('1.001 TB', FileUtils.SizeBytes(1024L * 1024 * 1024 * 1024 + 1024L * 1024 * 1024))
-        assertEquals('1.001 PB', FileUtils.SizeBytes(1024L * 1024 * 1024 * 1024 * 1024 + 1024L * 1024 * 1024 * 1024))
+        assertEquals('1.0 GB', FileUtils.SizeBytes(1024L * 1024 * 1024 + 1024L * 1024))
+        assertEquals('1.0 TB', FileUtils.SizeBytes(1024L * 1024 * 1024 * 1024 + 1024L * 1024 * 1024))
+        assertEquals('1025.0 TB', FileUtils.SizeBytes(1024L * 1024 * 1024 * 1024 * 1024 + 1024L * 1024 * 1024 * 1024))
     }
 
     @Test

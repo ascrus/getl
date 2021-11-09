@@ -1,13 +1,14 @@
 package getl.excel
 
 import getl.data.Field
+import getl.test.GetlTest
 import getl.utils.DateUtils
 import org.junit.Before
 import org.junit.Test
 
 import java.sql.Time
 
-class ExcelDriverTest extends getl.test.GetlTest {
+class ExcelDriverTest extends GetlTest {
     static final String path = 'resource:/excel'
     static final String fileName = 'test.xlsx'
 
@@ -18,6 +19,7 @@ class ExcelDriverTest extends getl.test.GetlTest {
     @Before
     void initTest() {
         excelDataset.header = true
+        excelDataset.formatBoolean = 'yes|no'
         excelDataset.field.clear()
         excelDataset.field << new Field(name: 'a', type: Field.integerFieldType)
         excelDataset.field << new Field(name: 'b', type: Field.numericFieldType)
@@ -25,7 +27,7 @@ class ExcelDriverTest extends getl.test.GetlTest {
         excelDataset.field << new Field(name: 'd', type: Field.dateFieldType)
         excelDataset.field << new Field(name: 'e', type: Field.datetimeFieldType)
         excelDataset.field << new Field(name: 'f', type: Field.timeFieldType)
-        excelDataset.field << new Field(name: 'g', type: Field.booleanFieldType, format: 'true|false')
+        excelDataset.field << new Field(name: 'g', type: Field.booleanFieldType)
         excelDataset.listName = listName
         excelDataset.limit = null
         excelDataset.offsetRows = 2

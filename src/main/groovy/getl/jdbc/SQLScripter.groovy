@@ -1,16 +1,18 @@
+//file:noinspection unused
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Field
 import getl.data.sub.WithConnection
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.exception.ExceptionSQLScripter
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.*
-import java.util.regex.Matcher
+
 import java.util.regex.Pattern
 
 /**
@@ -32,19 +34,23 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	@Override
 	void setDslCreator(Getl value) { _dslCreator = value }
 
+	private Date _dslRegistrationTime
+	@JsonIgnore
+	@Override
+	Date getDslRegistrationTime() { _dslRegistrationTime }
+	@Override
+	void setDslRegistrationTime(Date value) { _dslRegistrationTime = value }
+
 	@Override
 	void dslCleanProps() {
 		_dslNameObject = null
 		_dslCreator = null
+		_dslRegistrationTime = null
 	}
 
 	/** Current logger*/
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
-
-	static enum TypeCommand {
-		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
-	}
 
 	/** Local variables */
 	private final Map<String, Object> vars = [:] as Map<String, Object>
@@ -61,11 +67,6 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	/** All variables */
 	Map<String, Object> getAllVars() { (extVars != null)?((extVars + vars) as Map<String, Object>):vars }
 	
-	/** 
-	 * Current type script command 
-	 */
-	private TypeCommand typeSql = TypeCommand.UNKNOWN
-
 	/***  Source JDBC connection */
 	private JDBCConnection connection
 	/***  Source connection */
@@ -121,6 +122,13 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	String getLogEcho () {  logEcho.toString() }
 	/** Echo command output level */
 	void setLogEcho(String level) {  logEcho = Logs.StrToLevel(level) }
+
+	/** Print scripts to console */
+	private Boolean debugMode = false
+	/** Print scripts to console */
+	Boolean getDebugMode() { debugMode }
+	/** Print scripts to console */
+	void setDebugMode(Boolean value) { debugMode = value }
 	
 	/** 
 	 * Load script from file
@@ -151,104 +159,31 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 
 	/** SQL generated script */
-	private String sql
+	private String lastSql
 
 	/** SQL generated script */
-	String getSql() { sql }
-
-	/** 
-	 * Current script label variable 
-	 */
-	private String scriptLabel
-
-	/** 
-	 * Compile script to commands
-	 * @param script 
-	 */
-	private Boolean prepareSql(String script) {
-		if (script == null) 
-			throw new ExceptionGETL("SQLScripter: need script in prepareSql method")
-			
-		sql = StringUtils.EvalMacroString(script, allVars, false)
-		scriptLabel = null
-
-		def startCommand = StringUtils.DetectStartSQLCommand(sql)
-		if (startCommand == -1) return false
-		def cs = sql.substring(startCommand).trim()
-		
-		if (cs.matches("(?is)[@]{0,1}set\\s.*")) {
-			sql = removeFirstOperator(sql, 'SET', startCommand)
-			typeSql = TypeCommand.SET
-		} else if (cs.matches("(?is)[@]{0,1}echo\\s.*")) {
-			sql = StringUtils.RemoveSQLComments(sql)
-			sql = removeFirstOperator(sql, 'ECHO', 0)
-			typeSql = TypeCommand.ECHO
-		} else if (cs.matches("(?is)[@]{0,1}for\\s+select\\s.*") || sql.matches("(?is)for\\s+with\\s.*")) {
-			sql = removeFirstOperator(sql, 'FOR', startCommand)
-			typeSql = TypeCommand.FOR
-		} else if (cs.matches("(?is)[@]{0,1}if\\s.*")) {
-			def from = ((connection.driver as JDBCDriver).sysDualTable != null)?"FROM ${(connection.driver as JDBCDriver).sysDualTable}":''
-			sql = "SELECT 1 AS result $from WHERE " + removeFirstOperator(sql, 'IF', startCommand)
-			typeSql = TypeCommand.IF
-		} else if (cs.matches("(?is)[@]{0,1}error\\s.*")) {
-			sql = StringUtils.RemoveSQLComments(sql)
-			sql = removeFirstOperator(sql, 'ERROR', 0)
-			typeSql = TypeCommand.ERROR
-		} else if (cs.matches("(?is)[@]{0,1}exit")) {
-			sql = StringUtils.RemoveSQLComments(sql)
-			typeSql = TypeCommand.EXIT
-		} else if (cs.matches("(?is)[@]{0,1}load_point\\s+.*")) {
-			sql = StringUtils.RemoveSQLComments(sql)
-			typeSql = TypeCommand.LOAD_POINT
-		} else if (cs.matches("(?is)[@]{0,1}save_point\\s+.*")) {
-			sql = StringUtils.RemoveSQLComments(sql)
-			typeSql = TypeCommand.SAVE_POINT
-		} else if (cs.matches("(?is)[@]{0,1}begin\\s+block\\s*")) {
-			sql = cs
-			typeSql = TypeCommand.BLOCK
-		} else {
-			sql = StringUtils.RemoveSQLCommentsWithoutHints(sql).trim()
-			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
-				def ic = sql.indexOf("*/")
-				scriptLabel = sql.substring(2, ic).trim().substring(1).trim().toLowerCase()
-				sql = sql.substring(ic + 2).trim()
-			}
-			if (cs.matches("(?is)SELECT\\s+.*") ||
-                    cs.matches("(?is)WITH\\s+.*")) {
-                typeSql = TypeCommand.SELECT
-            } else {
-                typeSql = TypeCommand.UPDATE
-            }
-		}
-
-		return true
+	String getLastSql() { lastSql }
+	/** SQL generated script */
+	protected void setLastSql(String value) {
+		lastSql = value
+		if (debugMode)
+			println lastSql
 	}
 
-	/**
-	 * Remove first operator for SQL script
-	 * @param sql script
-	 * @param oper operator
-	 * @param start start index in script
-	 * @return script without first operator
-	 */
-	private String removeFirstOperator(String sql, String oper, Integer start) {
-		def str = sql.substring(start)
-		def find = "(?i)^(\\s*${StringUtils.EscapeJava(oper.toUpperCase())})"
-		def pat = Pattern.compile(find)
-		def mat = pat.matcher(str)
-		if (!mat.find()) {
-			logger.dump(null, getClass().name, 'sql', sql)
-			throw new ExceptionGETL("Operator \"$oper\" not found in script!")
-		}
-		str = mat.replaceFirst('')
+	/** Commands history */
+	public final StringBuffer historyCommands = new StringBuffer()
 
-		if (start > 0) str = sql.substring(0, start) + str
-		return str
-	}
-	
-	private void doLoadPoint(List<String> st, Integer i) {
-		def m = sql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
-		if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator LOAD_POINT: \"$sql\"")
+	/** DDL history */
+	public final StringBuffer historyDDL = new StringBuffer()
+
+	/** DML history */
+	public final StringBuffer historyDML = new StringBuffer()
+
+	private void doLoadPoint(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		def m = lastSql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+		if (m.size() == 0)
+			throw new ExceptionGETL("Uncorrect syntax for statement LOAD_POINT: \"$lastSql\"!")
 		//noinspection GroovyAssignabilityCheck
 		def point = m[0][2] as String
 		//noinspection GroovyAssignabilityCheck
@@ -263,8 +198,10 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		//noinspection GroovyAssignabilityCheck
 		def methodName = m[0][8] as String
 		
-		if (tableName == null) throw new ExceptionGETL("SQLScripter: need table name for LOAD_POINT operator")
-		if (pointName == null) throw new ExceptionGETL("SQLScripter: need pointer name for LOAD_POINT operator")
+		if (tableName == null)
+			throw new ExceptionGETL("SQLScripter: need table name for LOAD_POINT statement!")
+		if (pointName == null)
+			throw new ExceptionGETL("SQLScripter: need pointer name for LOAD_POINT statement!")
 		
 		def pm = new SavePointManager(connection: pointConnection?:connection, tableName: tableName, saveMethod: methodName)
 		if (dbName != null) pm.dbName = dbName
@@ -281,15 +218,17 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 	
 	@groovy.transform.Synchronized
-	private void doSavePoint (List<String> st, Integer i) {
-		def m = sql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
-        if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator SAVE_POINT: \"$sql\"")
+	private void doSavePoint (SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		def m = lastSql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+        if (m.size() == 0)
+			throw new ExceptionGETL("Uncorrect syntax for SAVE_POINT statement: \"$lastSql\"!")
 		//noinspection GroovyAssignabilityCheck
 		def point = m[0][2] as String
 		//noinspection GroovyAssignabilityCheck
 		def varName = m[0][5] as String
 		def value = allVars.get(varName)
-		if (value == null) throw new ExceptionGETL("SQLScripter: variable \"$varName\" has empty value for SAVE_POINT operator")
+		if (value == null) throw new ExceptionGETL("SQLScripter: variable \"$varName\" has empty value for SAVE_POINT statement!")
 		
 		def pointList = point.split('[.]').toList()
 		while (pointList.size() < 4) pointList.add(0, null)
@@ -300,8 +239,10 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		//noinspection GroovyAssignabilityCheck
 		def methodName = m[0][8] as String
 		
-		if (tableName == null) throw new ExceptionGETL("SQLScripter: need table name for SAVE_POINT operator")
-		if (pointName == null) throw new ExceptionGETL("SQLScripter: need pointer name for SAVE_POINT operator")
+		if (tableName == null)
+			throw new ExceptionGETL("SQLScripter: need table name for SAVE_POINT operator")
+		if (pointName == null)
+			throw new ExceptionGETL("SQLScripter: need pointer name for SAVE_POINT operator")
 		
 		def pm = new SavePointManager(connection: pointConnection?:connection, tableName: tableName, saveMethod: methodName)
 		if (dbName != null) pm.dbName = dbName
@@ -311,195 +252,235 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		pm.saveValue(pointName, value)
 	}
 	
-	/*** 
-	 * Do update command 
-	 * @param s
-	 * @param rc
-	 * @param st
-	 * @param i
-	 */
-	private void doUpdate(List<String> st, Integer i) {
-		def b = StringUtils.EvalMacroString(sql, allVars)
-		def rc = connection.executeCommand(command: b)
-		if (rc > 0) rowCount += rc
-		if (scriptLabel != null) {
+	/*** Do update command */
+	private void doDML(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		def rc = connection.executeCommand(command: lastSql)
+		if (rc > 0)
+			rowCount += rc
+
+		historyDML.append(lastSql)
+		historyDML.append('\n')
+
+		def scriptLabel = detectScriptVariable(parser)
+		if (scriptLabel != null)
 			vars.put(scriptLabel, rc)
-		}
+	}
+
+	/*** Do update command */
+	private void doDDL(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		connection.executeCommand(command: lastSql)
+
+		historyDDL.append(lastSql)
+		historyDDL.append('\n')
+	}
+
+	/*** Do other script */
+	private void doOther(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		connection.executeCommand(command: lastSql)
 	}
 	
-	/**
-	 * Do select command
-	 * @param st
-	 * @param i
-	 */
-	private void doSelect(List<String> st, Integer i) {
-		//println "Select query: ${sql}"
-		QueryDataset ds = new QueryDataset(connection: connection, query: sql) 
+	/** Do select command */
+	private void doSelect(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
 		def rows = ds.rows()
-		if (scriptLabel != null) {
+
+		def scriptLabel = detectScriptVariable(parser)
+		if (scriptLabel != null)
 			vars.put(scriptLabel, rows)
+	}
+
+	private Pattern setOperatorPattern = Pattern.compile('(?i)\\s*[@]?SET\\s+(.*)')
+	
+	/*** Do setting variable command */
+	private void doSetVar(SQLParser parser)  {
+		def matcher = setOperatorPattern.matcher(parser.lexer.scriptBuild(ignoreComments: true))
+		if (!matcher)
+			throw new ExceptionGETL("Invalid SET statement: ${parser.lexer.script}")
+
+		def setScript = matcher.group(1)
+		setLastSql(StringUtils.EvalMacroString(setScript, allVars).trim() + ';')
+
+		QueryDataset query = new QueryDataset(connection: connection, query: lastSql)
+		def rows = query.rows(limit: 1)
+		query.field.each { Field f ->
+			def fieldName = f.name.toLowerCase()
+			def fieldValue = (!rows.isEmpty())?rows[0].get(fieldName):null
+			if (fieldValue != null && fieldValue instanceof Date)
+				fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
+
+			vars.put(fieldName, fieldValue)
 		}
 	}
 	
-	/*** 
-	 * Do setting variable command
-	 * @param s
-	 * @param rc
-	 * @param st
-	 * @param i
-	 */
-	private void doSetVar(List<String> st, Integer i)  {
-		QueryDataset query = new QueryDataset(connection: connection, query: sql)
-		query.eachRow(limit: 1) { row ->
-			query.field.each { Field f ->
-				def fieldName = f.name.toLowerCase()
-                def fieldValue = row.get(fieldName)
-                if (fieldValue instanceof Date) fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
-				vars.put(fieldName, fieldValue)
-			}
-		}
-	}
-	
-	/*** 
-	 * Do each row command
-	 * @param s
-	 * @param rc
-	 * @param st
-	 * @param i
-	 */
-	private Integer doFor(List<String> st, Integer i) {
-		def fe = -1
-		def fc = 1
-		def b = new StringBuffer()
-		for (Integer fs = i + 1; fs < st.size(); fs++) {
-			String c = st[fs] 
-			if (c.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*")) {
-				fc++
-			} else if (c.matches("(?is)end(\\s|\\n|\\t)+for")) {
-				fc--
-				if (fc == 0) {
-					fe = fs
-					break
-				}
-			}
-			b.append(c + ";\n")
-		}
-		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END FOR construction")
-		
-		QueryDataset query = new QueryDataset(connection: connection, query: sql)
-		List<Map> rows = []
-		query.eachRow { Map row -> rows << row }
-		
-		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho,
+	/*** Execute the code for the query records in a loop */
+	private void doFor(SQLParser parser) {
+		def parseScript = parser.lexer.script
+
+		def posHeader = parser.lexer.findFunction('FOR')
+		if (posHeader == -1)
+			throw new ExceptionGETL("Invalid FOR statement: $parseScript")
+		def tokenHeader = parser.lexer.tokens[posHeader]
+		def listHeader = tokenHeader.list as List<Map>
+		if (listHeader.isEmpty())
+			throw new ExceptionGETL("No query specified for FOR statement: $parseScript")
+
+		def posDo = parser.lexer.findFunction('DO')
+		if (posDo == -1)
+			throw new ExceptionGETL("Invalid FOR statement: $parseScript")
+		def tokenDo = parser.lexer.tokens[posDo]
+		def listDo = tokenDo.list as List<Map>
+		if (listDo.isEmpty())
+			throw new ExceptionGETL("No script specified for FOR statement: $parseScript")
+
+		def queryText = parseScript.substring(listHeader[0].first as Integer, (listHeader[listHeader.size() - 1].last as Integer) + 1)
+		setLastSql(StringUtils.EvalMacroString(queryText, allVars).trim() + ';')
+		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1).trim()
+
+		QueryDataset query = new QueryDataset(connection: connection, query: lastSql)
+		def rows = query.rows()
+
+		SQLScripter ns = new SQLScripter(connection: connection, script: bodyText, logEcho: logEcho, debugMode: debugMode,
 				vars: vars, extVars: extVars)
-		def isExit = false
-		rows.each { row ->
-			if (isExit) return
-			
+		for (row in rows) {
 			query.field.each { Field f ->
                 def fieldName = f.name.toLowerCase()
                 def fieldValue = row.get(fieldName)
-                if (fieldValue instanceof Date) fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
+                if (fieldValue instanceof Date)
+					fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
                 ns.vars.put(fieldName, fieldValue)
 			}
 			try {
 				ns.runSql(true)
 				if (ns.isRequiredExit()) {
-					isExit = true
 					requiredExit = true
+					break
 				}
 			}
 			finally {
-				sql = ns.getSql()
+				lastSql = ns.lastSql
+				historyCommands.append(ns.historyCommands)
+				historyDDL.append(ns.historyDDL)
+				historyDML.append(ns.historyDML)
 				rowCount += ns.rowCount
 			}
 		}
-		
-		fe
 	}
 	
-	/*** 
-	 * Do if command
-	 * @param s
-	 * @param rc
-	 * @param st
-	 * @param i
-	 */
-	private Integer doIf(List<String> st, Integer i) {
-		def fe = -1
-		def fc = 1
-		def b = new StringBuffer()
-		for (Integer fs = i + 1; fs < st.size(); fs++) {
-			if (st[fs].matches("(?is)if(\\s|\\n|\\t)+.*")) {
-				fc++
-			} else if (st[fs].matches("(?is)end(\\s|\\n|\\t)+if")) {
-				fc--
-				if (fc == 0) {
-					fe = fs
-					break
-				}
-			}
-			b.append(st[fs] + ";\n")
-		}
-		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END IF construction")
-		
-		QueryDataset query = new QueryDataset(connection: connection, query: sql)
-		def rows = query.rows(limit: 1)  
-		if (rows.isEmpty()) {
-			return fe
-		} 
-		
-		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho,
-				vars: vars, extVars: extVars)
-		try {
-			ns.runSql(true)
-			if (ns.isRequiredExit()) {
-				requiredExit = true
-			}
-		}
-		finally {
-			sql = ns.getSql()
-			rowCount += ns.rowCount
-		}
-		return fe
-	}
-	
-	private Integer doBlock(List<String> st, Integer i) {
-		def fe = -1
-		def fc = 1
-		def b = new StringBuffer()
-		for (Integer fs = i + 1; fs < st.size(); fs++) {
-			if (st[fs].matches('(?is)begin(\\s|\\t)+block(\\s|\\t)*')) {
-				fc++
-			}
-			else if (st[fs].matches('(?is)end(\\s|\\t)+block(\\s|\\t)*')) {
-				fc--
-				if (fc == 0) {
-					fe = fs
-					break
-				}
-			}
-			else if (st[fs].matches('(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)')) {
-				fc--
-				if (fc == 0) {
-					fe = fs
-					def pattern = '(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)'
-					def m = st[fs] =~ pattern
-					//noinspection GroovyAssignabilityCheck
-					def symbol = m[0][3] as String
-					b.append(symbol)
-					break
-				}
-			}
-			b.append(st[fs].replace('\r', '') + ";\n")
-		}
-		if (fe == -1)
-			throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction!")
+	/*** Execute command if condition is true */
+	private void doIf(SQLParser parser) {
+		def parseScript = parser.lexer.script
 
-		sql = StringUtils.EvalMacroString(b.toString(), allVars)
-		connection.executeCommand(command: sql)
-		
-		return fe
+		def posHeader = parser.lexer.findFunction('IF')
+		if (posHeader == -1)
+			throw new ExceptionGETL("Invalid IF statement: $parseScript")
+		def tokenHeader = parser.lexer.tokens[posHeader]
+		def listHeader = tokenHeader.list as List<Map>
+		if (listHeader.isEmpty())
+			throw new ExceptionGETL("No query specified for IF statement: $parseScript")
+
+		def posDo = parser.lexer.findFunction('DO')
+		if (posDo == -1)
+			throw new ExceptionGETL("Invalid IF statement: $parseScript")
+		def tokenDo = parser.lexer.tokens[posDo]
+		def listDo = tokenDo.list as List<Map>
+		if (listDo.isEmpty())
+			throw new ExceptionGETL("No script specified for IF statement: $parseScript")
+
+		def queryText = parseScript.substring(listHeader[0].first as Integer, (listHeader[listHeader.size() - 1].last as Integer) + 1)
+		def sc = 'SELECT 1'
+		if (!connection.currentJDBCDriver.isSupport(Driver.Support.SELECT_WITHOUT_FROM)) {
+			if (connection.currentJDBCDriver.sysDualTable == null)
+				throw new ExceptionGETL("Can not generate IF statement for $connection connection (dual table not supported)!")
+
+			sc += ' FROM ' + connection.currentJDBCDriver.sysDualTable
+		}
+		sc += ' WHERE (\n' + StringUtils.EvalMacroString(queryText.trim(), allVars) + '\n)'
+		lastSql = setLastSql(sc + ';')
+
+		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1)
+
+		QueryDataset query = new QueryDataset(connection: connection, query: sc)
+		def rows = query.rows()
+
+		if (!rows.isEmpty()) {
+			SQLScripter ns = new SQLScripter(connection: connection, script: bodyText, logEcho: logEcho, debugMode: debugMode,
+					vars: vars, extVars: extVars)
+			try {
+				ns.runSql(true)
+				if (ns.isRequiredExit())
+					requiredExit = true
+			}
+			finally {
+				lastSql = ns.lastSql
+				historyCommands.append(ns.historyCommands)
+				historyDDL.append(ns.historyDDL)
+				historyDML.append(ns.historyDML)
+				rowCount += ns.rowCount
+			}
+		}
+	}
+
+	/** Calc block commands without parsing */
+	private void doCommand(SQLParser parser) {
+		def parseScript = parser.lexer.script
+		def posDo = parser.lexer.findFunction('COMMAND')
+		if (posDo == -1)
+			throw new ExceptionGETL("Invalid COMMAND statement: $parseScript")
+		def tokenDo = parser.lexer.tokens[posDo]
+		def listDo = tokenDo.list as List<Map>
+		if (listDo.isEmpty())
+			throw new ExceptionGETL("No script specified for COMMAND statement: $parseScript")
+
+		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1)
+
+		setLastSql(StringUtils.EvalMacroString(bodyText, allVars).trim())
+		def rc = connection.executeCommand(command: lastSql)
+		if (rc > 0)
+			rowCount += rc
+		historyCommands.append(lastSql)
+		if (StringUtils.RightStr(lastSql, 1) != ';') {
+			historyCommands.append(';')
+			lastSql += ';'
+		}
+		historyCommands.append('\n')
+	}
+
+	/** Logging echo message */
+	private void doEcho(SQLParser parser) {
+		def parseScript = parser.lexer.script
+
+		def posHeader = parser.lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], 'ECHO')
+		if (posHeader == -1)
+			throw new ExceptionGETL("Invalid ECHO statement: $parseScript")
+		def tokenHeader = parser.lexer.tokens[posHeader]
+
+		String text
+		def posText = tokenHeader.last as Integer + 2
+		if (posText < parseScript.length() - 1)
+			text = parseScript.substring(posText).trim()
+
+		if (text != null && text.length() > 0)
+			logger.write(logEcho, StringUtils.EvalMacroString(text, allVars))
+	}
+
+	private void doError(SQLParser parser) {
+		def parseScript = parser.lexer.script
+
+		def posHeader = parser.lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], 'ERROR')
+		if (posHeader == -1)
+			throw new ExceptionGETL("Invalid ERROR statement: $parseScript")
+		def tokenHeader = parser.lexer.tokens[posHeader]
+
+		String text = null
+		def posText = tokenHeader.last as Integer + 2
+		if (posText < parseScript.length() - 1)
+			text = parseScript.substring(posText).trim()
+
+		throw new ExceptionSQLScripter("SQLScripter: found error ${StringUtils.EvalMacroString(text, allVars)}!")
 	}
 	
 	private Boolean requiredExit
@@ -520,59 +501,112 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		if (useParsing == null)
 			useParsing = connection.extensionForSqlScripts()
 
+		lastSql = null
+		historyCommands.setLength(0)
+		historyDDL.setLength(0)
+		historyDML.setLength(0)
+
 		if (!useParsing) {
-			sql = StringUtils.EvalMacroString(script, allVars)
-			connection.executeCommand(command: sql)
+			setLastSql(StringUtils.EvalMacroString(script, allVars).trim())
+			connection.executeCommand(command: lastSql)
+			historyCommands.append(lastSql)
+			if (StringUtils.RightStr(lastSql, 1) != ';') {
+				historyCommands.append(';')
+				lastSql += ';'
+			}
+			historyCommands.append('\n')
+
 			return
 		}
 
+		def st = new SQLParser(script).scripts()
 		requiredExit = false
-		def st = BatchSQL2List(script, ";")
 		rowCount = 0
 		for (Integer i = 0; i < st.size(); i++) {
 			if (requiredExit)
-				return
-			if (!prepareSql(st[i]))
-				continue
-			
-			switch (typeSql) {
-				case TypeCommand.UPDATE:
-					doUpdate(st, i)
+				break
+
+			def parser = new SQLParser(st[i])
+			def type = parser.statementType()
+
+			switch (type) {
+				case SQLParser.StatementType.INSERT: case SQLParser.StatementType.UPDATE:
+				case SQLParser.StatementType.DELETE: case SQLParser.StatementType.MERGE:
+				case SQLParser.StatementType.TRUNCATE: case SQLParser.StatementType.START_TRANSACTION:
+				case SQLParser.StatementType.COMMIT: case SQLParser.StatementType.ROLLBACK:
+					doDML(parser)
 					break
-				case TypeCommand.SELECT:
-					doSelect(st, i)
+				case SQLParser.StatementType.CREATE: case SQLParser.StatementType.ALTER:
+				case SQLParser.StatementType.DROP:
+					doDDL(parser)
 					break
-				case TypeCommand.SET:
-					doSetVar(st, i)
+				case SQLParser.StatementType.SELECT:
+					doSelect(parser)
 					break
-				case TypeCommand.ECHO:
-					logger.write(logEcho, sql.trim())
+				case SQLParser.StatementType.GETL_SET:
+					doSetVar(parser)
 					break
-				case TypeCommand.FOR:
-					i = doFor(st, i)
+				case SQLParser.StatementType.GETL_ECHO:
+					doEcho(parser)
 					break
-				case TypeCommand.IF:
-					i = doIf(st, i)
+				case SQLParser.StatementType.GETL_FOR:
+					doFor(parser)
 					break
-				case TypeCommand.BLOCK:
-					i = doBlock(st, i)
+				case SQLParser.StatementType.GETL_IF:
+					doIf(parser)
 					break
-				case TypeCommand.ERROR:
-					throw new ExceptionSQLScripter("SQLScripter: found error $sql")
+				case SQLParser.StatementType.GETL_COMMAND:
+					doCommand(parser)
 					break
-				case TypeCommand.EXIT:
+				case SQLParser.StatementType.GETL_ERROR:
+					doError(parser)
+					break
+				case SQLParser.StatementType.GETL_EXIT:
 					requiredExit = true
 					break
-				case TypeCommand.LOAD_POINT:
-					doLoadPoint(st, i)
+				case SQLParser.StatementType.GETL_LOAD_POINT:
+					doLoadPoint(parser)
 					break
-				case TypeCommand.SAVE_POINT:
-					doSavePoint(st, i)
+				case SQLParser.StatementType.GETL_SAVE_POINT:
+					doSavePoint(parser)
 					break
 				default:
-					throw new ExceptionGETL("SQLScripter: unknown type command \"${typeSql}\"")
+					doOther(parser)
 			}
 		}
+	}
+
+	private Pattern scriptVariablePattern = Pattern.compile('^[:](\\w+)$')
+
+	/** Detect count script variable name in comment */
+	String detectScriptVariable(SQLParser parser) {
+		def tokens = parser.lexer.tokens
+		def count = tokens.size()
+		def i = 0
+		def c = -1
+		while (i < count) {
+			def token = tokens[i]
+			def type = token.type as Lexer.TokenType
+			if (type == Lexer.TokenType.COMMENT)
+				c = i
+			else if (type != Lexer.TokenType.LINE_FEED)
+				break
+
+			i++
+		}
+
+		String res = null
+		if (c != -1) {
+			def token = tokens[c]
+			if (token.value != null) {
+				def comment = (token.value as String).trim().toLowerCase()
+				def matcher = scriptVariablePattern.matcher(comment)
+				if (matcher.matches())
+					res = matcher.group(1)
+			}
+		}
+
+		return res
 	}
 
 	/**
@@ -613,48 +647,6 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	void exec(Boolean useParsing, String sql) {
 		script = sql
 		runSql(useParsing)
-	}
-
-	/** 
-	 * Convert batch script to SQL command list
-	 * @param sql
-	 * @param delimiter
-	 * @return
-	 */
-	static List<String> BatchSQL2List (String sql, String delimiter) {
-		if (sql == null) throw new ExceptionGETL("\"sql\" parameter required!")
-
-		List<String> res = sql.split('\n')
-		for (Integer i = 0; i < res.size(); i++) {
-			String s = res[i].trim()
-			def l = s.length()
-			if (l == 0) continue
-
-			if (s.matches("(?is)echo(\\s|\\t).*") || s.matches("(?is)error(\\s|\\t).*")) {
-				if (s.substring(s.length() - 1) != delimiter) res[i] = res[i] + delimiter
-			}
-			else if (l > 1 && s[s.length() - 1] == delimiter) {
-				def f = s.lastIndexOf('--')
-				if (f >= 0) {
-					def q = 0
-					for (Integer y = 0; y < f; y++) {
-						if (s[y] == '\'') {
-							if (q == 0)
-								q++
-							else
-								q--
-						}
-					}
-					if (q == 0)
-						res[i] = s.substring(0, l - 1)
-				}
-			}
-		}
-		String prepare = res.join('\n')
-		res = prepare.split(delimiter)
-		for (Integer i = 0; i < res.size(); i++) { res[i] = res[i].trim() }
-
-		return res
 	}
 
 	/**

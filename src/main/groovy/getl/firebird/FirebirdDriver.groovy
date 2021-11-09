@@ -32,9 +32,8 @@ class FirebirdDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-            [Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.INDEX,
-             Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN] -
-            [Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD, Driver.Support.DATABASE, Driver.Support.SCHEMA]
+            [Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.INDEX, Support.TIME, Support.DATE, Support.BOOLEAN] -
+            [Support.DEFAULT_VALUE, Support.COMPUTE_FIELD, Support.DATABASE, Support.SCHEMA, Support.SELECT_WITHOUT_FROM]
         /* TODO: rewrite for create table when DEFAULT before NOT NULL */
     }
 
@@ -42,8 +41,7 @@ class FirebirdDriver extends JDBCDriver {
     @Override
     List<Driver.Operation> operations() {
         return super.operations() +
-                [Driver.Operation.DROP, Driver.Operation.EXECUTE,
-                 Driver.Operation.CREATE]
+                [Operation.DROP, Operation.EXECUTE, Operation.CREATE]
     }
 
     @Override

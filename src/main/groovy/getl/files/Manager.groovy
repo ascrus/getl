@@ -193,11 +193,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 	Map<String, Object> getSysParams() { sysParams }
 
 	@JsonIgnore
+	@Override
 	String getDslNameObject() { sysParams.dslNameObject }
+	@Override
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
 	@JsonIgnore
+	@Override
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	@Override
 	void setDslCreator(Getl value) {
 		if (dslCreator != value) {
 			if (value != null && !value.repositoryStorageManager.isLoadMode)
@@ -205,6 +209,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 			else
 				sysParams.dslCreator = value
 		}
+	}
+
+	@JsonIgnore
+	@Override
+	Date getDslRegistrationTime() { sysParams.dslRegistrationTime as Date }
+	@Override
+	void setDslRegistrationTime(Date value) { sysParams.dslRegistrationTime = value }
+
+	@Override
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslCreator = null
+		sysParams.dslRegistrationTime = null
 	}
 
 	/**
@@ -2392,11 +2409,6 @@ WHERE
 	@Override
 	Object clone() {
 		return cloneManager(null, dslCreator)
-	}
-
-	void dslCleanProps() {
-		sysParams.dslNameObject = null
-		sysParams.dslCreator = null
 	}
 
 	/** Windows OS */

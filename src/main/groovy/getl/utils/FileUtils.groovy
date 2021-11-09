@@ -1276,7 +1276,7 @@ class FileUtils {
 		return "$avgSpeed $speedName"
 	}
 
-	static private String[] _fileSizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+	static private String[] _fileSizes = ['bytes', 'KB', 'MB', 'GB', 'TB']
 
 	/**
 	 * Convert length to byte measurements
@@ -1286,7 +1286,7 @@ class FileUtils {
 	@CompileStatic
 	static String SizeBytes(Long bytes) {
 		if (bytes == 0)
-			return '0 Byte'
+			return '0 byte'
 
 		Double x = Math.log(bytes) / Math.log(1024)
 		Integer i = Math.floor(x).toInteger()

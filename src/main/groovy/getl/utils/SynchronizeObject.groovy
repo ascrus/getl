@@ -93,7 +93,9 @@ class SynchronizeObject {
 	@Synchronized
 	Boolean addToList(def value) {
 		if (value != null)
-			list.add(value)
+			return list.add(value)
+
+		return false
 	}
 
 	/** Append list to array list */

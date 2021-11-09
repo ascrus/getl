@@ -902,19 +902,29 @@ abstract class FileListProcessing implements GetlRepository {
     @SuppressWarnings('unused')
     protected void saveCachedData(Throwable error = null) { }
 
+    @JsonIgnore
     @Override
     String getDslNameObject() { sysParams.dslNameObject as String }
     @Override
     void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
+    @JsonIgnore
     @Override
     Getl getDslCreator() { sysParams.dslCreator as Getl }
     @Override
     void setDslCreator(Getl value) { sysParams.dslCreator = value }
+
+    @JsonIgnore
+    @Override
+    Date getDslRegistrationTime() { sysParams.dslRegistrationTime as Date }
+    @Override
+    void setDslRegistrationTime(Date value) { sysParams.dslRegistrationTime = value }
+
     @Override
     void dslCleanProps() {
         sysParams.dslNameObject = null
         sysParams.dslCreator = null
+        sysParams.dslRegistrationTime = null
     }
 
     /** Current logger */

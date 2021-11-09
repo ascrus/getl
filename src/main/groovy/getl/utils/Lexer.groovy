@@ -3,6 +3,7 @@ package getl.utils
 
 import getl.exception.ExceptionGETL
 import groovy.transform.CompileStatic
+import groovy.transform.NamedVariant
 
 /**
  * Analyze text as lexer
@@ -11,7 +12,7 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class Lexer {
-	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT, SINGLE_COMMENT, NUMBER}
+	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT, SINGLE_COMMENT, NUMBER, LINE_FEED}
 
 	/**
 	 * Type of use parse command
@@ -94,7 +95,7 @@ class Lexer {
 		/** Finish character */
 		Integer finish
 		/** First position in script */
-		Long first
+		Integer first
 		/** Text buffer */
 		StringBuilder sb
 	}
@@ -124,7 +125,7 @@ class Lexer {
 	private Integer curLine
 
 	/** Current position in parsed script */
-	private Long curPosition
+	private Integer curPosition
 
 	/** Parse input stream */
 	void parse() {
@@ -144,7 +145,21 @@ class Lexer {
 		while (c != -1) {
 			curNum++
 			curPosition++
+			appendToScript(c)
+			//noinspection GroovyFallthrough
 			switch (c) {
+				case 92: // Escape char \
+					if (scriptType == javaScriptType && command.type == CommandType.QUOTE) {
+						c = input.read()
+						if (c == -1)
+							error('No character for escape sequence')
+
+						curNum++
+						curPosition++
+						addChar(c)
+						break
+					}
+
 				case 9: // Tabulation
 					curNum += 1
 					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
@@ -172,7 +187,7 @@ class Lexer {
 						input.reset()
 
 						if (nextChar == 45) {
-							input.read()
+							appendToScript(input.read())
 							curNum++
 							comment_start(true)
 							curPosition++
@@ -197,7 +212,7 @@ class Lexer {
 					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT] && nextChar != 47) {
 						addChar(c)
 					} else if (command.type == CommandType.COMMENT && nextChar == 47) {
-						input.read()
+						appendToScript(input.read())
 						curNum++
 						curPosition++
 						comment_finish()
@@ -248,13 +263,13 @@ class Lexer {
 					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
 						addChar(c)
 					} else if (nextChar == 42 && scriptType != null) {
-						input.read()
+						appendToScript(input.read())
 						curNum++
 						comment_start(false)
 						curPosition++
 					}
 					else if (scriptType == javaScriptType && nextChar == 47) {
-						input.read()
+						appendToScript(input.read())
 						curNum++
 						comment_start(true)
 						curPosition++
@@ -287,7 +302,9 @@ class Lexer {
 					else if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
 						addChar(c)
 					else
-						gap(c, true)
+						if (gap(c, true) || command.type == CommandType.NONE) {
+							tokens << [type: TokenType.LINE_FEED, value: '\n', first: curPosition, last: curPosition]
+						}
 
 					break
 
@@ -313,8 +330,14 @@ class Lexer {
 		scriptBuf = null
 	}
 
+	/** Adding character to current text buffer */
 	private void addChar(Integer c) {
 		sb.append((char)(c as int))
+	}
+
+	/** Adding character to script text buffer */
+	private void appendToScript(Integer c) {
+		scriptBuf.append((char)(c as int))
 	}
 
 	/**
@@ -390,7 +413,7 @@ class Lexer {
 		def n2 = input.read()
 		input.reset()
         if (Character.getType(n1) == Character.MATH_SYMBOL || (n1 in [37, 38, 42])) {
-			input.read()
+			appendToScript(input.read())
             curNum++
 			curPosition++
             addChar(n1)
@@ -398,7 +421,7 @@ class Lexer {
 
         if (n1 == 42) {
             if (Character.getType(n2) == Character.MATH_SYMBOL || (n2 in [37, 38, 42])) {
-				input.read()
+				appendToScript(input.read())
                 curNum++
 				curPosition++
                 addChar(n2)
@@ -419,7 +442,7 @@ class Lexer {
 	 */
 	private void quote(Integer c) {
 		if (command.type == CommandType.WORD) {
-			if (sb.length() > 0 && sb.substring(sb.length() - 1) == ".") {
+			if (sb.length() > 0 && sb.substring(sb.length() - 1) == "." && (c == 34 || scriptType == javaScriptType)) {
 				command.type = CommandType.OBJECT_NAME
 
 				return
@@ -429,9 +452,8 @@ class Lexer {
 			}
 		}
 
-		if (command.type == CommandType.OBJECT_NAME) {
+		if (command.type == CommandType.OBJECT_NAME)
 			return
-		}
 
 		if (command.type != CommandType.QUOTE) {
 			commands.push(command)
@@ -450,8 +472,8 @@ class Lexer {
 		input.mark(1)
 		def n = input.read()
 		input.reset()
-		if (c == n) {
-			input.read()
+		if (scriptType == sqlScriptType && c == n) {
+			appendToScript(input.read())
 			curNum++
 			curPosition++
 			addChar(n)
@@ -459,7 +481,7 @@ class Lexer {
 		}
 		// If point, change to object name
 		else if (n == 46) {
-			input.read()
+			appendToScript(input.read())
 			curNum++
 			curPosition++
 			addChar(n)
@@ -564,10 +586,9 @@ class Lexer {
 			prevToken.finish = ((char)(c2 as int)).toString()
 			prevToken.last = curPosition
 		}
-		else {
+		else
 			tokens << [type: TokenType.LIST, start: ((char)(c1 as int)).toString(), finish: ((char)(c2 as int)).toString(), list: curTokens, first:
 					command.first, last: curPosition]
-		}
 
 		command = commands.pop() as CommandParam
 	}
@@ -612,16 +633,36 @@ class Lexer {
 	 * @return
 	 */
 	List<List<Map>> statements() {
+		if (tokens == null)
+			return null
+
 		List<List<Map>> res = []
 		def cur = 0
 		def pos = FindByType(tokens, TokenType.SEMICOLON, 0)
 		while (pos != -1) {
-			if (pos >= cur)
-				res << tokens.subList(cur, pos)
+			if (pos >= cur) {
+				def list = tokens.subList(cur, pos)
+				def i = -1
+				while (i < list.size() && list[i + 1].type == TokenType.LINE_FEED)
+					i++
+
+				if (i != -1) {
+					if (i < list.size() - 1)
+						res.add(list.subList(i + 1, list.size()))
+				}
+				else
+					res.add(list)
+			}
 
 			cur = pos + 1
 			pos = FindByType(tokens, TokenType.SEMICOLON, cur)
 		}
+
+		while (cur < tokens.size() && tokens[cur].type == TokenType.LINE_FEED)
+			cur++
+
+		if (cur < tokens.size())
+			res.add(tokens.subList(cur, tokens.size()))
 
 		return res
 	}
@@ -644,6 +685,9 @@ class Lexer {
 	 * @return word string
 	 */
 	static String KeyWords(List<Map> tokens, Integer start = 0, Integer max = null) {
+		if (tokens == null)
+			return null
+
 		StringBuilder sb = new StringBuilder()
 		def i = 0
 		while (start < tokens.size() && (max == null || i < max)) {
@@ -656,6 +700,51 @@ class Lexer {
 		}
 
 		return (sb.length() > 0)?sb.substring(0, sb.length() - 1):""
+	}
+
+	/**
+	 * Return script for specified tokens
+	 * @param start start position by token
+	 * @param finish finish position by token (null for all)
+	 * @param ignoreComments ignore comments
+	 * @return script
+	 */
+	@NamedVariant
+	String scriptBuild(Integer start = 0, Integer finish = null, Boolean ignoreComments = false) {
+		if (tokens == null)
+			return null
+
+		if (tokens.isEmpty())
+			return ''
+
+		if (start == null)
+			start = 0
+
+		if (ignoreComments == null)
+			ignoreComments = false
+
+		StringBuilder sb = new StringBuilder()
+		def cur = tokens[0].first as Integer
+		def tokenSize = tokens.size()
+		def last = -1
+		while (start < tokenSize && (finish == null || start <= finish)) {
+			def token = tokens[start]
+			if (ignoreComments && (token.type as TokenType) in [TokenType.COMMENT, TokenType.SINGLE_COMMENT]) {
+				def commentStart = token.first as Integer
+				if (commentStart > cur)
+					sb.append(script.substring(cur, commentStart))
+
+				cur = (token.last as Integer) + 1
+			}
+			else
+				last = token.last as Integer
+
+			start++
+		}
+		if (cur <= last)
+			sb.append(script.substring(cur, last + 1))
+
+		return sb.toString()
 	}
 
 	/**
@@ -674,6 +763,9 @@ class Lexer {
 	 * @return list elements
 	 */
 	static List<Map> List(List<Map> tokens, Integer position) {
+		if (tokens == null)
+			return null
+
 		return (List<Map>)((tokens[position].type == TokenType.LIST)?tokens[position].list:null)
 	}
 
@@ -693,6 +785,9 @@ class Lexer {
 	 * @return list elements
 	 */
 	static Map Function(List<Map> tokens, Integer position) {
+		if (tokens == null)
+			return null
+
 		Map token = tokens[position]
 		if (token.type != TokenType.FUNCTION)
 			return null
@@ -716,6 +811,9 @@ class Lexer {
 	 * @return - object elements
 	 */
 	static List Object(List<Map> tokens, Integer position) {
+		if (tokens == null)
+			return null
+
 		if (!((tokens[position].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
 			return null
 		}
@@ -739,6 +837,9 @@ class Lexer {
 	 * @return token type
 	 */
 	static TokenType Type(List<Map> tokens, Integer position) {
+		if (tokens == null)
+			return null
+
 		return (TokenType)((position < tokens.size())?tokens[position].type:null)
 	}
 
@@ -749,6 +850,9 @@ class Lexer {
 	 * @return token number
 	 */
 	Integer findByType(TokenType type, Integer start = 0) {
+		if (tokens == null)
+			return null
+
 		FindByType(tokens, type, start)
 	}
 
@@ -760,6 +864,9 @@ class Lexer {
 	 * @return token number
 	 */
 	static Integer FindByType(List<Map> tokens, TokenType type, Integer start = 0) {
+		if (tokens == null)
+			return null
+
 		for (Integer i = start; i < tokens.size(); i++) {
 			if (tokens[i].type == type)
 				return i
@@ -789,6 +896,9 @@ class Lexer {
 	 * @return list elements
 	 */
 	static List<List<Map>> ToList(List<Map> tokens, Integer start = 0, Integer finish = null, String delimiter = ',') {
+		if (tokens == null)
+			return null
+
 		delimiter = delimiter.toUpperCase()
 		if (finish == null)
 			finish = tokens.size() - 1
@@ -817,7 +927,6 @@ class Lexer {
 
 	/**
 	 * Return position key word by start position
-	 * @param tokens list of tokens
 	 * @param start start position in tokens
 	 * @param keyWord key word
 	 * @return position number
@@ -834,10 +943,76 @@ class Lexer {
 	 * @return position number
 	 */
 	static Integer FindKeyWord(List<Map> tokens, String keyWord, Integer start = 0) {
-		keyWord = keyWord.toUpperCase()
+		FindKeyWithType(tokens, [TokenType.SINGLE_WORD], keyWord, start)
+	}
+
+	/**
+	 * Return position function by start position
+	 * @param start start position in tokens
+	 * @param keyWord function name
+	 * @return position number
+	 */
+	Integer findFunction(String funcName, Integer start = 0) {
+		FindFunction(tokens, funcName, start)
+	}
+
+	/**
+	 * Return position function by start position
+	 * @param tokens list of tokens
+	 * @param start start position in tokens
+	 * @param keyWord function name
+	 * @return position number
+	 */
+	static Integer FindFunction(List<Map> tokens, String funcName, Integer start = 0) {
+		FindKeyWithType(tokens, [TokenType.FUNCTION], funcName, start)
+	}
+
+	/**
+	 * Return position list by start position
+	 * @param start start position in tokens
+	 * @return position number
+	 */
+	Integer findList(Integer start = 0) {
+		FindList(tokens, start)
+	}
+
+	/**
+	 * Return position function by start position
+	 * @param tokens list of tokens
+	 * @param start start position in tokens
+	 * @return position number
+	 */
+	static Integer FindList(List<Map> tokens, Integer start = 0) {
+		FindKeyWithType(tokens, [TokenType.LIST], null, start)
+	}
+
+	/**
+	 * Return position key word by start position
+	 * @param types list of token type
+	 * @param key key word
+	 * @param start start position in tokens
+	 * @return position number
+	 */
+	Integer findKeyWithType(List<TokenType> types, String key, Integer start = 0) {
+		FindKeyWithType(tokens, types, key, start)
+	}
+
+	/**
+	 * Return position key word by start position
+	 * @param tokens list of tokens
+	 * @param types list of token type
+	 * @param key key word
+	 * @param start start position in tokens
+	 * @return position number
+	 */
+	static Integer FindKeyWithType(List<Map> tokens, List<TokenType> types, String key, Integer start = 0) {
+		if (tokens == null)
+			return null
+
+		key = key.toUpperCase()
 		for (Integer i = start; i < tokens.size(); i++) {
 			def token = tokens[i]
-			if (token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == keyWord)
+			if ((token.type as TokenType) in types && (key == null || (token.value as String).toUpperCase() == key))
 				return i
 		}
 

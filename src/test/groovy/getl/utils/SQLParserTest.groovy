@@ -14,23 +14,6 @@ INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (
 '''
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.INSERT, parser.statementType())
-
-        def res = parser.parseInsertStatement()
-        assertEquals('Schema', res.schemaName)
-        assertEquals('table', res.tableName)
-
-        def values = [
-                field1:[type: Lexer.TokenType.NUMBER, value:1, delimiter:[type: Lexer.TokenType.COMMA, value:',']],
-                field2:[type: Lexer.TokenType.QUOTED_TEXT, quote:'\'', value:'123', delimiter:[type: Lexer.TokenType.COMMA, value:',']],
-                field3:[type: Lexer.TokenType.FUNCTION, value:'TO_DATE',
-                        list:[
-                                [type: Lexer.TokenType.QUOTED_TEXT, quote:'\'', value:'2016-10-15']
-                        ],
-                        start:'(', finish:')', delimiter:[type: Lexer.TokenType.COMMA, value:',']],
-                field4:[type: Lexer.TokenType.SINGLE_WORD, value: 'null', delimiter:[type: Lexer.TokenType.COMMA, value:',']],
-                Field5:[type: Lexer.TokenType.SINGLE_WORD, value:'DEFAULT']
-        ]
-        assertEquals(values, res.values)
     }
 
     @Test
@@ -42,25 +25,6 @@ WHERE field1 = 1;
 '''
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.UPDATE, parser.statementType())
-
-        def res = parser.parseUpdateStatement()
-        assertEquals('Schema', res.schemaName)
-        assertEquals('table', res.tableName)
-
-        def values = [
-                field2:[type:Lexer.TokenType.NUMBER, value:123, delimiter:[type:Lexer.TokenType.COMMA, value:',']],
-                field3:[type:Lexer.TokenType.FUNCTION, value:'TO_DATE',
-                        list:[
-                                [type:Lexer.TokenType.QUOTED_TEXT, quote:'\'', value:'2016-10-15']
-                        ],
-                        start:'(', finish:')', delimiter:[type:Lexer.TokenType.COMMA, value:',']
-                ],
-                field4:[type:Lexer.TokenType.SINGLE_WORD, value:'null']
-        ]
-        assertEquals(values, res.values)
-
-        def where = [field1:[[type:Lexer.TokenType.NUMBER, value:1]]]
-        assertEquals(where, res.where)
     }
 
     @Test
@@ -72,15 +36,17 @@ WHERE field1 = 1 AND field2 = '123';
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.DELETE, parser.statementType())
+    }
 
-        def res = parser.parseDeleteStatement()
-        assertEquals('Schema', res.schemaName)
-        assertEquals('table', res.tableName)
-
-        def where = [
-                field1:[[type:Lexer.TokenType.NUMBER, value:1]],
-                field2:[[type:Lexer.TokenType.QUOTED_TEXT, quote:'\'', value:'123']]]
-        assertEquals(where, res.where)
+    @Test
+    void testMergeStatement() {
+        def sql = '''
+MERGE INTO "Schema"."table1"
+USING table2 ON table1.id = table2.id;
+'''
+        def lexer = new Lexer(sql, Lexer.sqlScriptType)
+        def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.MERGE, parser.statementType())
     }
 
     @Test
@@ -129,7 +95,7 @@ WHERE field1 = 1 AND field2 = '123';
 
     @Test
     void testIfStatement() {
-        def sql = 'IF 1 = 1'
+        def sql = 'IF (1 = 1) DO { ECHO If complete }'
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_IF, parser.statementType())
@@ -144,17 +110,24 @@ WHERE field1 = 1 AND field2 = '123';
 
     @Test
     void testForStatement() {
-        def sql = 'FOR SELECT id, name FROM table'
-        def lexer = new Lexer(sql, Lexer.sqlScriptType)
+        def sql = 'FOR (SELECT id, name FROM table) DO { ECHO {id}, {name} }'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_FOR, parser.statementType())
+
+        def posFor = parser.lexer.findFunction('FOR')
+        def tokenFor = parser.lexer.tokens[posFor]
+        assertEquals('FOR', tokenFor.value)
+
+        def posDo = parser.lexer.findFunction('DO')
+        def tokenDo = parser.lexer.tokens[posDo]
+        assertEquals('DO', tokenDo.value)
     }
 
     @Test
     void testBlockStatement() {
-        def sql = 'BLOCK'
+        def sql = 'COMMAND { ECHO Native script }'
         def parser = new SQLParser(sql)
-        assertEquals(SQLParser.StatementType.GETL_BLOCK, parser.statementType())
+        assertEquals(SQLParser.StatementType.GETL_COMMAND, parser.statementType())
     }
 
     @Test
@@ -174,7 +147,7 @@ WHERE field1 = 1 AND field2 = '123';
 
     @Test
     void testLoadPointStatement() {
-        def sql = 'LOAD POINT test:point1 TO var1'
+        def sql = 'LOAD_POINT test:point1 TO var1 WITH MERGE'
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_LOAD_POINT, parser.statementType())
@@ -182,8 +155,43 @@ WHERE field1 = 1 AND field2 = '123';
 
     @Test
     void testSavePointStatement() {
-        def sql = 'SAVE POINT test:point1 FROM var1'
+        def sql = 'SAVE_POINT test:point1 FROM var1 WITH INSERT'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_SAVE_POINT, parser.statementType())
+    }
+
+    @Test
+    void testStatements() {
+        def sql = '''@SET var1 = 123;
+ECHO var1: ${var1}
+SELECT ${var1} AS var1, ';' AS delim, * -- no ;
+FROM table;
+
+FOR (
+    SELECT id, name
+    FROM table1
+) DO {
+    ECHO {id}, '${name}'
+    INSERT INTO table2 VALUES({id}, '{name}');
+}
+
+/* 
+  IF CONDITION 
+*/
+IF ({var1} = 123) DO {
+    DELETE FROM table3 WHERE id = {var1};
+    ECHO Record deleted.
+}
+'''
+        def parser = new SQLParser(sql)
+        def scripts = parser.scripts()
+        parser.scripts().each {println '------\n' + it }
+
+        def lines = sql.readLines()
+        assertEquals(lines[0], scripts[0] + ';')
+        assertEquals(lines[1], scripts[1])
+        assertEquals(lines.subList(2, 4).join('\n'), scripts[2] + ';')
+        assertEquals(lines.subList(5, 12).join('\n'), scripts[3])
+        assertEquals(lines.subList(13, 20).join('\n'), scripts[4])
     }
 }

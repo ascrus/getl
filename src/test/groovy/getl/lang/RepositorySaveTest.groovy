@@ -69,7 +69,7 @@ class RepositorySaveTest extends RepositorySave {
         }
     }
 
-    @SaveToRepository(type = 'Files', env = 'Dev, Prod', mask = 'test:*')
+    @SaveToRepository(type = 'Files', env = 'Dev, Prod', mask = 'test:*', overwrite = true)
     void filemanagers_ftp() {
         options {
             jdbcConnectionLoggingPath = logDir
@@ -86,7 +86,7 @@ class RepositorySaveTest extends RepositorySave {
         }
     }
 
-    @SaveToRepository(type = 'Files', env = 'Dev', mask = 'test:*')
+    @SaveToRepository(type = 'Files', env = 'Dev', mask = 'test:*', overwrite = true)
     void filemanagers2_dev() {
         options {
             jdbcConnectionLoggingPath = logDir
@@ -97,7 +97,7 @@ class RepositorySaveTest extends RepositorySave {
         }
     }
 
-    @SaveToRepository(type = 'Files', env = 'Prod', mask = 'test:*')
+    @SaveToRepository(type = 'Files', env = 'Prod', mask = 'test:*', overwrite = true)
     void filemanagers2_prod() {
         options {
             jdbcConnectionLoggingPath = logDir

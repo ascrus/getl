@@ -452,20 +452,36 @@ Examples:
                                 password = StringUtils.Decrypt(password.substring(1, password.length() - 1),
                                         new String(RepositoryObjects._storage_key))
                             }
+
                             storagePassword = password
                             logFine('Repository encryption mode: enabled')
                         }
+
                         if (en.path != null) {
                             storagePath = en.path as String
                             autoLoadFromStorage = true
                             logFine("Path to repository objects: ${storagePath()}")
                         }
+
                         if (en.autoLoadFromStorage != null)
                             autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
                         else
                             autoLoadFromStorage = (storagePath != null)
+
                         if (en.autoLoadForList != null)
                             autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
+
+                        if (en.savingStoryDataset != null) {
+                            def storyDatasetFilePath = new File(FileUtils.TransformFilePath(en.savingStoryDataset as String)).canonicalPath
+                            def storyDatasetFile = new File(storyDatasetFilePath)
+                            if (storyDatasetFile.parentFile == null || !storyDatasetFile.parentFile.exists())
+                                throw new ExceptionGETL("Invalid path \"$storyDatasetFilePath\" for \"savingStoryDataset\"!")
+                            def csvCon = new CSVConnection(dslCreator: this, path: storyDatasetFile.parent)
+                            def csvDataset = new CSVDataset(dslCreator: this, connection: csvCon, fileName: storyDatasetFile.name, header: true,
+                                    fieldDelimiter: ',', codePage: 'utf-8', escaped: false)
+                            savingStoryDataset = csvDataset
+                            logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
+                        }
                     }
                 }
                 procs.engine = { Map<String, Object> en ->
@@ -2459,40 +2475,68 @@ Examples:
         return res
     }
 
+    /** Init script method */
+    void init() { }
+
     /**
      *  Call script init method before execute script
      */
     protected void _doInitMethod(Script script) {
-        def m = script.getClass().methods.find { it.name == 'init' }
-        if (m != null)
-            script.invokeMethod('init', null)
+        if (script instanceof Getl)
+            (script as Getl).init()
+        else {
+            def m = script.getClass().methods.find { it.name == 'init' }
+            if (m != null)
+                script.invokeMethod('init', null)
+        }
     }
+
+    /** Check script method */
+    void check() { }
 
     /**
      *  Call script check method after setting field values
      */
     protected void _doCheckMethod(Script script) {
-        def m = script.getClass().methods.find { it.name == 'check' }
-        if (m != null)
-            script.invokeMethod('check', null)
+        if (script instanceof Getl)
+            (script as Getl).check()
+        else {
+            def m = script.getClass().methods.find { it.name == 'check' }
+            if (m != null)
+                script.invokeMethod('check', null)
+        }
     }
+
+    /** Done script method */
+    void done() { }
 
     /**
      *  Call script done method before execute script
      */
     protected void _doDoneMethod(Script script) {
-        def m = script.getClass().methods.find { it.name == 'done' }
-        if (m != null)
-            script.invokeMethod('done', null)
+        if (script instanceof Getl)
+            (script as Getl).done()
+        else {
+            def m = script.getClass().methods.find { it.name == 'done' }
+            if (m != null)
+                script.invokeMethod('done', null)
+        }
     }
+
+    /** Error script method */
+    void error(Exception e) { }
 
     /**
      *  Call script error method before execute script
      */
     protected void _doErrorMethod(Script script, Exception e) {
-        def m = script.getClass().methods.find { it.name == 'error' }
-        if (m != null)
-            script.invokeMethod('error', e)
+        if (script instanceof Getl)
+            (script as Getl).error(e)
+        else {
+            def m = script.getClass().methods.find { it.name == 'error' }
+            if (m != null)
+                script.invokeMethod('error', e)
+        }
     }
 
     /**
@@ -3738,7 +3782,7 @@ Examples:
     /** Temporary database connection */
     TDS embeddedConnection(@DelegatesTo(TDS)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl) {
-        embeddedConnection(null, false, cl)
+        embeddedConnection().tap(cl)
     }
 
     /** Temporary database default connection */

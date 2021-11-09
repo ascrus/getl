@@ -618,17 +618,30 @@ ECHO Run sql script ...
 /*
   test IF operator
 */
-IF (1 IN (SELECT $id1Name FROM $table_name)); -- check condition 
-ECHO Table has rows -- test ECHO 
-END IF;
+ECHO Checking condition ...
+IF (1 IN (SELECT $id1Name FROM $table_name)) DO { -- check condition 
+    ECHO Table has rows -- test ECHO 
+}
 
 /* select to variables */
+ECHO Setting variables ...
 SET SELECT $id2Name FROM $table_name WHERE $id1Name = 1; -- test SET operator
 ECHO For id1=1 then id2={id2}
 
-/* FOR CYCLE */FOR SELECT $id1Name, $id2Name FROM $table_name WHERE $id1Name BETWEEN 2 AND 3; -- test FOR operator
-ECHO For id1={id1} then id2={id2}
-END FOR;
+ECHO Cycle ...
+/* FOR CYCLE */FOR (SELECT $id1Name, $id2Name FROM $table_name WHERE $id1Name BETWEEN 2 AND 3) DO { -- test FOR operator
+    ECHO For id1={id1} then id2={id2}
+}
+
+ECHO Run select ...
+/*:select_rows*/
+SELECT * FROM $table_name WHERE $id1Name = 1;
+
+ECHO Run update ...
+/*:count_update*/
+UPDATE $table_name
+SET  $id2Name =  $id2Name
+WHERE $id1Name = 1;
 """
         def scripter = new SQLScripter(connection: table.connection, script: sql)
         scripter.runSql(true)
@@ -637,6 +650,8 @@ END FOR;
         scripter.vars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
         scripter.vars.func = currentTimestampFuncName
         scripter.runSql(true)
+
+        println MapUtils.ToJson(scripter.vars)
     }
 
     protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP()' }

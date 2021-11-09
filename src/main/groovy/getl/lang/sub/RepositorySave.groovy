@@ -43,8 +43,8 @@ class RepositorySave extends Getl {
                 throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
         }
 
-        readGetlRepositoryProperties()
-        Application(startClass, args + ['environment=' + getlDefaultConfigEnvironment])
+        //readGetlRepositoryProperties()
+        Application(startClass, args/* + ['environment=' + getlDefaultConfigEnvironment]*/)
     }
 
     /** Additional properties for the repository object generator */
@@ -53,18 +53,18 @@ class RepositorySave extends Getl {
     static protected Map<String, Object> getGetlRepositoryConfigProperties() { getlRepositoryConfigProperties }
 
     /** Default configuration environment */
-    static private String getlDefaultConfigEnvironment
+    private String getlDefaultConfigEnvironment
     /** Default configuration environment */
-    static protected String getGetlDefaultConfigEnvironment() { getlDefaultConfigEnvironment }
+    protected String getGetlDefaultConfigEnvironment() { getlDefaultConfigEnvironment }
 
     /** Read repository properties from file and system variables */
-    static private void readGetlRepositoryProperties() {
+    private void readGetlRepositoryProperties() {
         def isSysEnvExists = System.properties.containsKey('getl-repository-env')
         if (isSysEnvExists) {
             getlDefaultConfigEnvironment = System.properties.get('getl-repository-env')
         }
         else
-            getlDefaultConfigEnvironment = 'dev'
+            getlDefaultConfigEnvironment = configuration.environment
 
         def propFile = new File('getl-repository-properties.conf')
         if (!propFile.exists()) {
@@ -97,18 +97,22 @@ class RepositorySave extends Getl {
 
     /** Class method parameters with annotation  */
     class MethodParams {
-        MethodParams(String methodName, List<String> envs, Boolean retrieve, String mask, List<String> otherTypes) {
+        MethodParams(String methodName, List<String> envs, Boolean retrieve, String mask, List<String> otherTypes, Boolean clear, Boolean overwrite) {
             this.methodName = methodName
             this.envs = envs
             this.retrieve = retrieve
             this.mask = mask
             this.otherTypes = otherTypes
+            this.clear = clear
+            this.overwrite = overwrite
         }
         String methodName
         List<String> envs
         Boolean retrieve
         String mask
         List<String> otherTypes
+        Boolean clear
+        Boolean overwrite
     }
 
     /** Processed object types */
@@ -145,7 +149,8 @@ class RepositorySave extends Getl {
             getClass().methods.each { method ->
                 def an = method.getAnnotation(SaveToRepository)
                 def methodName = method.name
-                if (an == null) return
+                if (an == null)
+                    return
 
                 def type = an.type()?.trim()
                 if (type == null || type == '')
@@ -177,7 +182,10 @@ class RepositorySave extends Getl {
                 if (mask.length() == 0)
                     mask = null
 
-                methods.get(type).add(new MethodParams(methodName, envs, retrieve, mask, otherTypes))
+                def clear = BoolUtils.IsValue(an.clear())
+                def overwrite = BoolUtils.IsValue(an.overwrite())
+
+                methods.get(type).add(new MethodParams(methodName, envs, retrieve, mask, otherTypes, clear, overwrite))
                 logFinest "  found method \"$methodName\" of saving objects with type \"$type\"${(mask != null)?" for mask \"$mask\"":''}"
                 countMethods++
             }
@@ -198,6 +206,8 @@ class RepositorySave extends Getl {
                         def retrieve = p.retrieve
                         def mask = p.mask
                         def otherTypes = p.otherTypes
+                        def clearRep = p.clear
+                        def overExists = p.overwrite
 
                         if (type in ['Connections', 'Files'])
                             logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
@@ -207,29 +217,49 @@ class RepositorySave extends Getl {
                             logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
 
                         envs.each {e ->
-                            repositoryStorageManager.clearRepositories()
+                            //repositoryStorageManager.clearRepositories()
+                            def now = new Date()
                             configuration.environment = e
 
+                            if (clearRep) {
+                                def clearMethod = 'clear' + type
+                                thisObject."$clearMethod"()
+                            }
+
                             def saveMethod = 'save' + type
-                            thisObject."$methodName"()
+
+                            if (overExists) {
+                                options {
+                                    pushOptions()
+                                    validRegisterObjects = false
+                                }
+                            }
+                            try {
+                                thisObject."$methodName"()
+                            }
+                            finally {
+                                if (overExists)
+                                    options.pullOptions()
+                            }
+
                             if (type in ['Connections', 'Files'])
-                                thisObject."$saveMethod"(e, mask)
+                                thisObject."$saveMethod"(e, mask, now)
                             else if (e == envs[0]) {
                                 if (type == 'Datasets')
-                                    thisObject."$saveMethod"(retrieve, mask)
+                                    thisObject."$saveMethod"(retrieve, mask, now)
                                 else
-                                    thisObject."$saveMethod"(mask)
+                                    thisObject."$saveMethod"(mask, now)
                             }
 
                             otherTypes?.each { otherType ->
                                 def saveOtherMethod = 'save' + otherType
                                 if (otherType in ['Connections', 'Files'])
-                                    thisObject."$saveOtherMethod"(e, null)
+                                    thisObject."$saveOtherMethod"(e, null, now)
                                 else if (e == envs[0]) {
                                     if (otherType == 'Datasets')
-                                        thisObject."$saveOtherMethod"(retrieve, null)
+                                        thisObject."$saveOtherMethod"(retrieve, null, now)
                                     else
-                                        thisObject."$saveOtherMethod"(null)
+                                        thisObject."$saveOtherMethod"(null, now)
                                 }
                             }
                         }
@@ -300,13 +330,13 @@ class RepositorySave extends Getl {
     }
 
     /** Save connections */
-    void saveConnections(String env = getlDefaultConfigEnvironment, String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env)
+    void saveConnections(String env = getlDefaultConfigEnvironment, String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env, changeTime)
         logInfo "For environment \"$env\" $count connections saved"
     }
 
     /** Save datasets */
-    void saveDatasets(Boolean retrieveFields = false, String mask = null) {
+    void saveDatasets(Boolean retrieveFields = false, String mask = null, Date changeTime = null) {
         if (retrieveFields) {
             processJdbcTables(mask) { tableName ->
                 def tbl = jdbcTable(tableName)
@@ -316,13 +346,13 @@ class RepositorySave extends Getl {
                 }
             }
         }
-        def count = repositoryStorageManager.saveRepository(RepositoryDatasets, mask)
+        def count = repositoryStorageManager.saveRepository(RepositoryDatasets, mask, null, changeTime)
         logInfo "$count datasets saved"
     }
 
     /** Save datasets */
-    void saveDatasets(String mask) {
-        saveDatasets(false, mask)
+    void saveDatasets(String mask, Date changeTime = null) {
+        saveDatasets(false, mask, changeTime)
     }
 
     /**
@@ -398,58 +428,58 @@ class RepositorySave extends Getl {
     }
 
     /** Save file managers */
-    void saveFiles(String env = getlDefaultConfigEnvironment, String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryFilemanagers, mask, env)
+    void saveFiles(String env = getlDefaultConfigEnvironment, String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryFilemanagers, mask, env, changeTime)
         logInfo "For environment \"$env\" $count file managers saved"
     }
 
     /** Save history point managers */
-    void saveHistorypoints(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryHistorypoints, mask)
+    void saveHistorypoints(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryHistorypoints, mask, null, changeTime)
         logInfo "$count history point managers saved"
     }
 
     /** Save sequences */
-    void saveSequences(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositorySequences, mask)
+    void saveSequences(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositorySequences, mask, null, changeTime)
         logInfo "$count sequences saved"
     }
 
     /** Save models of reference files */
-    void saveReferenceFiles(String mask = null) {
+    void saveReferenceFiles(String mask = null, Date changeTime = null) {
         Dsl {
-            def count = repositoryStorageManager.saveRepository(RepositoryReferenceFiles, mask)
+            def count = repositoryStorageManager.saveRepository(RepositoryReferenceFiles, mask, null, changeTime)
             logInfo "$count model of reference files saved"
         }
     }
 
     /** Save model of reference Vertica tables */
-    void saveReferenceVerticaTables(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryReferenceVerticaTables, mask)
+    void saveReferenceVerticaTables(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryReferenceVerticaTables, mask, null, changeTime)
         logInfo "$count models of reference Vertica tables saved"
     }
 
     /** Save model of monitoring rules */
-    void saveMonitorRules(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryMonitorRules, mask)
+    void saveMonitorRules(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryMonitorRules, mask, null, changeTime)
         logInfo "$count model of monitoring rules saved"
     }
 
     /** Save models of set tables */
-    void saveSetOfTables(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositorySetOfTables, mask)
+    void saveSetOfTables(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositorySetOfTables, mask, null, changeTime)
         logInfo "$count models of tablesets saved"
     }
 
     /** Save models of map tables */
-    void saveMapTables(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryMapTables, mask)
+    void saveMapTables(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryMapTables, mask, null, changeTime)
         logInfo "$count models of map tables saved"
     }
 
     /** Save model of monitoring rules */
-    void saveWorkflows(String mask = null) {
-        def count = repositoryStorageManager.saveRepository(RepositoryWorkflows, mask)
+    void saveWorkflows(String mask = null, Date changeTime = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryWorkflows, mask, null, changeTime)
         logInfo "$count model of workflow saved"
     }
 }

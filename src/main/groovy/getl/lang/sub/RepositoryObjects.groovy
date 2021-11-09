@@ -1,6 +1,7 @@
 //file:noinspection unused
 package getl.lang.sub
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
 import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
@@ -30,22 +31,32 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     /** Repository priority order */
     void setPriority(Integer value) { _priority = value }
 
-    private String dslNameObject
+    private String _dslNameObject
+    @JsonIgnore
     @Override
-    String getDslNameObject() { dslNameObject }
+    String getDslNameObject() { _dslNameObject }
     @Override
-    void setDslNameObject(String value) { dslNameObject = value }
+    void setDslNameObject(String value) { _dslNameObject = value }
 
-    private Getl dslCreator
+    private Getl _dslCreator
+    @JsonIgnore
     @Override
-    Getl getDslCreator() { dslCreator }
+    Getl getDslCreator() { _dslCreator }
     @Override
-    void setDslCreator(Getl value) { dslCreator = value }
+    void setDslCreator(Getl value) { _dslCreator = value }
+
+    private Date _dslRegistrationTime
+    @JsonIgnore
+    @Override
+    Date getDslRegistrationTime() { _dslRegistrationTime }
+    @Override
+    void setDslRegistrationTime(Date value) { _dslRegistrationTime = value }
 
     @Override
     void dslCleanProps() {
-        dslNameObject = null
-        dslCreator = null
+        _dslNameObject = null
+        _dslCreator = null
+        _dslRegistrationTime = null
     }
 
     protected final Object synchObjects = new Object()
@@ -81,7 +92,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 throw new ExceptionDSL("\"$it\" is not a supported class for $typeObject!")
         }
 
-        dslCreator.repositoryStorageManager.with {
+        _dslCreator.repositoryStorageManager.with {
             if (loadFromStorage && autoLoadForList && autoLoadFromStorage && storagePath != null)
                 loadRepository(this.getClass(), mask)
 
@@ -90,7 +101,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         def res = [] as List<String>
 
-        def maskNames = dslCreator.parseName(mask)
+        def maskNames = _dslCreator.parseName(mask)
         def maskGroup = maskNames.groupName
         def maskObject = maskNames.objectName
         def groupPath = (maskGroup != null)?new Path(mask: maskGroup):null
@@ -169,7 +180,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         //noinspection GroovySynchronizationOnNonFinalField
         synchronized (objects) {
-            T repObj = objects.get(dslCreator.repObjectName(repName))
+            T repObj = objects.get(_dslCreator.repObjectName(repName))
             if (repObj == null || repObj.getClass().name != className)
                 repName = null
         }
@@ -185,13 +196,13 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     T find(String name, Boolean findInStorage = true) {
         T obj
-        def repName = dslCreator.repObjectName(name)
+        def repName = _dslCreator.repObjectName(name)
         //noinspection GroovySynchronizationOnNonFinalField
         synchronized (objects) {
             obj = objects.get(repName)
             if (obj == null && findInStorage) {
                 def repClass = this.getClass().name
-                dslCreator.with {
+                _dslCreator.with {
                     if (obj == null && options.validRegisterObjects &&
                             repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
                             repName[0] != '#') {
@@ -236,7 +247,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         }
 
         validExist = BoolUtils.IsValue(validExist, true)
-        def repName = dslCreator.repObjectName(name, true)
+        def repName = _dslCreator.repObjectName(name, true)
 
         synchronized (objects) {
             if (validExist) {
@@ -246,6 +257,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             }
 
             obj.dslNameObject = repName
+            obj.dslRegistrationTime = new Date()
             creator.repositoryStorageManager.runWithLoadMode(!encryptPasswords) {
                 obj.dslCreator = (repName[0] == '#')?creator:dslCreator
             }
@@ -318,9 +330,9 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        def repName = dslCreator.repObjectName(name, registration)
+        def repName = _dslCreator.repObjectName(name, registration)
         def isTemporary = (repName[0] == '#')
-        def isThread = dslCreator.options.useThreadModelCloning &&
+        def isThread = _dslCreator.options.useThreadModelCloning &&
                 cloneInThread && Getl.IsCurrentProcessInThread(true)
 
         if (!registration && isThread) {
@@ -330,36 +342,39 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 return threadObj
         }
 
-        T obj
+        T obj = null
         synchronized (objects) {
-            obj = objects.get(repName)
+            if (!registration || _dslCreator.options.validRegisterObjects) {
+                obj = objects.get(repName)
 
-            def repClass = this.getClass().name
-            dslCreator.with {
-                if (!registration && obj == null && options.validRegisterObjects &&
-                        repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
-                        !isTemporary) {
-                    try {
-                        obj = repositoryStorageManager.loadObject(repClass, repName) as T
+                def repClass = this.getClass().name
+                _dslCreator.with {
+                    if (!registration && obj == null && options.validRegisterObjects &&
+                            repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
+                            !isTemporary) {
+                        try {
+                            obj = repositoryStorageManager.loadObject(repClass, repName) as T
+                        }
+                        catch (ExceptionDSL e) {
+                            throw new ExceptionDSL("\"$name\" is not registered for $typeObject: ${e.message}")
+                        }
                     }
-                    catch (ExceptionDSL e) {
-                        throw new ExceptionDSL("\"$name\" is not registered for $typeObject: ${e.message}")
-                    }
+
+                    return true
                 }
-
-                return true
             }
 
             if (obj == null) {
                 if (registration && isThread && !isTemporary)
                     throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")
 
-                if (!registration && dslCreator.options.validRegisterObjects)
+                if (!registration && _dslCreator.options.validRegisterObjects)
                     throw new ExceptionDSL("\"$name\" is not registered for $typeObject!")
 
                 obj = createObject(className)
                 obj.dslNameObject = repName
-                obj.dslCreator = isTemporary?creator:dslCreator
+                obj.dslCreator = isTemporary?creator:_dslCreator
+                obj.dslRegistrationTime = new Date()
                 objects.put(repName, obj)
                 initRegisteredObject(obj)
             } else {

@@ -5,8 +5,8 @@ class DslApplication extends Getl {
         Application(this, args)
     }
 
-    String field1
-    Integer field2
+    public String field1
+    public Integer field2
 
     void init() {
         configContent.init = true

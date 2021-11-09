@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.RepositorySave
 import getl.models.opts.WorkflowScriptSpec
 import getl.models.opts.WorkflowSpec
 import getl.models.opts.WorkflowSpec.Operation
@@ -23,6 +24,7 @@ import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import java.lang.reflect.Modifier
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Description of the steps in the workflow
@@ -410,6 +412,33 @@ return $className"""
         }
 
         try {
+            def classes =  new ConcurrentHashMap<String, Class<Getl>>()
+            def isRepositorySave = false
+            node.scripts.each { scriptName, scriptParams ->
+                def className = scriptParams.className as String
+
+                URLClassLoader classLoader = null
+                if (scriptClassLoader != null)
+                    classLoader = scriptClassLoader.call(className)
+                def runClass = classForExecute(className, classLoader, node.stepName)
+                if (runClass == null)
+                    throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
+
+                classes.put(scriptName, runClass)
+                if (RepositorySave.isAssignableFrom(runClass))
+                    isRepositorySave = true
+            }
+            if (isRepositorySave) {
+                if (node.countThreads > 1)
+                    throw new ExceptionModel("The number of threads in step \"${node.stepName}\" must be equal to 1 " +
+                            "when using the script for saving repository objects!")
+                classes.each { scriptName, runClass ->
+                    if (!RepositorySave.isAssignableFrom(runClass))
+                        throw new ExceptionModel("Script \"$scriptName\" cannot participate in step \"${node.stepName}\", " +
+                                "because the script for saving repository objects is used!")
+                }
+            }
+
             if (!node.scripts.isEmpty()) {
                 new Executor().tap { exec ->
                     dslCreator = this.dslCreator
@@ -418,20 +447,22 @@ return $className"""
                     abortOnError = true
                     dumpErrors = true
                     debugElementOnError = true
-                    run { String scriptName ->
+                    def runScript = { String scriptName ->
                         exec.counter.nextCount()
 
                         def scriptParams = node.scripts.get(scriptName)
                         def className = scriptParams.className as String
                         dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
 
+/*
                         URLClassLoader classLoader = null
                         if (scriptClassLoader != null)
                             classLoader = scriptClassLoader.call(className)
                         def runClass = classForExecute(className, classLoader, node.stepName)
                         if (runClass == null)
                             throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
-
+*/
+                        def runClass = classes.get(scriptName)
                         def classParams = ReadClassFields(runClass)
                         def scriptVars = scriptParams.vars as Map<String, Object>
                         def execVars = [:] as Map<String, Object>
@@ -507,7 +538,18 @@ return $className"""
                                 _result.put(scriptName, scriptResult.result as Map)
                             }
                         }
+
+                        return true
                     }
+
+                    if (!isRepositorySave)
+                        run(runScript)
+                    else {
+                        node.scripts.each { scriptName, scriptParams ->
+                            runScript.call(scriptName)
+                        }
+                    }
+
                     res = counter.count
                 }
             }

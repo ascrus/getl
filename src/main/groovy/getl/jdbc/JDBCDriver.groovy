@@ -107,7 +107,7 @@ class JDBCDriver extends Driver {
 		[Support.CONNECT, Support.SQL, Support.EACHROW, Support.WRITE, Support.BATCH,
 		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.NOT_NULL_FIELD,
 		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW, Support.SCHEMA,
-		 Support.DATABASE]
+		 Support.DATABASE, Support.SELECT_WITHOUT_FROM]
 	}
 
 	@Override

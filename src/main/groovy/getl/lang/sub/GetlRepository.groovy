@@ -20,6 +20,12 @@ interface GetlRepository {
     /** Getl creator */
     void setDslCreator(Getl value)
 
+    /** Getl registration time */
+    @JsonIgnore
+    Date getDslRegistrationTime()
+    /** Getl registration time */
+    void setDslRegistrationTime(Date value)
+
     /** Clean Dsl properties */
     void dslCleanProps()
 }

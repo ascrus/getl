@@ -2,6 +2,9 @@ package getl.lang.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
+import getl.csv.CSVDataset
+import getl.data.Dataset
+import getl.data.Field
 import getl.exception.ExceptionDSL
 import getl.files.FileManager
 import getl.files.Manager
@@ -16,6 +19,7 @@ import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositoryWorkflows
 import getl.proc.Executor
+import getl.proc.Flow
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
@@ -76,6 +80,53 @@ class RepositoryStorageManager {
     Boolean getAutoLoadForList() { autoLoadForList }
     /** Search the repository when retrieving object lists */
     void setAutoLoadForList(Boolean value) { autoLoadForList = value }
+
+    /** History of saving objects to files */
+    private Dataset savingStoryDataset
+    /** History of saving objects to files */
+    Dataset getSavingStoryDataset() { savingStoryDataset }
+    void setSavingStoryDataset(Dataset value) {
+        if (value != null && !(value instanceof TableDataset || value instanceof CSVDataset))
+            throw new ExceptionDSL('It is allowed to use JDBC tables or CSV files to store the history of saving objects!')
+
+        if (value != null)
+            checkSavingStoryDataset(value)
+
+        savingStoryDataset = value
+    }
+
+    /** Check the settings of the dataset for storing the history of saving objects */
+    private checkSavingStoryDataset(Dataset value) {
+        if (value instanceof TableDataset) {
+            def table = value as TableDataset
+            if (table.field.isEmpty() && table.exists) {
+                table.retrieveFields()
+                if (table.field.isEmpty())
+                    throw new ExceptionDSL("Failed to read the list of fields for \"$value\"!")
+            }
+        }
+
+        if (value.field.isEmpty())
+            value.field = savingStoryFields
+
+        savingStoryFields.each { needField ->
+            def dsField = value.fieldByName(needField.name)
+            if (dsField == null)
+                throw new ExceptionDSL("The field \"${needField.name}\" was not found in the dataset of the write history of objects \"$value\"!")
+            if (needField.type != dsField.type)
+                throw new ExceptionDSL("The type for field \"${needField.name}\" in dataset \"$value\" must be \"${needField.type}\"!")
+            if (needField.length != null && dsField.length < needField.length)
+                throw new ExceptionDSL("The length of the field \"${needField.name}\" in the dataset \"$value\" must be at least ${needField.length} characters long!")
+        }
+    }
+
+    /** List of fields for the object write history dataset */
+    public final List<Field> savingStoryFields = [
+            Field.New('repository') { length = 64; isNull = false },
+            Field.New('object') { length = 128; isNull = false },
+            Field.New('environment') { length = 32 },
+            Field.New('change_time') { type = datetimeFieldType; isNull = false }
+    ]
 
     /** Repository files are stored in project resources */
     private Boolean isResourceStoragePath
@@ -195,10 +246,11 @@ class RepositoryStorageManager {
      * Save objects from all repositories to storage
      * @param mask object name mask
      * @param env used environment
+     * @param changeTime start time of object modification
      */
-    void saveRepositories(String mask = null, String env = null) {
+    void saveRepositories(String mask = null, String env = null, Date changeTime = null) {
         listRepositories.each { name ->
-            saveRepository(name, mask, env)
+            saveRepository(name, mask, env, changeTime)
         }
     }
 
@@ -247,9 +299,10 @@ class RepositoryStorageManager {
      * @param repositoryName name of the repository to be saved
      * @param mask object name mask
      * @param env used environment
+     * @param changeTime start time of object modification
      * @return count of saved objects
      */
-    Integer saveRepository(String repositoryName, String mask = null, String env = null) {
+    Integer saveRepository(String repositoryName, String mask = null, String env = null, Date changeTime = null) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
 
@@ -260,9 +313,11 @@ class RepositoryStorageManager {
         FileUtils.ValidPath(repFilePath)
         repository.processObjects(mask, null, false) { name ->
             def objName = ParseObjectName.Parse(name)
-            if (objName.groupName == null && objName.objectName[0] == '#') return
-            saveObjectToStorage(repository, objName, env)
-            res++
+            if (objName.groupName == null && objName.objectName[0] == '#')
+                return
+
+            if (saveObjectToStorage(repository, objName, env, changeTime))
+                res++
         }
         return res
     }
@@ -272,13 +327,14 @@ class RepositoryStorageManager {
      * @param repositoryClass class of the repository to be saved
      * @param mask object name mask
      * @param env used environment
+     * @param changeTime start time of object modification
      * @return count of saved objects
      */
-    Integer saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
+    Integer saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Date changeTime = null) {
         if (repositoryClass == null)
             throw new ExceptionDSL('Required repository class name!')
 
-        saveRepository(repositoryClass.name, mask, env)
+        saveRepository(repositoryClass.name, mask, env, changeTime)
     }
 
     /**
@@ -286,14 +342,19 @@ class RepositoryStorageManager {
      * @param repository used repository
      * @param objName parsed object name
      * @param env used environment
+     * @param changeTime start time of object modification
+     * @return sign that the object has been saved
      */
-    protected void saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env) {
+    protected Boolean saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env, Date changeTime = null) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
 
         def obj = repository.find(objName.name)
         if (obj == null)
             throw new ExceptionDSL("Object \"${objName.name}\" not found in repository \"${repository.getClass().name}\"!")
+
+        if (changeTime != null && obj.dslRegistrationTime != null && obj.dslRegistrationTime < changeTime)
+            return false
 
         def objParams = repository.exportConfig(obj)
 
@@ -306,6 +367,29 @@ class RepositoryStorageManager {
         if (!file.exists())
             throw new ExceptionDSL("Error saving object \"${objName.name}\" from repository " +
                                     "\"${repository.getClass().name}\" to file \"$file\"!")
+
+        saveToStoryDataset(repository.getClass().name, objName.name, env, changeTime)
+
+        return true
+    }
+
+    /** Save information to saving story dataset */
+    private void saveToStoryDataset(String repositoryName, String objectName, String env, Date changeTime) {
+        if (savingStoryDataset == null)
+            return
+
+        def writeParams = [:] as Map<String, Object>
+        if (savingStoryDataset instanceof CSVDataset)
+            writeParams.append = true
+        else
+            writeParams.batchSize = 1
+
+        def row = [repository: repositoryName, object: objectName,
+                   environment: env, change_time: (changeTime?:new Date())]
+
+        new Flow().writeTo(dest: savingStoryDataset, destParams: writeParams) { add ->
+            add.call(row)
+        }
     }
 
     /**
@@ -895,5 +979,30 @@ class RepositoryStorageManager {
             rep.objects.put(repNewName, obj)
             obj.dslNameObject = repNewName
         }
+    }
+
+    /**
+     * Reload objects from files according to the log of the saved change history
+     * @param story saving story dataset
+     * @param env environment for which environment to overload
+     * @param includeRepositories process only specified repositories in history
+     * @return count of reloaded objects
+     */
+    Long reloadObjectsFromStory(Dataset story, String forEnvironment = null, List<String> includeRepositories = null) {
+        checkSavingStoryDataset(story)
+        if (forEnvironment == null)
+            forEnvironment = dslCreator.configuration.environment
+        def res = 0L
+        story.eachRow { row ->
+            def repositoryName = row.repository as String
+            def objectName = row.object as String
+            def environment = row.environment as String
+            if ((environment == 'all' || environment == forEnvironment) && (includeRepositories == null || repositoryName in includeRepositories)) {
+                loadObject(repositoryName, objectName, environment, true)
+                res++
+            }
+        }
+
+        return res
     }
 }

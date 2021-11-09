@@ -7,6 +7,8 @@ import org.junit.Test
  * @author Alexsey Konstantinov
  */
 class LexerTest extends GetlTest {
+    def writeResult = false
+
     @Test
     void testParse() {
         def example = '''
@@ -26,7 +28,8 @@ static public int test (def param1, def param2) {
         def lexer = new Lexer(example)
 
         def res = FileUtils.FileFromResources('/utils/lexer_parse.json').text
-//        new File('d:/send/lexer_parse.json').text = lexer.toString()
+        if (writeResult)
+            new File('d:/send/lexer_parse.json').text = lexer.toString()
         assertEquals(res, lexer.toString())
     }
 
@@ -112,7 +115,7 @@ YEAR
 
         example = "test=test\n"
         lexer = new Lexer(example)
-        assertEquals(['test', '=', 'test'], lexer.tokens*.value)
+        assertEquals(['test', '=', 'test', '\n'], lexer.tokens*.value)
     }
 
     @Test
@@ -186,7 +189,8 @@ IF(MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 400) = 0 || (MOD(YEAR(End
         def res = FileUtils.FileFromResources('/utils/lexer_java.json').text
 
         def lexer = new Lexer(code, Lexer.javaScriptType)
-//        new File('d:/send/lexer_java.json').text = lexer.toString()
+        if (writeResult)
+          new File('d:/send/lexer_java.json').text = lexer.toString()
         assertEquals(res, lexer.toString())
     }
 
@@ -196,7 +200,8 @@ IF(MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 400) = 0 || (MOD(YEAR(End
         def res = FileUtils.FileFromResources('/utils/lexer_sql.json').text
 
         def lexer = new Lexer(code, Lexer.sqlScriptType)
-//        new File('d:/send/lexer_sql.json').text = lexer.toString()
+        if (writeResult)
+          new File('d:/send/lexer_sql.json').text = lexer.toString()
         assertEquals(res, lexer.toString())
     }
 
@@ -311,25 +316,70 @@ SELECT 3;
     void testPosition() {
         def lexer = new Lexer('aaa bbb ccc')
         assertEquals([[0, 2], [4, 6], [8, 10]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa bbb ccc', lexer.script)
+
+        lexer = new Lexer(' aaa \n bbb \n ccc \n')
+        assertEquals([[1, 3], [5, 5], [7, 9], [11, 11], [13, 15], [17, 17]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals(' aaa \n bbb \n ccc \n', lexer.script)
 
         lexer = new Lexer('aaa; bbb; ccc;')
         assertEquals([[0, 2], [3, 3], [5, 7], [8, 8], [10, 12], [13, 13]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa; bbb; ccc;', lexer.script)
 
         lexer = new Lexer('aaa(bbb, ccc), bbb')
         assertEquals([[0, 12], [15, 17]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa(bbb, ccc), bbb', lexer.script)
 
         lexer = new Lexer('aaa /* bbb */ ccc', Lexer.javaScriptType)
         assertEquals([[0, 2], [4, 12], [14, 16]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa /* bbb */ ccc', lexer.script)
 
         lexer = new Lexer('aaa bbb --ccc ddd', Lexer.sqlScriptType)
         assertEquals([[0, 2], [4, 6], [8, 16]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa bbb --ccc ddd', lexer.script)
 
         lexer = new Lexer('aaa /* bbb */ ccc /* ddd */', Lexer.sqlScriptType)
         assertEquals([[0, 2], [4, 12], [14, 16], [18, 26]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa /* bbb */ ccc /* ddd */', lexer.script)
 
         lexer = new Lexer('aaa, bbb, [1, 2, 3, 4, 5], ccc', Lexer.sqlScriptType)
         assertEquals([[0, 2], [5, 7], [10, 24], [27, 29]], lexer.tokens.collect { [(it.first as Long).toInteger(), (it.last as Long).toInteger()]} )
+        assertEquals('aaa, bbb, [1, 2, 3, 4, 5], ccc', lexer.script)
 
         //println lexer
+    }
+
+    @Test
+    void testQuotesInText() {
+        def code = 'println "text\\"text\\"text"'
+        def lexer = new Lexer(code, Lexer.javaScriptType)
+        assertEquals('text"text"text', lexer.tokens[1].value)
+        assertEquals(8, lexer.tokens[1].first)
+        assertEquals(25, lexer.tokens[1].last)
+
+        code = "println 'text\\'text\\'text'"
+        lexer = new Lexer(code, Lexer.javaScriptType)
+        assertEquals('text\'text\'text', lexer.tokens[1].value)
+        assertEquals(8, lexer.tokens[1].first)
+        assertEquals(25, lexer.tokens[1].last)
+
+        code = "select 'text''text''text'"
+        lexer = new Lexer(code, Lexer.sqlScriptType)
+        assertEquals('text\'text\'text', lexer.tokens[1].value)
+        assertEquals(7, lexer.tokens[1].first)
+        assertEquals(24, lexer.tokens[1].last)
+
+//        println lexer
+    }
+
+    @Test
+    void testScriptBuild() {
+        def sql = 'SELECT * FROM table'
+        def lexer = new Lexer(sql, Lexer.sqlScriptType)
+        assertEquals(sql, lexer.scriptBuild())
+
+        sql = 'SELECT /*comment*/ * FROM table --comment'
+        lexer = new Lexer(sql, Lexer.sqlScriptType)
+        assertEquals('SELECT  * FROM table ', lexer.scriptBuild(ignoreComments: true))
     }
 }

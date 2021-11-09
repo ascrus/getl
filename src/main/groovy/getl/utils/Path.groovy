@@ -295,15 +295,33 @@ class Path implements Cloneable, GetlRepository {
 	/** System parameters */
 	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 	/** System parameters */
+	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
 
 	@JsonIgnore
+	@Override
 	String getDslNameObject() { sysParams.dslNameObject as String }
+	@Override
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
 	@JsonIgnore
+	@Override
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	@Override
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
+
+	@JsonIgnore
+	@Override
+	Date getDslRegistrationTime() { sysParams.dslRegistrationTime as Date }
+	@Override
+	void setDslRegistrationTime(Date value) { sysParams.dslRegistrationTime = value }
+
+	@Override
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslCreator = null
+		sysParams.dslRegistrationTime = null
+	}
 
 	/** Define variable options */
 	PathVarsSpec variable(String name,
@@ -936,11 +954,6 @@ class Path implements Cloneable, GetlRepository {
 		}
 
 		return sb.toString()
-	}
-
-	void dslCleanProps() {
-		sysParams.dslNameObject = null
-		sysParams.dslCreator = null
 	}
 
 	/**

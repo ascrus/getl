@@ -17,7 +17,6 @@ import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.Workbook
-
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.DecimalFormat
@@ -221,8 +220,10 @@ class ExcelDriver extends FileDriver {
             case Field.Type.BOOLEAN:
                 if (cell.cellType == CellType.STRING) {
                     def format = field.format?:dataset.formatBoolean()?:'true|false'
-                    def val = format.toLowerCase().split("[|]")
-                    res = (cell.stringCellValue == val[0])
+                    def val = format.toUpperCase().split("[|]")
+                    def str = cell.stringCellValue
+                    if (str != null)
+                        res = (str.toUpperCase() == val[0])
                 }
                 else if (cell.cellType == CellType.NUMERIC) {
                     res = cell.numericCellValue.toInteger() == 1

@@ -914,16 +914,26 @@ class RepositoryTest extends TestDsl {
     @Test
     void testRepositorySave() {
         Getl.Dsl {
+            def csvHistory = csvTemp()
+
             TFS.storage.connectionFileManager.with {
                 repositoryStorageManager {
                     storagePath = rootPath + '/repository.test'
                     storagePassword = '1234567890123456'
+                    savingStoryDataset = csvHistory
                 }
                 createDir 'repository.test'
             }
 
             try {
                 callScript RepositorySaveTest
+
+                assertEquals(12, csvHistory.countRow())
+                //csvHistory.eachRow { println it }
+                assertEquals(10, repositoryStorageManager.reloadObjectsFromStory(csvHistory))
+                assertEquals(2, repositoryStorageManager.reloadObjectsFromStory(csvHistory, 'prod',
+                        [RepositoryConnections.class.name, RepositoryFilemanagers.class.name]))
+                assertEquals(10, repositoryStorageManager.reloadObjectsFromStory(csvHistory, 'dev'))
 
                 embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
