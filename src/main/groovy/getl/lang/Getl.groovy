@@ -42,7 +42,6 @@ import getl.tfs.*
 import getl.utils.*
 import getl.utils.sub.*
 import getl.vertica.*
-import getl.xero.*
 import getl.xml.*
 import getl.yaml.*
 import groovy.test.GroovyAssert
@@ -4407,63 +4406,6 @@ Examples:
     KafkaDataset kafka(@DelegatesTo(KafkaDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaDataset']) Closure cl) {
         kafka(null, false, cl)
-    }
-
-    /** Xero connection */
-    XeroConnection xeroConnection(String name, Boolean registration,
-                                  @DelegatesTo(XeroConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.xero.XeroConnection']) Closure cl = null) {
-        def parent = registerConnection(RepositoryConnections.XEROCONNECTION, name, registration) as XeroConnection
-        runClosure(parent, cl)
-
-        return parent
-    }
-
-    /** Xero connection */
-    XeroConnection xeroConnection(String name,
-                                  @DelegatesTo(XeroConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.xero.XeroConnection']) Closure cl = null) {
-        xeroConnection(name, false, cl)
-    }
-
-    /** Xero connection */
-    XeroConnection xeroConnection(@DelegatesTo(XeroConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.xero.XeroConnection']) Closure cl) {
-        xeroConnection(null, false, cl)
-    }
-
-    /** Xero default connection */
-    XeroConnection xeroConnection() {
-        defaultOtherConnection(RepositoryDatasets.XERODATASET) as XeroConnection
-    }
-
-    /** Use default Xero connection for new datasets */
-    XeroConnection useXeroConnection(XeroConnection connection) {
-        useOtherConnection(RepositoryDatasets.XERODATASET, connection) as XeroConnection
-    }
-
-    /** Xero table */
-    XeroDataset xero(String name, Boolean registration,
-                     @DelegatesTo(XeroDataset)
-                     @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl = null) {
-        def parent = registerDataset(null, RepositoryDatasets.XERODATASET, name, registration,
-                defaultOtherConnection(RepositoryDatasets.XERODATASET), XeroConnection, cl) as XeroDataset
-        runClosure(parent, cl)
-
-        return parent
-    }
-
-    /** Xero table */
-    XeroDataset xero(String name,
-                     @DelegatesTo(XeroDataset)
-                     @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl = null) {
-        xero(name, false, cl)
-    }
-
-    /** Xero table */
-    XeroDataset xero(@DelegatesTo(XeroDataset)
-                     @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl) {
-        xero(null, false, cl)
     }
 
     /** Temporary CSV file connection */

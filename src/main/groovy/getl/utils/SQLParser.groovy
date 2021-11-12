@@ -3,7 +3,6 @@ package getl.utils
 
 import getl.exception.ExceptionParser
 import groovy.transform.CompileStatic
-import javassist.compiler.Lex
 
 /**
  * SQL parser
@@ -41,6 +40,7 @@ class SQLParser {
 	/** Script lexer */
 	Lexer getLexer() { lexer }
 
+	@SuppressWarnings('SpellCheckingInspection')
 	private Map<String, String> regexp = [
 			GETL_ECHO: '(?i)[@]{0,1}ECHO .+',
 			GETL_IF: '(?i)[@]{0,1}IF DO',

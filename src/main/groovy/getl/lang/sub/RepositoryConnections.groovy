@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.lang.sub
 
 import getl.csv.CSVConnection
@@ -20,9 +21,7 @@ import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
-import getl.utils.FileUtils
 import getl.vertica.VerticaConnection
-import getl.xero.XeroConnection
 import getl.xml.XMLConnection
 import getl.yaml.YAMLConnection
 import groovy.transform.InheritConstructors
@@ -54,7 +53,6 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String SALESFORCECONNECTION = SalesForceConnection.name
     static public final String EMBEDDEDCONNECTION = TDS.name
     static public final String VERTICACONNECTION = VerticaConnection.name
-    static public final String XEROCONNECTION = XeroConnection.name
     static public final String XMLCONNECTION = XMLConnection.name
     static public final String YAMLCONNECTION = YAMLConnection.name
 
@@ -63,7 +61,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
         MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
-        VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION, YAMLCONNECTION
+        VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */
@@ -80,7 +78,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed jdbc connection classes */
     static public final List<String> LISTOTHERCONNECTIONS = [
-        SALESFORCECONNECTION, XEROCONNECTION, KAFKACONNECTION
+        SALESFORCECONNECTION, KAFKACONNECTION
     ]
 
     /** List of allowed connection classes */

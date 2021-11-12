@@ -1,7 +1,9 @@
 package getl.excel
 
-import com.monitorjbl.xlsx.StreamingReader
-import com.monitorjbl.xlsx.impl.StreamingRow
+/*import com.monitorjbl.xlsx.*
+import com.monitorjbl.xlsx.impl.* */
+import com.github.pjfanning.xlsx.*
+import com.github.pjfanning.xlsx.impl.*
 import getl.data.*
 import getl.driver.Driver
 import getl.csv.CSVDataset
@@ -205,8 +207,7 @@ class ExcelDriver extends FileDriver {
     static private Object getCellValue(Cell cell, FileDataset dataset, Field field, DecimalFormat df) {
         if (cell.cellType == CellType.BLANK) return null
 
-		def res
-
+		def res = null
         def fieldType = field.type
 
         switch (fieldType) {

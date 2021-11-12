@@ -32,7 +32,6 @@ import getl.tfs.TFSDataset
 import getl.utils.GenerationUtils
 import getl.utils.MapUtils
 import getl.vertica.VerticaTable
-import getl.xero.XeroDataset
 import getl.xml.XMLDataset
 import getl.yaml.YAMLDataset
 import groovy.transform.InheritConstructors
@@ -69,7 +68,6 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String EMBEDDEDTABLE = TDSTable.name
     static public final String VIEWDATASET = ViewDataset.name
     static public final String VERTICATABLE = VerticaTable.name
-    static public final String XERODATASET = XeroDataset.name
     static public final String XMLDATASET = XMLDataset.name
     static public final String YAMLDATASET = YAMLDataset.name
 
@@ -77,8 +75,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final List<String> LISTDATASETS = [
         CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
-        SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
-        XMLDATASET, YAMLDATASET
+        SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
@@ -94,7 +91,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed other dataset classes */
     static public List<String> LISTOTHER = [
-            SALESFORCEDATASET, SALESFORCEQUERYDATASET, XERODATASET, KAFKADATASET
+            SALESFORCEDATASET, SALESFORCEQUERYDATASET, KAFKADATASET
     ]
 
     /** List of allowed dataset classes */

@@ -503,7 +503,8 @@ class JDBCDriver extends Driver {
 			String conParams = buildConnectParams()
 			
 			def drvName = con.params.driverName as String
-			if (drvName == null) throw new ExceptionGETL("Required \"driverName\" for connect to server")
+			if (drvName == null)
+				throw new ExceptionGETL("Required \"driverName\" for connect to server")
 
             def drvPath = con.params.driverPath as String
             if (drvPath == null) {
@@ -511,7 +512,9 @@ class JDBCDriver extends Driver {
 				useLoadedDriver = false
             }
             else {
-                jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath, this.getClass().classLoader))
+                jdbcClass = Class.forName(drvName, true,
+						FileUtils.ClassLoaderFromPath(FileUtils.ResourceFileName(FileUtils.TransformFilePath(drvPath), con.dslCreator),
+								this.getClass().classLoader))
 				useLoadedDriver = true
             }
 
