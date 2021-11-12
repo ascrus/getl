@@ -9,6 +9,7 @@ import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.CloneUtils
+import getl.utils.MapUtils
 import getl.utils.Path
 import getl.utils.StringUtils
 import getl.vertica.VerticaConnection
@@ -54,6 +55,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         def list = [] as List<ReferenceVerticaTableSpec>
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
+            p.datasetName = p.workTableName
+            p.remove('workTableName')
+
+            MapUtils.RemoveKeys(p) { k, v ->
+                return (v == null) || (v instanceof String && v.length() == 0) || (v instanceof GString && v.length() == 0)
+            }
+
             list.add(new ReferenceVerticaTableSpec(own, p))
         }
         usedTables = list

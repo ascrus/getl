@@ -79,6 +79,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     void setAlwaysFill(Boolean value) { saveParamValue('alwaysFill', value) }
 
     /** Reference data source name */
+    @JsonIgnore
     String getSourceDatasetName() { params.sourceDatasetName as String }
     /** Reference data source name */
     void setSourceDatasetName(String value) {

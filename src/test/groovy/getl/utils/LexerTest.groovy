@@ -369,7 +369,15 @@ SELECT 3;
         assertEquals(7, lexer.tokens[1].first)
         assertEquals(24, lexer.tokens[1].last)
 
-//        println lexer
+        code = '''ALTER TABLE excel.wag_zalog ADD serial_num_true varchar(100) 
+DEFAULT replace(btrim(coalesce(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(
+    regexp_substr(wag_zalog.serial_num, E'\\\\b([\\\\d\\\\w]{13})([\\\\d]{4})\\\\b', 1, 1, '', 0), 'А', 'A'), 'В', 'B'), 'С', 'C'), 'Е', 'E'), 'Н', 'H'), 
+        'К', 'K'), 'М', 'M'), 'О', 'O'), 'Р', 'P'), 'Т', 'T'), 'Х', 'X'), 'З', '3'), 
+    regexp_substr(wag_zalog.item_num, E'(\\\\b[2-9]{1})([0-9]{7})\\\\b', 1, 1, '', 0), 
+    regexp_substr(wag_zalog.item_num, E'(\\\\b[0-9]{7})\\\\b', 1, 1, '', 0), 
+    regexp_substr(wag_zalog.serial_num, E'(\\\\b[0-9]{7})\\\\b', 1, 1, '', 0), wag_zalog.serial_num)), U&'\\00A0', '');'''
+        lexer = new Lexer(code, Lexer.sqlScriptType)
+        println lexer
     }
 
     @Test

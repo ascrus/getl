@@ -79,7 +79,7 @@ class JDBCConnection extends Connection implements UserLogins {
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'sessionProperty', 'schemaName', 'driverName', 'driverPath', 'connectHost',
 				'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput',
-				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation'])
+				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation', 'extensionForSqlScripts'])
 	}
 	
 	@Override

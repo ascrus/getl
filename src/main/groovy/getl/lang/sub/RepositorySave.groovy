@@ -43,8 +43,7 @@ class RepositorySave extends Getl {
                 throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
         }
 
-        //readGetlRepositoryProperties()
-        Application(startClass, args/* + ['environment=' + getlDefaultConfigEnvironment]*/)
+        Application(startClass, args)
     }
 
     /** Additional properties for the repository object generator */
@@ -119,10 +118,8 @@ class RepositorySave extends Getl {
     static private final ObjectTypes = ['Connections', 'Datasets', 'Sequences', 'Historypoints', 'Files', 'SetOfTables', 'MapTables',
                           'MonitorRules', 'ReferenceFiles', 'ReferenceVerticaTables', 'Workflows']
 
-    @Override
-    Object run() {
-        super.run()
-
+    /** Initialization code */
+    void _initRepositorySave() {
         if (getlDefaultConfigEnvironment == null)
             readGetlRepositoryProperties()
 
@@ -137,7 +134,10 @@ class RepositorySave extends Getl {
 
         if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
             throw new ExceptionDSL('The repository path cannot be resource path!')
+    }
 
+    /** Processing declared methods */
+    Object _processRepositorySave() {
         try {
             def methods = [:] as Map<String, List<MethodParams>>
             ObjectTypes.each {typeName ->

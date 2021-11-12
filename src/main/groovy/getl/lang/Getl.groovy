@@ -2250,7 +2250,13 @@ Examples:
                 if (isGetlScript)
                     (script as Getl).prepare()
 
+                if (script instanceof RepositorySave)
+                    (script as RepositorySave)._initRepositorySave()
+
                 result = script.run()
+
+                if (script instanceof RepositorySave)
+                    (script as RepositorySave)._processRepositorySave()
             }
             catch (ExceptionDSL e) {
                 if (e.typeCode == ExceptionDSL.STOP_CLASS) {

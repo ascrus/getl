@@ -448,7 +448,10 @@ class Lexer {
 				return
 			}
 			else {
-				error("unexpectedly found quote in the word")
+				if (scriptType == javaScriptType)
+					error("unexpectedly found quote in the word")
+				else
+					gap(c, true)
 			}
 		}
 

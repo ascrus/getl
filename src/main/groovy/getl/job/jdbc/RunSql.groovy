@@ -12,6 +12,7 @@ import groovy.transform.Field
 @Field String login = null
 @Field String path = null
 @Field String files = null
+@Field Boolean allow_procedure_statements
 @Field Map<String, Object> ext = null
 
 void check() {
@@ -49,7 +50,7 @@ sql {scripter ->
             def fn = ((path != null)?(path + '/'):'') + fileName
             if (ext != null)
                 vars = ext
-            runFile true, fn
+            runFile allow_procedure_statements as Boolean, fn
             logInfo "SQL script file \"$fileName\" executed successfully"
             res.putAll(vars)
         }

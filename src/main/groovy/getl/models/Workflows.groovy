@@ -454,14 +454,6 @@ return $className"""
                         def className = scriptParams.className as String
                         dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
 
-/*
-                        URLClassLoader classLoader = null
-                        if (scriptClassLoader != null)
-                            classLoader = scriptClassLoader.call(className)
-                        def runClass = classForExecute(className, classLoader, node.stepName)
-                        if (runClass == null)
-                            throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
-*/
                         def runClass = classes.get(scriptName)
                         def classParams = ReadClassFields(runClass)
                         def scriptVars = scriptParams.vars as Map<String, Object>
@@ -542,7 +534,7 @@ return $className"""
                         return true
                     }
 
-                    if (!isRepositorySave)
+                    if (node.countThreads > 1)
                         run(runScript)
                     else {
                         node.scripts.each { scriptName, scriptParams ->

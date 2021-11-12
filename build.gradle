@@ -59,7 +59,7 @@ dependencies {
 
 	implementation 'org.apache.kafka:kafka-clients:2.8.0'
 
-	implementation 'com.force.api:force-partner-api:53.0.0'
+	implementation 'com.force.api:force-partner-api:53.1.0'
 
 	//noinspection GradlePackageUpdate
 	implementation 'com.github.xeroapi:xero-java:2.1.3'

@@ -57,6 +57,9 @@ class TDS extends H2Connection {
 		}
 		if (params.config == null)
 			config = "getl_tds"
+
+		if (params.extensionForSqlScripts == null)
+			extensionForSqlScripts = true
 	}
 
 	/** Global temporary database connection object */
