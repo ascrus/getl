@@ -554,8 +554,9 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Register specified tables from the list in Getl repository!
 	 * @param tables list of tables to register
 	 * @param groupName group in repository
+	 * @param skipExists skip existing table in repository
 	 */
-	void addTablesToRepository(List<TableDataset> tables, String groupName = null) {
+	void addTablesToRepository(List<TableDataset> tables, String groupName = null, Boolean skipExists = false) {
 		def getl = dslCreator
 		if (getl == null)
 			throw new ExceptionDSL('The connection was not created from the Getl instance!')
@@ -573,11 +574,15 @@ class JDBCConnection extends Connection implements UserLogins {
 				throw new ExceptionDSL('The table does not have a name!')
 			def repName = ((groupName != null)?(groupName + ':'):'') + tbl.tableName
 
-			if (tbl.field.isEmpty()) tbl.retrieveFields()
+			if (skipExists && getl.findDataset(repName) != null)
+				return
+
+			if (tbl.field.isEmpty())
+				tbl.retrieveFields()
 			if (tbl.field.isEmpty())
 				throw new ExceptionDSL("Fields are not defined for table $tbl!")
 
-				getl.registerDatasetObject(tbl, repName, true)
+			getl.registerDatasetObject(tbl, repName, true)
 		}
 	}
 

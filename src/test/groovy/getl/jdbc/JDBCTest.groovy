@@ -191,7 +191,7 @@ class JDBCTest extends GetlTest {
             sql(embeddedConnection()) {
                 vars.char = '-'
                 vars.null_var = null
-                exec'''SELECT *, '{char}' AS test, {null_var} AS null_test FROM test_sqlscripter WHERE id = 1 /* ; */
+                exec'''SELECT *, '{Char}' AS test, {null_var} AS null_test FROM test_sqlscripter WHERE id = 1 /* ; */
 -- SELECT 1;
 UNION ALL -- SELECT 1;
 SELECT *, '${char}' AS test, ${null_var} AS null_test  -- Comment; 

@@ -1,8 +1,10 @@
 package getl.excel
 
 import getl.data.Field
+import getl.lang.Getl
 import getl.test.GetlTest
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import org.junit.Before
 import org.junit.Test
 
@@ -111,5 +113,25 @@ class ExcelDriverTest extends GetlTest {
         assertEquals(2, rows.size())
         assertEquals(100, rows[0].a)
         assertEquals(200, rows[1].a)
+    }
+
+    @Test
+    void testReport() {
+        if (!FileUtils.ExistsFile('tests/excel/report.xlsx'))
+            return
+
+        Getl.Dsl {
+            excel {
+                useConnection excelConnection { it.path = 'tests/excel' }
+                it.fileName = 'report.xlsx'
+                header = true
+                formatBoolean = 'ГРУЖ|ПОРОЖ'
+
+                schemaFileName = 'tests/excel/report.schema'
+                loadDatasetMetadata()
+
+                eachRow { println it }
+            }
+        }
     }
 }

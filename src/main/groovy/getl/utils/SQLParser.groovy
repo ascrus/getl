@@ -51,12 +51,12 @@ class SQLParser {
 			GETL_ERROR: '(?i)[@]{0,1}ERROR .+',
 			GETL_LOAD_POINT: '(?i)[@]{0,1}LOAD[_]POINT .+ TO .+ WITH (INSERT|MERGE)',
 			GETL_SAVE_POINT: '(?i)[@]{0,1}SAVE[_]POINT .+ FROM .+ WITH (INSERT|MERGE)',
-	        INSERT: '(?i)INSERT INTO\\s+.+\\s+VALUES',
+	        INSERT: '(?i)INSERT INTO\\s+.+\\s+.+',
 			UPDATE: '(?i)UPDATE .+\\s+SET\\s+.+',
 			DELETE: '(?i)DELETE FROM.+\\s+WHERE\\s+.+',
 			MERGE: '(?i)MERGE INTO\\s+.+',
 			TRUNCATE: '(?i)TRUNCATE TABLE\\s+.+',
-			START_TRANSACTION: '(?i)^(START|BEGIN) TRAN(SACTION)?$',
+			START_TRANSACTION: '(?i)^(START\\s+|BEGIN\\s+)?TRAN(SACTION)?$',
 			COMMIT: 'COMMIT',
 			ROLLBACK: 'ROLLBACK',
 			CREATE: '(?i)CREATE (\\w+[ ]){0,2}(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
@@ -107,11 +107,12 @@ class SQLParser {
 			def tokens = stats[curStat] as List<Map>
 			def curPos = tokens[0].first as Integer
 
+			def isFirstOperator = true
 			for (int i = 0; i < tokens.size(); i++) {
 				def token = tokens[i] as Map
 				def type = token.type as Lexer.TokenType
 				def value = token.value as String
-				if (type in [Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION]) {
+				if (isFirstOperator && type in [Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION]) {
 					if (value.toUpperCase() in ['ECHO', '@ECHO']) {
 						def newPos = token.first as Integer
 						if (newPos > curPos)
@@ -172,6 +173,8 @@ class SQLParser {
 						curPos = lastPos + 1
 					}
 				}
+				if (!(type in [Lexer.TokenType.COMMENT, Lexer.TokenType.SINGLE_COMMENT, Lexer.TokenType.LINE_FEED]))
+					isFirstOperator = false
 			}
 
 			if (curPos < (tokens[tokens.size() - 1].first as Integer)) {
@@ -180,6 +183,6 @@ class SQLParser {
 			}
 		}
 
-		return res
+		return res.collect { it.trim() }
 	}
 }

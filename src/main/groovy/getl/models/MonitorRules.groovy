@@ -73,6 +73,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** List of enabled rules */
+    @JsonIgnore
     List<MonitorRuleSpec> getEnabledRules() {
         return usedRules.findAll { rule -> BoolUtils.IsValue(rule.enabled, true) }
     }

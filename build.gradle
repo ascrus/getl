@@ -42,6 +42,7 @@ dependencies {
 	compileOnly fileTree(dir: 'jdbc')
 
 	implementation 'org.apache.logging.log4j:log4j-api:2.14.1'
+	implementation 'org.apache.logging.log4j:log4j-core:2.14.1'
 	implementation 'org.slf4j:slf4j-api:1.7.32'
 	implementation 'org.slf4j:slf4j-log4j12:1.7.32'
 
@@ -65,8 +66,8 @@ dependencies {
 	implementation 'javax.servlet:javax.servlet-api:4.0.1'
 
 	//implementation 'com.monitorjbl:xlsx-streamer:2.2.0'
-	implementation 'com.github.pjfanning:excel-streaming-reader:3.2.1'
-	implementation 'com.github.pjfanning:poi-shared-strings:2.2.0'
+	implementation 'com.github.pjfanning:excel-streaming-reader:3.2.0'
+	//implementation 'com.github.pjfanning:poi-shared-strings:2.2.0'
 
 	implementation 'org.apache.kafka:kafka-clients:3.0.0'
 

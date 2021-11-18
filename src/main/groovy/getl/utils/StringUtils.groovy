@@ -90,6 +90,8 @@ class StringUtils {
 		if (vars == null)
 			throw new ExceptionGETL("Variables can not be null!")
 
+		vars = MapUtils.MapToLower(vars)
+
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
 		value = value.replace('\\\\', '\u0001')
@@ -125,8 +127,9 @@ class StringUtils {
 				continue
 			}
 
-			def varValue = vars.get(vn)
-			if (!vars.containsKey(vn) || (varValue instanceof Map)) {
+			def vl = vn.toLowerCase()
+			def varValue = vars.get(vl)
+			if (!vars.containsKey(vl) || (varValue instanceof Map)) {
 				if (errorWhenUndefined)
 					throw new ExceptionGETL("Unknown variable \"$vn\", " +
 							"known vars: ${vars.keySet().toList().join(', ')}")

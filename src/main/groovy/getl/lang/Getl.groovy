@@ -4908,6 +4908,16 @@ Examples:
         return parent
     }
 
+    /** File path parser */
+    Path filePath(String mask,
+                  @DelegatesTo(Path)
+                  @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
+        def parent = new Path(mask)
+        parent.dslCreator = this
+        runClosure(parent, cl)
+        return parent
+    }
+
     /** Incremental history point manager */
     HistoryPointManager historypoint(String name = null, Boolean registration = false,
                                   @DelegatesTo(HistoryPointManager)

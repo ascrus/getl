@@ -362,9 +362,10 @@ class RepositorySave extends Getl {
      * @param group group name for repository objects
      * @param mask list of table names or search masks
      * @param typeObjects list of type added objects (default using tables)
+     * @param skipExists skip existing table in repository
      */
     @SuppressWarnings('GrMethodMayBeStatic')
-    void addObjects(JDBCConnection con, String schema, String group, List<String> mask = null, List<String> typeObjects = null) {
+    void addObjects(JDBCConnection con, String schema, String group, List<String> mask = null, List<String> typeObjects = null, Boolean skipExists = false) {
         assert con != null, 'It is required to specify the connection in "con"!'
         assert schema != null, 'It is required to specify the schema name in "schema"!'
         assert group != null, 'It is required to specify the group name in "group"!'
@@ -377,7 +378,7 @@ class RepositorySave extends Getl {
                     filterByObjectType = typeObjects
             }
             assert list.size() > 0, "No objects found in schema \"$schema\"!"
-            addTablesToRepository(list, group)
+            addTablesToRepository(list, group, skipExists)
 
             logInfo "Added ${list.size()} objects for schemata \"$schema\" to \"$group\" group in repository"
         }
@@ -389,9 +390,10 @@ class RepositorySave extends Getl {
      * @param schema table storage schema name
      * @param group group name for repository objects
      * @param mask list of table names or search masks
+     * @param skipExists skip existing table in repository
      */
-    void addTables(JDBCConnection con, String schema, String group, List<String> mask = null) {
-        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.tableType])
+    void addTables(JDBCConnection con, String schema, String group, List<String> mask = null, Boolean skipExists = false) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.tableType], skipExists)
     }
 
     /**
@@ -400,9 +402,10 @@ class RepositorySave extends Getl {
      * @param schema view storage schema name
      * @param group group name for repository objects
      * @param mask list of views names or search masks
+     * @param skipExists skip existing table in repository
      */
-    void addViews(JDBCConnection con, String schema, String group, List<String> mask = null) {
-        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.viewType])
+    void addViews(JDBCConnection con, String schema, String group, List<String> mask = null, Boolean skipExists = false) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.viewType], skipExists)
     }
 
     /**
@@ -411,9 +414,10 @@ class RepositorySave extends Getl {
      * @param schema tables storage schema name
      * @param group group name for repository objects
      * @param mask list of tables names or search masks
+     * @param skipExists skip existing table in repository
      */
-    void addGlobalTables(JDBCConnection con, String schema, String group, List<String> mask = null) {
-        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.globalTableType])
+    void addGlobalTables(JDBCConnection con, String schema, String group, List<String> mask = null, Boolean skipExists = false) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.globalTableType], skipExists)
     }
 
     /**
@@ -422,9 +426,10 @@ class RepositorySave extends Getl {
      * @param schema table storage schema name
      * @param group group name for repository objects
      * @param mask list of table names or search masks
+     * @param skipExists skip existing table in repository
      */
-    void addSystemTables(JDBCConnection con, String schema, String group, List<String> mask = null) {
-        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.systemTableType])
+    void addSystemTables(JDBCConnection con, String schema, String group, List<String> mask = null, Boolean skipExists = false) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.systemTableType], skipExists)
     }
 
     /** Save file managers */

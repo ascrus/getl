@@ -9,10 +9,12 @@ import org.junit.Test
 class SQLParserTest extends GetlTest {
     @Test
     void testInsertStatement() {
-        def sql = '''
-INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (1, '123', TO_DATE('2016-10-15'), null, DEFAULT);
-'''
+        def sql = '''INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (1, '123', TO_DATE('2016-10-15'), null, DEFAULT);'''
         def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.INSERT, parser.statementType())
+
+        sql = '''INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) SELECT * FROM table2;'''
+        parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.INSERT, parser.statementType())
     }
 
@@ -77,7 +79,7 @@ USING table2 ON table1.id = table2.id;
 
     @Test
     void testDropStatement() {
-        def sql = 'DROP TABLE table1 CASCADE'
+        def sql = 'DROP TABLE IF EXISTS table1 CASCADE'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.DROP, parser.statementType())
     }
@@ -193,5 +195,41 @@ IF ({var1} = 123) DO {
         assertEquals(lines.subList(2, 4).join('\n'), scripts[2] + ';')
         assertEquals(lines.subList(5, 12).join('\n'), scripts[3])
         assertEquals(lines.subList(13, 20).join('\n'), scripts[4])
+    }
+
+    @Test
+    void testTranStatement() {
+        def sql = 'START TRANSACTION;'
+        def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.START_TRANSACTION, parser.statementType())
+
+        sql = 'BEGIN TRANSACTION;'
+        parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.START_TRANSACTION, parser.statementType())
+
+        sql = 'START TRAN;'
+        parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.START_TRANSACTION, parser.statementType())
+
+        sql = 'BEGIN TRAN;'
+        parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.START_TRANSACTION, parser.statementType())
+
+        sql = 'COMMIT;'
+        parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.COMMIT, parser.statementType())
+
+        sql = 'ROLLBACK;'
+        parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.ROLLBACK, parser.statementType())
+    }
+
+    @Test
+    void testComments() {
+        def sql = FileUtils.FileFromResources('/utils/comments.sql').text
+        def parser = new SQLParser(sql)
+        def scripts = parser.scripts()
+        assertEquals(1, scripts.size())
+        assertEquals(SQLParser.StatementType.DROP, new SQLParser(scripts[0]).statementType())
     }
 }
