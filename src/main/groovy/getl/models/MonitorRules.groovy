@@ -19,6 +19,7 @@ import getl.utils.CloneUtils
 import getl.utils.DateUtils
 import getl.utils.EMailer
 import getl.utils.StringUtils
+import groovy.time.Duration
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
@@ -65,8 +66,25 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     void assignUsedRules(List<Map> value) {
         def own = this
         def list = [] as List<MonitorRuleSpec>
+
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
+
+            def convertDuration = { String propName ->
+                if (p.containsKey(propName)) {
+                    def m = p.get(propName) as Map<String, Integer>
+                    def days = m.days?.toString()?.toInteger()?:0
+                    def hours = m.hours?.toString()?.toInteger()?:0
+                    def minutes = m.minutes?.toString()?.toInteger()?:0
+                    def seconds = m.seconds?.toString()?.toInteger()?:0
+                    def dur = new Duration(days, hours, minutes, seconds, 0)
+                    p.put(propName, dur)
+                }
+            }
+            convertDuration.call('checkFrequency')
+            convertDuration.call('lagTime')
+            convertDuration.call('notificationTime')
+
             list.add(new MonitorRuleSpec(own, p))
         }
         usedRules = list
@@ -293,7 +311,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * Checking the status of rules
      * @return returns true if it is not required to notify by a change in the state of the monitor
      */
-    Boolean check() {
+    Boolean checkingRules() {
         checkModel(true)
 
         if (!statusTable.exists)

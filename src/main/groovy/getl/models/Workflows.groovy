@@ -303,19 +303,25 @@ class Workflows extends BaseModel<WorkflowSpec> {
         return res
     }
 
+    /** Prepare step or script name */
+    static private stepName2CodeName(String stepName) {
+        return stepName.replace(' ', '_sss_').replace('.', '_qqq_')
+                .replace('-', '_ddd_').replace(':', '_ggg_')
+    }
+
     /** Condition name from class of user codes */
     static private String conditionName(String stepName) {
-        return "condition_${stepName.replace(' ', '')}"
+        return "condition_${stepName2CodeName(stepName)}"
     }
 
     /** Initialization name from class of user codes */
     static private String initCodeName(String stepName) {
-        return "init_${stepName.replace(' ', '')}"
+        return "init_${stepName2CodeName(stepName)}"
     }
 
     /** Finalization name from class of user codes */
     static private String finalCodeName(String stepName) {
-        return "final_${stepName.replace(' ', '')}"
+        return "final_${stepName2CodeName(stepName)}"
     }
 
     /** Generate class of user codes */

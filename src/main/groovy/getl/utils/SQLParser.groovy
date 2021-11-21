@@ -126,6 +126,8 @@ class SQLParser {
 						def lastPos = (token.last as Integer)
 						res.add(lexer.script.substring(newPos, lastPos + 1).trim())
 						curPos = lastPos + 1
+						isFirstOperator = true
+						type = Lexer.TokenType.LINE_FEED
 					}
 					else if (value.toUpperCase() in ['IF', '@IF', 'FOR', '@FOR']) {
 						def newPos = token.first as Integer

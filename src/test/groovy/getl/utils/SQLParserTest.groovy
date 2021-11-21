@@ -1,5 +1,6 @@
 package getl.utils
 
+import getl.lang.Getl
 import getl.test.GetlTest
 import org.junit.Test
 
@@ -231,5 +232,58 @@ IF ({var1} = 123) DO {
         def scripts = parser.scripts()
         assertEquals(1, scripts.size())
         assertEquals(SQLParser.StatementType.DROP, new SQLParser(scripts[0]).statementType())
+    }
+
+    @Test
+    void testCountVars() {
+        def sql = '''
+ECHO Create tables ...
+CREATE TABLE public.test_delete_table1(id int PRIMARY KEY, dt timestamp NOT NULL);
+CREATE TABLE public.test_delete_table2(start timestamp NOT NULL, finish timestamp NOT NULL);
+
+ECHO Inserting rows ...
+/*:count_1*/
+INSERT INTO public.test_delete_table1 VALUES(1, Now());
+ECHO Inserted to table1 ${count_1} rows.
+
+/*:count_2*/
+INSERT INTO public.test_delete_table2 VALUES('2021-11-01', '2021-11-30');
+
+
+ECHO Inserted to table2 ${count_2} rows.
+
+--commit;
+
+
+ECHO Cleaning tables ...
+
+/*:count_3*/
+DELETE
+FROM public.test_delete_table1
+WHERE dt between (select start from public.test_delete_table2) and (select finish from public.test_delete_table2);
+--commit;
+
+ECHO Deleted ${count_3} rows to bi_data.DelayPaymentsContract
+
+ECHO Commit ...
+
+COMMIT;
+
+ECHO Droping tables ...
+DROP TABLE public.test_delete_table1;
+DROP TABLE public.test_delete_table2;
+'''
+        def parser = new SQLParser(sql)
+        def stats = parser.scripts()
+        stats.each {
+            println "*** ${new SQLParser(it).statementType()}\n" + it
+        }
+
+        Getl.Dsl {
+            it.sql {
+                useConnection embeddedConnection()
+                exec sql
+            }
+        }
     }
 }

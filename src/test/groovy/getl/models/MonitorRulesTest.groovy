@@ -1,10 +1,10 @@
 package getl.models
 
+
 import getl.test.TestRepository
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import groovy.time.TimeCategory
-import org.junit.Ignore
 import org.junit.Test
 import static getl.test.TestRunner.Dsl
 
@@ -132,7 +132,7 @@ class MonitorRulesTest extends TestRepository {
                     }
                 }
 
-                assertFalse(check())
+                assertFalse(it.checkingRules())
                 assertTrue(statusTable.exists)
 //                checkStatusTable()
                 if (emailer != null) sendToSmtp emailer, mailTitle
@@ -155,7 +155,7 @@ class MonitorRulesTest extends TestRepository {
                         }
                     }
                 }
-                assertFalse(check())
+                assertFalse(it.checkingRules())
 //                checkStatusTable()
                 if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('NOT is_correct'))
@@ -167,7 +167,7 @@ class MonitorRulesTest extends TestRepository {
                         checkFrequency = 10.minutes
                     }
                 }
-                assertFalse(check())
+                assertFalse(it.checkingRules())
 //                checkStatusTable()
                 if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('NOT is_correct'))
@@ -187,17 +187,37 @@ class MonitorRulesTest extends TestRepository {
                         }
                     }
                 }
-                assertFalse(check())
+                assertFalse(it.checkingRules())
 //                checkStatusTable()
                 if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('is_correct'))
                 assertEquals(3, lastCheckStatusTable.countRow('is_notification'))
 
-                assertTrue(check())
+                assertTrue(it.checkingRules())
 //                checkStatusTable()
                 if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('is_correct AND first_error_time IS NULL'))
                 assertEquals(0, lastCheckStatusTable.countRow('is_notification'))
+            }
+        }
+    }
+
+    @Test
+    void testAssignObjects() {
+        Dsl {
+            configuration.load('resource:/models/monitor_duration.conf')
+            assertEquals(1, configContent.usedObjects?.size())
+
+            models.monitorRules {
+                assignUsedRules(configContent.usedObjects as List<Map>)
+                assertEquals(1, usedRules.size())
+                usedRules[0].tap {
+                    use(TimeCategory) {
+                        assertEquals(30.seconds, checkFrequency)
+                        assertEquals(20.minutes, lagTime)
+                        assertEquals(1.days + 12.hours, notificationTime)
+                    }
+                }
             }
         }
     }

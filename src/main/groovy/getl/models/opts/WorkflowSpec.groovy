@@ -99,37 +99,6 @@ class WorkflowSpec extends BaseSpec {
     /** Step finalization code */
     void setFinalCode(String value) { saveParamValue('finalCode', value) }
 
-    /** Condition closure code */
-    /*Closure<Boolean> condition() {
-        Closure<Boolean> res
-
-        try {
-            def script = """import groovy.transform.BaseScript
-import groovy.transform.Field
-import getl.lang.Getl
-import getl.models.Workflows
-
-@BaseScript Getl getl
-
-@Field Workflows proc
-
-Map result(String scriptName) { proc.result(scriptName) }
-
-return
-    $condition
-"""
-
-            res = GenerationUtils.EvalGroovyClosure(value: script, owner: ownerWorkflow.dslCreator) as Closure<Boolean>
-            res.setProperty('proc', ownerWorkflow)
-        }
-        catch (Exception e) {
-            ownerWorkflow.dslCreator.logError("Error parsing the execution condition for \"$stepName\" step: ${e.message}")
-            throw e
-        }
-
-        return res
-    }*/
-
     /** Number of simultaneously executed script (default 1) */
     Integer getCountThreads() { params.countThreads as Integer }
     /** Number of simultaneously executed script (default 1) */
