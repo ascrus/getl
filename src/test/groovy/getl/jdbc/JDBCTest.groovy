@@ -207,7 +207,7 @@ CREATE TABLE test_sqlscripter_result (id int PRIMARY KEY);
 ALTER TABLE test_sqlscripter_result ADD name varchar(50) NOT NULL;
 CREATE INDEX test_sqlscripter_result_name ON test_sqlscripter_result (name);
 COMMAND {
-    DELETE FROM test_sqlscripter_result
+    DELETE FROM test_sqlscripter_result;
 } 
 COMMAND {
     TRUNCATE TABLE test_sqlscripter_result;
@@ -227,6 +227,7 @@ FOR (SELECT id, Name FROM test_sqlscripter WHERE id IN ({list_id})) DO {
         
         IF ({count_rows} = 0) DO {
             ERROR Invalid insert {var_id}!
+            ECHO Exiting ...
         }
     }
 }

@@ -113,7 +113,7 @@ class SQLParser {
 				def type = token.type as Lexer.TokenType
 				def value = token.value as String
 				if (isFirstOperator && type in [Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION]) {
-					if (value.toUpperCase() in ['ECHO', '@ECHO']) {
+					if (value.toUpperCase() in ['ECHO', '@ECHO', 'ERROR', '@ERROR', 'EXIT', '@EXIT']) {
 						def newPos = token.first as Integer
 						if (newPos > curPos)
 							addToRes.call(lexer.script.substring(curPos, newPos))
@@ -173,6 +173,8 @@ class SQLParser {
 						def lastPos = (token.last as Integer)
 						res.add(lexer.script.substring(newPos, lastPos + 1).trim())
 						curPos = lastPos + 1
+						isFirstOperator = true
+						type = Lexer.TokenType.LINE_FEED
 					}
 				}
 				if (!(type in [Lexer.TokenType.COMMENT, Lexer.TokenType.SINGLE_COMMENT, Lexer.TokenType.LINE_FEED]))
