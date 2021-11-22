@@ -161,6 +161,7 @@ Examples:
 
         GetlSetInstance(this)
         setGetlSystemParameter('mainClass', getClass().name)
+        setGetlSystemParameter('groovyConsole', true)
         setUnitTestMode(isTestMode)
 
         if (jobArgs.environment == null) {
@@ -330,7 +331,7 @@ Examples:
 
                 try {
                     if (className != null)
-                        eng.runGroovyInstance(eng, eng.configuration.manager.vars)
+                        eng.runGroovyInstance(eng, true, eng.configuration.manager.vars)
                     else if (workflowFileName != null) {
                         def workflow = eng.models.workflow((workflowName != null)?
                                 "##${workflowName.replace(':', '_')}##":'##workflow##', true)
@@ -823,6 +824,7 @@ Examples:
     /** Work in unit test mode */
     Boolean getUnitTestMode() { BoolUtils.IsValue(_params.unitTestMode) }
     /** Work in unit test mode */
+    @Synchronized
     protected void setUnitTestMode(Boolean value) {
         _params.unitTestMode = value
     }
@@ -2175,7 +2177,7 @@ Examples:
         synchronized (_lockMainThread) {
             script = groovyClass.newInstance() as Script
         }
-        def res = runGroovyInstance(script, vars, extVars)
+        def res = runGroovyInstance(script, true, vars, extVars)
 
         if (!previouslyRun)
             executedClasses.addToList(className)
@@ -2204,14 +2206,18 @@ Examples:
     /**
      * Run groovy script object
      * @param script groovy script object
+     * @param runScript run script or only use in current Getl object
      * @param vars set values for script fields declared as "@Field"
      * @param extVars extend script variables
      * @return exitCode and result
      */
-    protected Map<String, Object> runGroovyInstance(Script script, Map vars = [:], Map extVars = null) {
+    protected Map<String, Object> runGroovyInstance(Script script, Boolean runScript = true, Map vars = [:], Map extVars = null) {
         def exitCode = 0
         def result = null
-        _repositoryFilter.pushOptions(true)
+
+        if (runScript)
+            _repositoryFilter.pushOptions(true)
+
         def isGetlScript = (script instanceof Getl)
         try {
             if (isGetlScript) {
@@ -2224,7 +2230,8 @@ Examples:
                     if (scriptGetl != getlMainInstance)
                         scriptGetl.importGetlParams(_params)
 
-                    scriptGetl._setGetlInstance()
+                    if (runScript)
+                        scriptGetl._setGetlInstance()
 
                     switchThreadToMain(true)
                     try {
@@ -2242,71 +2249,75 @@ Examples:
                 script.binding = new Binding(vars)
             }
 
-            if (isInitMode)
-                logInfo("### Start script ${script.getClass().name}")
-            def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
-            try {
-                if (isGetlScript)
-                    (script as Getl).prepare()
-
-                if (script instanceof RepositorySave)
-                    (script as RepositorySave)._initRepositorySave()
-
-                result = script.run()
-
-                if (script instanceof RepositorySave)
-                    (script as RepositorySave)._processRepositorySave()
-            }
-            catch (ExceptionDSL e) {
-                if (e.typeCode == ExceptionDSL.STOP_CLASS) {
-                    if (e.message != null)
-                        logInfo(e.message)
-                    if (e.exitCode != null)
-                        exitCode = e.exitCode
-                } else {
-                    throw e
-                }
-            }
-            catch (Exception e) {
+            if (runScript) {
+                if (isInitMode)
+                    logInfo("### Start script ${script.getClass().name}")
+                def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
                 try {
+                    if (isGetlScript)
+                        (script as Getl).prepare()
+
+                    if (script instanceof RepositorySave)
+                        (script as RepositorySave)._initRepositorySave()
+
+                    result = script.run()
+
+                    if (script instanceof RepositorySave)
+                        (script as RepositorySave)._processRepositorySave()
+                }
+                catch (ExceptionDSL e) {
+                    if (e.typeCode == ExceptionDSL.STOP_CLASS) {
+                        if (e.message != null)
+                            logInfo(e.message)
+                        if (e.exitCode != null)
+                            exitCode = e.exitCode
+                    } else {
+                        throw e
+                    }
+                }
+                catch (Exception e) {
+                    try {
+                        synchronized (_lockMainThread) {
+                            switchThreadToMain(true)
+                            try {
+                                _doErrorMethod(script, e)
+                            }
+                            finally {
+                                switchThreadToMain(false)
+                            }
+                        }
+                    }
+                    catch (Exception err) {
+                        logging.manager.exception(err, 'method error', script.getClass().name)
+                    }
+                    finally {
+                        throw e
+                    }
+                }
+                finally {
                     synchronized (_lockMainThread) {
                         switchThreadToMain(true)
                         try {
-                            _doErrorMethod(script, e)
+                            _doDoneMethod(script)
                         }
                         finally {
                             switchThreadToMain(false)
                         }
                     }
                 }
-                catch (Exception err) {
-                    logging.manager.exception(err, 'method error', script.getClass().name)
-                }
-                finally {
-                    throw e
-                }
+                pt.finish()
+                if (isInitMode)
+                    logInfo("### Finish script ${script.getClass().name}")
             }
-            finally {
-                synchronized (_lockMainThread) {
-                    switchThreadToMain(true)
-                    try {
-                        _doDoneMethod(script)
-                    }
-                    finally {
-                        switchThreadToMain(false)
-                    }
-                }
-            }
-            pt.finish()
-            if (isInitMode)
-                logInfo("### Finish script ${script.getClass().name}")
         }
         finally {
-            if (isGetlScript)
-                releaseTemporaryObjects(script as Getl)
+            if (runScript) {
+                if (isGetlScript)
+                    releaseTemporaryObjects(script as Getl)
 
-            this._setGetlInstance()
-            _repositoryFilter.pullOptions()
+                this._setGetlInstance()
+                _repositoryFilter.pullOptions()
+            }
         }
 
         return [exitCode: exitCode, result: result]
@@ -2473,11 +2484,46 @@ Examples:
         if (previouslyRun && BoolUtils.IsValue(runOnce))
             return [exitCode: 0]
 
-        def res = runGroovyInstance(script, null)
+        def res = runGroovyInstance(script, true)
 
-        if (!previouslyRun) executedClasses.addToList(className)
+        if (!previouslyRun)
+            executedClasses.addToList(className)
 
         return res
+    }
+
+    private Boolean _usedMode = false
+    /** Script used in other script */
+    Boolean getUsedMode() { _usedMode }
+    /** Script used in other script */
+    @Synchronized
+    protected void setUsedMode(Boolean value) {
+        _usedMode = value
+    }
+
+    /**
+     * Connect the use of the script class to work in the current script
+     * @param scriptClass script class to use
+     * @param vars script field values
+     * @param extVars additional variables for the script
+     * @return
+     */
+    Getl useScript(Class<Getl> scriptClass, Map vars = [:], Map extVars = null) {
+        def script = scriptClass.newInstance() as Getl
+        return useScript(script, vars, extVars)
+    }
+
+    /**
+     * Connect the use of the script to work in the current script
+     * @param script script to use
+     * @param vars script field values
+     * @param extVars additional variables for the script
+     * @return
+     */
+    Getl useScript(Getl script, Map vars = [:], Map extVars = null) {
+        script.setUsedMode(true)
+        runGroovyInstance(script, false, vars, extVars)
+        return script
     }
 
     /** Init script method */

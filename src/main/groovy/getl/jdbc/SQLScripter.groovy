@@ -152,7 +152,17 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
 	 */
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
-		def file = FileUtils.FileFromResources(fileName, otherPath)
+		def paths = [] as List<String>
+		if (dslCreator != null)
+			paths.addAll(dslCreator.repositoryStorageManager.otherResourcePaths)
+		if (otherPath != null) {
+			if (otherPath instanceof List)
+				paths.addAll(otherPath as List)
+			else
+				paths.add(otherPath.toString())
+		}
+
+		def file = FileUtils.FileFromResources(fileName, paths)
 		if (file == null)
 			throw new ExceptionGETL("Script file \"$fileName\" not found in resource!")
 		setScript(file.getText(codePage?:'utf-8'))

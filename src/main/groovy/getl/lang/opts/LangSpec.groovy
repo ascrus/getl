@@ -176,6 +176,13 @@ class LangSpec extends BaseSpec {
             dslCreator.logFinest("Loading configuration from \"resource:/getl-properties.conf\" ...")
         }
 
+        if (mainFile == null && BoolUtils.IsValue(dslCreator.getGetlSystemParameter('groovyConsole')) && FileUtils.ExistsFile('./resources/getl-properties.conf')) {
+            mainFile = new File('./resources/getl-properties.conf')
+            dslCreator.repositoryStorageManager.otherResourcePaths.add(new File('./resources').canonicalPath)
+            isResource = false
+            dslCreator.logFinest("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+        }
+
         if (mainFile == null)
             return
 

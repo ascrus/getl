@@ -1112,12 +1112,11 @@ class FileUtils {
 		if (resource == null) {
             if (otherPath != null) {
                 if (otherPath instanceof List) {
-                    (otherPath as List<String>).each { String path ->
+					for (path in (otherPath as List<String>)) {
                         def file = new File("$path/$fileName")
                         if (file.exists()) {
                             res = file
-							//noinspection UnnecessaryQualifiedReference
-							directive = Closure.DONE
+							break
                         }
                     }
                 } else {
@@ -1193,7 +1192,7 @@ class FileUtils {
 			if (fileName.length() < 10)
 				throw new ExceptionGETL("Invalid path to resource file \"$fileName\"!")
 
-			def file = FileFromResources(fileName.substring(9))
+			def file = FileFromResources(fileName.substring(9), getl?.repositoryStorageManager?.otherResourcePaths)
 			if (file == null)
 				throw new ExceptionGETL("Resource file \"$fileName\" not found!")
 			res = file.canonicalPath

@@ -81,6 +81,17 @@ class RepositoryStorageManager {
     /** Search the repository when retrieving object lists */
     void setAutoLoadForList(Boolean value) { autoLoadForList = value }
 
+    /** Additional search resource path */
+    private final List<String> otherResourcePaths = [] as List<String>
+    /** Additional search resource path */
+    List<String> getOtherResourcePaths() { otherResourcePaths }
+    /** Additional search resource path */
+    void setOtherResourcePaths(List<String> value) {
+        otherResourcePaths.clear()
+        if (value != null)
+            otherResourcePaths.addAll(value)
+    }
+
     /** History of saving objects to files */
     private Dataset savingStoryDataset
     /** History of saving objects to files */
@@ -674,7 +685,7 @@ class RepositoryStorageManager {
                               Boolean overloading = false) {
         def objName = ParseObjectName.Parse(name)
         def fileName = objectFilePathInStorage(repository, objName, env)
-        def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName):new File(fileName)
+        def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName, otherResourcePaths):new File(fileName)
         if (file == null || !file.exists()) {
             if (!validExist)
                 return null

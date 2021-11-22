@@ -96,6 +96,8 @@ class Lexer {
 		Integer finish
 		/** First position in script */
 		Integer first
+		/** Quoting */
+		Boolean isQuoted
 		/** Text buffer */
 		StringBuilder sb
 	}
@@ -160,17 +162,10 @@ class Lexer {
 						break
 					}
 
+				case 32: // Space
 				case 9: // Tabulation
 					curNum += 1
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
-						addChar(c)
-					else
-						gap(c, true)
-
-					break
-
-				case 32: // Space
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT] || (command.type == CommandType.OBJECT_NAME && command.isQuoted))
 						addChar(c)
 					else
 						gap(c, true)
@@ -348,7 +343,7 @@ class Lexer {
 	private Boolean gap(Integer c, Boolean div = false) {
 		def res = false
 		def lastPos = curPosition + ((div)?-1:0)
-		if (command.type in [CommandType.WORD]) {
+		if (command.type == CommandType.WORD) {
 			if (sb.length() > 0) {
 				def str = sb.toString()
 				if (str.isNumber()) {
@@ -441,9 +436,15 @@ class Lexer {
 	 * @param type
 	 */
 	private void quote(Integer c) {
+		if (command.type in [CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
+			addChar(c)
+			return
+		}
+
 		if (command.type == CommandType.WORD) {
-			if (sb.length() > 0 && sb.substring(sb.length() - 1) == "." && (c == 34 || scriptType == javaScriptType)) {
+			if (sb.length() > 0 && sb.substring(sb.length() - 1) == '.' && (c == 34 || scriptType == javaScriptType)) {
 				command.type = CommandType.OBJECT_NAME
+				command.isQuoted = true
 
 				return
 			}
@@ -455,8 +456,10 @@ class Lexer {
 			}
 		}
 
-		if (command.type == CommandType.OBJECT_NAME)
+		if (command.type == CommandType.OBJECT_NAME && (scriptType == javaScriptType || c == 34)) {
+			gap(c, true)
 			return
+		}
 
 		if (command.type != CommandType.QUOTE) {
 			commands.push(command)
@@ -546,8 +549,9 @@ class Lexer {
 
 		gap(c1, true)
 
-		if (tokens.size() > 0) {
-			def token = tokens[tokens.size() - 1] as Map
+		def size = tokens.size()
+		if (size > 0) {
+			def token = tokens[size - 1] as Map
 			def tokenDelimiterType = token.delimiter as Map
 			if (token.type == TokenType.SINGLE_WORD && tokenDelimiterType?.type != TokenType.COMMA) {
 				token.type = TokenType.FUNCTION
@@ -580,10 +584,11 @@ class Lexer {
 		tokens = stackTokens.pop() as List
 
 		Map prevToken = [:]
-		if (tokens.size() != 0)
-			prevToken = (Map) tokens.get(tokens.size() - 1)
+		def size = tokens.size()
+		if (size != 0)
+			prevToken = (Map) tokens.get(size - 1)
 
-		if (tokens.size() > 0 && prevToken.type == TokenType.FUNCTION && prevToken.list == null && (prevToken?.delimiter as Map)?.type != TokenType.COMMA) {
+		if (size > 0 && prevToken.type == TokenType.FUNCTION && prevToken.list == null && (prevToken?.delimiter as Map)?.type != TokenType.COMMA) {
 			prevToken.list = curTokens
 			prevToken.start = ((char)(c1 as int)).toString()
 			prevToken.finish = ((char)(c2 as int)).toString()
@@ -645,13 +650,14 @@ class Lexer {
 		while (pos != -1) {
 			if (pos >= cur) {
 				def list = tokens.subList(cur, pos)
+				def listSize = list.size()
 				def i = -1
-				while (i < list.size() && list[i + 1].type == TokenType.LINE_FEED)
+				while (i < listSize && list[i + 1].type == TokenType.LINE_FEED)
 					i++
 
 				if (i != -1) {
-					if (i < list.size() - 1)
-						res.add(list.subList(i + 1, list.size()))
+					if (i < listSize - 1)
+						res.add(list.subList(i + 1, listSize))
 				}
 				else
 					res.add(list)
@@ -661,11 +667,12 @@ class Lexer {
 			pos = FindByType(tokens, TokenType.SEMICOLON, cur)
 		}
 
-		while (cur < tokens.size() && tokens[cur].type == TokenType.LINE_FEED)
+		def tokenSize = tokens.size()
+		while (cur < tokenSize && tokens[cur].type == TokenType.LINE_FEED)
 			cur++
 
-		if (cur < tokens.size())
-			res.add(tokens.subList(cur, tokens.size()))
+		if (cur < tokenSize)
+			res.add(tokens.subList(cur, tokenSize))
 
 		return res
 	}
@@ -693,7 +700,8 @@ class Lexer {
 
 		StringBuilder sb = new StringBuilder()
 		def i = 0
-		while (start < tokens.size() && (max == null || i < max)) {
+		def size = tokens.size()
+		while (start < size && (max == null || i < max)) {
 			if ((tokens[start].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME, TokenType.FUNCTION]) {
 				i++
 				sb << tokens[start].value
@@ -870,7 +878,8 @@ class Lexer {
 		if (tokens == null)
 			return null
 
-		for (Integer i = start; i < tokens.size(); i++) {
+		def size = tokens.size()
+		for (Integer i = start; i < size; i++) {
 			if (tokens[i].type == type)
 				return i
 		}
@@ -1013,7 +1022,8 @@ class Lexer {
 			return null
 
 		key = key.toUpperCase()
-		for (Integer i = start; i < tokens.size(); i++) {
+		def size = tokens.size()
+		for (Integer i = start; i < size; i++) {
 			def token = tokens[i]
 			if ((token.type as TokenType) in types && (key == null || (token.value as String).toUpperCase() == key))
 				return i

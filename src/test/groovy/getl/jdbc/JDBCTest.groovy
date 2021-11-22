@@ -3,7 +3,9 @@ package getl.jdbc
 import getl.lang.Getl
 import getl.test.GetlTest
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import getl.utils.GenerationUtils
+import getl.utils.SQLParser
 import getl.utils.SynchronizeObject
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -256,5 +258,17 @@ DROP TABLE test_sqlscripter_result;
                 assertEquals('DROP TABLE test_sqlscripter_result;', ddl[3])
             }
         }
+    }
+
+    @Test
+    void testFor() {
+        def file = new File('tests/jdbc/stats.sql')
+        if (!file.exists())
+            return
+
+        def sql = file.getText('utf-8')
+        def parser = new SQLParser(sql)
+        parser.lexer.tokens.collect { "[${it.type}]${it.value}" }.each { println it }
+        //parser.scripts().each { println it }
     }
 }
