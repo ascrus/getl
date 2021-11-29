@@ -8,6 +8,10 @@ import org.supercsv.util.CsvContext
 import getl.utils.*
 import java.sql.Clob
 
+/**
+ * Format clob fields from write to CSV files
+ * @author Alexsey Konstantinov
+ */
 @CompileStatic
 class CSVFmtClob extends CellProcessorAdaptor implements StringCellProcessor {
 	CSVFmtClob() {

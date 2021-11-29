@@ -294,13 +294,19 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	
 	/** Do select command */
 	private void doSelect(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
-		QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
-		def rows = ds.rows()
+		try {
+			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+			QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
+			def rows = ds.rows()
 
-		def scriptLabel = detectScriptVariable(parser)
-		if (scriptLabel != null)
-			vars.put(scriptLabel, rows)
+			def scriptLabel = detectScriptVariable(parser)
+			if (scriptLabel != null)
+				vars.put(scriptLabel, rows)
+		}
+		catch (Exception e) {
+			logger.dump(e, 'SQLScripter.SELECT', dslNameObject, "Error execution script:\n${parser.lexer.script}\n")
+			throw e
+		}
 	}
 
 	private Pattern setOperatorPattern = Pattern.compile('(?i)\\s*[@]?SET\\s+(.*)')
@@ -469,9 +475,9 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		def tokenHeader = parser.lexer.tokens[posHeader]
 
 		String text
-		def posText = tokenHeader.last as Integer + 2
+		def posText = (tokenHeader.first as Integer) + 5
 		if (posText < parseScript.length() - 1)
-			text = parseScript.substring(posText).trim()
+			text = parseScript.substring(posText).trim().trim()
 
 		if (text != null && text.length() > 0)
 			logger.write(logEcho, StringUtils.EvalMacroString(text, allVars))

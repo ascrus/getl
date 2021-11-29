@@ -83,6 +83,7 @@ abstract class JDBCDriverProto extends GetlTest {
         if (con != null && useClob) res << new Field(name: 'text', type: 'TEXT', length: 1024)
         if (con != null && useBlob) res << new Field(name: 'data', type: 'BLOB', length: 1024)
 		if (con != null && useUuid) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
+        if (con != null && useArray) res << new Field(name: 'list', type: 'ARRAY', isNull: false, arrayType: 'INT8')
 
         return res
     }
@@ -248,7 +249,7 @@ abstract class JDBCDriverProto extends GetlTest {
 		}
 
 		def dsFields = [] as List<Field>
-		table.field.each {Field of ->
+		table.field.each { of ->
 			def f = of.copy()
 			dsFields << f
 
@@ -291,6 +292,7 @@ abstract class JDBCDriverProto extends GetlTest {
     protected boolean getUseClob() { con.driver.isSupport(Driver.Support.CLOB) }
     protected boolean getUseBlob() { con.driver.isSupport(Driver.Support.BLOB) }
     protected boolean getUseUuid() { con.driver.isSupport(Driver.Support.UUID) }
+    protected boolean getUseArray() { con.driver.isSupport(Driver.Support.ARRAY) }
 
     protected long insertData() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return 0
@@ -299,7 +301,7 @@ abstract class JDBCDriverProto extends GetlTest {
 
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
-                Map r = GenerationUtils.GenerateRowValues(table.field, num)
+                Map r = GenerationUtils.GenerateRowValues(table.field, table.currentJDBCConnection.currentJDBCDriver.lengthTextInBytes, num)
                 if(this.sequence != null)
                     r.id1 = this.sequence.nextValue
 
@@ -350,8 +352,8 @@ abstract class JDBCDriverProto extends GetlTest {
 				if (useTime) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
                 if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
 				if (useBoolean) nr.flag = GenerationUtils.GenerateBoolean()
-				if (useClob) nr.text = GenerationUtils.GenerateString(500)
-				if (useBlob) nr.data = GenerationUtils.GenerateString(250).bytes
+				if (useClob) nr.text = GenerationUtils.GenerateString(128)
+				if (useBlob) nr.data = GenerationUtils.GenerateString(128).bytes
 				if (useUuid) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
@@ -554,7 +556,7 @@ abstract class JDBCDriverProto extends GetlTest {
         def file = bulkTable.csvTempFile
         def count = new Flow().writeTo(dest: file) { updater ->
             (1..countRows).each { num ->
-                Map r = GenerationUtils.GenerateRowValues(file.field, num)
+                Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id1 = num
                 r.name = """'name'\t"$num"\ntest|/,;|\\"""
 
@@ -592,7 +594,7 @@ abstract class JDBCDriverProto extends GetlTest {
         def countFiles = new Flow().writeTo(dest: file) { updater ->
             updater([:])
             (2..countRows).each { num ->
-                Map r = GenerationUtils.GenerateRowValues(file.field, num)
+                Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id1 = num
                 r.name = """'name'\t"$num"\ntest|/,;|\\"""
 
@@ -642,6 +644,8 @@ ECHO Run update ...
 UPDATE $table_name
 SET  $id2Name =  $id2Name
 WHERE $id1Name = 1;
+
+ECHO {count_update} rows updated
 """
         def scripter = new SQLScripter(connection: table.connection, script: sql)
         scripter.runSql(true)
@@ -650,8 +654,7 @@ WHERE $id1Name = 1;
         scripter.vars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
         scripter.vars.func = currentTimestampFuncName
         scripter.runSql(true)
-
-        println MapUtils.ToJson(scripter.vars)
+        //println MapUtils.ToJson(scripter.vars)
     }
 
     protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP()' }
@@ -663,6 +666,7 @@ WHERE $id1Name = 1;
 
         createTable()
         retrieveObject()
+        retrieveFields()
         if (insertData() > 0) {
             copyToCsv()
             copyToTable()

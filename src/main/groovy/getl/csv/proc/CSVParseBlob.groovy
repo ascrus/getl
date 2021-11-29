@@ -7,6 +7,10 @@ import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 import getl.utils.*
 
+/**
+ * Parse blob fields for read CSV files
+ * @author Alexsey Konstantinov
+*/
 @CompileStatic
 class CSVParseBlob extends CellProcessorAdaptor {
 	CSVParseBlob() {

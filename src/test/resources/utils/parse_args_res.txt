@@ -1,0 +1,13 @@
+C:\sdk\open-jdk-11\bin\java.exe
+-Xms256m
+-Xmx2g
+-Dconsole.encoding=UTF-8
+-Dfile.encoding=UTF-8
+-DEASYLOADER_TEST="E:\getl\easyloader.test"
+-cp
+"E:\getl\easyloader.portal\libs\groovy\*";"E:\getl\easyloader.portal\libs\getl\*";"E:\getl\easyloader.portal\libs\logs\*";"E:\getl\easyloader.portal\libs\jdbc\*";"E:\getl\easyloader.portal\libs\excel\*";"E:\getl\easyloader.portal\libs\hadoop\*";"E:\getl\easyloader.portal\libs\kafka\*";"E:\getl\easyloader.portal\libs\easyloader\*"
+ru.easydata.easyloader.launcher.Job
+environment=dev
+unittest=true
+workflow="test:cmd"
+vars.test=te"st\test

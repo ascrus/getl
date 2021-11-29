@@ -268,7 +268,8 @@ class Logs {
 				vars.exception = ''
 				vars.error = ''
 			}
-			return StringUtils.EvalMacroString(messageFormat, vars) + '\n'
+			def res = StringUtils.EvalMacroString(messageFormat, vars) + '\n'
+			return res
 		}
 	}
 
@@ -443,29 +444,20 @@ class Logs {
 	}
 	
 	/**
-	 * Format log message
-	 * @param message text message
-	 * @return formatted text message
-	 */
-	static String FormatMessage(String message) {
-		message?.replace("\n", " ")
-	}
-
-	/**
 	 * Println log message to console
 	 * @param level log level value
 	 * @param message text message
 	 */
-	static void ToOut(Level level, String message) {
+	/*static void ToOut(Level level, String message) {
 		global.toOut(level, message)
-	}
+	}*/
 	
 	/**
 	 * Println log message to console
 	 * @param level log level value
 	 * @param message text message
 	 */
-	void toOut(Level level, String message) {
+	/*void toOut(Level level, String message) {
 		if (level == Level.OFF || message == null)
 			return
 
@@ -476,7 +468,7 @@ class Logs {
 		synchronized (lockOut) {
 			System.out.print(str)
 		}
-	}
+	}*/
 
 	/**
 	 * Log message with level FINE
@@ -494,9 +486,8 @@ class Logs {
 		if (message == null)
 			return
 
-		def msg = FormatMessage(message)
 		synchronized (lockOut) {
-			logger.fine(msg)
+			logger.fine(message)
 			event(Level.FINE, message)
 		}
 	}
@@ -517,9 +508,8 @@ class Logs {
 		if (message == null)
 			return
 
-		def msg = FormatMessage(message)
 		synchronized (lockOut) {
-			logger.finer(msg)
+			logger.finer(message)
 			event(Level.FINER, message)
 		}
 	}
@@ -540,9 +530,8 @@ class Logs {
 		if (message == null)
 			return
 
-		def msg = FormatMessage(message)
 		synchronized (lockOut) {
-			logger.finest(msg)
+			logger.finest(message)
 			event(Level.FINEST, message)
 		}
 	}
@@ -563,9 +552,8 @@ class Logs {
 		if (message == null)
 			return
 
-		def msg = FormatMessage(message)
 		synchronized (lockOut) {
-			logger.info(msg)
+			logger.info(message)
 			event(Level.INFO, message)
 		}
 	}
@@ -586,9 +574,8 @@ class Logs {
 		if (message == null)
 			return
 
-		def msg = FormatMessage(message)
 		synchronized (lockOut) {
-			logger.warning(msg)
+			logger.warning(message)
 			event(Level.WARNING, message)
 		}
 	}
@@ -611,7 +598,7 @@ class Logs {
 
 		StackTraceUtils.sanitize(error)
 		def t = (error.stackTrace.length > 0) ? (" => " + error.stackTrace.join('\n')) : ""
-		def msg = error.getClass().name + ": " + FormatMessage(error.message) + t
+		def msg = error.getClass().name + ": " + error.message + t
 		synchronized (lockOut) {
 			logger.warning(msg)
 			event(Level.WARNING, error.message)
@@ -631,10 +618,10 @@ class Logs {
 	 * @param message text message
 	 */
 	void severe(String message) {
-		//toOut(Level.SEVERE, message)
-		def msg = FormatMessage(message)
-		logger.severe(msg)
-		event(Level.SEVERE, message)
+		synchronized (lockOut) {
+			logger.severe(message)
+			event(Level.SEVERE, message)
+		}
 	}
 
 	/**
@@ -653,11 +640,13 @@ class Logs {
 		//toOut(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
 		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):''
-		def message = FormatMessage((error.message?:'') + t)
-		logger.severe(message)
-		event(Level.SEVERE, error.message)
-		if (printStackTraceError)
-			error.printStackTrace()
+		def message = (error.message?:'') + t
+		synchronized (lockOut) {
+			logger.severe(message)
+			event(Level.SEVERE, error.message)
+			if (printStackTraceError)
+				error.printStackTrace()
+		}
 	}
 
 	/**
@@ -678,14 +667,16 @@ class Logs {
 	 */
 	void exception(Throwable error, String typeObject, String nameObject) {
 		//toOut(Level.SEVERE, error.message)
-		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${FormatMessage(error.message)}"
+		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${error.message}"
 		StackTraceUtils.sanitize(error)
 		if (error.stackTrace.length > 0)
 			message += " => " + error.stackTrace.join('\n')
-		logger.severe(message)
-		event(Level.SEVERE, error.message)
-		if (printStackTraceError)
-			error.printStackTrace()
+		synchronized (lockOut) {
+			logger.severe(message)
+			event(Level.SEVERE, error.message)
+			if (printStackTraceError)
+				error.printStackTrace()
+		}
 	}
 
 	/**
@@ -734,9 +725,8 @@ class Logs {
 		if (level == Level.OFF || message == null)
 			return
 
-		def msg = FormatMessage(message)
 		synchronized (lockOut) {
-			logger.log(level, msg)
+			logger.log(level, message)
 			event(level, message)
 		}
 	}

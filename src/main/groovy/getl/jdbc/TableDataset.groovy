@@ -383,14 +383,14 @@ class TableDataset extends JDBCDataset {
 		def removeFile = BoolUtils.IsValue(parent.removeFile)
 
 		if (remoteLoad) {
-			if (parent.saveFilePath != null)
+			if (saveFilePath != null)
 				throw new ExceptionGETL('File move is not supported for remote load!')
-			if (parent.removeFile)
+			if (removeFile)
 				throw new ExceptionGETL('File remove is not supported for remote load!')
 			if (parent.onPrepareFileList != null || parent.onBeforeBulkLoadFile != null || parent.onBeforeBulkLoadPackageFiles != null ||
 					parent.onAfterBulkLoadFile != null || parent.onAfterBulkLoadPackageFiles != null)
 				throw new ExceptionGETL('Prepare files code not supported for remote load!')
-			if (!parent.loadAsPackage)
+			if (!loadAsPackage)
 				throw new ExceptionGETL('Required load package mode for remote load!')
 		}
 

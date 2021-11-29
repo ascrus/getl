@@ -10,6 +10,10 @@ import org.supercsv.cellprocessor.ift.LongCellProcessor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.util.CsvContext
 
+/**
+ * Trim value processor
+ * @author Alexsey Konstantinov
+ */
 @CompileStatic
 class CSVTrimProcessor extends CellProcessorAdaptor implements BoolCellProcessor, DateCellProcessor, DoubleCellProcessor,
         LongCellProcessor, StringCellProcessor {

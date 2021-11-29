@@ -12,12 +12,12 @@ import groovy.transform.NamedVariant
  */
 @CompileStatic
 class Lexer {
-	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT, SINGLE_COMMENT, NUMBER, LINE_FEED}
+	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OPERATOR, COMMENT, SINGLE_COMMENT, NUMBER, LINE_FEED}
 
 	/**
 	 * Type of use parse command
 	 */
-	static private enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, OPERATOR, COMMENT, SINGLE_COMMENT}
+	static private enum CommandType {NONE, WORD, QUOTE, BRACKET, OPERATOR, COMMENT, SINGLE_COMMENT}
 
 	/** Type language in the script */
 	enum ScriptType {JAVA, SQL}
@@ -96,8 +96,6 @@ class Lexer {
 		Integer finish
 		/** First position in script */
 		Integer first
-		/** Quoting */
-		Boolean isQuoted
 		/** Text buffer */
 		StringBuilder sb
 	}
@@ -165,7 +163,7 @@ class Lexer {
 				case 32: // Space
 				case 9: // Tabulation
 					curNum += 1
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT] || (command.type == CommandType.OBJECT_NAME && command.isQuoted))
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT])
 						addChar(c)
 					else
 						gap(c, true)
@@ -304,7 +302,7 @@ class Lexer {
 					break
 
 				default:
-					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME, CommandType.OPERATOR,
+					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OPERATOR,
 										   CommandType.COMMENT, CommandType.SINGLE_COMMENT])) {
 						commands.push(command)
 						command = new CommandParam()
@@ -365,15 +363,6 @@ class Lexer {
 				else
 					tokens << [type: TokenType.SINGLE_WORD, value: str, first: command.first, last: lastPos]
 			}
-
-			command = commands.pop() as CommandParam
-			sb = new StringBuilder()
-
-			res = true
-		}
-		else if (command.type == CommandType.OBJECT_NAME) {
-			if (sb.length() > 0)
-				tokens << [type: TokenType.OBJECT_NAME, value: sb.toString(), first: command.first, last: lastPos]
 
 			command = commands.pop() as CommandParam
 			sb = new StringBuilder()
@@ -441,25 +430,8 @@ class Lexer {
 			return
 		}
 
-		if (command.type == CommandType.WORD) {
-			if (sb.length() > 0 && sb.substring(sb.length() - 1) == '.' && (c == 34 || scriptType == javaScriptType)) {
-				command.type = CommandType.OBJECT_NAME
-				command.isQuoted = true
-
-				return
-			}
-			else {
-				if (scriptType == javaScriptType)
-					error("unexpectedly found quote in the word")
-				else
-					gap(c, true)
-			}
-		}
-
-		if (command.type == CommandType.OBJECT_NAME && (scriptType == javaScriptType || c == 34)) {
+		if (command.type == CommandType.WORD)
 			gap(c, true)
-			return
-		}
 
 		if (command.type != CommandType.QUOTE) {
 			commands.push(command)
@@ -483,15 +455,6 @@ class Lexer {
 			curNum++
 			curPosition++
 			addChar(n)
-			return
-		}
-		// If point, change to object name
-		else if (n == 46) {
-			appendToScript(input.read())
-			curNum++
-			curPosition++
-			addChar(n)
-			command.type = CommandType.OBJECT_NAME
 			return
 		}
 
@@ -702,7 +665,7 @@ class Lexer {
 		def i = 0
 		def size = tokens.size()
 		while (start < size && (max == null || i < max)) {
-			if ((tokens[start].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME, TokenType.FUNCTION]) {
+			if ((tokens[start].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.FUNCTION]) {
 				i++
 				sb << tokens[start].value
 				sb << " "
@@ -804,32 +767,6 @@ class Lexer {
 			return null
 
 		return token
-	}
-
-	/**
-	 * Return object name for start token while has single or double quoted word delimiters by point
-	 * @param position start position in tokens
-	 * @return - object elements
-	 */
-	List object(Integer position) {
-		Object(tokens, position)
-	}
-
-	/**
-	 * Return object name for start token while has single or double quoted word delimiters by point
-	 * @param tokens list of tokens
-	 * @param position start position in tokens
-	 * @return - object elements
-	 */
-	static List Object(List<Map> tokens, Integer position) {
-		if (tokens == null)
-			return null
-
-		if (!((tokens[position].type as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
-			return null
-		}
-
-		return ((String)tokens[position].value).split("[.]").toList()
 	}
 
 	/**

@@ -275,13 +275,6 @@ SELECT 3;
     }
 
     @Test
-    void testObject() {
-        def sql = 'SELECT table."id" FROM table'
-        def lexer = new Lexer(sql, Lexer.javaScriptType)
-        assertEquals(['table', 'id'] as List, lexer.object(1))
-    }
-
-    @Test
     void testType() {
         def code = '/* TEST */ String func(String name) { [1,2,3] } // TEST\n["a","b","c"]'
         def lexer = new Lexer(code, Lexer.javaScriptType)

@@ -153,6 +153,12 @@ class Field implements Serializable, Cloneable {
 	String getCompute() { return this.compute }
 	/** Compute columns */
 	void setCompute(String value) { this.compute = value }
+
+	private String arrayType
+	/** Primitive type for array */
+	String getArrayType() { arrayType }
+	/** Primitive type for array */
+	void setArrayType(String value) { arrayType = value }
 	
 	private def minValue = null
 	/** Minimum value (for validation and generation) */
@@ -242,6 +248,7 @@ class Field implements Serializable, Cloneable {
 		if (ordPartition != null) n.ordPartition = ordPartition
 		if (isAutoincrement) n.isAutoincrement = isAutoincrement
 		if (isReadOnly) n.isReadOnly = isReadOnly
+		if (arrayType != null) n.arrayType = arrayType
 		if (defaultValue != null) n.defaultValue = defaultValue
 		if (compute != null) n.compute = compute
 		if (format != null) n.format = format
@@ -279,6 +286,7 @@ class Field implements Serializable, Cloneable {
 		def ordPartition = NumericUtils.Obj2Integer(mf.ordPartition)
 		def isAutoincrement = BoolUtils.IsValue(mf.isAutoincrement, false)
 		def isReadOnly = BoolUtils.IsValue(mf.isReadOnly, false)
+		def arrayType = StringUtils.NullIsEmpty(mf.arrayType as String)
 		def defaultValue = StringUtils.NullIsEmpty(mf.defaultValue as String)
 		def compute = StringUtils.NullIsEmpty(mf.compute as String)
 		def minValue = (mf.minValue instanceof String && (mf.minValue as String).length() == 0)?null:mf.minValue
@@ -293,7 +301,7 @@ class Field implements Serializable, Cloneable {
 		def res = new Field(
 					name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,
 					isKey: isKey, ordKey: ordKey, isPartition: isPartition, ordPartition: ordPartition,
-					isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
+					isAutoincrement: isAutoincrement, isReadOnly: isReadOnly, arrayType: arrayType,
 					defaultValue: defaultValue, compute: compute, minValue: minValue, maxValue: maxValue,
 					format: format, alias: alias, trim: trim,
 					decimalSeparator: decimalSeparator, description: description, extended: extended
@@ -332,6 +340,7 @@ class Field implements Serializable, Cloneable {
 		s.ordPartition = ordPartition
 		s.isAutoincrement = isAutoincrement
 		s.isReadOnly = isReadOnly
+		s.arrayType = arrayType
 		s.defaultValue = defaultValue
 		s.compute = compute
 		s.minValue = minValue
@@ -363,6 +372,7 @@ class Field implements Serializable, Cloneable {
 		precision = (f.precision > 0)?f.precision:precision
 		isAutoincrement = (f.isAutoincrement)?true:isAutoincrement
 		isReadOnly = (f.isReadOnly)?true:isReadOnly
+		arrayType = (f.arrayType != null)?f.arrayType:arrayType
 		defaultValue = (f.defaultValue != null)?f.defaultValue:defaultValue
 		compute = (f.compute != null)?f.compute:compute
 		minValue = (f.minValue != null)?f.minValue:minValue
@@ -397,7 +407,7 @@ class Field implements Serializable, Cloneable {
 				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull,
 				length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isPartition: this.isPartition, ordPartition: this.ordPartition, isAutoincrement: this.isAutoincrement,
-				isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute,
+				isReadOnly: this.isReadOnly, arrayType: this.arrayType, defaultValue: this.defaultValue, compute: this.compute,
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias,
 				trim: this.trim, decimalSeparator: this.decimalSeparator, description: this.description,
 				extended: CloneUtils.CloneMap(extended, false)
@@ -470,6 +480,7 @@ class Field implements Serializable, Cloneable {
         if (this.typeName?.toUpperCase() != o.typeName?.toUpperCase()) return false
         if (this.decimalSeparator != o.decimalSeparator) return false
         if (this.alias?.toUpperCase() != o.alias?.toUpperCase()) return false
+		if (this.arrayType?.toUpperCase() != o.arrayType?.toUpperCase()) return false
         if (this.compute != o.compute) return false
         if (this.defaultValue != o.defaultValue) return false
         if (this.minValue != o.minValue) return false
@@ -531,6 +542,7 @@ class Field implements Serializable, Cloneable {
 		if (BoolUtils.IsValue(isReadOnly)) l << 'isReadOnly = true'
 		if (defaultValue != null) l << "defaultValue = '$defaultValue'".toString()
 		if (compute != null) l << "compute = '$compute'".toString()
+		if (arrayType != null) l << "arrayType = '$arrayType'".toString()
 		if (minValue != null) l << "minValue = $minValue".toString()
 		if (maxValue != null) l << "minValue = $maxValue".toString()
 		if (format != null) l << "format = '$format'".toString()

@@ -1,6 +1,7 @@
 package getl.utils
 
 import getl.data.*
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.lang.Getl
@@ -981,7 +982,7 @@ $body
 	}
 	
 	@CompileStatic
-	static String GenerateString (Integer length) {
+	static String GenerateString(Integer length) {
 		String result = ""
 		while (result.length() < length) result += ((result.length() > 0)?" ":"") + StringUtils.RandomStr().replace('-', ' ')
 		
@@ -1065,8 +1066,8 @@ $body
 	}
 	
 	@CompileStatic
-	static def GenerateValue (Field f) {
-        return GenerateValue(f, null)
+	static def GenerateValue(Field f, Boolean lengthTextInBytes = false) {
+        return GenerateValue(f, lengthTextInBytes, null)
 	}
 	
 	/**
@@ -1076,14 +1077,17 @@ $body
 	 * @return
 	 */
 	@CompileStatic
-	static def GenerateValue (Field f, def rowID) {
+	static def GenerateValue(Field f, Boolean lengthTextInBytes, def rowID) {
 		def result
 		def l = f.length?:1
 		
-		if (f.isNull && GenerateBoolean()) return null
+		if (f.isNull && GenerateBoolean())
+			return null
 		
 		switch (f.type) {
 			case Field.stringFieldType:
+				if (lengthTextInBytes)
+					l = l.intdiv(2) as Integer
 				result = GenerateString(l)
 				break
 			case Field.booleanFieldType:
@@ -1144,29 +1148,34 @@ $body
 				result = GenerateString((l < 65536)?l:65536)
                 break
             case Field.blobFieldType:
-                result = GenerateString((l < 65536)?l:65536).bytes
+				l = (l?:65536).intdiv(2) as Integer
+                result = GenerateString(l).bytes
                 break
 			case Field.uuidFieldType:
 				result = UUID.randomUUID().toString()
 				break
+			case Field.arrayFieldType:
+				def list = [] as List<Integer>
+				(1..GenerateInt(1, 10)).each {
+					list.add(GenerateInt(1, 100))
+				}
+				result = list
+
+				break
 			default:
-				result = GenerateString((l < 65536)?l:65536)
+				l = (l?:65536).intdiv(2) as Integer
+				result = GenerateString(l)
 		}
 
         return result
 	}
 	
 	@CompileStatic
-	static Map GenerateRowValues (List<Field> field) {
-        return GenerateRowValues(field, null)
-	}
-	
-	@CompileStatic
-	static Map GenerateRowValues (List<Field> field, def rowID) {
+	static Map GenerateRowValues(List<Field> field, Boolean lengthTextInBytes = false, def rowID = null) {
 		Map row = [:]
 		field.each { Field f ->
 			def fieldName = f.name.toLowerCase()
-			def value = GenerateValue(f, rowID)
+			def value = GenerateValue(f, lengthTextInBytes, rowID)
 			row.put(fieldName, value)
 		}
 
@@ -2015,6 +2024,9 @@ sb << """
 				break
 			
 			case types.BOOLEAN: case types.BIT:
+				if (!driver.isSupport(Driver.Support.BOOLEAN))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"BOOLEAN\" type in field \"${field.name}\"!")
+
 				res = "if ($value != null) _getl_stat.setBoolean($paramNum, ($value) as Boolean) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
 				break
 				
@@ -2027,10 +2039,16 @@ sb << """
 				break
 				
 			case types.BLOB:
+				if (!driver.isSupport(Driver.Support.BLOB))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"BLOB\" type in field \"${field.name}\"!")
+
 				res = "blobWrite(_getl_con, _getl_stat, $paramNum, ($value) as byte[])"
 				break
 				
 			case types.TEXT:
+				if (!driver.isSupport(Driver.Support.CLOB))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"CLOB\" type in field \"${field.name}\"!")
+
 				if (driver.textReadAsObject()) {
 					res = "clobWrite(_getl_con, _getl_stat, $paramNum, ($value) as String)"
 				}
@@ -2040,26 +2058,49 @@ sb << """
 				break
 				
 			case types.DATE:
+				if (!driver.isSupport(Driver.Support.DATE))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"DATE\" type in field \"${field.name}\"!")
 				res = "if ($value != null) _getl_stat.setDate($paramNum, new java.sql.Date(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.DATE)"
 				break
 				
 			case types.TIME:
+				if (!driver.isSupport(Driver.Support.TIME))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"TIME\" type in field \"${field.name}\"!")
 				res = "if ($value != null) _getl_stat.setTime($paramNum, new java.sql.Time(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIME)"
 				break
 				
 			case types.TIMESTAMP:
+				if (!driver.isSupport(Driver.Support.TIMESTAMP))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"TIMESTAMP\" type in field \"${field.name}\"!")
 				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
 				break
 
 			case types.TIMESTAMP_WITH_TIMEZONE:
+				if (!driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"TIMESTAMP WITH TIMEZONE\" type in field \"${field.name}\"!")
 				if (!driver.timestampWithTimezoneConvertOnWrite())
 					res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
 				else
 					res = "if ($value != null) _getl_stat.setObject($paramNum, ((${value}) as Date).toInstant().atZone(java.time.ZoneId.of('UTC')).toLocalDateTime()) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
 				break
 
+			case types.ARRAY:
+				if (!driver.isSupport(Driver.Support.ARRAY))
+					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"ARRAY\" type in field \"${field.name}\"!")
+
+				res = """if ($value != null) {
+    def val_$paramNum = $value
+    def arr_$paramNum = (val_${paramNum}.class.isArray())?val_${paramNum}:(val_${paramNum} as List).toArray()
+	_getl_stat.setArray($paramNum, _getl_con.createArrayOf('${field.arrayType?:'OBJECT'}', arr_$paramNum))
+}
+else 
+	_getl_stat.setNull($paramNum, java.sql.Types.ARRAY)"""
+				break
 			default:
 				if (field.type == Field.uuidFieldType) {
+					if (!driver.isSupport(Driver.Support.UUID))
+						throw new ExceptionGETL("${driver.class.simpleName} driver not support \"DATETIME\" type in field \"${field.name}\"!")
+
 					if (driver.uuidReadAsObject()) {
 						res = "if ($value != null) _getl_stat.setObject($paramNum, UUID.fromString(($value) as String), java.sql.Types.OTHER) else _getl_stat.setNull($paramNum, java.sql.Types.OTHER)"
 					} else {

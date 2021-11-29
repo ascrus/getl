@@ -301,13 +301,13 @@ class FileManager extends Manager {
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
-			def env = [] as List<String>
-			System.getenv().each { k, v ->
-				env << ("$k=$v").toString()
-			}
-			if (Config.isWindows()) command = "cmd /c $command".toString()
-			String[] envList = env.toArray(String[])
-			p = Runtime.getRuntime().exec(command, envList, currentDirectory)
+			if (Config.isWindows())
+				command = "cmd /c $command".toString()
+			def args = FileUtils.ParseArguments(command)
+			def pb = new ProcessBuilder(args)
+			pb.directory(currentDirectory)
+			//p = Runtime.getRuntime().exec(command, /*envList*/null, currentDirectory)
+			p = pb.start()
 		}
 		catch (IOException e) {
 			err.append(e.message)

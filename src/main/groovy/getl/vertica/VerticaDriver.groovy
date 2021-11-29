@@ -42,6 +42,7 @@ class VerticaDriver extends JDBCDriver {
 		defaultSchemaName = 'public'
 		tempSchemaName = 'v_temp_schema'
 		allowExpressions = true
+		lengthTextInBytes = true
         addPKFieldsToUpdateStatementFromMerge = true
 
 		sqlExpressions.ddlCreateView = '{create} {temporary} VIEW {name} {privileges} AS\n{select}'
@@ -62,8 +63,8 @@ class VerticaDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
         return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
-                 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
-                 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.BOOLEAN,
+                 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
+				 Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.BOOLEAN, /*Driver.Support.ARRAY,*/
                  Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.BULKLOADMANYFILES]
     }
 
@@ -86,6 +87,17 @@ class VerticaDriver extends JDBCDriver {
 		res.add([errorCode: 4486, sqlState: '0A000'])
 
 		return res
+	}
+
+	@Override
+	String type2sqlType(Field field, Boolean useNativeDBType) {
+		if (field.type != Field.arrayFieldType || (useNativeDBType && field.typeName != null))
+			return super.type2sqlType(field, useNativeDBType)
+
+		if (field.arrayType == null)
+			throw new ExceptionGETL("It is required to specify the type of the array in \"arrayType\" for field \"${field.name}\"!")
+
+		return "array[${field.arrayType}]" + (((field.length?:0) > 0)?"(${field.length})":'')
 	}
 
 	@Override
@@ -141,26 +153,32 @@ class VerticaDriver extends JDBCDriver {
 	String copyFormatField(CSVDataset ds, Field field, String fieldName, String formatDate, String formatTime, String formatDateTime) {
 		String res = null
 		switch (field.type) {
-			case Field.Type.BLOB:
+			case Field.blobFieldType:
 				res = "$fieldName format 'hex'"
 				break
 
-			case Field.Type.DATE:
+			case Field.dateFieldType:
 				def format = field.format?:formatDate?:ds.formatDate?:ds.currentCsvConnection.formatDate
 				if (format != null && format.length() > 0)
 					res = "$fieldName format '$format'"
 				break
 
-			case Field.Type.TIME:
+			case Field.timeFieldType:
 				def format = field.format?:formatTime?:ds.formatTime?:ds.currentCsvConnection.formatTime
 				if (format != null && format.length() > 0)
 					res = "$fieldName format '$format'"
 				break
 
-			case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
+			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
 				def format = field.format?:formatDateTime?:ds.formatDateTime?:ds.currentCsvConnection.formatDateTime
 				if (format != null && format.length() > 0)
 					res = "$fieldName format '$format'"
+				break
+
+			/* TODO: Need adding */
+			/*case Field.arrayFieldType:
+				res = "$fieldName"
+				break*/
 		}
 
 		return res
@@ -294,7 +312,7 @@ class VerticaDriver extends JDBCDriver {
 		StringBuilder sb = new StringBuilder()
 		sb.append("COPY ${fullNameDataset(dest)} (\n")
 
-		def table = dest as VerticaTable
+		def table = dest as TableDataset
 		String formatDate = ListUtils.NotNullValue([params.formatDate, table.bulkLoadDirective.formatDate])
 		String formatTime = ListUtils.NotNullValue([params.formatTime, table.bulkLoadDirective.formatTime])
 		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, table.bulkLoadDirective.formatDateTime])
@@ -329,7 +347,7 @@ class VerticaDriver extends JDBCDriver {
 			if (sourceFieldName in filledCols) {
 				def fillFieldName = table.sqlObjectName("_filled_$sourceFieldName")
 				def sourceField = source.fieldByName(sourceFieldName)
-				def sourceType = table.currentVerticaConnection.currentVerticaDriver.type2sqlType(sourceField, false)
+				def sourceType = table.currentJDBCConnection.currentJDBCDriver.type2sqlType(sourceField, false)
 				columns.add("  $fillFieldName FILLER $sourceType")
 
 				def format = copyFormatField(source, sourceField, fillFieldName, formatDate, formatTime, formatDateTime)
@@ -466,7 +484,7 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	String blobMethodWrite (String methodName) {
-		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
+		/*return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BINARY) 
 	}
@@ -475,6 +493,12 @@ class VerticaDriver extends JDBCDriver {
 		stat.setBinaryStream(paramNum, stream, value.length)
 		stream.close()
 	}
+}"""*/
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
+	if (value == null) 
+		stat.setNull(paramNum, java.sql.Types.BINARY) 
+	else
+		stat.setBytes(paramNum, value)
 }"""
 	}
 
@@ -569,22 +593,16 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	protected void prepareCopyTableSource(TableDataset source, Map<String, Object> qParams ) {
-		if (source instanceof VerticaTable)
-			(source as VerticaTable).readOpts {
-				if (label != null)
-					qParams.after_select = "/*+label($label)*/"
-				if (tablesample != null)
-					qParams.after_from = "TABLESAMPLE($tablesample)"
-			}
+		if (source.readDirective.label != null)
+			qParams.after_select = "/*+label(${source.readDirective.label})*/"
+		if (source.readDirective.tablesample != null)
+			qParams.after_from = "TABLESAMPLE(${source.readDirective.tablesample})"
 	}
 
 	@Override
 	protected void prepareCopyTableDestination(TableDataset dest, Map<String, Object> qParams ) {
-		if (dest instanceof VerticaTable)
-			(dest as VerticaTable).writeOpts {
-				if (direct != null)
-					qParams.after_insert = "/*+${direct}*/"
-			}
+		if (dest.writeDirective.direct != null)
+			qParams.after_insert = "/*+${dest.writeDirective.direct}*/"
 	}
 
 	@Override

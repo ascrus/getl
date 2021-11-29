@@ -6,6 +6,10 @@ import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.util.CsvContext
 
+/**
+ * Parse escaped string fields for read CSV files
+ * @author Alexsey Konstantinov
+ */
 @CompileStatic
 class CSVParseEscapeString extends CellProcessorAdaptor implements StringCellProcessor {
     CSVParseEscapeString() {

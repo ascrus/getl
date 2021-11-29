@@ -6,6 +6,10 @@ import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 
+/**
+ * Parse clob fields for read CSV files
+ * @author Alexsey Konstantinov
+ */
 @CompileStatic
 class CSVParseClob extends CellProcessorAdaptor implements StringCellProcessor {
 	CSVParseClob() {

@@ -679,10 +679,11 @@ class RepositoryStorageManager {
      * @param name object name
      * @param env used environment
      * @param validExist valid existing file (default true)
-     * @param overloading reload existing object
+     * @param overloading reload existing object (default false)
+     * @param register registering object in repository (default true)
      */
     GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true,
-                              Boolean overloading = false) {
+                              Boolean overloading = false, Boolean register = true) {
         def objName = ParseObjectName.Parse(name)
         def fileName = objectFilePathInStorage(repository, objName, env)
         def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName, otherResourcePaths):new File(fileName)
@@ -697,15 +698,26 @@ class RepositoryStorageManager {
         try {
             def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
                     configVars: this.dslCreator.configVars, owner: dslCreator)
-            obj = repository.find(name, false)
-            if (obj != null && !overloading)
-                throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")
+            if (register) {
+                obj = repository.find(name, false)
+                if (obj != null && !overloading)
+                    throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")
+            }
             def isExists = (obj != null)
             obj = repository.importConfig(objParams, obj)
-            if (!isExists)
-                repository.registerObject(this.dslCreator, obj, name, true)
-            else
-                repository.initRegisteredObject(obj)
+            if (register) {
+                if (!isExists)
+                    repository.registerObject(this.dslCreator, obj, name, true)
+                else
+                    repository.initRegisteredObject(obj)
+            }
+            else {
+                runWithLoadMode(false) {
+                    obj.dslCreator = this.dslCreator
+                    obj.dslNameObject = name
+                    obj.dslRegistrationTime = new Date()
+                }
+            }
         }
         finally {
             if (isResourceStoragePath)
@@ -770,12 +782,13 @@ class RepositoryStorageManager {
      * @param name object name
      * @param env used environment
      * @param overloading load over existing (default false)
+     * @param register registering object in repository (default true)
      */
-    GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
+    GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false, Boolean register = true) {
         GetlRepository obj = null
         runWithLoadMode(true) {
             def repository = repository(repositoryName)
-            obj = readObject(repository, name, env, true, overloading)
+            obj = readObject(repository, name, env, true, overloading, register)
         }
 
         return obj
@@ -787,12 +800,13 @@ class RepositoryStorageManager {
      * @param name object name
      * @param env used environment
      * @param overloading load over existing (default false)
+     * @param register registering object in repository (default true)
      */
-    GetlRepository loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false) {
+    GetlRepository loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false, Boolean register = true) {
         if (repositoryClass == null)
             throw new ExceptionDSL('Required repository class name!')
 
-        loadObject(repositoryClass.name, name, env, overloading)
+        loadObject(repositoryClass.name, name, env, overloading, register)
     }
 
     /**

@@ -44,7 +44,7 @@ class OracleDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.TIMESTAMP_WITH_TIMEZONE] -
-				[Support.SELECT_WITHOUT_FROM]
+				[Support.SELECT_WITHOUT_FROM, Support.BOOLEAN]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

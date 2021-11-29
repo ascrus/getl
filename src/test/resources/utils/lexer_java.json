@@ -6,113 +6,113 @@
             "comment_finish": "*/",
             "value": "*\n  Java class\n  @author Alexsey Konstantinov\n",
             "first": 0,
-            "last": 49
+            "last": 52
         },
         {
             "type": "LINE_FEED",
             "value": "\n",
-            "first": 50,
-            "last": 50
+            "first": 54,
+            "last": 54
         },
         {
             "type": "SINGLE_WORD",
             "value": "class",
-            "first": 51,
-            "last": 55
+            "first": 55,
+            "last": 59
         },
         {
             "type": "SINGLE_WORD",
             "value": "TestCommentlass",
-            "first": 57,
-            "last": 71
+            "first": 61,
+            "last": 75
         },
         {
             "type": "SINGLE_WORD",
             "value": "extend",
-            "first": 73,
-            "last": 78
+            "first": 77,
+            "last": 82
         },
         {
             "type": "COMMENT",
             "comment_start": "/*",
             "comment_finish": "*/",
             "value": "Any",
-            "first": 84,
-            "last": 90
+            "first": 88,
+            "last": 94
         },
         {
             "type": "FUNCTION",
             "value": "TestClass",
-            "first": 80,
-            "last": 522,
+            "first": 84,
+            "last": 541,
             "list": [
                 {
                     "type": "COMMENT",
                     "comment_start": "/*",
                     "comment_finish": "*/",
                     "value": "* Class field ",
-                    "first": 101,
-                    "last": 118
+                    "first": 106,
+                    "last": 123
                 },
                 {
                     "type": "SINGLE_WORD",
                     "value": "private",
-                    "first": 122,
-                    "last": 128
+                    "first": 128,
+                    "last": 134
                 },
                 {
                     "type": "SINGLE_WORD",
                     "value": "String",
-                    "first": 130,
-                    "last": 135
+                    "first": 136,
+                    "last": 141
                 },
                 {
                     "type": "SINGLE_WORD",
                     "value": "field",
-                    "first": 137,
-                    "last": 141
+                    "first": 143,
+                    "last": 147
                 },
                 {
                     "type": "SEMICOLON",
                     "value": ";",
-                    "first": 142,
-                    "last": 142
+                    "first": 148,
+                    "last": 148
                 },
                 {
                     "type": "SINGLE_COMMENT",
                     "comment_start": "//",
                     "comment_finish": "\n",
                     "value": "Internal field",
-                    "first": 143,
-                    "last": 159
+                    "first": 149,
+                    "last": 166
                 },
                 {
                     "type": "COMMENT",
                     "comment_start": "/*",
                     "comment_finish": "*/",
                     "value": "* Property getter <--> ",
-                    "first": 162,
-                    "last": 188
+                    "first": 169,
+                    "last": 195
                 },
                 {
                     "type": "SINGLE_WORD",
                     "value": "String",
-                    "first": 192,
-                    "last": 197
+                    "first": 200,
+                    "last": 205
                 },
                 {
                     "type": "FUNCTION",
                     "value": "getField",
-                    "first": 199,
-                    "last": 228,
+                    "first": 207,
+                    "last": 236,
                     "list": [
                         {
                             "type": "COMMENT",
                             "comment_start": "/*",
                             "comment_finish": "*/",
                             "value": " not parameters ",
-                            "first": 208,
-                            "last": 227
+                            "first": 216,
+                            "last": 235
                         }
                     ],
                     "start": "(",
@@ -126,64 +126,64 @@
                         {
                             "type": "SINGLE_WORD",
                             "value": "return",
-                            "first": 232,
-                            "last": 237
+                            "first": 240,
+                            "last": 245
                         },
                         {
                             "type": "SINGLE_WORD",
                             "value": "field",
-                            "first": 239,
-                            "last": 243
+                            "first": 247,
+                            "last": 251
                         },
                         {
                             "type": "SEMICOLON",
                             "value": ";",
-                            "first": 244,
-                            "last": 244
+                            "first": 252,
+                            "last": 252
                         }
                     ],
-                    "first": 230,
-                    "last": 246
+                    "first": 238,
+                    "last": 254
                 },
                 {
                     "type": "COMMENT",
                     "comment_start": "/*",
                     "comment_finish": "*/",
                     "value": "* <--> Property setter ",
-                    "first": 250,
-                    "last": 276
+                    "first": 259,
+                    "last": 285
                 },
                 {
                     "type": "SINGLE_WORD",
                     "value": "void",
-                    "first": 280,
-                    "last": 283
+                    "first": 290,
+                    "last": 293
                 },
                 {
                     "type": "COMMENT",
                     "comment_start": "/*",
                     "comment_finish": "*/",
                     "value": "Value",
-                    "first": 288,
-                    "last": 296
+                    "first": 298,
+                    "last": 306
                 },
                 {
                     "type": "FUNCTION",
                     "value": "setField",
-                    "first": 285,
-                    "last": 315,
+                    "first": 295,
+                    "last": 325,
                     "list": [
                         {
                             "type": "SINGLE_WORD",
                             "value": "String",
-                            "first": 303,
-                            "last": 308
+                            "first": 313,
+                            "last": 318
                         },
                         {
                             "type": "SINGLE_WORD",
                             "value": "value",
-                            "first": 310,
-                            "last": 314
+                            "first": 320,
+                            "last": 324
                         }
                     ],
                     "start": "(",
@@ -199,56 +199,56 @@
                             "comment_start": "//",
                             "comment_finish": "\n",
                             "value": " body",
-                            "first": 319,
-                            "last": 326
+                            "first": 329,
+                            "last": 337
                         },
                         {
                             "type": "FUNCTION",
                             "value": "if",
-                            "first": 331,
-                            "last": 368,
+                            "first": 342,
+                            "last": 379,
                             "list": [
                                 {
                                     "type": "SINGLE_WORD",
                                     "value": "value",
-                                    "first": 335,
-                                    "last": 339
+                                    "first": 346,
+                                    "last": 350
                                 },
                                 {
                                     "type": "OPERATOR",
                                     "value": "==",
-                                    "first": 341,
-                                    "last": 342
+                                    "first": 352,
+                                    "last": 353
                                 },
                                 {
                                     "type": "SINGLE_WORD",
                                     "value": "null",
-                                    "first": 344,
-                                    "last": 347
+                                    "first": 355,
+                                    "last": 358
                                 },
                                 {
                                     "type": "OPERATOR",
                                     "value": "||",
-                                    "first": 349,
-                                    "last": 350
+                                    "first": 360,
+                                    "last": 361
                                 },
                                 {
                                     "type": "SINGLE_WORD",
                                     "value": "value.length",
-                                    "first": 352,
-                                    "last": 363
+                                    "first": 363,
+                                    "last": 374
                                 },
                                 {
                                     "type": "OPERATOR",
                                     "value": "<",
-                                    "first": 365,
-                                    "last": 365
+                                    "first": 376,
+                                    "last": 376
                                 },
                                 {
                                     "type": "NUMBER",
                                     "value": 1,
-                                    "first": 367,
-                                    "last": 367
+                                    "first": 378,
+                                    "last": 378
                                 }
                             ],
                             "start": "(",
@@ -257,27 +257,27 @@
                         {
                             "type": "SINGLE_WORD",
                             "value": "throw",
-                            "first": 376,
-                            "last": 380
+                            "first": 388,
+                            "last": 392
                         },
                         {
                             "type": "SINGLE_WORD",
                             "value": "new",
-                            "first": 382,
-                            "last": 384
+                            "first": 394,
+                            "last": 396
                         },
                         {
                             "type": "FUNCTION",
                             "value": "Exception",
-                            "first": 386,
-                            "last": 416,
+                            "first": 398,
+                            "last": 428,
                             "list": [
                                 {
                                     "type": "QUOTED_TEXT",
                                     "quote": "\"",
                                     "value": "Required value //!",
-                                    "first": 396,
-                                    "last": 415
+                                    "first": 408,
+                                    "last": 427
                                 }
                             ],
                             "start": "(",
@@ -286,20 +286,20 @@
                         {
                             "type": "SEMICOLON",
                             "value": ";",
-                            "first": 417,
-                            "last": 417
+                            "first": 429,
+                            "last": 429
                         },
                         {
                             "type": "FUNCTION",
                             "value": "if",
-                            "first": 424,
-                            "last": 456,
+                            "first": 438,
+                            "last": 470,
                             "list": [
                                 {
                                     "type": "FUNCTION",
                                     "value": "value.toUpperCase",
-                                    "first": 428,
-                                    "last": 446,
+                                    "first": 442,
+                                    "last": 460,
                                     "list": [
                                         
                                     ],
@@ -309,14 +309,14 @@
                                 {
                                     "type": "OPERATOR",
                                     "value": "!=",
-                                    "first": 448,
-                                    "last": 449
+                                    "first": 462,
+                                    "last": 463
                                 },
                                 {
                                     "type": "SINGLE_WORD",
                                     "value": "value",
-                                    "first": 451,
-                                    "last": 455
+                                    "first": 465,
+                                    "last": 469
                                 }
                             ],
                             "start": "(",
@@ -325,20 +325,20 @@
                         {
                             "type": "SINGLE_WORD",
                             "value": "value",
-                            "first": 464,
-                            "last": 468
+                            "first": 479,
+                            "last": 483
                         },
                         {
                             "type": "OPERATOR",
                             "value": "=",
-                            "first": 470,
-                            "last": 470
+                            "first": 485,
+                            "last": 485
                         },
                         {
                             "type": "FUNCTION",
                             "value": "value.toUpperCase",
-                            "first": 472,
-                            "last": 490,
+                            "first": 487,
+                            "last": 505,
                             "list": [
                                 
                             ],
@@ -348,38 +348,38 @@
                         {
                             "type": "SINGLE_WORD",
                             "value": "field",
-                            "first": 497,
-                            "last": 501
+                            "first": 514,
+                            "last": 518
                         },
                         {
                             "type": "OPERATOR",
                             "value": "=",
-                            "first": 503,
-                            "last": 503
+                            "first": 520,
+                            "last": 520
                         },
                         {
                             "type": "SINGLE_WORD",
                             "value": "value",
-                            "first": 505,
-                            "last": 509
+                            "first": 522,
+                            "last": 526
                         },
                         {
                             "type": "COMMENT",
                             "comment_start": "/*",
                             "comment_finish": "*/",
                             "value": "!",
-                            "first": 511,
-                            "last": 515
+                            "first": 528,
+                            "last": 532
                         },
                         {
                             "type": "SEMICOLON",
                             "value": ";",
-                            "first": 516,
-                            "last": 516
+                            "first": 533,
+                            "last": 533
                         }
                     ],
-                    "first": 317,
-                    "last": 520
+                    "first": 327,
+                    "last": 538
                 }
             ],
             "start": "{",

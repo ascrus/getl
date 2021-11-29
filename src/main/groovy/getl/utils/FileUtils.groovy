@@ -1036,47 +1036,52 @@ class FileUtils {
 		return new URLClassLoader(urls.toArray(URL[]) as URL[], classLoader)
 	}
 
+	//static public final Pattern ParseArgumentsPattern = Pattern.compile('[^\\\\\\"]+(?:\\\\.[^\\\\\\"]*)*')
+
 	/**
 	 * Parse arguments from the command line with quotation marks
-	 * @param args
-	 * @return
+	 * @param args command line arguments
+	 * @return list of arguments
 	 */
 	static List<String> ParseArguments(String args) {
-		def scanner = new Scanner(args)
-		def res = [] as List<String>
-		while (scanner.hasNext()) {
-			String val = ''
-			def str = scanner.next()
-			def i1 = str.indexOf('"')
-			def findQuote = false
-			while (i1 != -1 || findQuote) {
-				if (i1 == str.length() - 1 && !findQuote) {
-					if (!scanner.hasNext())
-						throw new Exception("Closing double quote not found!")
-					val += str + ' '
-					str = scanner.next()
-					i1 = -1
-					findQuote = true
-				}
-				else {
-					def i2 = str.indexOf('"', i1 + 1)
-					if (i2 == -1) {
-						if (!scanner.hasNext())
-							throw new Exception("Closing double quote not found!")
-						val += str + ' '
-						str = scanner.next()
-						i1 = -1
-						findQuote = true
-					} else {
-						i1 = str.indexOf('"', i2 + 1)
-						findQuote = false
-					}
-				}
-			}
-			val += str
+		if (args == null)
+			throw new ExceptionGETL("Required arguments!")
 
-			res << val
+		def value = args.trim().replace('\\\\', '\u0002').replace('\\"', '\u0001')
+		def matcher = Pattern.compile('(["]|[ ])').matcher(value)
+
+		def res = [] as List<String>
+		def addToRes = { String str ->
+			str = str.trim()
+			if (str.length() > 0) {
+				//noinspection RegExpRedundantEscape
+				if (str.matches('^\\"[^\\"]+\\"$'))
+					str = str.substring(1, str.length() - 1)
+				res.add(str.replace('\u0001', '"').replace('\u0002', '\\'))
+			}
 		}
+
+		def inQuote = false
+		def curPos = 0
+		while (matcher.find()) {
+			if (matcher.group() == ' ') {
+				if (inQuote)
+					continue
+
+				def spacePos = matcher.start()
+				if (spacePos > curPos)
+					addToRes(value.substring(curPos, spacePos))
+
+				curPos = spacePos + 1
+			}
+			else
+				inQuote = !inQuote
+		}
+		if (inQuote)
+			throw new ExceptionGETL('No closing quote found!')
+
+		if (curPos < value.length())
+			addToRes(value.substring(curPos))
 
 		return res
 	}

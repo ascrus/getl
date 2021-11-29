@@ -94,6 +94,14 @@ USING table2 ON table1.id = table2.id;
         sql = '@ECHO Test 1 2 3'
         parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_ECHO, parser.statementType())
+
+        sql = '''/* select to variables */
+ECHO Setting variables ...
+SET SELECT "ID2" FROM "PUBLIC"."TABLE1" WHERE "ID1" = 1; -- test SET operator
+ECHO For id1=1 then id2={id2}
+'''
+        parser = new SQLParser(sql)
+        parser.scripts().each { println '*** ' + it }
     }
 
     @Test

@@ -276,14 +276,29 @@ println time() + 'finish' '''
     void testParseArguments() {
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1 2 3'))
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1  2  3'))
-        assertEquals(['"1"', '2', '3', '4', '5'], FileUtils.ParseArguments('"1" 2 3 4 5'))
-        assertEquals(['1', '2', '"3"', '4', '5'], FileUtils.ParseArguments('1 2 "3" 4 5'))
-        assertEquals(['1', '2', '3', '4', '"5"'], FileUtils.ParseArguments('1 2 3 4 "5"'))
-        assertEquals(['"1 2 3"', '4', '5'], FileUtils.ParseArguments('"1 2 3" 4 5'))
-        assertEquals(['1', '"2 3 4"', '5'], FileUtils.ParseArguments('1 "2 3 4" 5'))
-        assertEquals(['1', '2', '"3 4 5"'], FileUtils.ParseArguments('1 2 "3 4 5"'))
-        assertEquals(['1', '2', '" 3 4 5 "'], FileUtils.ParseArguments('1 2 " 3  4  5 "'))
+        assertEquals(['1', '2', '3', '4', '5'], FileUtils.ParseArguments('"1" 2 3 4 5'))
+        assertEquals(['1', '2', '3', '4', '5'], FileUtils.ParseArguments('1 2 "3" 4 5'))
+        assertEquals(['1', '2', '3', '4', '5'], FileUtils.ParseArguments('1 2 3 4 "5"'))
+        assertEquals(['1 2 3', '4', '5'], FileUtils.ParseArguments('"1 2 3" 4 5'))
+        assertEquals(['1', '2 3 4', '5'], FileUtils.ParseArguments('1 "2 3 4" 5'))
+        assertEquals(['1', '2', '3 4 5'], FileUtils.ParseArguments('1 2 "3 4 5"'))
+        assertEquals(['1', '2', 'message= 3  4  5 '], FileUtils.ParseArguments('1 2 "message= 3  4  5 "'))
+        assertEquals(['123 "456" 789'], FileUtils.ParseArguments('"123 \\"456\\" 789"'))
+        assertEquals(['"123 "456" 789"'], FileUtils.ParseArguments('"\\"123 \\"456\\" 789\\""'))
+        shouldFail { FileUtils.ParseArguments('"1 2 3 4 5') }
         shouldFail { FileUtils.ParseArguments('1 2 "3 4 5') }
+        shouldFail { FileUtils.ParseArguments('1 2 3 4 5"') }
+        shouldFail { FileUtils.ParseArguments('"1 2 "3 4 5"') }
+
+        def args = FileUtils.FileFromResources('/utils/parse_args.txt').text
+        def res = FileUtils.FileFromResources('/utils/parse_args_res.txt').readLines()
+        assertEquals(res, FileUtils.ParseArguments(args))
+
+        /*def pb = new ProcessBuilder(args)
+        pb.redirectOutput(new File('d:\\send\\test_cmd.txt'))
+        pb.directory(new File('E:\\getl\\idea\\getl.vertica\\src\\test\\resources\\repository'))
+        def p = pb.start()
+        p.waitFor()*/
     }
 
     @Test

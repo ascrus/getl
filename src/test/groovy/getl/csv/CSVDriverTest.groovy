@@ -29,7 +29,8 @@ class CSVDriverTest extends GetlTest {
             new Field(name: 'Numeric', type: 'NUMERIC', isNull: false, length: 12, precision: 2),
             new Field(name: 'Boolean', type: 'BOOLEAN', isNull: false),
             new Field(name: 'Text', type: 'TEXT', length: 100),
-            new Field(name: 'Blob', type: 'BLOB', length: 100)
+            new Field(name: 'Blob', type: 'BLOB', length: 100),
+            new Field(name: 'List', type: 'ARRAY')
     ]
 
     static Map<String, Object> conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv',
@@ -68,6 +69,7 @@ class CSVDriverTest extends GetlTest {
         def csv = new CSVDataset(connection: con, fileName: name)
         csv.field = fields
 
+        def generateArrayAsList = !csv.isGzFile()
         def generate_row = { id ->
             def row = [:]
 
@@ -81,6 +83,11 @@ class CSVDriverTest extends GetlTest {
             row.boolean = true
             row.text = "text \"$id\"\tand\nnew line"
             row.blob = 'abcdef'.bytes
+            if (generateArrayAsList)
+                row.list = ['a', 'b', 'c']
+            else {
+                row.list = new String[] { 'a', 'b', 'c' }
+            }
 
             return row
         }
@@ -119,6 +126,7 @@ class CSVDriverTest extends GetlTest {
 			assertNotNull(row.boolean)
 			assertNotNull(row.text)
 			assertNotNull(row.blob)
+            assertNotNull(row.list)
 
 			csvCountRows++
 		}
@@ -138,6 +146,7 @@ class CSVDriverTest extends GetlTest {
 			assertNotNull(row.boolean)
 			assertNotNull(row.text)
 			assertNotNull(row.blob)
+            assertNotNull(row.list)
 
 			csvCountRows++
 		}
@@ -172,6 +181,7 @@ class CSVDriverTest extends GetlTest {
             assertTrue(row.boolean instanceof Boolean)
             assertTrue(row.text instanceof String)
             assertTrue(row.blob instanceof byte[])
+            assertTrue(row.list instanceof List)
 
             assertEquals(id, row.id)
             assertEquals("row $id".toString(), row.name)
@@ -183,6 +193,7 @@ class CSVDriverTest extends GetlTest {
             assertTrue(row.boolean as Boolean)
             assertEquals("text \"$id\"\tand\nnew line".toString(), row.text)
             assertArrayEquals('abcdef'.bytes, row.blob as byte[])
+            assertEquals(['a', 'b', 'c'], row.list)
         }
         assertEquals(2, new_csv.countReadPortions)
         assertEquals(100, new_csv.readRows)

@@ -62,4 +62,11 @@ class LogsTest extends GetlTest {
         assertTrue(file.exists())
         println file.text
     }
+
+    @Test
+    void testLead() {
+        Logs.Info("Test lead message:")
+        Logs.Info('    lead message')
+        Logs.Info('        lead message')
+    }
 }

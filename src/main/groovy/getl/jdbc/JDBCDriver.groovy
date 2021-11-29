@@ -61,6 +61,7 @@ class JDBCDriver extends Driver {
 		transactionalDDL = false
 		transactionalTruncate = false
 		allowExpressions = false
+		lengthTextInBytes = false
 		caseObjectName = "NONE" // LOWER OR UPPER
 		supportLocalTemporaryRetrieveFields = true
 		globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
@@ -107,13 +108,13 @@ class JDBCDriver extends Driver {
 		[Support.CONNECT, Support.SQL, Support.EACHROW, Support.WRITE, Support.BATCH,
 		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.NOT_NULL_FIELD,
 		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW, Support.SCHEMA,
-		 Support.DATABASE, Support.SELECT_WITHOUT_FROM]
+		 Support.DATABASE, Support.SELECT_WITHOUT_FROM,
+		 Support.TIMESTAMP, Support.BOOLEAN]
 	}
 
 	@Override
 	List<Operation> operations() {
-		[RETRIEVEFIELDS, READ_METADATA, INSERT,
-		 UPDATE, DELETE]
+		[RETRIEVEFIELDS, READ_METADATA, INSERT, UPDATE, DELETE]
 	}
 	
 	/**
@@ -176,9 +177,10 @@ class JDBCDriver extends Driver {
 			BLOB: [Types.BLOB, Types.LONGVARBINARY, Types.VARBINARY, Types.BINARY],
 			TEXT: [Types.CLOB, Types.NCLOB, Types.LONGNVARCHAR, Types.LONGVARCHAR],
 			DATE: [Types.DATE],
-			TIME: [Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
+			TIME: [Types.TIME],
 			TIMESTAMP: [Types.TIMESTAMP],
-			TIMESTAMP_WITH_TIMEZONE: [Types.TIMESTAMP_WITH_TIMEZONE]
+			TIMESTAMP_WITH_TIMEZONE: [Types.TIMESTAMP_WITH_TIMEZONE],
+			ARRAY: [Types.ARRAY]
 		]
 	}
 	
@@ -190,12 +192,14 @@ class JDBCDriver extends Driver {
 
 	@Override
 	void prepareField (Field field) {
-		if (field.dbType == null) return
-		if (field.type != null && field.type != Field.stringFieldType) return
+		if (field.dbType == null)
+			return
+		if (field.type != null && field.type != Field.stringFieldType)
+			return
 
 		Field.Type res
 		
-		Integer t = (Integer)field.dbType
+		def t = field.dbType as Integer
 		switch (t) {
 			case Types.INTEGER: case Types.SMALLINT: case Types.TINYINT:
 				res = Field.integerFieldType
@@ -341,6 +345,7 @@ class JDBCDriver extends Driver {
 			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
 			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
 			UUID: [name: 'uuid'],
+			ARRAY: [name: 'array'],
 			OBJECT: [name: 'object']
 		]
 	}
@@ -1000,6 +1005,7 @@ class JDBCDriver extends Driver {
 	protected Boolean transactionalDDL
 	protected Boolean transactionalTruncate
 	protected Boolean allowExpressions
+	protected Boolean lengthTextInBytes
 	/** Case named object (NONE, LOWER, UPPER) */
 	protected String caseObjectName
 	protected String defaultDBName
@@ -1073,21 +1079,48 @@ class JDBCDriver extends Driver {
 		def defPrimary = GenerationUtils.SqlKeyFields(dataset as JDBCDataset, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
-				if (f.type == Field.Type.BOOLEAN && !isSupport(Support.BOOLEAN))
-					throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
-				if (f.type == Field.Type.DATE && !isSupport(Support.DATE))
-					throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")!")
-				if (f.type == Field.Type.TIME && !isSupport(Support.TIME))
-					throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")!")
-				if (f.type == Field.Type.UUID && !isSupport(Support.UUID))
-					throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")!")
-                if (f.type == Field.Type.BLOB && !isSupport(Support.BLOB))
-					throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")!")
-                if (f.type == Field.Type.TEXT && !isSupport(Support.CLOB))
-					throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")!")
+				switch (f.type) {
+					case Field.Type.BOOLEAN:
+						if (!isSupport(Support.BOOLEAN))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.DATE:
+						if (!isSupport(Support.DATE))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.TIME:
+						if (!isSupport(Support.TIME))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.DATETIME:
+						if (!isSupport(Support.TIMESTAMP))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.TIMESTAMP_WITH_TIMEZONE:
+						if (!isSupport(Support.TIMESTAMP_WITH_TIMEZONE))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.BLOB:
+						if (!isSupport(Support.BLOB))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.TEXT:
+						if (!isSupport(Support.CLOB))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.UUID:
+						if (!isSupport(Support.UUID))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+					case Field.Type.ARRAY:
+						if (!isSupport(Support.ARRAY))
+							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+						break
+				}
 
 				def s = createDatasetAddColumn(f, useNativeDBType)
-				if (s == null) return
+				if (s == null)
+					return
 
 				defFields << s
 			}
@@ -2157,7 +2190,8 @@ $sql
 		}
 
 		def batchSize = (!isSupport(Support.BATCH)?1:((params.batchSize != null)?params.batchSize:500L))
-		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
+		if (params.onSaveBatch != null)
+			wp.onSaveBatch = params.onSaveBatch as Closure
 		
 		def fields = prepareFieldFromWrite(dataset as JDBCDataset, prepareCode)
 		

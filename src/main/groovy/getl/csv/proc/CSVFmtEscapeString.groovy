@@ -6,6 +6,10 @@ import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.util.CsvContext
 
+/**
+ * Format escaped string fields from write to CSV files
+ * @author Alexsey Konstantinov
+ */
 @CompileStatic
 class CSVFmtEscapeString extends CellProcessorAdaptor implements StringCellProcessor {
     CSVFmtEscapeString() {

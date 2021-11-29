@@ -1254,8 +1254,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		// History table		
 		TableDataset storyTable = (!ignoreStory)?((lParams.story as TableDataset)?:story):null
-		if (createStory && storyTable != null)
+		if (storyTable != null)
+			storyTable = storyTable.cloneDatasetConnection() as TableDataset
+		if (createStory && storyTable != null) {
 			createStoryTable(storyTable, path)
+			storyTable.connection.connected = false
+		}
 
 		// Init result file list table
 		fileList = new TableDataset(connection: (fileListConnection?:new TDS()),
@@ -1543,6 +1547,8 @@ FROM (
 			useFiles.drop(ifExists: true)
 
 			newFiles.connection.connected = false
+			if (storyTable != null)
+				storyTable.connection.connected = false
 		}
 	}
 
