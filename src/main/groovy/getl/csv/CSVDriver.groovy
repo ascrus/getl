@@ -286,10 +286,16 @@ class CSVDriver extends FileDriver {
 
 			if (isEscape)
 				if (!isWrite)
-					cp = (cp != null)?new CSVParseEscapeString(cp as StringCellProcessor):new CSVParseEscapeString()
+					cp = (cp != null) ? new CSVParseEscapeString(cp as StringCellProcessor) : new CSVParseEscapeString()
 
 			if (isWrite)
-				cp = (cp != null)?new CSVFmtClob(cp as StringCellProcessor):new CSVFmtClob()
+				cp = (cp != null) ? new CSVFmtClob(cp as StringCellProcessor) : new CSVFmtClob()
+		}
+		else if (field.type == Field.arrayFieldType) {
+			if (!isWrite)
+				cp = new CSVParseArray()
+			else
+				cp = new CSVFmtArray()
 		} else {
 			throw new ExceptionGETL("Type ${field.type} not supported")
 		}
@@ -315,7 +321,7 @@ class CSVDriver extends FileDriver {
 				cp = (cp != null)?new CSVConvertToNullProcessor(nullAsValue, cp):new CSVConvertToNullProcessor(nullAsValue)
 		}
 
-		return cp
+		return cp?:new Optional()
 	}
 	
 	static CellProcessor[] fields2cellProcessor(Map fParams) {
