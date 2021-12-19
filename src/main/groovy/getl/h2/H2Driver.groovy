@@ -8,6 +8,8 @@ import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.utils.*
+import static getl.driver.Driver.Support
+import static getl.driver.Driver.Operation
 
 /**
  * H2 driver class
