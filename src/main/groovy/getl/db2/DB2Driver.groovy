@@ -34,13 +34,13 @@ class DB2Driver extends JDBCDriver {
 				 Driver.Support.BOOLEAN]
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
+	/*@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		return super.operations() +
                 [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
 				 Driver.Operation.CREATE]
-	}
+	}*/
 
 	@Override
     String defaultConnectURL () {

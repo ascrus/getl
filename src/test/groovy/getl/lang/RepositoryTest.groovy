@@ -23,7 +23,7 @@ import org.junit.Test
 
 @InheritConstructors
 class RepositoryTest extends TestDsl {
-    final def isdebug = false
+    final def isDebug = false
     final def repConfigFileName = 'tests/repository/vars.conf'
 
     @Test
@@ -31,12 +31,12 @@ class RepositoryTest extends TestDsl {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
         def rep = new RepositoryConnections(dslCreator: getl)
-        assertEquals(23, rep.listClasses.size())
+        assertEquals(22, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
         assertNull(rep.find(new H2Connection()))
 
-        shouldFail { rep.register(getl, 'UNNOWN') }
+        shouldFail { rep.register(getl, 'UNKNOWN') }
         assertTrue(rep.register(getl, rep.H2CONNECTION) instanceof H2Connection)
         assertEquals(0, rep.list().size())
 
@@ -188,9 +188,9 @@ class RepositoryTest extends TestDsl {
 
     @Test
     void testRepositoryStorageManagerWithEnv() {
-        def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
+        def reppath = FileUtils.ConvertToDefaultOSPath((this.isDebug)?
                 FileUtils.TransformFilePath('{GETL_TEST}/repository1'):"${TFS.systemPath}/repository1")
-        if (!isdebug) FileUtils.ValidPath(reppath, true)
+        if (!isDebug) FileUtils.ValidPath(reppath, true)
 
         Getl.Dsl {
             repositoryStorageManager {
@@ -201,16 +201,15 @@ class RepositoryTest extends TestDsl {
         }
 
         processRepStorage()
-
-        if (!isdebug)
-            FileUtils.DeleteFolder(reppath, true)
+        FileUtils.DeleteFolder(reppath, true)
     }
 
     @Test
     void testRepositoryStorageManagerWithoutEnv() {
-        def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
+        def reppath = FileUtils.ConvertToDefaultOSPath((this.isDebug)?
                 FileUtils.TransformFilePath('{GETL_TEST}/repository2'):"${TFS.systemPath}/repository2")
-        if (!isdebug) FileUtils.ValidPath(reppath, true)
+        if (!isDebug)
+            FileUtils.ValidPath(reppath, true)
 
         Getl.Dsl {
             repositoryStorageManager {
@@ -219,9 +218,7 @@ class RepositoryTest extends TestDsl {
         }
 
         processRepStorage()
-
-        if (!isdebug)
-            FileUtils.DeleteFolder(reppath, true)
+        FileUtils.DeleteFolder(reppath, true)
     }
 
     void processRepStorage() {
@@ -246,7 +243,7 @@ class RepositoryTest extends TestDsl {
                 login = 'user'
                 password = 'password'
             }
-            assertEquals(4, listConnections().size)
+            assertEquals(4, listConnections().size())
 
             embeddedTable('table', true) {
                 useConnection embeddedConnection('con')
@@ -294,7 +291,7 @@ class RepositoryTest extends TestDsl {
                 setQuery 'SELECT Max(dt) FROM table1 WHERE \'{region}\' = \'all\' OR region = \'{region}\''
                 queryParams.region = 'all'
             }
-            assertEquals(7, listDatasets().size)
+            assertEquals(7, listDatasets().size())
 
             sequence('sequence', true) {
                 useConnection embeddedConnection('con')
@@ -410,8 +407,8 @@ class RepositoryTest extends TestDsl {
                 //loadRepositories()
                 autoLoadForList = true
             }
-            assertEquals(4, listConnections().size)
-            assertEquals(8, listDatasets().size)
+            assertEquals(4, listConnections().size())
+            assertEquals(8, listDatasets().size())
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
@@ -657,8 +654,8 @@ class RepositoryTest extends TestDsl {
                 loadRepositories('h2:*')
             }
 
-            assertEquals(1, listConnections().size)
-            assertEquals(2, listDatasets().size)
+            assertEquals(1, listConnections().size())
+            assertEquals(2, listDatasets().size())
             assertEquals(0, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(0, listFilemanagers().size())
@@ -674,8 +671,8 @@ class RepositoryTest extends TestDsl {
             registerDatasetsFromStorage('ver:*')
             registerSequencesFromStorage('ver:*')
 
-            assertEquals(1, listConnections().size)
-            assertEquals(1, listDatasets().size)
+            assertEquals(1, listConnections().size())
+            assertEquals(1, listDatasets().size())
             assertEquals(1, listSequences().size())
             assertEquals(0, listHistorypoints().size())
             assertEquals(0, listFilemanagers().size())
@@ -872,8 +869,6 @@ class RepositoryTest extends TestDsl {
         Getl.Dsl {
             shouldFail { embeddedTable('#group:name', true) }
             assertEquals('#name_1', embeddedTable('group:#name_1', true).dslNameObject)
-            assertEquals('$group:name', embeddedTable('$group:name', true).dslNameObject)
-            assertEquals('group:$name', embeddedTable('group:$name', true).dslNameObject)
             shouldFail { embeddedTable('group*:name', true) }
             shouldFail { embeddedTable('group:name*', true) }
             shouldFail { embeddedTable('group:name:1', true) }
@@ -914,6 +909,12 @@ class RepositoryTest extends TestDsl {
     @Test
     void testRepositorySave() {
         Getl.Dsl {
+            options {
+                jdbcConnectionLoggingPath = TFS.systemPath + '/repository.logs'
+                fileManagerLoggingPath = jdbcConnectionLoggingPath
+                new File(jdbcConnectionLoggingPath).mkdirs()
+            }
+
             def csvHistory = csvTemp()
 
             TFS.storage.connectionFileManager.with {

@@ -157,7 +157,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Schema name for table */
-	String getSchemaName () { (params.schemaName as String)?:currentJDBCConnection.schemaName }
+	String getSchemaName () { (params.schemaName as String)?:currentJDBCConnection.schemaName() }
 	/** Schema name for table */
 	void setSchemaName (String value) {
 		params.schemaName = value
@@ -232,7 +232,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
-		def res = getClass().newInstance() as SavePointManager
+		def res = getClass().getDeclaredConstructor().newInstance() as SavePointManager
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
 

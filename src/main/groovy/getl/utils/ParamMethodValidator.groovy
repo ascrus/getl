@@ -78,6 +78,9 @@ class ParamMethodValidator {
 	 * @param otherValidator list of over registered parameter
 	 */
 	void validation(String methodName, Map runParams, List<List<String>> others) {
+		if (runParams == null)
+			return
+
 		def list = params(methodName)
 		
 		def vList = [] as List<String>

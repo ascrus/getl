@@ -191,6 +191,18 @@ class FileConnection extends Connection {
 	/** Decimal separator for number fields */
 	String decimalSeparator() { decimalSeparator?:'.' }
 
+	/** Group separator for number fields */
+	String getGroupSeparator() { params.groupSeparator as String }
+	/** Group separator for number fields */
+	void setGroupSeparator(String value) { params.groupSeparator = value }
+	/** Group separator for number fields */
+	String groupSeparator() { groupSeparator }
+
+	/** Regional locale for parsing date-time and numeric fields */
+	String getLocale() { params.locale as String }
+	/** Regional locale for parsing date-time and numeric fields */
+	void setLocale(String value) { params.locale = value }
+
 	/** Exists path for connection */
 	@JsonIgnore
 	Boolean getExists() { (path != null)?new File(currentPath()).exists():null }

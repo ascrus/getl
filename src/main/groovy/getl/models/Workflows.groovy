@@ -462,7 +462,7 @@ return $className"""
 
                         def runClass = classes.get(scriptName)
                         def classParams = ReadClassFields(runClass)
-                        def scriptVars = scriptParams.vars as Map<String, Object>
+                        def scriptVars = (scriptParams.vars as Map<String, Object>)?:([:] as Map<String, Object>)
                         def execVars = [:] as Map<String, Object>
                         classParams.each { field ->
                             def fieldName = field.name as String
@@ -559,14 +559,14 @@ return $className"""
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, userCodes, addVars, scriptClassLoader, stepLabel)
+                res += stepExecute(subNode, userCodes, addVars?:[:], scriptClassLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, userCodes, addVars, scriptClassLoader, stepLabel)
+                    stepExecute(errStep, userCodes, addVars?:[:], scriptClassLoader, stepLabel)
             }
             finally {
                 throw e

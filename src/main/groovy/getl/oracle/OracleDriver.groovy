@@ -2,14 +2,10 @@ package getl.oracle
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
-import getl.jdbc.opts.SequenceCreateSpec
 import groovy.transform.InheritConstructors
-import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.utils.*
-import groovy.transform.Synchronized
-
 
 /**
  * Oracle driver class
@@ -33,27 +29,53 @@ class OracleDriver extends JDBCDriver {
 		commitDDL = true
 		transactionalDDL = true
 
+		ruleNameNotQuote = '(?i)^[a-z]+[a-z0-9_]*$'
+
 		sqlExpressions.convertTextToTimestamp = 'TO_TIMESTAMP(\'{value}\', \'yyyy-mm-dd hh24:mi:ss.FF\')'
 		sqlExpressions.now = 'LOCALTIMESTAMP'
 		sqlExpressions.sequenceNext = 'SELECT {value}.nextval id FROM dual'
 		sqlExpressions.sysDualTable = 'DUAL'
+
+		sqlExpressions.ddlCreateSequence = '''declare count_seq number; if_not_exists varchar(20) := '{%ifNotExists%}';
+begin
+    if (if_not_exists = 'IF NOT EXISTS') then
+		select count(*) into count_seq from user_sequences where Upper(sequence_name)  = Upper('{name}');
+		if (count_seq = 0) then
+			execute immediate 'CREATE SEQUENCE {name}{ INCREMENT BY %increment%}{ MINVALUE %min%}{ MAXVALUE %max%}{ START WITH %start%}{ CACHE %cache%}{%CYCLE%}';
+		end if;
+	else
+		execute immediate 'CREATE SEQUENCE {name}{ INCREMENT BY %increment%}{ MINVALUE %min%}{ MAXVALUE %max%}{ START WITH %start%}{ CACHE %cache%}{%CYCLE%}';
+	end if;
+end;'''
+		sqlExpressions.ddlDropSequence = '''declare count_seq number; if_exists varchar(20) := '{%ifExists%}';
+begin
+    if (if_exists = 'IF EXISTS') then
+		select count(*) into count_seq from user_sequences where Upper(sequence_name)  = Upper('{name}');
+		if (count_seq = 1) then
+			execute immediate 'DROP SEQUENCE {name}';
+		end if;
+	else
+		execute immediate 'DROP SEQUENCE {name}';
+	end if;
+end;'''
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.TIMESTAMP_WITH_TIMEZONE] -
+				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX,
+				 Support.TIMESTAMP_WITH_TIMEZONE, Support.START_TRANSACTION] -
 				[Support.SELECT_WITHOUT_FROM, Support.BOOLEAN]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
-        return super.operations() +
-                [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
-				 Driver.Operation.CREATE]
+        return super.operations() - [Driver.Operation.CREATE_SCHEMA]
 	}
+
+	Boolean timestamptzReadAsTimestamp() { return true }
 
 	@Override
 	void connect() {
@@ -96,10 +118,10 @@ class OracleDriver extends JDBCDriver {
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	Map getSqlType () {
-		Map res = super.getSqlType()
-		res.BIGINT.name = 'number'
-		res.BIGINT.useLength = JDBCDriver.sqlTypeUse.NEVER
+	Map<String, Map<String, Object>> getSqlType () {
+		def res = super.getSqlType()
+		res.INTEGER.name = 'number(10)'
+		res.BIGINT.name = 'number(19)'
 		res.BLOB.name = 'raw'
 		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 
@@ -139,14 +161,30 @@ class OracleDriver extends JDBCDriver {
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	void prepareField (Field field) {
+	void prepareField(Field field) {
 		super.prepareField(field)
 		
-		if (field.type == Field.Type.NUMERIC) {
+		if (field.type == Field.numericFieldType) {
+			if (field.columnClassName == 'java.lang.Double') {
+				field.type = Field.doubleFieldType
+				field.length = null
+				field.precision = null
+			}
 			if (field.length == 0 && field.precision == -127) {
 				field.length = 38
 				field.precision = 6
 			}
+			else if (field.length == 19 && field.precision == 0) {
+				field.type = Field.bigintFieldType
+				field.length = null
+				field.precision = null
+			}
+			else if (field.length == 10 && field.precision == 0) {
+				field.type = Field.integerFieldType
+				field.length = null
+				field.precision = null
+			}
+
 			return
 		}
 		
@@ -158,13 +196,15 @@ class OracleDriver extends JDBCDriver {
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)DATE")) {
 				field.type = Field.Type.DATETIME
-//				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.DATE).timestampValue().getTime())"
+				field.dbType = java.sql.Types.TIMESTAMP
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue().getTime())"
 				return
 			}
 
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") || 
 					field.typeName.matches("(?i)TIMESTAMP")) {
 				field.type = Field.Type.DATETIME
+				field.dbType = java.sql.Types.TIMESTAMP
 				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue().getTime())"
 				return
 			}
@@ -172,6 +212,7 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH TIME ZONE")) {
 				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				field.dbType = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
 				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection).getTime())"
 				return
 			}
@@ -179,27 +220,32 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE")) {
 				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				field.dbType = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
 				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection, Calendar.instance).getTime())"
 				return
 			}
 			
 			if (field.typeName.matches("(?i)NCHAR")) {
 				field.type = Field.Type.STRING
+				field.dbType = java.sql.Types.NVARCHAR
 				return
 			}
 			
 			if (field.typeName.matches("(?i)NVARCHAR2")) {
 				field.type = Field.Type.STRING
+				field.dbType = java.sql.Types.NVARCHAR
 				return
 			}
 			
 			if (field.typeName.matches("(?i)LONG")) {
 				field.type = Field.Type.STRING
+				field.dbType = java.sql.Types.LONGVARCHAR
 				return
 			}
 			
 			if (field.typeName.matches("(?i)BINARY_FLOAT") || field.typeName.matches("(?i)BINARY_DOUBLE")) {
 				field.type = Field.Type.DOUBLE
+				field.dbType = java.sql.Types.DOUBLE
 				return
 			}
 			
@@ -261,43 +307,5 @@ class OracleDriver extends JDBCDriver {
         }
 
         return url
-	}
-
-	@Synchronized
-	@Override
-	protected void dropSequence(String name, Boolean ifExists) {
-		if (ifExists) {
-			def sql = """begin
-	for x in (select sequence_name from user_sequences where Upper(sequence_name)  = '${name.toUpperCase()}')
-	loop
-		execute immediate 'drop sequence ' || x.sequence_name;
-	end loop;
-end;
-	"""
-			executeCommand(sql)
-		}
-		else {
-			super.dropSequence(name, ifExists)
-		}
-	}
-
-	@Synchronized
-	@Override
-	protected void createSequence(String name, Boolean ifNotExists, SequenceCreateSpec opts) {
-		if (ifNotExists) {
-			def attrs = createSequenceAttrs(opts).join(' ')
-			def sql = """declare count_seq number;
-begin
-	select count(*) into count_seq from user_sequences where Upper(sequence_name)  = '${name.toUpperCase()}';
-	if (count_seq = 0) then
-		execute immediate 'create sequence $name $attrs';
-	end if;
-end;
-	"""
-			executeCommand(sql)
-		}
-		else {
-			super.createSequence(name, ifNotExists, opts)
-		}
 	}
 }

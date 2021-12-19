@@ -52,19 +52,25 @@ class RepositoryStorageManager {
     void setStoragePath(String value) {
         storagePath = value
         isResourceStoragePath = FileUtils.IsResourceFileName(value, false)
+        currentStoragePath = null
     }
+
+    /** Absolute storage path for repository files */
+    private String currentStoragePath
     /** Absolute storage path for repository files */
     String storagePath() {
         if (storagePath == null)
             return null
 
-        String res
-        if (!isResourceStoragePath)
-            res = new File(FileUtils.TransformFilePath(storagePath)).canonicalPath
-        else
-            res = FileUtils.TransformFilePath(storagePath.substring(9))
+        if (currentStoragePath != null)
+            return currentStoragePath
 
-        return res
+        if (!isResourceStoragePath)
+            currentStoragePath = new File(FileUtils.TransformFilePath(storagePath)).canonicalPath
+        else
+            currentStoragePath = FileUtils.TransformFilePath(storagePath.substring(9))
+
+        return currentStoragePath
     }
 
     /** Autoload objects from the repository when accessing them */
@@ -212,7 +218,7 @@ class RepositoryStorageManager {
         if (classRepository == null)
             throw new ExceptionDSL('Required repository class name!')
 
-        def parent = classRepository.newInstance()
+        def parent = classRepository.getDeclaredConstructor().newInstance()
         registerRepository(classRepository.name, parent, priority)
     }
 
@@ -323,7 +329,7 @@ class RepositoryStorageManager {
         def repFilePath = repositoryStoragePath(repository, env)
         FileUtils.ValidPath(repFilePath)
         repository.processObjects(mask, null, false) { name ->
-            def objName = ParseObjectName.Parse(name)
+            def objName = ParseObjectName.Parse(name, false)
             if (objName.groupName == null && objName.objectName[0] == '#')
                 return
 
@@ -429,7 +435,7 @@ class RepositoryStorageManager {
      */
     void saveObject(String repositoryName, String name, String env = null) {
         def repository = repository(repositoryName)
-        def objName = ParseObjectName.Parse(name)
+        def objName = ParseObjectName.Parse(name, false)
         saveObjectToStorage(repository, objName, env)
     }
 
@@ -587,7 +593,7 @@ class RepositoryStorageManager {
         def res = 0
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
-        def maskParse = (mask != null)?ParseObjectName.Parse(mask):null
+        def maskParse = (mask != null)?ParseObjectName.Parse(mask, true):null
 
         env = envFromRep(repository, env)
         def repFilePath = repositoryPath(repository, env)
@@ -614,7 +620,7 @@ class RepositoryStorageManager {
                     def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
                     if (isEnvConfig && objectName.env != env)
                         throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
-                    def name = new ParseObjectName(groupName, objectName.name as String).name
+                    def name = new ParseObjectName(groupName, objectName.name as String, true).name
                     if (maskPath == null || maskPath.match(name)) {
                         def isExists = (name in existsObject)
                         if (isExists) {
@@ -684,7 +690,7 @@ class RepositoryStorageManager {
      */
     GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true,
                               Boolean overloading = false, Boolean register = true) {
-        def objName = ParseObjectName.Parse(name)
+        def objName = ParseObjectName.Parse(name, false)
         def fileName = objectFilePathInStorage(repository, objName, env)
         def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName, otherResourcePaths):new File(fileName)
         if (file == null || !file.exists()) {
@@ -887,7 +893,7 @@ class RepositoryStorageManager {
      * @return file path
      */
     String objectFilePath(String repositoryName, String name, String env = null) {
-        objectFilePathInStorage(repository(repositoryName), ParseObjectName.Parse(name), env)
+        objectFilePathInStorage(repository(repositoryName), ParseObjectName.Parse(name, false), env)
     }
 
     /**
@@ -901,7 +907,7 @@ class RepositoryStorageManager {
         if (repositoryClass == null)
             throw new ExceptionDSL('Required repository class name!')
 
-        objectFilePathInStorage(repository(repositoryClass.name), ParseObjectName.Parse(name), env)
+        objectFilePathInStorage(repository(repositoryClass.name), ParseObjectName.Parse(name, false), env)
     }
 
     /**
@@ -964,8 +970,8 @@ class RepositoryStorageManager {
         if (name == newName)
             return
 
-        def repName = dslCreator.repObjectName(name, true)
-        def repNewName = dslCreator.repObjectName(newName, true)
+        def repName = dslCreator.repObjectName(name)
+        def repNewName = dslCreator.repObjectName(newName)
 
         def rep = repository(repositoryClassName)
         def obj = rep.find(repName, true)

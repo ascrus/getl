@@ -1,6 +1,8 @@
+//file:noinspection RegExpRedundantEscape
 package getl.lang.sub
 
 import getl.exception.ExceptionDSL
+import getl.utils.BoolUtils
 import java.util.regex.Pattern
 
 /**
@@ -8,15 +10,77 @@ import java.util.regex.Pattern
  * @author Alexsey Konstantinov
  */
 class ParseObjectName {
-    ParseObjectName() { }
+    ParseObjectName() {
+        this._isMaskName = false
+        this._checkName = true
+    }
 
-    ParseObjectName(String repName) {
+    ParseObjectName(String repName, Boolean isMaskName = false, Boolean checkName = true) {
+        this._isMaskName = BoolUtils.IsValue(isMaskName, false)
+        this._checkName = BoolUtils.IsValue(checkName, true)
         setName(repName)
     }
 
-    ParseObjectName(String groupName, objectName) {
+    ParseObjectName(String groupName, String objectName, Boolean isMaskName = false, Boolean checkName = true) {
+        this._isMaskName = BoolUtils.IsValue(isMaskName, false)
+        this._checkName = BoolUtils.IsValue(checkName, true)
         setName(((groupName != null)?(groupName + ':'):'') + ((objectName != null)?objectName:''))
     }
+
+    static private Pattern patternGroupMask = Pattern.compile('(?i)^([\\w\\-\\*\\.])+$')
+    static private Pattern patternFullObjectMask = Pattern.compile('(?iu)^([^\\\\:/$%?^#~!@&+=|])+$')
+    static private Pattern patternSimpleObjectMask = Pattern.compile('(?iu)^([^\\\\:/$%?^~!@&+=|])+$')
+
+    /** Invalid characters regexp */
+    static public String incorrectChars = '\\\\:/$%?^#*~!@&+=|`<>\'\\";'
+
+    static private Pattern patternGroupName = Pattern.compile('(?i)^([\\w\\-\\.])+$')
+    static private Pattern patternFullObjectName = Pattern.compile("(?iu)^([^${incorrectChars}])+\$")
+    static private Pattern patternSimpleObjectName = Pattern.compile("(?iu)^([^${incorrectChars.replace('#', '')}])+\$")
+
+    /** Valid group name */
+    static Boolean validGroupName(String groupName, Boolean isMaskName = false) {
+        if (groupName == null)
+            return null
+
+        return (isMaskName)?groupName.matches(patternGroupMask):groupName.matches(patternGroupName)
+    }
+
+    /** Valid object name */
+    static Boolean validObjectName(String objectName, Boolean inGroup = true, Boolean isMaskName = false) {
+        if (objectName == null)
+            return null
+
+        Boolean res
+        if (isMaskName)
+            res =  BoolUtils.IsValue(inGroup, true)?
+                    objectName.matches(patternFullObjectMask):objectName.matches(patternSimpleObjectMask)
+        else
+            res =  BoolUtils.IsValue(inGroup, true)?
+                    objectName.matches(patternFullObjectName):objectName.matches(patternSimpleObjectName)
+
+        return res
+    }
+
+    /** Valid repository name */
+    static Boolean validName(String groupName, String objectName, Boolean isMaskName = false) {
+        Boolean res = null
+        if (groupName != null)
+            res = validGroupName(groupName, isMaskName)
+        if ((res == null || res) && objectName != null)
+            res = validObjectName(objectName, (groupName != null), isMaskName)
+
+        return res
+    }
+
+    /** Valid repository name */
+    Boolean validName() { return validName(groupName, objectName, _isMaskName) }
+
+    /** Object name is mask */
+    private Boolean _isMaskName
+
+    /** Check object name */
+    private Boolean _checkName
 
     /** Name object in repository */
     private String _name
@@ -46,7 +110,8 @@ class ParseObjectName {
 
             if (i < value.length() - 1) {
                 _objectName = value.substring(i + 1).trim()
-                if (_objectName[0] == '#') _groupName = null
+                if (_objectName[0] == '#')
+                    _groupName = null
             }
             else
                 _objectName = null
@@ -54,6 +119,12 @@ class ParseObjectName {
             _groupName = null
             _objectName = value
         }
+
+        if (_groupName != null && _checkName && !validGroupName(_groupName, _isMaskName))
+            throw new ExceptionDSL("Incorrect characters in group name \"$_groupName\"")
+
+        if (_objectName != null && _checkName && !validObjectName(_objectName, (_groupName != null), _isMaskName))
+            throw new ExceptionDSL("Incorrect characters in object name \"$_objectName\"")
 
         _name = ((_groupName != null)?(_groupName + ':'):'') + ((_objectName != null)?_objectName:'')
     }
@@ -72,6 +143,8 @@ class ParseObjectName {
             throw new ExceptionDSL('The group naming value cannot be empty!')
         if (value != null && value[0] == '#')
             throw new ExceptionDSL("The group name \"$value\" cannot begin with the character \"#\"!")
+        if (value != null && _checkName && !validGroupName(value, _isMaskName))
+            throw new ExceptionDSL("Incorrect characters in group name \"$value\"")
 
         if (value == null) {
             _name = _objectName
@@ -93,6 +166,9 @@ class ParseObjectName {
         if (value != null && value.length() == 0)
             throw new ExceptionDSL('The object naming value cannot be empty!')
 
+        if (value != null && _checkName && !validObjectName(value, (_groupName != null), _isMaskName))
+            throw new ExceptionDSL("Incorrect characters in object name \"$value\"")
+
         if (value == null) {
             _name = null
         } else if (_groupName != null) {
@@ -108,22 +184,38 @@ class ParseObjectName {
     /**
      * Parse specified name
      * @param name repository object name
+     * @param isMaskName name can be a mask
+     * @param checkName validate object name
      * @return
      */
-    static ParseObjectName Parse(String name) {
-        new ParseObjectName(name)
+    static ParseObjectName Parse(String name, Boolean isMaskName = false, checkName = true) {
+        return new ParseObjectName(name, isMaskName, checkName)
     }
 
-    /** Repository object name */
-    static String ObjectName(String name, String filteringGroup = null, Boolean checkName = false) {
-        def names = Parse(name)
+    /**
+     * Parse specified name
+     * @param name repository object name
+     * @param isMaskName name can be a mask
+     * @param checkName validate object name
+     * @return
+     */
+    static ParseObjectName Parse(String groupName, String objectName, Boolean isMaskName = false, checkName = true) {
+        return new ParseObjectName(groupName, objectName, isMaskName, checkName)
+    }
+
+    /**
+     * Return repository object with filter group
+     * @param name repository object name
+     * @param filteringGroup current filter group of objects
+     * @param isMaskName name can be a mask
+     * @param checkName validate object name
+     */
+    static ParseObjectName ParseObject(String name, String filteringGroup = null, Boolean isMaskName = false, checkName = true) {
+        def names = Parse(name, isMaskName, checkName)
         if (filteringGroup != null && names.groupName == null && (names.objectName == null || names.objectName[0] != '#'))
             names.groupName = filteringGroup
 
-        if (checkName)
-            names.validName()
-
-        return names.name
+        return names
     }
 
     /** Incorrect symbols pattern for name */
@@ -133,26 +225,6 @@ class ParseObjectName {
     /** Check name characters */
     static Boolean CheckNameCharacters(String name) {
         return (!incorrectNamePattern.matcher(name).find())
-    }
-
-    /** Check object name */
-    void validName() {
-        if (objectName == null)
-            throw new ExceptionDSL("No name given for object \"$name\"!")
-        if (!CheckNameCharacters(objectName))
-            throw new ExceptionDSL("The object name \"$objectName\" contains invalid characters!")
-
-        if (groupName != null) {
-            if (groupName[0] == '#')
-                throw new ExceptionDSL('The group name cannot begin with the character "#" in object \"$name\"!')
-            if (!CheckNameCharacters(groupName))
-                throw new ExceptionDSL("The group name \"$groupName\" contains invalid characters in object \"$name\"!")
-        }
-    }
-
-    /** Check object name */
-    static void ValidName(String name) {
-        Parse(name).validName()
     }
 
     /** Convert object name to file path */

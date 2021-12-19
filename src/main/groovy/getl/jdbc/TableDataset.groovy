@@ -29,7 +29,6 @@ class TableDataset extends JDBCDataset {
 	protected void registerParameters() {
 		super.registerParameters()
 		methodParams.register('unionDataset', [])
-		methodParams.register('generateDsl', [])
 		methodParams.register('deleteRows', [])
 	}
 
@@ -53,7 +52,7 @@ class TableDataset extends JDBCDataset {
 	/** Schema name */
 	void setSchemaName(String value) { params.schemaName = value }
 	/** Schema name */
-	String schemaName() { schemaName?:currentJDBCConnection?.schemaName }
+	String schemaName() { schemaName?:currentJDBCConnection?.schemaName() }
 
 	/** Table name */
 	String getTableName() { params.tableName }

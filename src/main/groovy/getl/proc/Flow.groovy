@@ -324,6 +324,8 @@ class Flow {
 			if (map.containsKey(fn)) {
 				def df = sf.clone() as Field
 				df.tap {
+					typeName = null
+					columnClassName = null
 					isReadOnly = false
 					defaultValue = null
 					isAutoincrement = null

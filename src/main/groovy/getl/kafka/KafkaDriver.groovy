@@ -72,17 +72,17 @@ class KafkaDriver extends Driver {
     }
 
     @Override
-    void startTran() {
+    void startTran(Boolean useSqlOperator = false) {
         throw new ExceptionGETL('Not supported!')
     }
 
     @Override
-    void commitTran() {
+    void commitTran(Boolean useSqlOperator = false) {
         throw new ExceptionGETL('Not supported!')
     }
 
     @Override
-    void rollbackTran() {
+    void rollbackTran(Boolean useSqlOperator = false) {
         throw new ExceptionGETL('Not supported!')
     }
 
@@ -224,6 +224,7 @@ class KafkaDriver extends Driver {
                     uniFormatDateTime = ds.uniFormatDateTime()
                     formatBoolean = ds.formatBoolean()
                     decimalSeparator = ds.decimalSeparator()
+                    groupSeparator = ds.groupSeparator()
                     readOpts.onFilter = (params.filter as Closure<Boolean>)?:ds.readOpts.onFilter
                 }
                 (1..countPortions).each { num ->

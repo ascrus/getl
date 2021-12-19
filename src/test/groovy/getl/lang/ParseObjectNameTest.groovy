@@ -6,6 +6,38 @@ import org.junit.Test
 
 class ParseObjectNameTest extends GetlDslTest {
     @Test
+    void testObjectName() {
+        Getl.Dsl {
+            assertEquals('object_1', parseName('Object_1').name)
+            assertEquals('#object 1.2', parseName('#Object 1.2').name)
+            shouldFail { parseName('Object^1').name }
+
+            assertEquals('group1:object1', parseName('Group1:Object1').name)
+            assertEquals('group1.group2:object1.object2 test', parseName('Group1.Group2:Object1.Object2 test').name)
+            shouldFail { parseName('group1:object:1').name }
+            shouldFail { parseName('group1/group2:object 1').name }
+            shouldFail { parseName('group1.group2:object1\\object2').name }
+
+            def p = parseName('group1:object1')
+            p.groupName = 'Group1.Group2'
+            p.objectName = 'Object1_Object2'
+            assertEquals('group1.group2', p.groupName)
+            assertEquals('object1_object2', p.objectName)
+            assertEquals('group1.group2:object1_object2', p.name)
+
+            assertTrue(ParseObjectName.Parse('object1.object2', false, false).validName())
+            assertTrue(ParseObjectName.Parse('#object1.object2', false, false).validName())
+            assertFalse(ParseObjectName.Parse('^object1.object2', false, false).validName())
+            assertTrue(ParseObjectName.Parse('group1.group2:object1.object2', false, false).validName())
+            assertTrue(ParseObjectName.Parse('group1.group2:object1.object2', false, false).validName())
+            assertFalse(ParseObjectName.Parse('group1.%group2%:object1.object2', false, false).validName())
+            assertFalse(ParseObjectName.Parse('group1.group2:object1.$object2$', false, false).validName())
+            assertFalse(ParseObjectName.Parse('group1.:group2:object1.object2', false, false).validName())
+            assertFalse(ParseObjectName.Parse('group1.group2:object1.:object2', false, false).validName())
+        }
+    }
+
+    @Test
     void testLastSubsgroupName() {
         Getl.Dsl {
             assertEquals('subgroup', parseName('root_group.group_1.subgroup:').lastSubgroup())

@@ -49,7 +49,9 @@ class JDBCDriver extends Driver {
 		methodParams.register('executeCommand', ['historyText'])
 		methodParams.register('deleteRows', ['where', 'queryParams'])
 		methodParams.register('clearDataset', ['autoTran', 'truncate'])
-		methodParams.register('createView', ['select', 'replace'])
+		methodParams.register('createSchema', [])
+		methodParams.register('dropSchema', [])
+		methodParams.register('createView', [])
 	}
 
 	@Override
@@ -62,7 +64,9 @@ class JDBCDriver extends Driver {
 		transactionalTruncate = false
 		allowExpressions = false
 		lengthTextInBytes = false
+
 		caseObjectName = "NONE" // LOWER OR UPPER
+		caseQuotedName = false
 		supportLocalTemporaryRetrieveFields = true
 		globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
 		localTemporaryTablePrefix = 'LOCAL TEMPORARY'
@@ -77,6 +81,20 @@ class JDBCDriver extends Driver {
 		syntaxPartitionLastPosInValues = true
 		fieldPrefix = '"'
 		tablePrefix = '"'
+		defaultSchemaFromConnectDatabase = false
+		ruleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
+
+		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP',
+						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY',
+						   'PRIMARY', 'UNIQUE', 'KEY', 'CONSTRAINT', 'DEFAULT', 'CHECK', 'COMPUTE', 'NULL',
+						   'AND', 'OR', 'XOR', 'NOT', 'ON', 'IDENTITY',
+						   'IF', 'EXISTS', 'IN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'FOR', 'CURSOR',
+						   'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'WITH',
+						   'INSERT', 'UPDATE', 'SET', 'DELETE', 'MERGE'] as List<String>
+		sqlType.each { name, par ->
+			def words = (par.name as String).toUpperCase().split('[ ]')
+			ruleQuotedWords.addAll(words)
+		}
 
 		sqlExpressions = [
 				convertTextToTimestamp: 'CAST(\'{value}\' AS timestamp)',
@@ -84,11 +102,19 @@ class JDBCDriver extends Driver {
 				sequenceNext: 'SELECT NextVal(\'{value}\') AS id;',
 				sysDualTable: null,
 
-				ddlCreateTable: 'CREATE {type} TABLE {ifNotExists} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
-				ddlCreateIndex: 'CREATE {unique} {hash} INDEX {ifNotExists} {indexName} ON {tableName} ({columns})',
-				ddlDrop: 'DROP {object} {ifexists} {name}',
-				ddlCreateView: '{create} {temporary} VIEW {name} AS\n{select}',
-				ddlAutoIncrement: null
+				ddlCreateTable: 'CREATE{ %type%} TABLE{ %ifNotExists%} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
+				ddlCreateIndex: 'CREATE{ %unique%}{ %hash%} INDEX{ %ifNotExists%} {indexName} ON {tableName} ({columns})',
+				ddlCreateField: '{column} {type}{ %increment%}{ %not_null%}{ %default%}{ %check%}{ %compute%}',
+				ddlDrop: 'DROP {object}{ %ifExists%} {name}',
+				ddlCreateView: '{create}{ %temporary%} VIEW{ %ifNotExists%} {name} AS\n{select}',
+				ddlAutoIncrement: null,
+				ddlCreateSchema: 'CREATE SCHEMA{ %ifNotExists%} {schema}',
+				ddlDropSchema: 'DROP SCHEMA{ %ifExists%} {schema}',
+				ddlStartTran: 'START TRANSACTION',
+				ddlTruncateTable: 'TRUNCATE TABLE {tableName}',
+				ddlTruncateDelete: 'DELETE FROM {tableName}',
+				ddlCreateSequence: 'CREATE SEQUENCE{ %ifNotExists%} {name}{ INCREMENT BY %increment%}{ MINVALUE %min%}{ MAXVALUE %max%}{ START WITH %start%}{ CACHE %cache%}{%CYCLE%}',
+				ddlDropSequence: 'DROP SEQUENCE{ %ifExists%} {name}'
 		]
 	}
 
@@ -108,13 +134,13 @@ class JDBCDriver extends Driver {
 		[Support.CONNECT, Support.SQL, Support.EACHROW, Support.WRITE, Support.BATCH,
 		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.NOT_NULL_FIELD,
 		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW, Support.SCHEMA,
-		 Support.DATABASE, Support.SELECT_WITHOUT_FROM,
+		 Support.DATABASE, Support.SELECT_WITHOUT_FROM, Support.CHECK_FIELD,
 		 Support.TIMESTAMP, Support.BOOLEAN]
 	}
 
 	@Override
 	List<Operation> operations() {
-		[RETRIEVEFIELDS, READ_METADATA, INSERT, UPDATE, DELETE]
+		[RETRIEVEFIELDS, READ_METADATA, INSERT, UPDATE, DELETE, TRUNCATE, CREATE, DROP, CREATE_SCHEMA, EXECUTE, CREATE_VIEW]
 	}
 	
 	/**
@@ -135,6 +161,12 @@ class JDBCDriver extends Driver {
 	 * Blob field return value as Blob interface
 	 */
 	Boolean blobReadAsObject() { return true }
+
+	/**
+	 * Timestamp with timezone field return value as Timestamp class
+	 * @return
+	 */
+	Boolean timestamptzReadAsTimestamp() { return false }
 	
 	/**
 	 * Class name for generate write data to clob field
@@ -330,24 +362,25 @@ class JDBCDriver extends Driver {
 	/**
 	 * SQL type mapper
 	 */
-	Map getSqlType () {
-		[
-			STRING: [name: 'varchar', useLength: sqlTypeUse.ALWAYS],
-			INTEGER: [name: 'int'],
-			BIGINT: [name: 'bigint'],
+	Map<String, Map<String, Object>> getSqlType () {
+		def res = [
+			STRING: [name: 'varchar', useLength: sqlTypeUse.ALWAYS, usePrecision: sqlTypeUse.NEVER],
+			INTEGER: [name: 'int', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			BIGINT: [name: 'bigint', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			NUMERIC: [name: 'decimal', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES],
-			DOUBLE: [name: 'double precision'],
-			BOOLEAN: [name: 'boolean'],
-			DATE: [name: 'date'],
-			TIME: [name: 'time'],
-			DATETIME: [name: 'timestamp'],
-			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone'],
-			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
-			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
-			UUID: [name: 'uuid'],
-			ARRAY: [name: 'array'],
-			OBJECT: [name: 'object']
-		]
+			DOUBLE: [name: 'double precision', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			BOOLEAN: [name: 'boolean', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			DATE: [name: 'date', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			TIME: [name: 'time', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			DATETIME: [name: 'timestamp', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535, usePrecision: sqlTypeUse.NEVER],
+			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535, usePrecision: sqlTypeUse.NEVER],
+			UUID: [name: 'uuid', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			ARRAY: [name: 'array', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.NEVER],
+			OBJECT: [name: 'object', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER]
+		] as Map<String, Map<String, Object>>
+		return res
 	}
 	
 	/**
@@ -362,7 +395,7 @@ class JDBCDriver extends Driver {
 			throw new ExceptionGETL('Required field object')
 		
 		def type = field.type.toString()
-		def rule = sqlType."$type"
+		def rule = sqlType.get(type)
 		if (rule == null)
 			throw new ExceptionGETL("Can not generate type ${field.type}")
 
@@ -462,7 +495,7 @@ class JDBCDriver extends Driver {
 		DriverManager.setLoginTimeout(loginTimeout)
         Sql sql
 		try {
-            def javaDriver = driverClass.newInstance() as java.sql.Driver
+            def javaDriver = driverClass.getDeclaredConstructor().newInstance() as java.sql.Driver
             def prop = new Properties()
             if (login != null) prop.user = login
             if (password != null) prop.password = password
@@ -744,8 +777,8 @@ class JDBCDriver extends Driver {
 		def isSupportDB = isSupport(Support.DATABASE)
 		def isSupportSchemas = isSupport(Support.SCHEMA)
 		def isSupportMultiDB = isSupport(Support.MULTIDATABASE)
-		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName):null):null
-		String schemaPattern = (isSupportSchemas)?(prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName):null
+		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName?:jdbcConnection.connectDatabase):null):null
+		String schemaPattern = (isSupportSchemas)?(prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName()):null
 		String tableNamePattern = prepareObjectName(params.tableName as String)
 
 		def maskList = [] as List<Path>
@@ -809,7 +842,7 @@ class JDBCDriver extends Driver {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 
-		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType])
+		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType] && tempSchemaName != null)
 			names.schemaName = tempSchemaName
 		else
 			names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName(), defaultSchemaName]) as String)
@@ -859,7 +892,11 @@ class JDBCDriver extends Driver {
 					catch (Exception ignored) {
 					}
 					f.description = rs.getString("REMARKS")
-					if (f.description == '') f.description = null
+					if (f.description == '')
+						f.description = null
+
+					if (f.isAutoincrement)
+						f.defaultValue = null
 
 					res << f
 				}
@@ -869,7 +906,7 @@ class JDBCDriver extends Driver {
 			}
 
 			if (ds.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType]) {
-				rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
+				rs = readPrimaryKey(names)
 				def ord = 0
 				try {
 					while (rs.next()) {
@@ -896,6 +933,11 @@ class JDBCDriver extends Driver {
 		}
 
 		return res
+	}
+
+	/** Read primary key for table */
+	protected ResultSet readPrimaryKey(Map<String, String> names) {
+		return sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
 	}
 
 	/** Read fields from query */
@@ -945,11 +987,18 @@ class JDBCDriver extends Driver {
 
 	@Synchronized('operationLock')
 	@Override
-	void startTran() {
+	void startTran(Boolean useSqlOperator = false) {
 		def con = jdbcConnection
-		if (!isSupport(Support.TRANSACTIONAL)) return
+		if (!isSupport(Support.TRANSACTIONAL))
+			return
 		if (con.tranCount == 0) {
-			saveToHistory("START TRAN")
+			saveToHistory("START TRANSACTION")
+			if (useSqlOperator) {
+				if (!isSupport(Support.START_TRANSACTION))
+					throw new ExceptionGETL("Connect \"$connection\" not support start transaction operator!")
+
+				executeCommand(sqlExpressionValue('ddlStartTran'))
+			}
 		}
 		else {
 			saveToHistory("-- START TRAN (active ${con.tranCount} transaction)")
@@ -958,7 +1007,7 @@ class JDBCDriver extends Driver {
 
 	@Synchronized
 	@Override
-	void commitTran() {
+	void commitTran(Boolean useSqlOperator = false) {
 		def con = jdbcConnection
 
         if (!isSupport(Support.TRANSACTIONAL))
@@ -971,8 +1020,11 @@ class JDBCDriver extends Driver {
 			throw new ExceptionGETL("Can not commit from disconnected connection")
 
 		if (con.tranCount == 1) {
-			saveToHistory("COMMIT")
-			sqlConnect.commit()
+			saveToHistory('COMMIT')
+			if (useSqlOperator)
+				executeCommand('COMMIT')
+			else
+				sqlConnect.commit()
 		}
 		else {
 			saveToHistory("-- COMMIT (active ${con.tranCount} transaction)")
@@ -981,7 +1033,7 @@ class JDBCDriver extends Driver {
 
 	@Synchronized('operationLock')
 	@Override
-	void rollbackTran() {
+	void rollbackTran(Boolean useSqlOperator = false) {
 		def con = jdbcConnection
         if (!isSupport(Support.TRANSACTIONAL))
 			return
@@ -993,8 +1045,11 @@ class JDBCDriver extends Driver {
 			throw new ExceptionGETL("Can not rollback from disconnected connection")
 
 		if (con.tranCount == 1) {
-			saveToHistory("ROLLBACK")
-			sqlConnect.rollback()
+			saveToHistory('ROLLBACK')
+			if (useSqlOperator)
+				executeCommand('ROLLBACK')
+			else
+				sqlConnect.rollback()
 		}
 		else {
 			saveToHistory("-- ROLLBACK (active ${con.tranCount} transaction)")
@@ -1006,8 +1061,13 @@ class JDBCDriver extends Driver {
 	protected Boolean transactionalTruncate
 	protected Boolean allowExpressions
 	protected Boolean lengthTextInBytes
+	protected Boolean defaultSchemaFromConnectDatabase
+
 	/** Case named object (NONE, LOWER, UPPER) */
 	protected String caseObjectName
+	/** Cased quoted field names */
+	protected Boolean caseQuotedName
+
 	protected String defaultDBName
 	protected String defaultSchemaName
 	protected String tempSchemaName
@@ -1016,6 +1076,8 @@ class JDBCDriver extends Driver {
 	protected String localTemporaryTablePrefix
 	protected String memoryTablePrefix
 	protected String externalTablePrefix
+	protected String ruleNameNotQuote
+	protected List<String> ruleQuotedWords
 
 	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
@@ -1038,7 +1100,7 @@ class JDBCDriver extends Driver {
 							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
             throw new ExceptionGETL("Can not create table for type \"${tableType}\"!")
         }
-		def tableTypeName = ''
+		String tableTypeName = null
 		switch (tableType) {
 			case JDBCDataset.globalTemporaryTableType:
                 if (!isSupport(Support.GLOBAL_TEMPORARY))
@@ -1069,10 +1131,10 @@ class JDBCDriver extends Driver {
 			if ((dataset as TableDataset).exists)
 				return
 		}
-		def ifNotExists = (validExists && isSupport(Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':''
-		def useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
+		def ifNotExists = (validExists && isSupport(Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':null
+		def useNativeDBType = BoolUtils.IsValue(params.useNativeDBType, false)
 		
-		def p = MapUtils.CleanMap(params, ["ifNotExists", "indexes", "hashPrimaryKey", "useNativeDBType"])
+		def p = MapUtils.CleanMap(params, ['ifNotExists', 'indexes', 'hashPrimaryKey', 'useNativeDBType'])
 		def extend = createDatasetExtend(dataset as JDBCDataset, p)
 		
 		def defFields = []
@@ -1129,7 +1191,7 @@ class JDBCDriver extends Driver {
 				throw e
 			}
 		}
-		def fields = defFields.join(",\n")
+		def fields = '\t' + defFields.join(",\n\t")
 		def pk = "" 
 		if (isSupport(Support.PRIMARY_KEY) && defPrimary.size() > 0) {
 			pk = "	PRIMARY KEY " + ((params.hashPrimaryKey != null && params.hashPrimaryKey)?"HASH ":"") + "(" + defPrimary.join(",") + ")"
@@ -1137,8 +1199,10 @@ class JDBCDriver extends Driver {
 		}
 
 		def con = jdbcConnection
-		
-		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit())) con.startTran()
+
+		def needTran = transactionalDDL && !(jdbcConnection.autoCommit())
+		if (needTran)
+			con.startTran()
 		try {
 			def varsCT = [
 					type: tableTypeName,
@@ -1162,40 +1226,32 @@ class JDBCDriver extends Driver {
 					
 					def varsCI = [
 							indexName: prepareTableNameForSQL(name as String),
-							unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
-							hash: (value.hash != null && value.hash == true)?"HASH":"",
-							ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":"",
+							unique: (value.unique != null && value.unique == true)?"UNIQUE":null,
+							hash: (value.hash != null && value.hash == true)?"HASH":null,
+							ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":null,
 							tableName: tableName,
 							columns: idxCols.join(",")
 					]
 					def sqlCodeCI = sqlExpressionValue('ddlCreateIndex', varsCI)
 
-					if (commitDDL && !(jdbcConnection.autoCommit())) {
-						if (transactionalDDL) {
-							con.commitTran()
-							con.startTran()
-						} else {
-							executeCommand('COMMIT')
-						}
-					}
+					/*if (needTran) {
+						con.commitTran(false, commitDDL)
+						con.startTran(transactionalDDL)
+					}*/
 
 					executeCommand(sqlCodeCI, p)
 				}
 			}
 		}
 		catch (Exception e) {
-			if (commitDDL && !(jdbcConnection.autoCommit())) {
-				if (transactionalDDL) con.rollbackTran()
-			}
+			if (needTran)
+				con.rollbackTran(false, commitDDL)
+
 			throw e
 		}
 		
-		if (commitDDL && !(jdbcConnection.autoCommit())) {
-			if (transactionalDDL)
-				con.commitTran()
-			else
-				executeCommand('COMMIT')
-		}
+		if (needTran)
+			con.commitTran(false, commitDDL)
 	}
 
 	/**
@@ -1205,11 +1261,21 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
-		def autoIncrement = sqlExpressionValue('ddlAutoIncrement')
-		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
-				((f.isAutoincrement && autoIncrement != null)?" $autoIncrement":"") +
-				((isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
-				((isSupport(Support.COMPUTE_FIELD) && f.compute != null)?" ${generateComputeDefinition(f)}":"")
+		def fp = [:] as Map<String, String>
+		fp.column = prepareFieldNameForSQL(f.name)
+		fp.type = type2sqlType(f, useNativeDBType)
+		if (isSupport(Support.PRIMARY_KEY) && !f.isNull)
+			fp.not_null =  'NOT NULL'
+		if (isSupport(Support.AUTO_INCREMENT) && f.isAutoincrement)
+			fp.increment = sqlExpressionValue('ddlAutoIncrement')
+		if (isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)
+			fp.default = generateDefaultDefinition(f)
+		if (isSupport(Support.CHECK_FIELD) && f.checkValue != null)
+			fp.check = generateCheckDefinition(f)
+		if (isSupport(Support.COMPUTE_FIELD) && f.compute != null)
+			fp.compute = generateComputeDefinition(f)
+
+		return sqlExpressionValue('ddlCreateField', fp)
 	}
 
 	/** Generate default constraint for field of table */
@@ -1219,7 +1285,12 @@ class JDBCDriver extends Driver {
 
 	/** Generate default constraint for field of table */
 	String generateComputeDefinition(Field f) {
-		return "AS ${f.compute}"
+		return "AS (${f.compute})"
+	}
+
+	/** Generate default constraint for field of table */
+	String generateCheckDefinition(Field f) {
+		return "CHECK (${f.checkValue})"
 	}
 
 	/**
@@ -1257,31 +1328,39 @@ class JDBCDriver extends Driver {
 	String getFieldEndPrefix() { fieldEndPrefix }
 
 	String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
-		if (name == null) return null
-		String res
+		if (name == null)
+			return null
+
+		def needQuote = !name.matches(ruleNameNotQuote) || (name.toUpperCase() in ruleQuotedWords)
+
+		String res = name
 		switch (caseObjectName) {
 			case "LOWER":
-				res = name.toLowerCase()
+				if (!needQuote || !caseQuotedName)
+					res = name.toLowerCase()
 				break
 			case "UPPER":
-				res = name.toUpperCase()
+				if (!needQuote || !caseQuotedName)
+					res = name.toUpperCase()
 				break
 			default:
 				if (dataset != null) {
 					def f = dataset.fieldByName(name)
-					if (f != null) {
+					if (f != null)
 						res = f.name
-					}
-					else {
-						res = name
-					}
-				}
-				else {
-					res = name
 				}
 		}
 
-		return prefix + res + (prefixEnd?:prefix)
+		if (prefixEnd == null && prefix != null)
+			prefixEnd = prefix
+
+
+		//noinspection RegExpRedundantEscape
+		if (prefix != null && prefix.length() > 0 && !res.matches("^[\\$prefix].+[\\$prefixEnd]\$"))
+			if (needQuote)
+				res = prefix + res + prefixEnd
+
+		return res
 	}
 	
 	/**
@@ -1402,26 +1481,22 @@ class JDBCDriver extends Driver {
 
 		def con = jdbcConnection
 
-		if (commitDDL && transactionalDDL && !(con.autoCommit()))
+		def needTran = transactionalDDL && !(con.autoCommit())
+		if (needTran)
 			con.startTran()
 
 		try {
-			executeCommand(q, [:])
+			executeCommand(q)
 		}
 		catch (Exception err) {
-			if (commitDDL && !(jdbcConnection.autoCommit())) {
-				if (transactionalDDL) con.rollbackTran()
-			}
+			if (needTran)
+				con.rollbackTran(false, commitDDL)
+
 			throw err
 		}
 
-		if (commitDDL && !(jdbcConnection.autoCommit())) {
-			if (transactionalDDL) {
-				con.commitTran()
-			} else {
-				executeCommand('COMMIT')
-			}
-		}
+		if (needTran)
+			con.commitTran(false, commitDDL)
 	}
 
 	/** Check that the dataset is a table */
@@ -1575,9 +1650,12 @@ class JDBCDriver extends Driver {
         for (Integer i = 0; i < meta.getColumnCount(); i++) {
 			def c = i + 1
             //noinspection GroovyAssignabilityCheck
-            Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)) as String, dbType: meta.getColumnType(c), typeName: meta.getColumnTypeName(c),
+            Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)) as String, dbType: meta.getColumnType(c),
+								typeName: meta.getColumnTypeName(c), columnClassName: meta.getColumnClassName(c),
 								length: meta.getPrecision(c), precision: meta.getScale(c), 
 								isAutoincrement: meta.isAutoIncrement(c), isNull: meta.isNullable(c), isReadOnly: (!isTable && meta.isReadOnly(c)))
+			if (f.isAutoincrement)
+				f.defaultValue = null
 			prepareField(f)
 
 			result << f
@@ -1601,7 +1679,7 @@ class JDBCDriver extends Driver {
 			def onlyFields = ListUtils.ToLowerCase(params.onlyFields as List<String>)
 			def excludeFields = ListUtils.ToLowerCase(params.excludeFields as List<String>)
 			
-			def lf = (!dataset.isManualSchema() && dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
+			def lf = (dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
 			lf.each { prepareField(it) }
 			
 			if (!onlyFields && !excludeFields) {
@@ -1775,25 +1853,26 @@ class JDBCDriver extends Driver {
 			autoTran = BoolUtils.IsValue(params.autoTran, (connection.tranCount == 0))
 		autoTran = (autoTran && (!truncate || (truncate && transactionalTruncate)))
 
-		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
+		def qp = [tableName: fn]
+		String q = (truncate)?sqlExpressionValue('ddlTruncateTable', qp):sqlExpressionValue('ddlTruncateDelete', qp)
 		Map p = MapUtils.CleanMap(params, ['autoTran', 'truncate'])
+		if (autoTran)
+			con.startTran()
 		try {
-			if (autoTran)
-				con.startTran()
 			def count = executeCommand(q, p + [isUpdate: true])
 			dataset.updateRows = count
-
-			if (autoTran)
-				con.commitTran()
 		}
 		catch (Exception e) {
 			if (autoTran)
-				con.rollbackTran()
+				con.rollbackTran(false, truncate && transactionalTruncate && commitDDL)
 			throw e
 		}
+
+		if (autoTran)
+			con.commitTran(false, truncate && transactionalTruncate && commitDDL)
 	}
 
-	private final Object operationLock = new Object()
+	protected final Object operationLock = new Object()
 
 	@Synchronized('operationLock')
 	protected void saveToHistory(String sql) {
@@ -1921,7 +2000,7 @@ $sql
 		def curMethod = 0
 
 		StringBuilder sb = new StringBuilder()
-		sb << "{ getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map _getl_row ->\n"
+		sb << "Closure code = { getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map _getl_row ->\n"
 
 		(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
 		sb << "}\n"
@@ -1968,7 +2047,7 @@ $sql
 			sb << "\n"
 		}
 		//sb << "println _getl_row.'class'\n"
-		sb << "}"
+		sb << "}\nreturn code"
 		wp.statement = sb.toString()
 		//println wp.statement
 
@@ -1985,9 +2064,8 @@ $sql
 	 * @return
 	 */
 	protected List<Field> prepareFieldFromWrite(JDBCDataset dataset, Closure prepareCode) {
-		def loadedField = (!dataset.field.isEmpty())
 		List<Field> tableFields
-		if (!loadedField && !dataset.isManualSchema()) {
+		if (dataset.field.isEmpty()) {
 			tableFields = fields(dataset)
 		}
 		else {
@@ -2598,11 +2676,15 @@ $sql
 		def keyField = (procParams.keyField as List<String>)?:([] as List<String>)
 		def autoKeyField = keyField.isEmpty()
 		
-		if (!target.isManualSchema() && target.field.isEmpty()) target.retrieveFields()
-		if (target.field.isEmpty()) throw new ExceptionGETL("Required fields for dataset")
+		if (target.field.isEmpty())
+			target.retrieveFields()
+		if (target.field.isEmpty())
+			throw new ExceptionGETL("Required fields for dataset")
 		
-		if (!source.isManualSchema() && source.field.isEmpty()) source.retrieveFields()
-		if (source.field.isEmpty()) throw new ExceptionGETL("Required fields for dest dataset")
+		if (source.field.isEmpty())
+			source.retrieveFields()
+		if (source.field.isEmpty())
+			throw new ExceptionGETL("Required fields for dest dataset")
 		
 		def mapField = [:]
 		target.field.each { Field field ->
@@ -2694,15 +2776,13 @@ $sql
 	}
 
 	/** Return options for create sequence */
-	protected List<String> createSequenceAttrs(SequenceCreateSpec opts) {
-		def res = [] as List<String>
-		if (opts.incrementBy != null) res << "INCREMENT BY ${opts.incrementBy}".toString()
-		if (opts.minValue != null) res << "MINVALUE ${opts.minValue}".toString()
-		if (opts.maxValue != null) res << "MAXVALUE ${opts.minValue}".toString()
-		if (opts.startWith != null) res << "START WITH ${opts.startWith}".toString()
-		if (opts.cacheNumbers != null) res << "CACHE ${opts.cacheNumbers}".toString()
-		if (BoolUtils.IsValue(opts.isCycle)) res << 'CYCLE'
-		return res
+	protected void createSequenceAttrs(SequenceCreateSpec opts, Map<String, Object> queryParams) {
+		queryParams.increment = opts.incrementBy
+		queryParams.min = opts.minValue
+		queryParams.max = opts.maxValue
+		queryParams.start = opts.startWith
+		queryParams.cache = opts.cacheNumbers
+		queryParams.cycle = opts.isCycle
 	}
 
 	/**
@@ -2712,9 +2792,26 @@ $sql
 	 */
 	@Synchronized
 	protected void createSequence(String name, Boolean ifNotExists, SequenceCreateSpec opts) {
-		def s1 = (ifNotExists)?'IF NOT EXISTS ':''
-		def attrs = createSequenceAttrs(opts).join(' ')
-		executeCommand("CREATE SEQUENCE ${s1}${name} $attrs")
+		def qp = [name: name]
+		if (ifNotExists)
+			qp.ifNotExists = 'IF NOT EXISTS'
+
+		createSequenceAttrs(opts, qp)
+
+		def needTran = (transactionalDDL && !jdbcConnection.autoCommit())
+		if (needTran)
+			connection.startTran()
+		try {
+			executeCommand(sqlExpressionValue('ddlCreateSequence', qp))
+		}
+		catch (Exception e) {
+			if (needTran)
+				connection.rollbackTran(false, commitDDL)
+
+			throw e
+		}
+		if (needTran)
+			connection.commitTran(false, commitDDL)
 	}
 
 	/**
@@ -2724,8 +2821,11 @@ $sql
 	 */
 	@Synchronized
 	protected void dropSequence(String name, Boolean ifExists) {
-		def s1 = (ifExists)?'IF EXISTS ':''
-		executeCommand("DROP SEQUENCE ${s1}${name}")
+		def qp = [name: name]
+		if (ifExists)
+			qp.ifExists = 'IF EXISTS'
+
+		executeCommand(sqlExpressionValue('ddlDropSequence', qp))
 	}
 
 	/** Count row */
@@ -2867,51 +2967,128 @@ FROM {source} {after_from}'''
 		csvFile.formatTimestampWithTz = DateUtils.defaultTimestampWithTzSmallMask
 	}
 
+	/** Generate query parameters for script of create schema */
+	protected Map<String, Object> createSchemaParams(String schemaName, Map<String, Object> createParams) {
+		def res = [:] as Map<String, Object>
+		res.schema = prepareObjectNameWithPrefix(schemaName, tablePrefix, tableEndPrefix)
+		if (isSupport(Support.CREATESCHEMAIFNOTEXIST) && BoolUtils.IsValue(createParams.ifNotExists))
+			res.ifNotExists = 'IF NOT EXISTS'
+
+		return res
+	}
+
 	/** Create schema in database */
 	@Synchronized
-	void createSchema(String schemaName, Map<String, Object> createParams) { }
+	void createSchema(String schemaName, Map<String, Object> createParams) {
+		def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
+		if (needTran)
+			connection.startTran()
+		try {
+			jdbcConnection.executeCommand(sqlExpressionValue('ddlCreateSchema',
+					createSchemaParams(schemaName, createParams?:([:] as Map<String, Object>))))
+		}
+		catch (Exception e) {
+			if (needTran)
+				connection.rollbackTran(false, commitDDL)
+
+			throw e
+		}
+		if (needTran)
+			connection.commitTran(false, commitDDL)
+	}
+
+	/** Generate query parameters for script of drop schema */
+	protected Map<String, Object> dropSchemaParams(String schemaName, Map<String, Object> dropParams) {
+		def res = [:] as Map<String, Object>
+		res.schema = prepareObjectNameWithPrefix(schemaName, tablePrefix, tableEndPrefix)
+		if (isSupport(Support.DROPSCHEMAIFEXIST) && BoolUtils.IsValue(dropParams.ifExists))
+			res.ifExists = 'IF EXISTS'
+
+		return res
+	}
 
 	/**  Drop schema from database */
 	@Synchronized
-	void dropSchema(String schemaName, Map<String, Object> dropParams) { }
+	void dropSchema(String schemaName, Map<String, Object> dropParams) {
+		def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
+		if (needTran)
+			connection.startTran()
+		try {
+			jdbcConnection.executeCommand(sqlExpressionValue('ddlDropSchema',
+					dropSchemaParams(schemaName, dropParams?:([:] as Map<String, Object>))))
+		}
+		catch (Exception e) {
+			if (needTran)
+				connection.rollbackTran(false, commitDDL)
+
+			throw e
+		}
+		if (needTran)
+			connection.commitTran(false, commitDDL)
+	}
 
 	/** Create or replace view SQL syntax*/
 	protected List<String> createViewTypes
+
+	/** Database support replace existing views */
+	Boolean isAllowReplaceView() { createViewTypes.size() == 2 }
 
 	/**
 	 * Create view in database
 	 * @param dataset view object
 	 * @param params creation options
 	 */
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized
 	void createView(ViewDataset dataset, Map params) {
 		if (!isSupport(Support.VIEW))
 			throw new ExceptionGETL('Driver not support views!')
+		if (!isOperation(Operation.CREATE_VIEW))
+			throw new ExceptionGETL('Driver not support create views!')
 
 		validTableName(dataset as JDBCDataset)
-		def qp = createViewParams(dataset, params)
-		dataset.currentJDBCConnection.executeCommand(sqlExpressionValue('ddlCreateView', qp))
+
+		def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
+		if (needTran)
+			connection.startTran()
+		try {
+			dataset.currentJDBCConnection.executeCommand(sqlExpressionValue('ddlCreateView',
+					createViewParams(dataset, params?:([:] as Map<String, Object>))))
+		}
+		catch (Exception e) {
+			if (needTran)
+				connection.rollbackTran(false, commitDDL)
+
+			throw e
+		}
+
+		if (needTran)
+			connection.commitTran(false, commitDDL)
 	}
 
 	/**
 	 * Prepare parameters for creating a view
 	 * @param dataset view object
-	 * @param procParams creation options
+	 * @param createParams creation options
 	 * @return generate variables
 	 */
-	protected Map<String, Object> createViewParams(ViewDataset dataset, Map procParams) {
+	protected Map<String, Object> createViewParams(ViewDataset dataset, Map<String, Object> createParams) {
 		def res = [name: fullNameDataset(dataset)] as Map<String, Object>
 
-		def replace = BoolUtils.IsValue(procParams.replace)
-		if (replace && createViewTypes.size() == 1)
+		def replace = BoolUtils.IsValue(createParams.replace)
+		if (replace && !allowReplaceView)
 			throw new ExceptionGETL("Option \"replace\" is not supported on the current connection!")
 
 		res.create = (replace)?createViewTypes[1]:createViewTypes[0]
 
 		def isTemporary = (dataset.type == ViewDataset.localTemporaryViewType)
-		res.temporary = (isTemporary)?'LOCAL TEMPORARY':''
+		if (isTemporary)
+			res.temporary = 'LOCAL TEMPORARY'
 
-		def select = procParams.select as String
+		if (BoolUtils.IsValue(createParams.ifNotExists))
+			res.ifNotExists = 'IF NOT EXISTS'
+
+		def select = createParams.select as String
 		if (select == null)
 			throw new ExceptionGETL("It is required to specify sql select for view in the \"select\" parameter!")
 		res.select = StringUtils.EvalMacroString(select, dataset.queryParams())
@@ -2933,6 +3110,8 @@ FROM {source} {after_from}'''
 	/** Value from sql expression by name */
 	String sqlExpressionValue(String name, Map<String, Object> extParams = [:]) {
 		def expr = sqlExpression(name)
+		if (extParams == null)
+			extParams = [:] as Map<String, Object>
 		return StringUtils.EvalMacroString(expr, sqlExpressions + (extParams?:[:]))
 	}
 }

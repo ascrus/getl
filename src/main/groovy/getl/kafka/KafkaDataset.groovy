@@ -54,28 +54,28 @@ class KafkaDataset extends Dataset {
     /** Format for date fields */
     void setFormatDate(String value) { params.formatDate = value }
     /** Format for date fields */
-    String formatDate() { formatDate?:currentKafkaConnection.formatDate() }
+    String formatDate() { formatDate?:currentKafkaConnection?.formatDate() }
 
     /** Format for datetime fields */
     String getFormatDateTime() { params.formatDateTime as String }
     /** Format for datetime fields */
     void setFormatDateTime(String value) { params.formatDateTime = value }
     /** Format for datetime fields */
-    String formatDateTime() { formatDateTime?:currentKafkaConnection.formatDateTime() }
+    String formatDateTime() { formatDateTime?:currentKafkaConnection?.formatDateTime() }
 
     /** Format for timestamp with timezone fields */
     String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
     /** Format for timestamp with timezone fields */
     void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
     /** Format for timestamp with timezone fields */
-    String formatTimestampWithTz() { formatTimestampWithTz?:currentKafkaConnection.formatTimestampWithTz() }
+    String formatTimestampWithTz() { formatTimestampWithTz?:currentKafkaConnection?.formatTimestampWithTz() }
 
     /** Format for time fields */
     String getFormatTime() { params.formatTime as String }
     /** Format for time fields */
     void setFormatTime(String value) { params.formatTime = value }
     /** Format for time fields */
-    String formatTime() { formatTime?:currentKafkaConnection.formatTime() }
+    String formatTime() { formatTime?:currentKafkaConnection?.formatTime() }
 
     /** Use the same date and time format */
     String getUniFormatDateTime() { params.uniFormatDateTime as String }
@@ -88,14 +88,21 @@ class KafkaDataset extends Dataset {
     String getFormatBoolean() { params.formatBoolean as String }
     /** Format for boolean fields */
     void setFormatBoolean(String value) { params.formatBoolean = value }
-    String formatBoolean() { formatBoolean?:currentKafkaConnection.formatBoolean() }
+    String formatBoolean() { formatBoolean?:currentKafkaConnection?.formatBoolean() }
 
     /** Decimal separator for number fields */
     String getDecimalSeparator() { params.decimalSeparator as String }
     /** Decimal separator for number fields */
     void setDecimalSeparator(String value) { params.decimalSeparator = value }
     /** Decimal separator for number fields */
-    String decimalSeparator() { decimalSeparator?:currentKafkaConnection.decimalSeparator() }
+    String decimalSeparator() { decimalSeparator?:currentKafkaConnection?.decimalSeparator() }
+
+    /** Group separator for number fields */
+    String getGroupSeparator() { params.groupSeparator as String }
+    /** Group separator for number fields */
+    void setGroupSeparator(String value) { params.groupSeparator = value }
+    /** Group separator for number fields */
+    String groupSeparator() { groupSeparator?:currentKafkaConnection?.groupSeparator() }
 
     /**
      * Return the format of the specified field
@@ -148,7 +155,7 @@ class KafkaDataset extends Dataset {
     @Override
     String getObjectName() {
         def objName = (kafkaTopic != null)?"Kafka topic $kafkaTopic":'noname'
-        return (connection != null)?"Kafka servers ${currentKafkaConnection.bootstrapServers}, $objName":objName
+        return (connection != null)?"Kafka servers ${currentKafkaConnection?.bootstrapServers}, $objName":objName
     }
     /** Full dataset name */
     @JsonIgnore

@@ -49,10 +49,10 @@ class CSVReadSpec extends FileReadSpec {
         setOnProcessError(value)
     }
 
-    /** Ignore field header when reading a file (true by default) */
-    Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
-    /** Ignore field header when reading a file (true by default) */
-    void setIgnoreHeader(Boolean value) { saveParamValue('ignoreHeader', value) }
+    /** The order of the fields is determined by the file header */
+    Boolean getFieldOrderByHeader() { params.fieldOrderByHeader as Boolean }
+    /** The order of the fields is determined by the file header */
+    void setFieldOrderByHeader(Boolean value) { saveParamValue('fieldOrderByHeader', value) }
 
     /** Skip n-lines after the header */
     Long getSkipRows() { params.skipRows as Long }

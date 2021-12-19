@@ -24,13 +24,13 @@ class RepositoryFilter extends BaseSpec {
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
 
-        def value = ParseObjectName.Parse(group)
-        if (value.groupName != null)
+        def value = ParseObjectName.Parse(group, null, false)
+        if (value.groupName == null)
             throw new ExceptionDSL("Invalid group name \"$group\"!")
-        if (value.name[0] == '#')
-            throw new ExceptionDSL('The group name cannot begin with the character "#"!')
+        /*if (value.name[0] == '#')
+            throw new ExceptionDSL('The group name cannot begin with the character "#"!')*/
 
-        saveParamValue('filteringGroup', value.name)
+        saveParamValue('filteringGroup', value.groupName)
     }
 
     /** Reset filter to search for objects */
@@ -43,8 +43,12 @@ class RepositoryFilter extends BaseSpec {
      * @param checkName name validation required
      * @return repository object name
      */
-    String objectName(String name, Boolean checkName = false) {
-        ParseObjectName.ObjectName(name, filteringGroup, checkName)
+    String objectName(String name) {
+        def names = ParseObjectName.Parse(name, false, false)
+        if (filteringGroup != null && names.groupName == null && (names.objectName == null || names.objectName[0] != '#'))
+            names.groupName = filteringGroup
+
+        return names.name
     }
 
     /**
@@ -52,7 +56,7 @@ class RepositoryFilter extends BaseSpec {
      * @param name repository object name
      * @return parse result
      */
-    ParseObjectName parseName(String name) {
-        ParseObjectName.Parse(ParseObjectName.ObjectName(name, filteringGroup))
+    ParseObjectName parseName(String name, Boolean isMaskName = false) {
+        ParseObjectName.ParseObject(name, filteringGroup, isMaskName)
     }
 }

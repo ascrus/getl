@@ -22,7 +22,7 @@ import org.apache.poi.ss.usermodel.Workbook
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
+import java.time.format.DateTimeFormatter
 
 /**
  * Excel Driver class
@@ -34,7 +34,8 @@ class ExcelDriver extends FileDriver {
     @Override
     protected void registerParameters() {
         super.registerParameters()
-        methodParams.register('eachRow', ['limit', 'showWarnings', 'filter', 'prepareFilter'])
+        methodParams.register('eachRow', ['limit', 'showWarnings', 'filter', 'prepareFilter', 'decimalSeparator', 'groupSeparator',
+                                          'formatDate', 'formatDateTime', 'formatTime', 'formatBoolean', 'uniFormatDateTime'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -90,13 +91,27 @@ class ExcelDriver extends FileDriver {
         def prepareFilter = (params.prepareFilter as Closure)?:dataset.onPrepareFilter
         def filter = (params.filter as Closure)?:dataset.onFilter
 
-        def decimalSeparator = dataset.decimalSeparator()
-        def dfs = new DecimalFormatSymbols()
-        dfs.setDecimalSeparator(decimalSeparator.chars[0])
-        def df = new DecimalFormat('#,##0.0#', dfs)
+        def locale = ListUtils.NotNullValue([params.locale, dataset.locale()]) as String
+        def decimalSeparator = ListUtils.NotNullValue([params.decimalSeparator, dataset.decimalSeparator()]) as String
+        def groupSeparator = ListUtils.NotNullValue([params.groupSeparator, dataset.groupSeparator()]) as String
+        def dfs = NumericUtils.BuildDecimalFormatSymbols((decimalSeparator != null)?decimalSeparator.chars[0]:null,
+                (groupSeparator != null)?groupSeparator.chars[0]:null, locale)
+        def dfDecimal = new DecimalFormat('#,##0.#', dfs)
+
+        def formatBoolean = ListUtils.NotNullValue([params.formatBoolean, dataset.formatBoolean(), 'true|false']) as String
+
+        def uniFormatDateTime = ListUtils.NotNullValue([params.uniFormatDateTime, dataset.uniFormatDateTime()]) as String
+
+        def formatDate = ListUtils.NotNullValue([params.formatDate, uniFormatDateTime, dataset.formatDate(), DateUtils.defaultDateMask]) as String
+        def dfDate = DateUtils.BuildDateFormatter(formatDate, null, locale)
+
+        def formatDateTime = ListUtils.NotNullValue([params.formatDate, uniFormatDateTime, dataset.formatDateTime(), DateUtils.defaultDateTimeMask]) as String
+        def dfDateTime = DateUtils.BuildDateTimeFormatter(formatDateTime, null, locale)
+
+        def formatTime = ListUtils.NotNullValue([params.formatTime, uniFormatDateTime, dataset.formatTime(), DateUtils.defaultTimeMask]) as String
+        def dfTime = DateUtils.BuildTimeFormatter(formatTime, null, locale)
 
         def countRec = 0L
-
         if (prepareCode != null)
             prepareCode([])
 
@@ -160,7 +175,7 @@ class ExcelDriver extends FileDriver {
                     def field = dataset.field.get(fieldNum)
                     def fieldName = field.name
                     try {
-                        def fieldValue = getCellValue(cell, dataset, field, df)
+                        def fieldValue = getCellValue(cell, dataset, field, dfDate, dfTime, dfDateTime, formatBoolean, dfDecimal)
                         updater.put(fieldName.toLowerCase(), fieldValue)
                     }
                     catch (Exception e) {
@@ -204,7 +219,8 @@ class ExcelDriver extends FileDriver {
 
     @SuppressWarnings('unused')
     @CompileStatic
-    static private Object getCellValue(Cell cell, FileDataset dataset, Field field, DecimalFormat df) {
+    static private Object getCellValue(Cell cell, FileDataset dataset, Field field, DateTimeFormatter formatDate, DateTimeFormatter formatTime,
+                                       DateTimeFormatter formatDateTime, String formatBoolean, DecimalFormat df) {
         if (cell.cellType == CellType.BLANK) return null
 
 		def res = null
@@ -212,64 +228,111 @@ class ExcelDriver extends FileDriver {
 
         switch (fieldType) {
             case Field.Type.BIGINT:
-                if (cell.cellType == CellType.STRING)
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
+                    res = cell.numericCellValue.toBigInteger()
+                else if (cell.cellType == CellType.STRING)
                     res = (cell.stringCellValue.toBigInteger())
                 else
-                    res = cell.numericCellValue.toBigInteger()
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with bigint!")
 
                 break
             case Field.Type.BOOLEAN:
-                if (cell.cellType == CellType.STRING) {
-                    def format = field.format?:dataset.formatBoolean()?:'true|false'
-                    def val = format.toUpperCase().split("[|]")
-                    def str = cell.stringCellValue
-                    if (str != null)
-                        res = (str.toUpperCase() == val[0])
-                }
+                if (cell.cellType in [CellType.BOOLEAN, CellType.FORMULA])
+                    res = cell.booleanCellValue
                 else if (cell.cellType == CellType.NUMERIC) {
-                    res = cell.numericCellValue.toInteger() == 1
+                    def val = cell.numericCellValue.toInteger()
+                    if (val == 1)
+                        res = true
+                    else if (val == 0)
+                        res = false
+                    else
+                        res = null
+                }
+                else if (cell.cellType == CellType.STRING) {
+                    def format = field.format?.toLowerCase()?:formatBoolean?:'true|false'
+                    def val = format.split("[|]")
+                    def str = cell.stringCellValue
+                    if (str != null) {
+                        if (str.toLowerCase() == val[0])
+                            res = true
+                        else if (str.toLowerCase() == val[1])
+                            res = false
+                        else
+                            res = null
+                    }
                 }
                 else
-                    res = cell.booleanCellValue
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with boolean!")
 
                 break
             case Field.Type.DATE:
-                res = new java.sql.Date(cell.dateCellValue.time)
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
+                    res = new java.sql.Date(cell.dateCellValue.time)
+                else if (cell.cellType == CellType.STRING)
+                    res = DateUtils.ParseSQLDate(formatDate, cell.stringCellValue, false)
+                else
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with date!")
 
                 break
-            case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
-                res = new Timestamp(cell.dateCellValue.time)
+            case Field.Type.DATETIME:
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
+                    res = new Timestamp(cell.dateCellValue.time)
+                else if (cell.cellType == CellType.STRING)
+                    res = DateUtils.ParseSQLDate(formatDateTime, cell.stringCellValue, false)
+                else
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with datetime!")
 
                 break
             case Field.Type.TIME:
-                res = new Time(cell.dateCellValue.time)
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
+                    res = new Time(cell.dateCellValue.time)
+                else if (cell.cellType == CellType.STRING)
+                    res = DateUtils.ParseSQLDate(formatTime, cell.stringCellValue, false)
+                else
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with time!")
 
                 break
             case Field.Type.DOUBLE:
-                if (cell.cellType == CellType.STRING)
-                    res = df.parse(cell.stringCellValue).toDouble()
-                    //res = (cell.stringCellValue.toDouble())
-                else
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
                     res = cell.numericCellValue
+                else if (cell.cellType == CellType.STRING)
+                    res = df.parse(cell.stringCellValue).toDouble()
+                else
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with double!")
 
                 break
             case Field.Type.INTEGER:
-                if (cell.cellType == CellType.STRING)
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
+                    res = cell.numericCellValue.toInteger()
+                else if (cell.cellType == CellType.STRING)
                     res = (cell.stringCellValue.toInteger())
                 else
-                    res = cell.numericCellValue.toInteger()
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with integer!")
 
                 break
             case Field.Type.NUMERIC:
-                if (cell.cellType == CellType.STRING)
-                    res = df.parse(cell.stringCellValue).toBigDecimal()
-                    //res = (cell.stringCellValue.toBigDecimal())
-                else
+                if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
                     res = cell.numericCellValue.toBigDecimal()
+                else if (cell.cellType == CellType.STRING)
+                    res = df.parse(cell.stringCellValue).toBigDecimal()
+                else
+                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with numeric!")
 
                 break
             case Field.Type.STRING:
-                res = cell.stringCellValue
+                switch (cell.cellType) {
+                    case CellType.STRING: case CellType.FORMULA:
+                        res = cell.stringCellValue
+                        break
+                    case CellType.NUMERIC:
+                        res = cell.numericCellValue.toString()
+                        break
+                    case CellType.BOOLEAN:
+                        res = cell.booleanCellValue.toString()
+                        break
+                    default:
+                        throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with string!")
+                }
 
                 break
             default:
@@ -311,7 +374,7 @@ class ExcelDriver extends FileDriver {
     }
 
     @Override
-    void doneWrite (Dataset dataset) {
+    void doneWrite(Dataset dataset) {
         throw new ExceptionGETL('Not support this features!')
     }
 
@@ -336,7 +399,7 @@ class ExcelDriver extends FileDriver {
     }
 
     @Override
-    Long executeCommand (String command, Map params) {
+    Long executeCommand(String command, Map params) {
         throw new ExceptionGETL('Not support this features!')
     }
 
@@ -348,39 +411,35 @@ class ExcelDriver extends FileDriver {
     @Override
     void clearDataset(Dataset dataset, Map params) {
         throw new ExceptionGETL('Not support this features!')
-
     }
 
     @Override
     void createDataset(Dataset dataset, Map params) {
         throw new ExceptionGETL('Not support this features!')
-
     }
 
     @Override
-    void startTran() {
-        throw new ExceptionGETL('Not support this features!')
-
-    }
-
-    @Override
-    void commitTran() {
-        throw new ExceptionGETL('Not support this features!')
-
-    }
-
-    @Override
-    void rollbackTran() {
+    void startTran(Boolean useSqlOperator = false) {
         throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    void connect () {
+    void commitTran(Boolean useSqlOperator = false) {
         throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    void disconnect () {
+    void rollbackTran(Boolean useSqlOperator = false) {
+        throw new ExceptionGETL('Not support this features!')
+    }
+
+    @Override
+    void connect() {
+        throw new ExceptionGETL('Not support this features!')
+    }
+
+    @Override
+    void disconnect() {
         throw new ExceptionGETL('Not support this features!')
     }
 

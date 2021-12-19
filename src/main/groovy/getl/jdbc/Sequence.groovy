@@ -161,7 +161,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	String getSchema() {
 		def res = params.schema as String
 		if (res  == null && name?.indexOf('.') == -1)
-			res = currentJDBCConnection?.schemaName
+			res = currentJDBCConnection?.schemaName()
 
 		return res
 	}
@@ -206,7 +206,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
-		def res = getClass().newInstance() as Sequence
+		def res = getClass().getDeclaredConstructor().newInstance() as Sequence
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
 		res.params.putAll(p)

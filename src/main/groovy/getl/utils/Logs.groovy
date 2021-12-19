@@ -65,8 +65,8 @@ class Logs {
 	@JsonIgnore
 	LogFormatter getFormatter() { formatter }
 
-	/** Display configuration messages (default false) */
-	private Boolean printConfigMessage = false
+	/** Display configuration messages (default true) */
+	private Boolean printConfigMessage = true
 	/** Display configuration messages */
 	Boolean getPrintConfigMessage() { printConfigMessage }
 	/** Display configuration messages */
@@ -333,7 +333,7 @@ class Logs {
 		if (props.printConfig != null)
 			printConfigMessage = BoolUtils.IsValue(props.printConfig)
 
-		initFile(logFileName?:props.file as String, logFileLevel?:StrToLevel(props.logFileLevel as String))
+		initFile(logFileName?:props.file as String, logFileLevel?:ObjectToLevel(props.logFileLevel))
 
 		initMessages.each { config(it) }
 		initMessages.clear()
@@ -391,6 +391,15 @@ class Logs {
 		config("# Log file \"$fileNameHandler\" closed")
 
 		fileNameHandler = null
+	}
+
+	/**
+	 * Convert level object to level value
+	 * @param level log level object value
+	 * @return log level value
+	 */
+	static Level ObjectToLevel(Object level) {
+		return (level instanceof Level)?(level as Level):StrToLevel(level.toString())
 	}
 	
 	/**

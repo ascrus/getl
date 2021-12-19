@@ -74,6 +74,20 @@ class DateUtilsTest extends getl.test.GetlTest {
         df = DateUtils.BuildTimeFormatter("HH:mm:ss")
         assertEquals(DateUtils.ParseSQLTime('HH:mm:ss', '01:02:03', false), DateUtils.ParseSQLTime(sdf, '01:02:03', false))
         assertEquals(DateUtils.ParseSQLTime('HH:mm:ss', '01:02:03', false), DateUtils.ParseSQLTime(df, '01:02:03', false))
+
+        def ruLocale = (IsJava8())?'ru-RU':'ce-RU'
+
+        sdf = new SimpleDateFormat("yyyy-MM-dd")
+        df = DateUtils.BuildDateFormatter('dd MMM yyyy', null, ruLocale)
+        assertEquals(sdf.parse('2021-12-31'), DateUtils.ParseDate(df, '31 дек 2021', false))
+
+        sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        df = DateUtils.BuildDateTimeFormatter('dd MMM yyyy HH:mm:ss', null, ruLocale)
+        assertEquals(sdf.parse('2021-12-31 23:59:59'), DateUtils.ParseDate(df, '31 дек 2021 23:59:59', false))
+
+        sdf = new SimpleDateFormat("HH:mm:ss")
+        df = DateUtils.BuildTimeFormatter('HH:mm:ss', null, ruLocale)
+        assertEquals(sdf.parse('23:59:59'), DateUtils.ParseDate(df, '23:59:59', false))
     }
 
     @Test

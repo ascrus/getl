@@ -1,9 +1,13 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.exception.ExceptionGETL
 import groovy.transform.CompileStatic
 
-import java.security.MessageDigest
+import java.math.RoundingMode
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.text.ParsePosition
 
 /**
  * Number library functions class
@@ -41,9 +45,12 @@ class NumericUtils {
 	 * @return
 	 */
 	static BigDecimal Round(BigDecimal value, Integer prec) {
-		if (value == null) return null as BigDecimal
-		if (prec == null) return value
-		value.setScale(prec, BigDecimal.ROUND_HALF_UP)
+		if (value == null)
+			return null
+		if (prec == null)
+			return value
+
+		return value.setScale(prec, RoundingMode.HALF_UP)
 	}
 
 	/**
@@ -317,6 +324,53 @@ class NumericUtils {
 		} catch (NumberFormatException ignored) {
 			res = defaultValue
 		}
+		return res
+	}
+
+	/**
+	 * Build DecimalFormatSymbols object
+	 * @param decimalChar decimal character
+	 * @param groupingChar grouping character
+	 * @param locale locale
+	 * @return decimal formatter
+	 */
+	static DecimalFormatSymbols BuildDecimalFormatSymbols(Character decimalChar = null, Character groupingChar = null, String locale = null) {
+		def res = (locale == null)?new DecimalFormatSymbols():new DecimalFormatSymbols(StringUtils.NewLocale(locale))
+
+		/*if (groupingChar == null)
+			groupingChar = ','
+		if (decimalChar == null)
+			decimalChar = '.'*/
+
+		if (groupingChar != null && decimalChar != null && groupingChar == decimalChar)
+			groupingChar = ' '
+
+		if (groupingChar != null)
+			res.setGroupingSeparator(groupingChar)
+		if (decimalChar != null)
+		res.setDecimalSeparator(decimalChar)
+
+		return res
+	}
+
+	static Number ParseString(DecimalFormat formatter, String value, Boolean ignoreError = false) {
+		if (value == null)
+			return null
+
+		Number res = null
+		try {
+			def pos = new ParsePosition(0)
+			res = formatter.parse(value, pos)
+			if (pos.index != value.length()) {
+				res = null
+				throw new ExceptionGETL("Fail convert \"$value\" to number!")
+			}
+		}
+		catch (Exception e) {
+			if (!ignoreError)
+				throw e
+		}
+
 		return res
 	}
 }

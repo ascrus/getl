@@ -808,12 +808,14 @@ class FileUtils {
 										
 	/**
 	 * Run OS command
-	 * @param command
-	 * @param dir
-	 * @param codePage
-	 * @param out
-	 * @param err
-	 * @return
+	 * @param command run command
+	 * @param dir work directory
+	 * @param codePage console code page
+	 * @param out output buffer
+	 * @param err error buffer
+	 * @param checkTime interval of checking messages in the log in ms
+	 * @param checkCode log message processing code
+	 * @return exit process code
 	 */
 	static Integer Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err,
 					   Long checkTime = 500, Closure checkCode = null) {

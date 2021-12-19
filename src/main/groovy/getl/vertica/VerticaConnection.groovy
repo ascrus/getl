@@ -230,9 +230,9 @@ ORDER BY threshold DESC, table_name;
 		def qry = new QueryDataset()
 		qry.tap {
 			useConnection this
-			query = "SELECT ANALYZE_STATISTICS('{schema}'{percent}) AS res"
-			queryParams.schema = (schema?:'')
-			queryParams.percent = (percent != null)?", $percent":''
+			query = "SELECT ANALYZE_STATISTICS('{%schema%}'{, %percent%}) AS res"
+			queryParams.schema = schema
+			queryParams.percent = percent
 		}
 
 		return qry.rows()[0].res as Integer
@@ -290,14 +290,14 @@ ORDER BY threshold DESC, table_name;
 		qry.tap {
 			useConnection this
 			if (specifiedTime != null) {
-				query = "SELECT ANALYZE_WORKLOAD('{scope}', '{time}'::timestamp)"
+				query = "SELECT ANALYZE_WORKLOAD('{%scope%}', '{time}'::timestamp)"
 				queryParams.time = specifiedTime
 			}
 			else {
-				query = "SELECT ANALYZE_WORKLOAD('{scope}', {save})"
+				query = "SELECT ANALYZE_WORKLOAD('{%scope%}', {save})"
 				queryParams.save = BoolUtils.IsValue(saveData)
 			}
-			queryParams.scope = (scope?:'')
+			queryParams.scope = scope
 		}
 
 		return qry.rows()

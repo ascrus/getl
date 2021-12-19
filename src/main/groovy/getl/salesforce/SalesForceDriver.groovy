@@ -472,13 +472,13 @@ class SalesForceDriver extends Driver {
 	}
 
 	@Override
-	void startTran() { throw new ExceptionGETL('Not support this features!') }
+	void startTran(Boolean useSqlOperator = false) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void commitTran() { throw new ExceptionGETL('Not support this features!') }
+	void commitTran(Boolean useSqlOperator = false) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void rollbackTran() { throw new ExceptionGETL('Not support this features!') }
+	void rollbackTran(Boolean useSqlOperator = false) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
 	void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }

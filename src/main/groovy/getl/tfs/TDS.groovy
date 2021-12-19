@@ -5,6 +5,7 @@ import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.h2.*
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import org.h2.tools.DeleteDbFiles
 
@@ -24,11 +25,12 @@ class TDS extends H2Connection {
 
 		synchronized (lock) {
 			if (connectURL == null && connectDatabase == null) {
+				def dbn = 'getl_' + StringUtils.RandomStr().replace('-', '')
 				if (inMemory) {
-					connectDatabase = "getl"
+					connectDatabase = dbn
 				} else {
 					tempPath = TFS.storage.currentPath()
-					connectDatabase = "$tempPath/getl"
+					connectDatabase = "$tempPath/$dbn"
 					new File(connectDatabase + '.mv.db').deleteOnExit()
 					new File(connectDatabase + '.trace.db').deleteOnExit()
 				}
@@ -49,12 +51,12 @@ class TDS extends H2Connection {
 		if (connectProperty.PAGE_SIZE == null) {
 			connectProperty.PAGE_SIZE = 8192
 		}
-		if (connectProperty.LOG == null) {
+		/*if (connectProperty.LOG == null) {
 			connectProperty.LOG = 0
 		}
 		if (connectProperty.UNDO_LOG == null) {
 			connectProperty.UNDO_LOG = 0
-		}
+		}*/
 		if (params.config == null)
 			config = "getl_tds"
 

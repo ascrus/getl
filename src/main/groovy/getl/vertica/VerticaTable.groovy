@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.vertica
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -346,10 +347,10 @@ class VerticaTable extends TableDataset {
         def qry = new QueryDataset()
         qry.tap {
             useConnection currentVerticaConnection
-            query = "SELECT ANALYZE_STATISTICS('{table}'{columns}{percent}) AS res"
+            query = "SELECT ANALYZE_STATISTICS('{table}'{, '%columns%'}{, %percent%}) AS res"
             queryParams.table = fullTableName
-            queryParams.columns = (columns != null && !columns.isEmpty())?", '${columns.join(',')}'":''
-            queryParams.percent = (percent != null)?", $percent":''
+            queryParams.columns = (columns != null && !columns.isEmpty())?columns.join(','):null
+            queryParams.percent = percent
         }
 
         return qry.rows()[0].res as Integer
@@ -414,7 +415,8 @@ class VerticaTable extends TableDataset {
         oraTable.field.each { oraField ->
             def field = oraField.clone() as Field
             field.typeName = null
-            ProcessOracleField(field, allowClob, allowNumericWithoutLength, convertToUtf)
+            field.columnClassName = null
+            ProcessOracleField(field/*, allowClob, allowNumericWithoutLength, convertToUtf*/)
             ProcessOtherField(field, allowClob, allowNumericWithoutLength, convertToUtf)
             res << field
         }
@@ -461,8 +463,8 @@ class VerticaTable extends TableDataset {
      * @param allowNumericWithoutLength convert numeric fields with no length specified
      * @param convertToUtf convert length of text fields to store utf 8 encoding
      */
-    static void ProcessOracleField(Field field, Boolean allowClob = true,
-                                           Boolean allowNumericWithoutLength = true, Boolean convertToUtf = true) {
+    static void ProcessOracleField(Field field/*, Boolean allowClob = true,
+                                           Boolean allowNumericWithoutLength = true, Boolean convertToUtf = true*/) {
         if (field.type == Field.numericFieldType) {
             if ((field.precision ?: 0) == 0) {
                 if (field.name.matches('(?i).+[_]ID')) {
@@ -548,14 +550,14 @@ class VerticaTable extends TableDataset {
             importParams = [:]
 
         def convertToUtf = BoolUtils.IsValue(importParams.convertToUtf, true)
-        def allowClob = BoolUtils.IsValue(importParams.allowClob, true)
-        def allowNumericWithoutLength = BoolUtils.IsValue(importParams.allowNumericWithoutLength , true)
+        /*def allowClob = BoolUtils.IsValue(importParams.allowClob, true)
+        def allowNumericWithoutLength = BoolUtils.IsValue(importParams.allowNumericWithoutLength , true)*/
 
         def isOracle = (dataset instanceof OracleTable)
 
         field.each { field ->
             if (isOracle)
-                ProcessOracleField(field, allowClob, allowNumericWithoutLength, convertToUtf)
+                ProcessOracleField(field/*, allowClob, allowNumericWithoutLength, convertToUtf*/)
 
             ProcessOtherField(field, convertToUtf)
         }

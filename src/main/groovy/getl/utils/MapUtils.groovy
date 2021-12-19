@@ -1056,7 +1056,7 @@ class MapUtils {
 	 */
 	static Map Clone(Map map) {
 		if (map == null) return null
-		def res = map.getClass().newInstance() as Map
+		def res = map.getClass().getDeclaredConstructor().newInstance() as Map
 		map.each { k, v ->
 			if (v instanceof Map)
 				res.put(k, Clone(v))

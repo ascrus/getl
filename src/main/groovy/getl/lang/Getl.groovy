@@ -168,7 +168,7 @@ Examples:
             def propPath = new File('.')
             def propFile = new File('getl-test-properties.conf')
             def path = FileUtils.ConvertToUnixPath(propPath.absolutePath)
-            if (!propFile.exists() && path.matches('.+/src/main/[.]')) {
+            if (!propFile.exists() && (path.matches('.+/src/main/[.]') || path.matches('.+/src/test/[.]'))) {
                 propPath = new File(StringUtils.LeftStr(path, path.length() - 11))
                 propFile = new File(propPath.path + '/' + 'getl-test-properties.conf')
             }
@@ -282,7 +282,7 @@ Examples:
                     runClass = launcher?:Getl
                 }
 
-                eng = runClass.newInstance() as Getl
+                eng = runClass.getDeclaredConstructor().newInstance() as Getl
                 eng.configuration.manager.init(jobArgs)
                 if (jobArgs.vars != null)
                     eng.configVars.putAll(jobArgs.vars as Map)
@@ -380,22 +380,32 @@ Examples:
         if (extProp == null)
             extProp = [:] as Map<String, Object>
 
+        File configFile
+        String configFilePath
+
         options {
             if (autoInitFromConfig) {
-                if (loadProperties)
-                    loadProjectProperties(instance.configuration.environment, extProp.filename as String)
+                if (loadProperties) {
+                    configFile = loadProjectProperties(instance.configuration.environment, extProp.filename as String)
+                    configFilePath = FileUtils.PathFromFile(configFile.canonicalPath)
+                }
                 if (!extProp?.isEmpty())
                     MapUtils.MergeMap(options.getlConfigProperties,
                             MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
 
                 logFinest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
                 if (unitTestMode)
-                    logFine('Unit tests allowed')
+                    logWarn('Used to work in unit testing mode!')
 
                 def procs = [:] as Map<String, Closure>
                 procs.logging = { Map<String, Object> en ->
+                    if (en.logConsoleLevel != null) {
+                        logging.logConsoleLevel = Logs.ObjectToLevel(en.logConsoleLevel)
+                        logFine("Logging to console is done starting from level ${logging.logConsoleLevel}")
+                    }
+
                     if (en.logFileLevel != null) {
-                        logging.logFileLevel = Logs.StrToLevel(en.logFileLevel as String)
+                        logging.logFileLevel = Logs.ObjectToLevel(en.logFileLevel)
                         logFine("Logging to file is done starting from level ${logging.logFileLevel}")
                     }
 
@@ -458,7 +468,13 @@ Examples:
                         }
 
                         if (en.path != null) {
-                            storagePath = en.path as String
+                            def sp = en.path as String
+                            if (sp == '.')
+                                storagePath = configFilePath
+                            else if (sp.matches('[.][/].+'))
+                                storagePath = configFilePath + sp.substring(1)
+                            else
+                                storagePath = sp
                             autoLoadFromStorage = true
                             logFine("Path to repository objects: ${storagePath()}")
                         }
@@ -529,7 +545,7 @@ Examples:
                             logFine("Enabled output of profiling results to the log")
 
                         if (en.level != null) {
-                            processTimeLevelLog = en.level as Level
+                            processTimeLevelLog = Logs.ObjectToLevel(en.level)
                             if (processTimeLevelLog)
                                 logFine("Output profiling messages with level $processTimeLevelLog")
                         }
@@ -542,7 +558,7 @@ Examples:
                     }
 
                     if (en.sqlEchoLevel != null) {
-                        sqlEchoLogLevel = en.sqlEchoLevel as Level
+                        sqlEchoLogLevel = Logs.ObjectToLevel(en.sqlEchoLevel)
                         if (sqlEchoLogLevel)
                             logFine("SQL command echo is logged with level $sqlEchoLogLevel")
                     }
@@ -812,7 +828,7 @@ Examples:
     /** Clean Getl instance */
     static void CleanGetl(Boolean softClean = false) {
         if (softClean && _getl != null) {
-            _getl = _getl.getClass().newInstance()
+            _getl = _getl.getClass().getDeclaredConstructor().newInstance()
             _getl._getlInstance = true
             _getl.setGetlSystemParameter('mainInstance', _getl)
         }
@@ -956,13 +972,17 @@ Examples:
     }
 
     /** Repository object name */
-    String repObjectName(String name, Boolean checkName = false) {
-        _repositoryFilter.objectName(name, checkName)
+    String repObjectName(String name, Boolean needObjectName = true) {
+        def names = _repositoryFilter.parseName(name, false)
+        if (needObjectName && names.objectName == null)
+            throw new ExceptionDSL("Invalid object name \"$name\"!")
+
+        return names.name
     }
 
     /** Parsing the name of an object from the repository into a group and the name itself */
-    ParseObjectName parseName(String name) {
-        _repositoryFilter.parseName(name)
+    ParseObjectName parseName(String name, Boolean isMaskName = false) {
+        _repositoryFilter.parseName(name, isMaskName)
     }
 
     /** Replace the group name with the one specified for the object name */
@@ -2175,7 +2195,7 @@ Examples:
 
         Script script
         synchronized (_lockMainThread) {
-            script = groovyClass.newInstance() as Script
+            script = groovyClass.getDeclaredConstructor().newInstance() as Script
         }
         def res = runGroovyInstance(script, true, vars, extVars)
 
@@ -2509,7 +2529,7 @@ Examples:
      * @return
      */
     Getl useScript(Class<Getl> scriptClass, Map vars = [:], Map extVars = null) {
-        def script = scriptClass.newInstance() as Getl
+        def script = scriptClass.getDeclaredConstructor().newInstance() as Getl
         return useScript(script, vars, extVars)
     }
 
@@ -3952,7 +3972,8 @@ Examples:
     QueryDataset sqlQuery(JDBCConnection connection, String sql, Map vars = null) {
         def parent = query(connection)
         parent.query = sql
-        if (vars != null) parent.queryParams.putAll(vars)
+        if (vars != null)
+            parent.setAttributes(vars)
 
         return parent
     }

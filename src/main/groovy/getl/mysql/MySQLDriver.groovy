@@ -2,9 +2,14 @@ package getl.mysql
 
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.utils.ListUtils
+import getl.utils.Path
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
+
+import java.sql.ResultSet
 
 /**
  * MySQL driver class
@@ -25,6 +30,7 @@ class MySQLDriver extends JDBCDriver {
 
         localTemporaryTablePrefix = 'TEMPORARY'
 		supportLocalTemporaryRetrieveFields = false
+		defaultSchemaFromConnectDatabase = true
 
 		sqlExpressions.convertTextToTimestamp = 'CAST(\'{value}\' AS datetime)'
 		sqlExpressions.sysDualTable = 'DUAL'
@@ -34,18 +40,19 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.BLOB, Driver.Support.CLOB,
-				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN,
-				 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
+				[Support.LOCAL_TEMPORARY, Support.BLOB, Support.CLOB, Support.INDEX, Support.START_TRANSACTION,
+				 Support.TIME, Support.DATE, Support.BOOLEAN, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
+				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST] -
+				[Support.SELECT_WITHOUT_FROM/*, Support.CHECK_FIELD*/] /* TODO : Valid CHECK on new version! */
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
+	/*@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
 				 Driver.Operation.CREATE]
-	}
+	}*/
 
 	@Override
 	protected Map getConnectProperty() {
@@ -63,8 +70,8 @@ class MySQLDriver extends JDBCDriver {
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	Map getSqlType () {
-		Map res = super.getSqlType()
+	Map<String, Map<String, Object>> getSqlType () {
+		def res = super.getSqlType()
 		res.BLOB.name = 'blob'
 		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.TEXT.name = 'text'
@@ -110,15 +117,35 @@ class MySQLDriver extends JDBCDriver {
 	void prepareField (Field field) {
 		super.prepareField(field)
 
-		if (field.type == Field.Type.BLOB) {
+		if (field.type == Field.blobFieldType) {
 			field.length = null
 			field.precision = null
 			return
 		}
 
+		if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate') {
+			field.getMethod = '({field} as java.time.LocalDate).toDate().toTimestamp()'
+			return
+		}
+
+		if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime') {
+			field.getMethod = '({field} as java.time.LocalTime).toDate().toTimestamp()'
+			return
+		}
+
+		if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime') {
+			field.getMethod = '({field} as java.time.LocalDateTime).toDate().toTimestamp()'
+			return
+		}
+
+		if (field.type == Field.timestamp_with_timezoneFieldType && field.columnClassName == 'java.time.OffsetDateTime') {
+			field.getMethod = '({field} as java.time.OffsetDateTime).toDate().toTimestamp()'
+			return
+		}
+
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)TEXT")) {
-				field.type = Field.Type.TEXT
+				field.type = Field.textFieldType
 				field.dbType = java.sql.Types.CLOB
 				field.length = null
 				field.precision = null
@@ -142,5 +169,15 @@ class MySQLDriver extends JDBCDriver {
 		def names = super.prepareForRetrieveFields(dataset)
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 		return names
+	}
+
+	@Override
+	protected ResultSet readPrimaryKey(Map<String, String> names) {
+		return sqlConnect.connection.metaData.getPrimaryKeys(names.dbName?:names.schemaName, names.schemaName, names.tableName)
+	}
+
+	@Override
+	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
+		retrieveCatalogs(masks)
 	}
 }

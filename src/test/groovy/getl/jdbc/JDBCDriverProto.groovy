@@ -12,6 +12,7 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 
+import java.sql.Time
 import java.sql.Timestamp
 
 /**
@@ -83,7 +84,7 @@ abstract class JDBCDriverProto extends GetlTest {
         if (con != null && useClob) res << new Field(name: 'text', type: 'TEXT', length: 1024)
         if (con != null && useBlob) res << new Field(name: 'data', type: 'BLOB', length: 1024)
 		if (con != null && useUuid) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
-        if (con != null && useArray) res << new Field(name: 'list', type: 'ARRAY', isNull: false, arrayType: 'INT8')
+        if (con != null && useArray) res << new Field(name: 'list', type: 'ARRAY', isNull: false, arrayType: 'INT')
 
         return res
     }
@@ -113,7 +114,9 @@ abstract class JDBCDriverProto extends GetlTest {
     }
 
     protected void createTable() {
+        def fq = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('id1', table)
         table.field = fields
+        table.fieldByName('id1').checkValue = "$fq > 0"
         table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
 			def indexes = [:]
@@ -194,7 +197,7 @@ abstract class JDBCDriverProto extends GetlTest {
 
         tempTable.field = null
         tempTable.retrieveFields()
-        assertEquals(fields*.name*.toLowerCase(), tempTable.field*.name*.toLowerCase())
+        assertEquals(fields*.name*.toLowerCase() as List, tempTable.field*.name*.toLowerCase() as List)
 
         tempTable.drop()
     }
@@ -257,6 +260,7 @@ abstract class JDBCDriverProto extends GetlTest {
 			f.defaultValue = null
 			f.dbType = null
 			f.typeName = null
+            f.columnClassName = null
 
 			if (f.type != Field.Type.NUMERIC) {
 				f.precision = null
@@ -300,8 +304,11 @@ abstract class JDBCDriverProto extends GetlTest {
         createSequence()
 
         def count = new Flow().writeTo(dest: table) { updater ->
+            def fields = table.fieldClone()
+            fields*.isNull = false
+            fields.find { it.name.toLowerCase() == 'id1' }.isKey = true
             (1..countRows).each { num ->
-                Map r = GenerationUtils.GenerateRowValues(table.field, table.currentJDBCConnection.currentJDBCDriver.lengthTextInBytes, num)
+                Map r = GenerationUtils.GenerateRowValues(fields, table.currentJDBCConnection.currentJDBCDriver.lengthTextInBytes, num)
                 if(this.sequence != null)
                     r.id1 = this.sequence.nextValue
 
@@ -411,13 +418,13 @@ abstract class JDBCDriverProto extends GetlTest {
 
 		def i = 0
         table.eachRow(order: ['id1']) { r ->
-            assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' merge', r.name)
-			assertEquals(StringUtils.LeftStr(rows[i].get(descriptionName), 200) + ' merge', r.get(descriptionName))
+            assertEquals(StringUtils.LeftStr(rows[i].name as String, 40) + ' merge', r.name)
+			assertEquals(StringUtils.LeftStr(rows[i].get(descriptionName) as String, 200) + ' merge', r.get(descriptionName))
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
-			if (useDate) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-			if (useTime) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
-            if (useTimestampWithZone) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
+			if (useDate) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date as Date), r.date)
+			if (useTime) assertEquals(Time.valueOf((rows[i].time as Time).toLocalTime().plusSeconds(100)), r.time)
+            if (useTimestampWithZone) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz as Date), r.dtwithtz)
 			if (useBoolean) assertNotNull(r.flag)
 			/*if (useClob) assertNotNull(r.text)
 			if (useBlob) assertNotNull(r.data)*/
@@ -639,15 +646,17 @@ ECHO Run select ...
 /*:select_rows*/
 SELECT * FROM $table_name WHERE $id1Name = 1;
 
-ECHO Run update ...
-/*:count_update*/
-UPDATE $table_name
-SET  $id2Name =  $id2Name
-WHERE $id1Name = 1;
+IF ('{support_update}' = 'true') DO {
+    ECHO Run update ...
+    /*:count_update*/
+    UPDATE $table_name
+    SET  $id2Name =  $id2Name
+    WHERE $id1Name = 1;
 
-ECHO {count_update} rows updated
+    ECHO {count_update} rows updated
+}
 """
-        def scripter = new SQLScripter(connection: table.connection, script: sql)
+        def scripter = new SQLScripter(connection: table.connection, script: sql, vars: [support_update: table.connection.driver.isOperation(Driver.Operation.UPDATE)])
         scripter.runSql(true)
 
         scripter.loadFile('resource:/sql/test_scripter.sql')
@@ -665,6 +674,8 @@ ECHO {count_update} rows updated
         assertTrue(con.connected)
 
         createTable()
+        createView()
+
         retrieveObject()
         retrieveFields()
         if (insertData() > 0) {
@@ -757,7 +768,7 @@ ECHO {count_update} rows updated
         def fp1 = con.currentJDBCDriver.fieldPrefix
         def fp2 = con.currentJDBCDriver.fieldEndPrefix?:fp1
         def table1 = table.cloneDataset() as TableDataset
-        table1.readOpts {where = "${fp1}ID1${fp2} > 0" }
+        table1.readOpts {where = "${table1.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('id1', table1)} > 0" }
         def table2 = table.cloneDataset() as TableDataset
         table2.tap {
             if (con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
@@ -765,8 +776,9 @@ ECHO {count_update} rows updated
                     type = localTemporaryTableType
                     onCommit = true
                 }
+                schemaName = null
             }
-            schemaName = null
+
             tableName = tableName + '_clone'
             drop(ifExists: true)
             createOpts {indexes.clear() }
@@ -801,17 +813,116 @@ ECHO {count_update} rows updated
         def list = con.retrieveCatalogs()
         println "Detect databases: $list"
         if (needCatalog != null)
-            assertTrue(needCatalog in list)
+            assertTrue("Catalog \"$needCatalog\" not in $list", needCatalog.toUpperCase() in list*.toUpperCase())
     }
 
     @Test
-    void testRertieveSchemas() {
+    void testRetrieveSchemas() {
         if (!con.currentJDBCDriver.isSupport(Driver.Support.SCHEMA))
             return
 
         def list = con.retrieveSchemas()
         println "Detect schemas: $list"
         if (con.currentJDBCDriver.defaultSchemaName != null)
-            assertTrue(con.currentJDBCDriver.defaultSchemaName in list)
+            assertTrue(con.currentJDBCDriver.defaultSchemaName.toUpperCase() in list*.toUpperCase())
+    }
+
+    @Test
+    void testCreateDropSchema() {
+        if (!con.currentJDBCDriver.isOperation(Driver.Operation.CREATE_SCHEMA))
+            return
+
+        if (con.currentJDBCDriver.isSupport(Driver.Support.DROPSCHEMAIFEXIST))
+            con.dropSchema('_getl_test_schema', [ifExists: true])
+        else if (con.retrieveSchemas('_getl_test_schema').size() == 1)
+            con.dropSchema('_getl_test_schema')
+        assertEquals(0, con.retrieveSchemas('_getl_test_schema').size())
+
+        con.createSchema('_getl_test_schema')
+        assertEquals(1, con.retrieveSchemas('_getl_test_schema').size())
+        shouldFail { con.createSchema('_getl_test_schema') }
+        if (con.currentJDBCDriver.isSupport(Driver.Support.CREATESCHEMAIFNOTEXIST)) {
+            con.createSchema('_getl_test_schema', [ifNotExists: true])
+            assertEquals(1, con.retrieveSchemas('_getl_test_schema').size())
+        }
+
+        con.dropSchema('_getl_test_schema')
+        assertEquals(0, con.retrieveSchemas('_getl_test_schema').size())
+        shouldFail { con.dropSchema('_getl_test_schema') }
+        if (con.currentJDBCDriver.isSupport(Driver.Support.DROPSCHEMAIFEXIST)) {
+            con.dropSchema('_getl_test_schema', [ifExists: true])
+            assertEquals(0, con.retrieveSchemas('_getl_test_schema').size())
+        }
+    }
+
+    protected void createView() {
+        if (!con.currentJDBCDriver.isSupport(Driver.Support.VIEW))
+            return
+
+        def view = new ViewDataset().tap {
+            useConnection con
+            schemaName = con.schemaName
+            tableName = "v_${table.tableName}"
+            if (exists)
+                drop()
+            createView(select: "SELECT * FROM ${table.fullTableName}")
+            assertTrue(countRow() == 0)
+            assertTrue(exists)
+            shouldFail {
+                createView(select: "SELECT * FROM ${table.fullTableName}")
+            }
+
+            if (con.currentJDBCDriver.isAllowReplaceView())
+                createView(select: "SELECT * FROM ${table.fullTableName}", replace: true)
+
+            drop()
+            shouldFail { drop() }
+            drop(ifExists: true)
+        }
+    }
+
+    @Test
+    void testIncrementFields() {
+        if (!con.currentJDBCDriver.isSupport(Driver.Support.AUTO_INCREMENT))
+            return
+
+        new TableDataset().tap {tab ->
+            setConnection con
+            dbName = defaultDatabase
+            schemaName = defaultSchema
+            tableName = 'test_increment'
+            field('id') { type = integerFieldType; isAutoincrement = true; isKey = true }
+            field('name') { length = 50; isNull = false }
+
+            if (exists)
+                drop()
+
+            create()
+
+            new Flow().writeTo(dest: tab) {add ->
+                (1..10).each { num -> add name: "Name $num" }
+            }
+
+            assertEquals(10, countRow())
+            def num = 0
+            eachRow(order: ['id']) { row ->
+                num++
+                assertEquals(num, row.id)
+                assertEquals("Name $num", row.name)
+            }
+
+            field.clear()
+            retrieveFields()
+            field.each { field ->
+                println field
+            }
+
+            fieldByName('id').tap {
+                assertTrue(isAutoincrement)
+                assertNull(defaultValue)
+            }
+
+            drop()
+        }
     }
 }

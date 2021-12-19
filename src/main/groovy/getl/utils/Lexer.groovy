@@ -614,16 +614,17 @@ class Lexer {
 			if (pos >= cur) {
 				def list = tokens.subList(cur, pos)
 				def listSize = list.size()
-				def i = -1
-				while (i < listSize && list[i + 1].type == TokenType.LINE_FEED)
-					i++
+				if (listSize > 0) {
+					def i = -1
+					while (i < listSize && list[i + 1].type == TokenType.LINE_FEED)
+						i++
 
-				if (i != -1) {
-					if (i < listSize - 1)
-						res.add(list.subList(i + 1, listSize))
+					if (i != -1) {
+						if (i < listSize - 1)
+							res.add(list.subList(i + 1, listSize))
+					} else
+						res.add(list)
 				}
-				else
-					res.add(list)
 			}
 
 			cur = pos + 1
@@ -684,9 +685,9 @@ class Lexer {
 	 * @return script
 	 */
 	@NamedVariant
-	String scriptBuild(Integer start = 0, Integer finish = null, Boolean ignoreComments = false) {
+	String scriptBuild(List<Map> tokens = this.tokens, Integer start = 0, Integer finish = null, Boolean ignoreComments = false) {
 		if (tokens == null)
-			return null
+			tokens = this.tokens
 
 		if (tokens.isEmpty())
 			return ''
@@ -698,7 +699,7 @@ class Lexer {
 			ignoreComments = false
 
 		StringBuilder sb = new StringBuilder()
-		def cur = tokens[0].first as Integer
+		def cur = tokens[start].first as Integer
 		def tokenSize = tokens.size()
 		def last = -1
 		while (start < tokenSize && (finish == null || start <= finish)) {

@@ -169,7 +169,7 @@ class Connection implements Cloneable, GetlRepository {
 
 	/** Create a new dataset object for the current connection */
 	Dataset newDataset() {
-		def ds = datasetClass.newInstance()
+		def ds = datasetClass.getDeclaredConstructor().newInstance()
 		ds.connection = this
 		return ds
 	}
@@ -531,7 +531,7 @@ class Connection implements Cloneable, GetlRepository {
 	Boolean getIsSupportTran() { driver.isSupport(Driver.Support.TRANSACTIONAL) }
 	
 	/** Start transaction */
-	void startTran (Boolean onlyIfSupported = false) {
+	void startTran(Boolean onlyIfSupported = false, Boolean useSqlOperator = false) {
 		if (!isSupportTran) {
 			if (onlyIfSupported)
 				return
@@ -540,7 +540,7 @@ class Connection implements Cloneable, GetlRepository {
 		}
 
 		tryConnect()
-		driver.startTran()
+		driver.startTran(useSqlOperator)
 		tranCount++
 	}
 
@@ -551,7 +551,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/**  Commit transaction */
-	void commitTran (Boolean onlyIfSupported = false) {
+	void commitTran(Boolean onlyIfSupported = false, Boolean useSqlOperator = false) {
 		if (!isSupportTran) {
 			if (onlyIfSupported)
 				return
@@ -560,17 +560,22 @@ class Connection implements Cloneable, GetlRepository {
 		}
 
 		checkEstablishedConnection()
+
 		if (!isTran())
 			throw new ExceptionGETL("Not started transaction for commit operation")
 
-		driver.commitTran()
-		tranCount--
+		try {
+			driver.commitTran(useSqlOperator)
+		}
+		finally {
+			tranCount--
+		}
 	}
 	
 	/**
 	 * Rollback transaction
 	 */
-	void rollbackTran (Boolean onlyIfSupported = false) {
+	void rollbackTran(Boolean onlyIfSupported = false, Boolean useSqlOperator = false) {
 		if (!isSupportTran) {
 			if (onlyIfSupported)
 				return
@@ -583,8 +588,12 @@ class Connection implements Cloneable, GetlRepository {
 		if (!isTran())
 			throw new ExceptionGETL("Not started transaction for rollback operation")
 
-		driver.rollbackTran()
-		tranCount--
+		try {
+			driver.rollbackTran(useSqlOperator)
+		}
+		finally {
+			tranCount--
+		}
 	}
 	
 	/**

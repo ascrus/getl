@@ -180,4 +180,70 @@ class WorkflowTest extends GetlDslTest {
             }
         }
     }
+
+    @Test
+    void testVars() {
+        Getl.Dsl {
+            embeddedConnection('#con', true)
+
+            embeddedTable('#table', true) {
+                useConnection embeddedConnection('#con')
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                create()
+                etl.rowsTo {
+                    writeRow { add ->
+                        (1..10).each { num -> add id: num, name: "Name $num" }
+                    }
+                }
+            }
+
+            query('#query', true) {
+                useConnection embeddedTable('#table').currentJDBCConnection
+                query = 'SELECT * FROM {table} WHERE id = {id}'
+                queryParams.table = embeddedTable('#table').tableName
+                queryParams.id = 1
+
+                def testRows = rows()
+                assertEquals(1, testRows.size())
+                assertEquals(1, testRows[0].id)
+                assertEquals('Name 1', testRows[0].name)
+
+                queryParams.table = null
+            }
+
+            models.setOfTables('#model', true) {
+                useSourceConnection embeddedTable('#table').connection
+                table(embeddedTable('#table')) {
+                    partitionsDataset = query('#query')
+                    objectVars.id = 2
+                }
+            }
+
+            models.workflow('#workflow', true) {
+                start {
+                    exec('test') {
+                        className = 'getl.models.WorkflowTestVar'
+                        vars.model = models.setOfTables('#model')
+                        vars.param_id = 3
+                    }
+                }
+
+                execute([param_id: 4])
+                assertEquals(4, result('test').id)
+
+                execute()
+                assertEquals(3, result('test').id)
+
+                script('test').vars.param_id = null
+                execute()
+                assertEquals(2, result('test').id)
+
+
+                models.setOfTables('#model').table('#table').objectVars.id = null
+                execute()
+                assertEquals(1, result('test').id)
+            }
+        }
+    }
 }

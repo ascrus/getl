@@ -33,6 +33,8 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
 		methodParams.register('createView', ['privileges'])
+		methodParams.register('createSchema', ['authorization', 'privileges'])
+		methodParams.register('dropSchema', ['cascade'])
 	}
 
 	@Override
@@ -45,12 +47,14 @@ class VerticaDriver extends JDBCDriver {
 		lengthTextInBytes = true
         addPKFieldsToUpdateStatementFromMerge = true
 
-		sqlExpressions.ddlCreateView = '{create} {temporary} VIEW {name} {privileges} AS\n{select}'
+		sqlExpressions.ddlCreateView = '{create}{ %temporary%} VIEW{ %ifNotExists%} {name}{ %privileges% SCHEMA PRIVILEGES} AS\n{select}'
+		sqlExpressions.ddlCreateSchema = 'CREATE SCHEMA{ %ifNotExists%} {schema}{ AUTHORIZATION %authorization%}{ DEFAULT %privileges% SCHEMA PRIVILEGES}'
+		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
 	}
 
     @Override
-    Map getSqlType () {
-        Map res = super.getSqlType()
+	Map<String, Map<String, Object>> getSqlType () {
+        def res = super.getSqlType()
         res.DOUBLE.name = 'double precision'
         res.BLOB.name = 'varbinary'
         res.TEXT.name = 'long varchar'
@@ -58,23 +62,26 @@ class VerticaDriver extends JDBCDriver {
         return res
     }
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Driver.Support> supported() {
+	List<Support> supported() {
         return super.supported() +
-				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
-                 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
-				 Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.BOOLEAN, /*Driver.Support.ARRAY,*/
-                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.BULKLOADMANYFILES]
+				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE,
+                 Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE,
+				 Support.TIMESTAMP_WITH_TIMEZONE, Support.BOOLEAN,
+                 Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
+				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
+				 Support.BULKLOADMANYFILES, Support.START_TRANSACTION
+				 /*,Driver.Support.ARRAY*/]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
-        return super.operations() +
-                [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
-				 Driver.Operation.CREATE, Driver.Operation.BULKLOAD, Driver.Operation.CREATE_SCHEMA]
+		return super.operations() + [Driver.Operation.BULKLOAD]
     }
+
+	@Override
+	Boolean timestamptzReadAsTimestamp() { return true }
 
 	@Override
 	String defaultConnectURL () {
@@ -622,42 +629,49 @@ class VerticaDriver extends JDBCDriver {
 		return res
 	}
 
-	@Override
-	void createSchema(String schemaName, Map<String, Object> createParams) {
-		def p = [] as List<String>
-		String ifNotExists = null
-		if (createParams != null) {
-			if (BoolUtils.IsValue(createParams.ifNotExists))
-				ifNotExists = 'IF NOT EXISTS'
-			if (createParams.containsKey('authorization'))
-				p.add("AUTHORIZATION ${createParams.authorization}")
-			if (createParams.containsKey('privileges'))
-				p.add("DEFAULT ${createParams.privileges} SCHEMA PRIVILEGES")
-		}
-		jdbcConnection.executeCommand('CREATE SCHEMA{ %if_not_exists%} {schema} {options}',
-				[queryParams: [schema: schemaName, if_not_exists: ifNotExists, options: p.join(' ')]])
+	/** Check default privileges type */
+	private String checkPrivelegesType(String privileges, String objectName) {
+		if (privileges == null)
+			return null
+
+		privileges = privileges.toUpperCase()
+		if (!(privileges in ['INCLUDE', 'EXCLUDE']))
+			throw new ExceptionGETL("Invalid default privilege option \"$privileges\" for \"$objectName\"!")
+
+		return privileges
 	}
 
 	@Override
-	void dropSchema(String schemaName, Map<String, Object> dropParams) {
-		def p = [] as List<String>
-		def ifExists = null
-		if (dropParams != null) {
-			if (BoolUtils.IsValue(dropParams.ifExists))
-				ifExists = 'IF EXISTS'
-			if (BoolUtils.IsValue(dropParams.cascade))
-				p.add('CASCADE')
-		}
-		jdbcConnection.executeCommand('DROP SCHEMA{ %if_exists%} {schema} {options}',
-				[queryParams: [schema: schemaName, if_exists: ifExists, options: p.join(' ')]])
+	protected Map<String, Object> createSchemaParams(String schemaName, Map<String, Object> createParams) {
+		def res = super.createSchemaParams(schemaName, createParams)
+
+		def authorization = createParams.authorization as String
+		if (authorization != null)
+			res.authorization = prepareObjectNameWithPrefix(authorization, '"')
+
+		def privileges = createParams.privileges as String
+		if (privileges != null)
+			res.privileges = checkPrivelegesType(privileges, schemaName)
+
+		return res
 	}
 
 	@Override
-	protected Map<String, Object> createViewParams(ViewDataset dataset, Map procParams) {
-		def res = super.createViewParams(dataset, procParams)
+	protected Map<String, Object> dropSchemaParams(String schemaName, Map<String, Object> dropParams) {
+		def res = super.dropSchemaParams(schemaName, dropParams)
+		if (BoolUtils.IsValue(dropParams.cascade))
+			res.cascade = 'CASCADE'
 
-		def privileges = procParams.privileges as String
-		res.privileges = (privileges != null)?"${privileges.toUpperCase()} SCHEMA PRIVILEGES":''
+		return res
+	}
+
+	@Override
+	protected Map<String, Object> createViewParams(ViewDataset dataset, Map<String, Object> createParams) {
+		def res = super.createViewParams(dataset, createParams)
+
+		def privileges = createParams.privileges as String
+		if (privileges != null)
+			res.privileges = checkPrivelegesType(privileges, dataset.objectName)
 
 		return res
 	}

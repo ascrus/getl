@@ -617,8 +617,8 @@ abstract class FileListProcessing implements GetlRepository {
                     inMemory: false,
                     connectProperty: [
                             LOCK_MODE: 3,
-                            LOG: 0,
-                            UNDO_LOG: 0,
+                            /*LOG: 0,
+                            UNDO_LOG: 0,*/
                             MAX_LOG_SIZE: 0,
                             WRITE_DELAY: 6000,
                             PAGE_SIZE: 8192,

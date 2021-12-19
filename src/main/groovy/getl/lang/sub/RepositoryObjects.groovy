@@ -101,7 +101,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         def res = [] as List<String>
 
-        def maskNames = _dslCreator.parseName(mask)
+        def maskNames = _dslCreator.parseName(mask, true)
         def maskGroup = maskNames.groupName
         def maskObject = maskNames.objectName
         def groupPath = (maskGroup != null)?new Path(mask: maskGroup):null
@@ -109,7 +109,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         synchronized (objects) {
             objects.each { name, obj ->
-                def names = new ParseObjectName(name)
+                def names = ParseObjectName.Parse(name, false)
                 if (groupPath != null) {
                     if (names.groupName != null && groupPath.match(names.groupName))
                         if (objectPath == null || objectPath.match(names.objectName))
@@ -247,7 +247,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         }
 
         validExist = BoolUtils.IsValue(validExist, true)
-        def repName = _dslCreator.repObjectName(name, true)
+        def repName = _dslCreator.repObjectName(name)
 
         synchronized (objects) {
             if (validExist) {
@@ -330,7 +330,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        def repName = _dslCreator.repObjectName(name, registration)
+        def repName = _dslCreator.repObjectName(name)
         def isTemporary = (repName[0] == '#')
         def isThread = _dslCreator.options.useThreadModelCloning &&
                 cloneInThread && Getl.IsCurrentProcessInThread(true)

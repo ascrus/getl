@@ -58,6 +58,11 @@ class LogSpec extends BaseSpec {
     /** The level of message logging to a file (default INFO) */
     void setLogFileLevel(Level value) { manager.logFileLevel = value }
 
+    /** The level of message logging to a file (default FINEST) */
+    Level getLogConsoleLevel() { manager.logConsoleLevel }
+    /** The level of message logging to a file (default FINEST) */
+    void setLogConsoleLevel(Level value) { manager.logConsoleLevel = value }
+
     /**
      * Print stack trace for error
      */

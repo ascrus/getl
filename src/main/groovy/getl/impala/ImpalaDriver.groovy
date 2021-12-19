@@ -42,7 +42,10 @@ class ImpalaDriver extends JDBCDriver {
         connectionParamBegin = ';'
         connectionParamJoin = ';'
 
+        createViewTypes = ['CREATE']
+
         syntaxPartitionKeyInColumns = false
+        defaultSchemaFromConnectDatabase = true
 
         defaultTransactionIsolation = Connection.TRANSACTION_READ_UNCOMMITTED
 
@@ -55,19 +58,18 @@ class ImpalaDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-                [Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST,
+                [Driver.Support.BOOLEAN,
+                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
                  Driver.Support.EXTERNAL, Driver.Support.BULKLOADMANYFILES] -
-                [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
-                 Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
+                [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD,
+                 Driver.Support.SELECT_WITHOUT_FROM]
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() {
-        return super.operations() +
-                [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
-                 Driver.Operation.CREATE/*, Driver.Operation.BULKLOAD*/] -
-                [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
+        /* TODO: Fixed bug bulk load to Impala */
+        return super.operations() /*+ [Driver.Operation.BULKLOAD]*/ - [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
@@ -77,8 +79,8 @@ class ImpalaDriver extends JDBCDriver {
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
-    Map getSqlType () {
-        Map res = super.getSqlType()
+    Map<String, Map<String, Object>> getSqlType () {
+        def res = super.getSqlType()
         res.STRING.name = 'string'
         res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
         res.DOUBLE.name = 'double'

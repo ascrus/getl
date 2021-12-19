@@ -860,59 +860,6 @@ ORDER BY t1.id"""
     }
 
     @Test
-    void test06GenerateDslTables() {
-        Dsl(this) {
-            forGroup  'getl.testdsl.h2'
-
-            def tempDir = TFS.systemPath + '/dsl/generate'
-            FileUtils.ValidPath(tempDir)
-            def scriptFile = "$tempDir/script.groovy"
-            FileUtils.ValidFilePath(scriptFile)
-            def resourceDir = "$tempDir/resources"
-            FileUtils.ValidPath(resourceDir)
-            FileUtils.ListResourcePath << resourceDir
-
-            embeddedConnection('h2').generateDslTables {
-                packageName = 'getl.tables.pub'
-                connectionName = 'getl.testdsl.h2:h2'
-                groupName = 'getl.testdsl.temp'
-                defineFields = true
-                createTables = true
-                dropTables = true
-                listTableSavedData = [this.h2TableName]
-                scriptPath = scriptFile
-                overwriteScript = true
-                resourcePath = resourceDir
-                tableMask = 'table*_dsl_test'
-                listTableExcluded = ['FILE_MANAGER_*']
-
-                filter {
-                    (it.tableName as String)?.toLowerCase() != 'historytable'
-                }
-            }
-
-            def scriptTable1 = new File(scriptFile)
-            assertTrue(scriptTable1.exists())
-//            println scriptTable1.text
-
-            try {
-                runGroovyScriptFile(scriptFile) { createTables = true }
-                assertEquals(2, listJdbcTables('getl.testdsl.temp:').size())
-                embeddedTable("getl.testdsl.temp:${this.h2TableName}") {
-                    assertTrue(exists)
-                    assertEquals(this.table1_rows, countRow())
-                }
-                embeddedTable("getl.testdsl.temp:${this.h2Table2Name}") {
-                    assertTrue(exists)
-                }
-            }
-            finally {
-                FileUtils.DeleteFolder(TFS.systemPath + '/dsl', true)
-            }
-        }
-    }
-
-    @Test
     void test99_01UnregisterObjects() {
         Dsl(this) {
             testCase {

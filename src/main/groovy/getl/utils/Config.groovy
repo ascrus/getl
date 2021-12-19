@@ -95,7 +95,7 @@ class Config {
 	/** Init configuration */
 	static void Init(Map initParams) {
 		if ((initParams.config as Map)?.manager != null) {
-            configClassManager = Class.forName((initParams.config as Map).manager as String).newInstance() as ConfigManager
+            configClassManager = Class.forName((initParams.config as Map).manager as String).getDeclaredConstructor().newInstance() as ConfigManager
             Logs.Config("config: use ${configClassManager.getClass().name} class for config manager")
         }
 

@@ -33,17 +33,17 @@ class NetezzaDriver extends JDBCDriver {
                  Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
     }
 
-    @SuppressWarnings("UnnecessaryQualifiedReference")
+    /*@SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
                  Driver.Operation.CREATE]
-    }
+    }*/
 
     @Override
-    Map getSqlType () {
-        Map res = super.getSqlType()
+    Map<String, Map<String, Object>> getSqlType () {
+        def res = super.getSqlType()
         res.DOUBLE.name = 'double precision'
         res.BLOB.name = 'varbinary'
         res.NUMERIC.name = 'numeric'

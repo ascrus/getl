@@ -80,7 +80,7 @@ class GetlDslTest extends GetlTest {
         }
     }
 
-    @BeforeClass
+    /*@BeforeClass
     static void InitDslTestClass() {
         Getl.CleanGetl()
     }
@@ -88,7 +88,7 @@ class GetlDslTest extends GetlTest {
     @AfterClass
     static void DoneDslTestClass() {
         Getl.CleanGetl()
-    }
+    }*/
 
     /** Status init script */
     private Boolean initWasRun = false
@@ -107,7 +107,7 @@ class GetlDslTest extends GetlTest {
         }
 
         if (!Getl.GetlInstanceCreated()) {
-            def eng = useGetlClass().newInstance()
+            def eng = useGetlClass().getDeclaredConstructor().newInstance()
             Getl.GetlSetInstance(eng)
             eng.options.autoInitFromConfig = autoLoadProperties()
         }

@@ -32,7 +32,7 @@ class ProcessTime {
 			this.name = params.className
 
 		if (params.logLevel != null)
-			logLevel = Logs.StrToLevel(params.logLevel as String)
+			logLevel = Logs.ObjectToLevel(params.logLevel)
 
 		if (params.objectName != null)
 			objectName = params.objectName
@@ -52,7 +52,7 @@ class ProcessTime {
 	private Getl dslCreator
 
 	static public java.util.logging.Level LogLevelDefault = Level.FINER
-    static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
+    static void SetLogLevelDefault (Object level) { LogLevelDefault = Logs.ObjectToLevel(level) }
 	static public Boolean debugDefault = false
 
 	/** Current logger */
@@ -94,7 +94,7 @@ class ProcessTime {
 
 		if (conf != null) {
 			if (conf.level != null && logLevel == null)
-				logLevel = Logs.StrToLevel(conf.level as String)
+				logLevel = Logs.ObjectToLevel(conf.level)
 			if (conf.debug != null)
 				debug = conf.debug
 		}

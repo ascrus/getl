@@ -1,6 +1,7 @@
+//file:noinspection unused
 package getl.jdbc.opts
 
-import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCDataset
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
@@ -39,6 +40,25 @@ class CreateSpec extends BaseSpec {
     void setIndexes(Map<String, Object> value) {
         indexes.clear()
         if (value != null) indexes.putAll(value)
+    }
+    /** Indexes by table */
+    void assignIndexes(Map<String, Object> value) {
+        indexes.clear()
+        (value as Map<String, Map<String, Object>>)?.each { indexName, indexParams ->
+            def par = [:] as Map<String, Object>
+            indexParams.each { name, param ->
+                if (name == 'columns') {
+                    if (!(param instanceof List)) {
+                        if (param instanceof String)
+                            param = (param as String).split('\\|').toList()
+                        else
+                            throw new ExceptionGETL("Invalid type of propery \"columns\" from \"$name\" index!")
+                    }
+                }
+                par.put(name, param)
+            }
+            indexes.put(indexName, par)
+        }
     }
 
     /** Create hash primary key */

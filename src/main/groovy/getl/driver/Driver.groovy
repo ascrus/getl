@@ -29,29 +29,30 @@ abstract class Driver {
 	static enum Support {
 		CONNECT, TRANSACTIONAL, SQL, MULTIDATABASE,
 		LOCAL_TEMPORARY, GLOBAL_TEMPORARY, MEMORY, EXTERNAL, SEQUENCE,
-		BATCH, CREATEIFNOTEXIST, DROPIFEXIST, EACHROW, WRITE,
-		AUTOLOADSCHEMA, AUTOSAVESCHEMA, BULKLOADMANYFILES, INDEX,
-		NOT_NULL_FIELD, PRIMARY_KEY, DEFAULT_VALUE, COMPUTE_FIELD,
+		BATCH, CREATEIFNOTEXIST, DROPIFEXIST, CREATESCHEMAIFNOTEXIST, DROPSCHEMAIFEXIST,
+		EACHROW, WRITE, AUTOLOADSCHEMA, AUTOSAVESCHEMA, BULKLOADMANYFILES, INDEX,
+		NOT_NULL_FIELD, PRIMARY_KEY, DEFAULT_VALUE, CHECK_FIELD, COMPUTE_FIELD,
 		VIEW, SCHEMA, DATABASE, SELECT_WITHOUT_FROM,
-		TIMESTAMP, DATE, TIME, TIMESTAMP_WITH_TIMEZONE, BOOLEAN, BLOB, CLOB, UUID, ARRAY
+		TIMESTAMP, DATE, TIME, TIMESTAMP_WITH_TIMEZONE, BOOLEAN,
+		BLOB, CLOB, UUID, ARRAY, START_TRANSACTION, AUTO_INCREMENT
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	abstract List<Driver.Support> supported ()
+	abstract List<Support> supported()
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	Boolean isSupport(Driver.Support feature) {
+	Boolean isSupport(Support feature) {
 		(supported().indexOf(feature) != -1)
 	}
 
 	@SuppressWarnings('SpellCheckingInspection')
     static enum Operation {
 		CREATE, DROP, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE,
-		READ_METADATA, TRUNCATE, CREATE_SCHEMA, DROP_SCHEMA
+		READ_METADATA, TRUNCATE, CREATE_SCHEMA, CREATE_VIEW
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	abstract List<Driver.Operation> operations ()
+	abstract List<Driver.Operation> operations()
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	Boolean isOperation(Driver.Operation operation) {
@@ -76,55 +77,56 @@ abstract class Driver {
 	/**
 	 * Initialization parameters
 	 */
-	protected void initParams() { }
+	protected void initParams(){ }
 
-    void prepareField (Field field) { }
+    void prepareField(Field field) { }
 
     abstract Boolean isConnected()
 
-    abstract void connect ()
+    abstract void connect()
 
-    abstract void disconnect ()
+    abstract void disconnect()
 
-    abstract List<Object> retrieveObjects (Map params, Closure<Boolean> filter)
+    abstract List<Object> retrieveObjects(Map params, Closure<Boolean> filter)
 
-    abstract  List<Field> fields (Dataset dataset)
+    abstract  List<Field> fields(Dataset dataset)
 
-    abstract void startTran ()
+    abstract void startTran(Boolean useSqlOperator = false)
 
-    abstract void commitTran ()
+    abstract void commitTran(Boolean useSqlOperator = false)
 
-    abstract void rollbackTran ()
+    abstract void rollbackTran(Boolean useSqlOperator = false)
 
-    abstract void createDataset (Dataset dataset, Map params)
+    abstract void createDataset(Dataset dataset, Map params)
 
-    void dropDataset (Dataset dataset, Map params) {
+    void dropDataset(Dataset dataset, Map params) {
 		if (dataset.isAutoSchema() && !isResourceFileNameSchema(dataset)) {
 			def name = fullFileNameSchema(dataset)
 			if (name != null) {
 				def s = new File(name)
-				if (s.exists()) s.delete()
+				if (s.exists())
+					s.delete()
 			}
 		}
 	}
 
-    abstract Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
+    abstract Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code)
 
     abstract void openWrite(Dataset dataset, Map params, Closure prepareCode)
 
-    abstract void write (Dataset dataset, Map row)
+    abstract void write(Dataset dataset, Map row)
 
-    abstract void doneWrite (Dataset dataset)
+    abstract void doneWrite(Dataset dataset)
 
-    abstract void closeWrite (Dataset dataset)
+    abstract void closeWrite(Dataset dataset)
 
 	void cleanWrite(Dataset dataset) { }
 
-    abstract void bulkLoadFile (CSVDataset source, Dataset dest, Map params, Closure prepareCode)
+    abstract void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode)
 
-    abstract void clearDataset (Dataset dataset, Map params)
+    abstract void clearDataset(Dataset dataset, Map params)
 
-    abstract Long executeCommand (String command, Map params)
+    abstract Long executeCommand(String command, Map params)
 
     abstract Long getSequence(String sequenceName)
 	

@@ -1,3 +1,4 @@
+//file:noinspection UnnecessaryQualifiedReference
 package getl.utils
 
 import getl.data.*
@@ -11,9 +12,6 @@ import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
 import org.codehaus.groovy.control.CompilerConfiguration
 
-import java.sql.Time
-import java.sql.Timestamp
-
 /**
  * Generation code library functions class 
  * @author Alexsey Konstantinov
@@ -26,14 +24,14 @@ class GenerationUtils {
 	static public final def EMPTY_CLOB = null
 	static public final Boolean EMPTY_BOOLEAN = null
 	static public final Date EMPTY_DATE = null
-	static public final Timestamp EMPTY_DATETIME = null
+	static public final java.sql.Timestamp EMPTY_DATETIME = null
 	static public final Double EMPTY_DOUBLE = null
 	static public final Integer EMPTY_INTEGER = null
 	static public final BigDecimal EMPTY_NUMERIC = null
 	static public final def EMPTY_OBJECT = null
 	static public final String EMPTY_STRING = null
 	static public final def EMPTY_TEXT = null
-	static public final Time EMPTY_TIME = null
+	static public final java.sql.Time EMPTY_TIME = null
 
 	/**
 	 * Convert string alias as a modifier to access the value of field
@@ -1136,13 +1134,13 @@ $body
 				result = GenerateDouble()
 				break
 			case Field.dateFieldType:
-				result = new Timestamp(GenerateDate().time)
+				result = new java.sql.Date(GenerateDate().time)
 				break
 			case Field.timeFieldType:
-				result = new Timestamp(GenerateDate().time)
+				result = new java.sql.Time(GenerateDate().time)
 				break
 			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-				result = new Timestamp(GenerateDateTime().time)
+				result = new java.sql.Timestamp(GenerateDateTime().time)
 				break
             case Field.textFieldType:
 				result = GenerateString((l < 65536)?l:65536)
@@ -1725,6 +1723,7 @@ sb << """
 		if (len != null) field.length = len
 		field.precision = null
 		field.typeName = null
+		field.columnClassName = null
 	}
 	
 	/**
@@ -1931,24 +1930,34 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, Boolean sourceIsMap = false) {
-		if (!driver.isConnected()) driver.connect()
+	static Map<String, Object> GenerateRowCopy(JDBCDriver driver, List<Field> fields, Boolean sourceIsMap = false) {
+		if (!driver.isConnected())
+			driver.connect()
+
+		def getSourceMethod = (sourceIsMap)?'get':'getAt'
 
 		StringBuilder sb = new StringBuilder()
-		sb << "{ java.sql.Connection connection, ${(sourceIsMap)?'Map<String, Object>':'groovy.sql.GroovyResultSet'} inRow, Map<String, Object> outRow -> methodRowCopy(connection, inRow, outRow) }\n"
+		sb << "Closure code = { java.sql.Connection connection, ${(sourceIsMap)?'Map':'groovy.sql.GroovyResultSet'} inRow, Map outRow -> methodRowCopy(connection, inRow, outRow) }\n"
 		sb << '\n@groovy.transform.CompileStatic\n'
-		sb << "void methodRowCopy(java.sql.Connection connection, ${(sourceIsMap)?'Map<String, Object>':'groovy.sql.GroovyResultSet'} inRow, Map<String, Object> outRow) {\n"
+		sb << "void methodRowCopy(java.sql.Connection connection, ${(sourceIsMap)?'Map':'groovy.sql.GroovyResultSet'} inRow, Map outRow) {\n"
 		def i = 0
 		fields.each { Field f ->
 			i++
 
 			def fName = f.name.toLowerCase().replace("'", "\\'")
 
-			sb << "	def _getl_temp_var_$i = inRow.getAt('$fName')\n"
+			sb << "	def _getl_temp_var_$i = inRow.${getSourceMethod}('$fName')\n"
 			sb << "	if (_getl_temp_var_$i == null) outRow.put('$fName', null) else {\n"
-			if (f.getMethod != null) sb << "		_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
+			if (f.getMethod != null) sb << "\t\t_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
 
 			switch (f.type) {
+				case Field.timestamp_with_timezoneFieldType:
+					if (!driver.timestamptzReadAsTimestamp())
+						//sb << " outRow.put('$fName', java.sql.Timestamp.valueOf((_getl_temp_var_${i} as java.time.OffsetDateTime).toLocalDateTime()))"
+						sb << " outRow.put('$fName', (_getl_temp_var_${i} as java.time.OffsetDateTime).toDate().toTimestamp())"
+					else
+						sb << "	outRow.put('$fName', _getl_temp_var_${i})"
+					break
 				case Field.blobFieldType:
 					if (driver.blobReadAsObject()) {
 						sb << "	outRow.put('$fName', (_getl_temp_var_${i} as java.sql.Blob).getBytes((long)1, (int)((_getl_temp_var_${i} as java.sql.Blob).length())))"
@@ -1969,6 +1978,9 @@ sb << """
 				case Field.uuidFieldType:
 					sb << "		outRow.put('$fName', _getl_temp_var_${i}.toString())"
 					break
+				case Field.arrayFieldType:
+					sb << "		outRow.put('$fName', ((_getl_temp_var_${i} as java.sql.Array).array as Object[]).toList())"
+					break
 				default:
 					sb << "		outRow.put('$fName', _getl_temp_var_${i})"
 			}
@@ -1976,9 +1988,8 @@ sb << """
 			sb << '\n	}\n'
 
 		}
-		sb << "}"
+		sb << "}\nreturn code"
 		def statement = sb.toString()
-
 //		println statement
 
 		Closure code = EvalGroovyClosure(value: statement, convertReturn: false,
@@ -2091,7 +2102,8 @@ sb << """
 				res = """if ($value != null) {
     def val_$paramNum = $value
     def arr_$paramNum = (val_${paramNum}.class.isArray())?val_${paramNum}:(val_${paramNum} as List).toArray()
-	_getl_stat.setArray($paramNum, _getl_con.createArrayOf('${field.arrayType?:'OBJECT'}', arr_$paramNum))
+	//_getl_stat.setArray($paramNum, _getl_con.createArrayOf('${field.arrayType?:'OBJECT'}', arr_$paramNum))
+	_getl_stat.setObject($paramNum, arr_$paramNum)
 }
 else 
 	_getl_stat.setNull($paramNum, java.sql.Types.ARRAY)"""

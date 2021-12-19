@@ -10,7 +10,11 @@ import org.junit.Test
 class SQLParserTest extends GetlTest {
     @Test
     void testInsertStatement() {
-        def sql = '''INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (1, '123', TO_DATE('2016-10-15'), null, DEFAULT);'''
+        def sql = '''
+/*:count_insert*/
+INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) 
+VALUES (1, '123', TO_DATE('2016-10-15'), null, DEFAULT)
+'''
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.INSERT, parser.statementType())
 
@@ -22,9 +26,10 @@ class SQLParserTest extends GetlTest {
     @Test
     void testUpdateStatement() {
         def sql = '''
-UPDATE "Schema"."table"
-SET field2 = 123, field3 = TO_DATE('2016-10-15'), "field4" = null
-WHERE field1 = 1;
+/*:count_update*/
+UPDATE "getl_test_data"
+SET  "ID2" =  "ID2"
+WHERE "ID1" = 1
 '''
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.UPDATE, parser.statementType())
@@ -33,6 +38,7 @@ WHERE field1 = 1;
     @Test
     void testDeleteStatement() {
         def sql = '''
+/*:count_delete*/
 DELETE FROM "Schema"."table"
 WHERE field1 = 1 AND field2 = '123';
 '''
@@ -44,6 +50,7 @@ WHERE field1 = 1 AND field2 = '123';
     @Test
     void testMergeStatement() {
         def sql = '''
+/*:count_merge*/
 MERGE INTO "Schema"."table1"
 USING table2 ON table1.id = table2.id;
 '''
@@ -54,7 +61,7 @@ USING table2 ON table1.id = table2.id;
 
     @Test
     void testSelectStatement() {
-        def sql = 'SELECT id, name FROM table1'
+        def sql = '/*:rows*/SELECT id, name FROM table1'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.SELECT, parser.statementType())
 
@@ -65,14 +72,14 @@ USING table2 ON table1.id = table2.id;
 
     @Test
     void testCreateStatement() {
-        def sql = 'CREATE TABLE table1(id int NOT NULL)'
+        def sql = '/* Create */CREATE TABLE table1(id int NOT NULL)'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.CREATE, parser.statementType())
     }
 
     @Test
     void testAlterStatement() {
-        def sql = 'ALTER TABLE table1 ALTER id SET DATA TYPE bigint'
+        def sql = '/* Alter */ALTER TABLE table1 ALTER id SET DATA TYPE bigint'
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.ALTER, parser.statementType())
@@ -80,7 +87,7 @@ USING table2 ON table1.id = table2.id;
 
     @Test
     void testDropStatement() {
-        def sql = 'DROP TABLE IF EXISTS table1 CASCADE'
+        def sql = '/* Drop */DROP TABLE IF EXISTS table1 CASCADE'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.DROP, parser.statementType())
     }
@@ -106,7 +113,7 @@ ECHO For id1=1 then id2={id2}
 
     @Test
     void testIfStatement() {
-        def sql = 'IF (1 = 1) DO { ECHO If complete }'
+        def sql = '/* IF */IF (1 = 1) DO { ECHO If complete }'
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_IF, parser.statementType())
@@ -114,14 +121,14 @@ ECHO For id1=1 then id2={id2}
 
     @Test
     void testSetStatement() {
-        def sql = 'SET a = 1'
+        def sql = '/* SET */SET a = 1'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_SET, parser.statementType())
     }
 
     @Test
     void testForStatement() {
-        def sql = 'FOR (SELECT id, name FROM table) DO { ECHO {id}, {name} }'
+        def sql = '/* FOR */ FOR (SELECT id, name FROM table) DO { ECHO {id}, {name} }'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_FOR, parser.statementType())
 
@@ -136,14 +143,14 @@ ECHO For id1=1 then id2={id2}
 
     @Test
     void testBlockStatement() {
-        def sql = 'COMMAND { ECHO Native script }'
+        def sql = '/* COMMAND */COMMAND { ECHO Native script }'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_COMMAND, parser.statementType())
     }
 
     @Test
     void testExitStatement() {
-        def sql = 'EXIT'
+        def sql = '/* EXIT */EXIT'
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_EXIT, parser.statementType())
@@ -151,14 +158,14 @@ ECHO For id1=1 then id2={id2}
 
     @Test
     void testErrorStatement() {
-        def sql = 'ERROR Test 1 2 3'
+        def sql = '/* ERROR */ERROR Test 1 2 3'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_ERROR, parser.statementType())
     }
 
     @Test
     void testLoadPointStatement() {
-        def sql = 'LOAD_POINT test:point1 TO var1 WITH MERGE'
+        def sql = '/* POINT */LOAD_POINT test:point1 TO var1'
         def lexer = new Lexer(sql, Lexer.sqlScriptType)
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_LOAD_POINT, parser.statementType())
@@ -166,9 +173,37 @@ ECHO For id1=1 then id2={id2}
 
     @Test
     void testSavePointStatement() {
-        def sql = 'SAVE_POINT test:point1 FROM var1 WITH INSERT'
+        def sql = '/* POINT */SAVE_POINT test:point1 FROM var1'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_SAVE_POINT, parser.statementType())
+    }
+
+    @Test
+    void testRunFile() {
+        def sql = '/* FILE */RUN_FILE "/tmp/script1.sql"'
+        def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.GETL_RUN_FILE, parser.statementType())
+    }
+
+    @Test
+    void testSwitchLogin() {
+        def sql = '/* LOGIN */SWITCH_LOGIN sa'
+        def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.GETL_SWITCH_LOGIN, parser.statementType())
+    }
+
+    @Test
+    void testSingleComment() {
+        def sql = '--Comment'
+        def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.SINGLE_COMMENT, parser.statementType())
+    }
+
+    @Test
+    void testMultiComment() {
+        def sql = '/* Comment \n Comment */'
+        def parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.MULTI_COMMENT, parser.statementType())
     }
 
     @Test
@@ -196,7 +231,7 @@ IF ({var1} = 123) DO {
 '''
         def parser = new SQLParser(sql)
         def scripts = parser.scripts()
-        parser.scripts().each {println '------\n' + it }
+//        parser.scripts().each {println '------\n' + it }
 
         def lines = sql.readLines()
         assertEquals(lines[0], scripts[0] + ';')
@@ -204,6 +239,23 @@ IF ({var1} = 123) DO {
         assertEquals(lines.subList(2, 4).join('\n'), scripts[2] + ';')
         assertEquals(lines.subList(5, 12).join('\n'), scripts[3])
         assertEquals(lines.subList(13, 20).join('\n'), scripts[4])
+
+        sql = '''/* START */
+-- IF statement
+IF (1 = 1) DO {
+    ECHO IF OK
+}
+/*
+    ECHO
+*/
+ECHO FINISH
+/*
+    FINISH
+*/
+'''
+        parser = new SQLParser(sql)
+        //parser.scripts(true).each {println '------\n' + it }
+        assertEquals(2, parser.scripts(true).size())
     }
 
     @Test

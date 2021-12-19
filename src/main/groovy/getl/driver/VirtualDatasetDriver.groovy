@@ -56,19 +56,19 @@ abstract class VirtualDatasetDriver extends Driver {
 
 	@Override
 
-	void startTran() {
+	void startTran(Boolean useSqlOperator = false) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 
-	void commitTran() {
+	void commitTran(Boolean useSqlOperator = false) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 
-	void rollbackTran() {
+	void rollbackTran(Boolean useSqlOperator = false) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 

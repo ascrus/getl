@@ -26,7 +26,7 @@ class CSVConnection extends FileConnection {
 		methodParams.register('Super',
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped',
 					'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
-					'formatDateTime', 'uniFormatDateTime', 'ignoreHeader', 'locale',
+					'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale',
 					'constraintsCheck', 'presetMode'])
 	}
 
@@ -90,13 +90,13 @@ class CSVConnection extends FileConnection {
 	//@JsonIgnore
 	Boolean isHeader() { BoolUtils.IsValue(header, true) }
 	
-	/** Ignore header field name */
-	Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
-	/** Ignore header field name */
-    void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
-	/** Ignore header field name */
+	/** The order of the fields is determined by the file header */
+	Boolean getFieldOrderByHeader() { params.fieldOrderByHeader as Boolean }
+	/** The order of the fields is determined by the file header */
+    void setFieldOrderByHeader(Boolean value) { params.fieldOrderByHeader = value }
+	/** The order of the fields is determined by the file header */
 	//@JsonIgnore
-	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, true) }
+	Boolean isFieldOrderByHeader() { BoolUtils.IsValue(fieldOrderByHeader) }
 	
 	/** Required convert string to escape value */
 	Boolean getEscaped() { params.escaped as Boolean }
@@ -137,15 +137,6 @@ class CSVConnection extends FileConnection {
 	/** Mode of quote value */
 	QuoteMode quoteMode() { quoteMode?:quoteNormal }
 
-	/** OS locale for parsing date-time fields
-	 * <br>P.S. You can set locale for separately field in Field.extended.locale
-	 */
-	String getLocale() { params.locale as String }
-	/** OS locale for parsing date-time fields
-	 * <br>P.S. You can set locale for separately field in Field.extended.locale
-	 */
-	void setLocale(String value) { params.locale = value }
-
 	/** File settings preset */
 	String getPresetMode() { params.presetMode as String }
 	/** File settings preset */
@@ -161,7 +152,7 @@ class CSVConnection extends FileConnection {
 	String presetMode() { presetMode?:'custom' }
 
 	@Override
-	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzSmallMask }
+	String formatTimestampWithTz() { super.formatTimestampWithTz?:DateUtils.defaultTimestampWithTzSmallMask }
 
 	@Override
 	protected Class<Dataset> getDatasetClass() { CSVDataset }

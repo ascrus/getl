@@ -2,6 +2,7 @@ package getl.test
 
 import getl.config.ConfigFiles
 import getl.config.ConfigManager
+import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -27,7 +28,7 @@ class GetlTest extends GroovyAssert {
     /** Install the required configuration manager */
     protected InstallConfigManager() {
         if (!useConfigManager().isInstance(Config.configClassManager))
-            Config.configClassManager = useConfigManager().newInstance() as ConfigManager
+            Config.configClassManager = useConfigManager().getDeclaredConstructor().newInstance() as ConfigManager
     }
 
     /** Variables for testing from JVM environment */
@@ -47,6 +48,7 @@ class GetlTest extends GroovyAssert {
 
     @BeforeClass
     static void InitTestClass() {
+        Getl.CleanGetl(false)
         Config.ReInit()
         Config.RegisterChangeManagerEvent { oldManager, newManager ->
             newManager.mergeConfig(oldManager.content)
@@ -58,6 +60,7 @@ class GetlTest extends GroovyAssert {
 
     @AfterClass
     static void DoneTestClass() {
+        Getl.CleanGetl(false)
         Logs.Done()
         FileUtils.ListResourcePath.clear()
     }
@@ -107,7 +110,7 @@ class GetlTest extends GroovyAssert {
                 'Parameters do not match, one of them is null!'
 
         def res = MapUtils.CompareMap(expected, actual)
-        assert res.isEmpty(), 'maps difference: ' + MapUtils.ToJson(res)
+        assert res.isEmpty(), "${message?:'Maps difference'}: " + MapUtils.ToJson(res)
     }
 
     /**
@@ -139,5 +142,66 @@ class GetlTest extends GroovyAssert {
      */
     static void assertEquals(Time expected, Time actual) {
         assertEquals(null, expected, actual)
+    }
+
+    static Boolean IsJava8() {
+        System.getProperty("java.version").matches('1[.]8[.].+')
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(GString expected, String actual) {
+        assertEquals(null as String, expected.toString(), actual)
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param message message text
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String message, GString expected, String actual) {
+        assertEquals(message, expected.toString(), actual)
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String expected, String actual) {
+        assertEquals(null as String, expected.toString(), actual)
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param message message text
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String message, String expected, String actual) {
+        assertEquals(message, expected as Object, actual as Object)
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String expected, GString actual) {
+        assertEquals(null as String, expected, actual.toString())
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param message message text
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String message, String expected, GString actual) {
+        assertEquals(message, expected, actual.toString())
     }
 }

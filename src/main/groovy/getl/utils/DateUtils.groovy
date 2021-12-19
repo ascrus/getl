@@ -220,44 +220,57 @@ class DateUtils {
 	 * Generate date time formatter
 	 * @param format date time format mask
 	 * @param resolverStyle use parse style
+	 * @param locale used region locale
 	 * @return formatter
 	 */
-	static DateTimeFormatter BuildDateTimeFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT) {
+	static DateTimeFormatter BuildDateTimeFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT, String locale = null) {
+		def loc = (locale != null)?StringUtils.NewLocale(locale):Locale.getDefault(Locale.Category.FORMAT)
 		return new DateTimeFormatterBuilder()
 				.appendPattern(format)
 				.parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
 				.parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
 				.parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
 				.parseDefaulting(ChronoField.ERA, 1)
-				.toFormatter().withResolverStyle(resolverStyle)
+				.toFormatter(loc).withResolverStyle(resolverStyle?:ResolverStyle.STRICT).withLocale(loc)
 	}
 
 	/**
 	 * Generate date formatter
 	 * @param format date format mask
 	 * @param resolverStyle use parse style
+	 * @param locale used region locale
 	 * @return formatter
 	 */
-	static DateTimeFormatter BuildDateFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT) {
+	static DateTimeFormatter BuildDateFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT, String locale = null) {
+		def loc = (locale != null)?StringUtils.NewLocale(locale):Locale.getDefault(Locale.Category.FORMAT)
 		return new DateTimeFormatterBuilder()
 				.appendPattern(format)
+				.parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+				.parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+				.parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
 				.parseDefaulting(ChronoField.ERA, 1)
-				.toFormatter().withResolverStyle(resolverStyle)
+				.toFormatter(loc).withResolverStyle(resolverStyle?:ResolverStyle.STRICT).withLocale(loc)
 	}
 
 	/**
 	 * Generate time formatter
 	 * @param format time format mask
 	 * @param resolverStyle use parse style
+	 * @param locale used region locale
 	 * @return formatter
 	 */
-	static DateTimeFormatter BuildTimeFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT) {
+	static DateTimeFormatter BuildTimeFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT, String locale = null) {
+		def loc = (locale != null)?StringUtils.NewLocale(locale):Locale.getDefault(Locale.Category.FORMAT)
 		return new DateTimeFormatterBuilder()
 				.appendPattern(format)
+				.parseDefaulting(ChronoField.YEAR, 1970)
+				.parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)
+				.parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
 				.parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
 				.parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
 				.parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-				.toFormatter().withResolverStyle(resolverStyle)
+				.parseDefaulting(ChronoField.ERA, 1)
+				.toFormatter(loc).withResolverStyle(resolverStyle?:ResolverStyle.STRICT).withLocale(loc)
 	}
 
 	/** Parse string to date with default date format */

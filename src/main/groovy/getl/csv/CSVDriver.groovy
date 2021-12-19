@@ -1,6 +1,7 @@
 package getl.csv
 
 import getl.csv.proc.*
+
 import getl.data.sub.FileWriteOpts
 import getl.data.*
 import getl.driver.Driver
@@ -8,16 +9,13 @@ import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.files.FileManager
 import getl.utils.*
-
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import org.codehaus.groovy.runtime.StringBufferWriter
-
 import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
+import java.time.format.ResolverStyle
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-
 import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.cellprocessor.constraint.*
 import org.supercsv.cellprocessor.ift.*
@@ -38,11 +36,11 @@ class CSVDriver extends FileDriver {
 		super.registerParameters()
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header',
 										  'isSplit', 'readAsText', 'escaped', 'processError', 'filter',
-										  'nullAsValue', 'ignoreHeader', 'skipRows', 'limit'])
+										  'nullAsValue', 'fieldOrderByHeader', 'skipRows', 'limit'])
 		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize',
 											'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue',
 											'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime',
-											'formatTimestampWithTz', 'uniFormatDateTime', 'onSplitFile'])
+											'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'onSplitFile'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -117,64 +115,224 @@ class CSVDriver extends FileDriver {
 		}
 		return res
 	}
-	
+
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Override
 	List<Field> fields(Dataset dataset) {
-		//noinspection UnnecessaryQualifiedReference
-		CSVDriver.ReadParams p = readParamDataset(dataset, [:])
+		def csv = dataset as CSVDataset
+		ReadParams p = readParamDataset(dataset, [:])
 		
 		def csvFile = new File(p.path)
 		if (!csvFile.exists())
-			throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName()}\" not found or invalid path \"${dataset.connection.params.path}\"!")
-		Reader fileReader = getFileReader(dataset as FileDataset, [:])
+			throw new ExceptionGETL("File \"${csv.fileName()}\" not found or invalid path \"${csv.currentCsvConnection?.path}\"!")
+		Reader fileReader = getFileReader(csv, [:])
 
 		CsvPreference pref = new CsvPreference.Builder(p.quoteStr, (int)p.fieldDelimiter, p.rowDelimiter).useQuoteMode(p.qMode).build()
-		def reader = new CsvListReader(fileReader, pref)
-		String[] header = null
-		try {
+		List<Field> res = []
+		try (def reader = new CsvListReader(fileReader, pref)) {
+			String[] header
 			if (p.isHeader)  {
 				header = reader.getHeader(true)
 				if (header == null)
-					throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName()}\" is empty!")
+					throw new ExceptionGETL("File \"${csv.fileName()}\" is empty!")
 			}
 			else {
 				def row = reader.read()
 				if (row == null)
-					throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName()}\" is empty!")
+					throw new ExceptionGETL("File \"${csv.fileName()}\" is empty!")
 				def c = 0
+				def list = [] as List<String>
 				row.each {
 					c++
-					header += "col_${c}"
+					list.add("col_${c}".toString())
+				}
+				header = list.toArray(new String[0])
+			}
+
+			header.each { String name ->
+				if (name == null || name.length() == 0)
+					throw new ExceptionGETL("Detected empty field name for $header")
+
+				res.add(new Field(name: name, type: Field.Type.OBJECT, isNull: false))
+			}
+		}
+
+		def nullValue = csv.nullAsValue()?.toLowerCase()
+		def dateFormatter = DateUtils.BuildDateFormatter(csv.uniFormatDateTime()?:csv.formatDate(), ResolverStyle.STRICT, csv.locale())
+		def timeFormatter = DateUtils.BuildTimeFormatter(csv.uniFormatDateTime()?:csv.formatTime(), ResolverStyle.STRICT, csv.locale())
+		def dateTimeFormatter = DateUtils.BuildDateFormatter(csv.uniFormatDateTime()?:csv.formatDateTime(), ResolverStyle.STRICT, csv.locale())
+		def timestampWithTzFormatter = DateUtils.BuildDateFormatter(csv.uniFormatDateTime()?:csv.formatTimestampWithTz(), ResolverStyle.STRICT, csv.locale())
+		def decimalSeparator = csv.decimalSeparator()
+		def groupingSeparator = csv.groupSeparator()
+		def decimalFormatSymbol = NumericUtils.BuildDecimalFormatSymbols(decimalSeparator.chars[0],
+				(groupingSeparator != null)?groupingSeparator.chars[0]:null, csv.locale())
+		def decimalFormat = new DecimalFormat('#,##0.#', decimalFormatSymbol)
+		def booleanFormat = (csv.formatBoolean()?.toLowerCase()?:'true|false').split('[|]')
+
+		fileReader = getFileReader(csv, [:])
+
+		List<String> row
+		def lengths = res.collect { 0 }
+		def useGrouping = res.collect { false }
+		try (def reader = new CsvListReader(fileReader, pref)) {
+			if (p.isHeader)
+				reader.getHeader(true)
+
+			while ((row = reader.read()) != null) {
+				for (int i = 0; i < res.size(); i++) {
+					def col = row[i]
+					def field = res[i]
+
+					if (col == null || (nullValue == null && col.length() == 0) || (nullValue != null && nullValue == col.toLowerCase())) {
+						field.isNull = true
+						continue
+					}
+
+					if (col.matches('^\\s+.+')) {
+						col = col.trim()
+						field.trim = true
+					}
+
+					switch (field.type) {
+						case Field.objectFieldType:
+							if (DateUtils.ParseSQLTime(timeFormatter, col, true) != null)
+								field.type = Field.timeFieldType
+							else if (DateUtils.ParseSQLDate(dateFormatter, col, true) != null)
+								field.type = Field.dateFieldType
+							else if (DateUtils.ParseSQLTimestamp(dateTimeFormatter, col, true) != null)
+								field.type = Field.datetimeFieldType
+							else if (DateUtils.ParseSQLTimestamp(timestampWithTzFormatter, col, true) != null)
+								field.type = Field.timestamp_with_timezoneFieldType
+							else if (col.matches('(?i)^(\\w){8}-(\\w){4}-(\\w){4}-(\\w){4}-(\\w){12}$'))
+								field.type = Field.uuidFieldType
+							else if ((NumericUtils.ParseString(decimalFormat, col, true)) != null) {
+								field.type = Field.numericFieldType
+								if (groupingSeparator != null && col.indexOf(groupingSeparator) != -1) {
+									useGrouping[i] = true
+									col = col.replace(groupingSeparator, '')
+								}
+								def pos = col.indexOf(decimalSeparator)
+								field.precision = (pos != -1)?(col.size() - pos - 1):0
+							} else if (col.toLowerCase() in booleanFormat)
+								field.type = Field.booleanFieldType
+							else
+								field.type = Field.stringFieldType
+
+							break
+						case Field.dateFieldType:
+							if (DateUtils.ParseSQLDate(dateFormatter, col, true) == null) {
+								if (DateUtils.ParseSQLDate(dateTimeFormatter, col, true) != null)
+									field.type = Field.datetimeFieldType
+								else
+									field.type = Field.stringFieldType
+							}
+							break
+						case Field.datetimeFieldType:
+							if (DateUtils.ParseSQLTimestamp(dateTimeFormatter, col, true) == null)
+								field.type = Field.stringFieldType
+							break
+						case Field.timeFieldType:
+							if (DateUtils.ParseSQLTime(timeFormatter, col, true) == null)
+								field.type = Field.stringFieldType
+							break
+						case Field.timestamp_with_timezoneFieldType:
+							if (DateUtils.ParseSQLTimestamp(timestampWithTzFormatter, col, true) == null)
+								field.type = Field.stringFieldType
+							break
+						case Field.numericFieldType:
+							if ((NumericUtils.ParseString(decimalFormat, col, true)) == null)
+								field.type = Field.stringFieldType
+							else {
+								if (groupingSeparator != null && col.indexOf(groupingSeparator) != -1) {
+									if (!useGrouping[i])
+										useGrouping[i] = true
+									col = col.replace(groupingSeparator, '')
+								}
+								def pos = col.indexOf(decimalSeparator)
+								def precision = (pos != -1) ? col.size() - pos - 1 : 0
+								if (precision > field.precision)
+									field.precision = precision
+							}
+							break
+						case Field.booleanFieldType:
+							if (!(col.toLowerCase() in booleanFormat))
+								field.type = Field.stringFieldType
+							break
+						case Field.uuidFieldType:
+							if (!col.matches('(?i)^(\\w){8}-(\\w){4}-(\\w){4}-(\\w){4}-(\\w){12}$'))
+								field.type = Field.stringFieldType
+					}
+
+					if (col.size() > lengths[i])
+						lengths[i] = col.size()
 				}
 			}
 		}
-		finally {
-			reader.close()
+
+		for (int i = 0; i < res.size(); i++) {
+			def field = res[i]
+			def length = lengths[i]
+			switch (field.type) {
+				case Field.objectFieldType:
+					field.type = Field.stringFieldType
+					if (length > 0)
+						field.length = length
+					break
+				case Field.stringFieldType:
+					if (length > 0)
+						field.length = length
+					break
+				case Field.dateFieldType: case Field.datetimeFieldType:
+				case Field.timeFieldType: case Field.timestamp_with_timezoneFieldType:
+				case Field.booleanFieldType: case Field.uuidFieldType:
+					field.length = null
+					field.precision = null
+					break
+				case Field.numericFieldType:
+					if (field.precision == 0 && !useGrouping[i]) {
+						if (length < Integer.MAX_VALUE.toString().size())
+							field.type = Field.integerFieldType
+						else if (length < Long.MAX_VALUE.toString().length())
+							field.type = Field.bigintFieldType
+					}
+					if (field.type == Field.numericFieldType)
+						field.length = length
+			}
 		}
 		
-		return header2fields(header)
+		return res
 	}
-	
-	protected static List<Field> header2fields (String[] header) {
+
+	static private List<Field> header2fields(String[] header, List<Field> listField) {
 		List<Field> fields = []
-		header.each { String name ->
-			if (name == null || name.length() == 0) throw new ExceptionGETL("Detected empty field name for $header")
-			fields << new Field(name: name, type: Field.Type.STRING)
+		def c = 0
+		def size = header.length
+		for (int i = 0; i < size; i++) {
+			def name = header[i]
+			if (name == null || name.length() == 0)
+				throw new ExceptionGETL("Detected empty field name for $header")
+
+			def findName = name.toLowerCase()
+			def field = listField.find { field -> field.name.toLowerCase() == findName }
+			if (field == null) {
+				c++
+				field = new Field(name: "_getl_csv_col_$c".toString())
+			}
+
+			fields.add(field)
 		}
+
 		return fields
 	}
 
-	protected static CellProcessor type2cellProcessor (Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
-													   String locale, String decimalSeparator, String formatDate,
+	static private CellProcessor type2cellProcessor(Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
+													   String locale, String decimalSeparator, String groupSeparator, String formatDate,
 													   String formatTime, String formatDateTime, String formatTimestampWithTz,
-													   Boolean isValid) {
+													   String formatBoolean, Boolean isValid) {
 		CellProcessor cp = null
 		if (field.type == null || (field.type in [Field.stringFieldType, Field.objectFieldType, Field.rowidFieldType, Field.uuidFieldType])) {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
-
-			/*if (BoolUtils.IsValue(field.trim))
-				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())*/
 
 			if (isEscape && field.type == Field.Type.STRING) {
 				if (!isWrite)
@@ -190,52 +348,45 @@ class CSVDriver extends FileDriver {
 			def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
 			def fieldLocale = (field.extended.locale as String)?:locale
 
-			if (!isWrite) {
-				if (field.precision != null || field.format != null || ds != null || fieldLocale != null) {
-					DecimalFormatSymbols dfs = (fieldLocale == null)?
-							new DecimalFormatSymbols():new DecimalFormatSymbols(StringUtils.NewLocale(fieldLocale))
-					if (ds != null) dfs.setDecimalSeparator(ds.chars[0])
-					cp = new ParseBigDecimal(dfs)
-				}
-				else {
-					cp = new ParseBigDecimal()
-				}
-			}
+			def dfs = NumericUtils.BuildDecimalFormatSymbols(ds?.chars[0],
+					(groupSeparator != null)?groupSeparator.chars[0]:null, fieldLocale)
+			if (!isWrite)
+				cp = new ParseBigDecimal(dfs)
 			else {
-				if (field.precision != null || field.format != null || ds != null || fieldLocale != null) {
-					DecimalFormatSymbols dfs = (fieldLocale == null)?
-							new DecimalFormatSymbols():new DecimalFormatSymbols(StringUtils.NewLocale(fieldLocale))
-					if (ds != null) dfs.setDecimalSeparator(ds.chars[0])
-
+				def cf = (groupSeparator != null)?'#,##0':'0'
+				String f = cf + '.#'
+				if (field.precision != null || field.format != null) {
 					def p = (field.precision != null)?field.precision:0
-					def f = field.format
-					if (f == null) {
-						if (p > 0) {
-							def s = ''
-							(1..p).each {
-								s += '0'
-							}
-							f = '0.' + s
-						}
-						else {
-							f = '0'
-						}
+					if (field.format != null)
+						f = field.format
+					else if (p != null) {
+						if (p > 0)
+							f = cf + '.' + StringUtils.Replicate('0', p)
+						else
+							f = cf
 					}
-
-					DecimalFormat df = new DecimalFormat(f, dfs)
-					cp = new FmtNumber(df)
 				}
+
+				DecimalFormat df = new DecimalFormat(f, dfs)
+				cp = new FmtNumber(df)
 			}
 		} else if (field.type == Field.Type.DOUBLE) {
 			if (!isWrite)
 				cp = new ParseDouble()
 		} else if (field.type == Field.Type.BOOLEAN) {
-			String[] v = (field.format == null)?['1', '0']:field.format.toLowerCase().split('[|]')
+			def df = (ListUtils.NotNullValue([field.format, formatBoolean, '1|0']) as String).toLowerCase()
+			String[] v = df.split('[|]')
 			if (v[0] == null) v[0] = '1'
 			if (v[1] == null) v[1] = '0'
+
+			String[] listTrue = [v[0]]
+			String[] listFalse = [v[1]]
 			
 			if (!isWrite) {
-				if (field.format != null) cp = new ParseBool(v[0], v[1]) else cp = new ParseBool()
+				if (df != null)
+					cp = new ParseBool(listTrue, listFalse, true)
+				else
+					cp = new ParseBool()
 			}
 			else {
 				cp = new FmtBool(v[0], v[1])
@@ -335,13 +486,16 @@ class CSVDriver extends FileDriver {
 		def nullAsValue = ListUtils.NotNullValue([fParams.nullAsValue, dataset.nullAsValue()]) as String
 		def locale = ListUtils.NotNullValue([fParams.locale, dataset.locale()]) as String
 		def decimalSeparator = ListUtils.NotNullValue([fParams.decimalSeparator, dataset.decimalSeparator()]) as String
+		def groupSeparator = ListUtils.NotNullValue([fParams.groupSeparator, dataset.groupSeparator()]) as String
 		def uniFormatDateTime = ListUtils.NotNullValue([fParams.uniFormatDateTime, dataset.uniFormatDateTime()]) as String
-		def formatDate = (uniFormatDateTime == null)?ListUtils.NotNullValue([fParams.formatDate, dataset.formatDate()]) as String:uniFormatDateTime
-		def formatTime = (uniFormatDateTime == null)?ListUtils.NotNullValue([fParams.formatTime, dataset.formatTime()]) as String:uniFormatDateTime
-		def formatDateTime = (uniFormatDateTime == null)?ListUtils.NotNullValue([fParams.formatDateTime, dataset.formatDateTime()]) as String:uniFormatDateTime
-		def formatTimestampWithTz = (uniFormatDateTime == null)?ListUtils.NotNullValue([fParams.formatTimestampWithTz, dataset.formatTimestampWithTz()]) as String:uniFormatDateTime
+		def formatDate = ListUtils.NotNullValue([fParams.formatDate, uniFormatDateTime, dataset.formatDate()]) as String
+		def formatTime = ListUtils.NotNullValue([fParams.formatTime, uniFormatDateTime, dataset.formatTime()]) as String
+		def formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, uniFormatDateTime, dataset.formatDateTime()]) as String
+		def formatTimestampWithTz = ListUtils.NotNullValue([fParams.formatTimestampWithTz, uniFormatDateTime, dataset.formatTimestampWithTz()]) as String
+		def formatBoolean = ListUtils.NotNullValue([fParams.formatBoolean, dataset.formatBoolean()]) as String
 		
-		if (fields == null) fields = [] as List<String>
+		if (fields == null)
+			fields = [] as List<String>
 
 		def cp = new ArrayList<CellProcessor>()
 		header.each { String name ->
@@ -358,8 +512,8 @@ class CSVDriver extends FileDriver {
 				else {
 					Field f = dataset.field[i]
 					
-					CellProcessor p = type2cellProcessor(f, isWrite, escaped, nullAsValue, locale, decimalSeparator,
-															formatDate, formatTime, formatDateTime, formatTimestampWithTz, isValid)
+					CellProcessor p = type2cellProcessor(f, isWrite, escaped, nullAsValue, locale, decimalSeparator, groupSeparator,
+															formatDate, formatTime, formatDateTime, formatTimestampWithTz, formatBoolean, isValid)
 					cp << p
 				}
 			}
@@ -373,14 +527,16 @@ class CSVDriver extends FileDriver {
 		def header = []
 		fields.each { v ->
 			if (writeFields.isEmpty()) {
-				header << v.name //.toLowerCase()
+				header << v.name
 			}
 			else {
 				def fi = writeFields.find { (it.toLowerCase() == v.name.toLowerCase()) }
-				if (fi != null) header << v.name //.toLowerCase()
+				if (fi != null) header << v.name
 			}
 		}
-		if (header.isEmpty()) throw new ExceptionGETL('Fields for processing dataset not found!')
+		if (header.isEmpty())
+			throw new ExceptionGETL('Fields for processing dataset not found!')
+
 		return header.toArray()
 	}
 
@@ -398,7 +554,7 @@ class CSVDriver extends FileDriver {
 		
 		def escaped = BoolUtils.IsValue([params.escaped, cds.escaped()])
 		def readAsText = BoolUtils.IsValue(params.readAsText)
-		def ignoreHeader = BoolUtils.IsValue(params.ignoreHeader, cds.isIgnoreHeader())
+		def fieldOrderByHeader = BoolUtils.IsValue(params.fieldOrderByHeader, cds.isFieldOrderByHeader())
 		def formatDate = params.formatDate as String
 		def formatTime = params.formatTime as String
 		def formatDateTime = params.formatDateTime as String
@@ -418,6 +574,7 @@ class CSVDriver extends FileDriver {
 		def fileMask = fileMaskDataset(cds, isSplit)
 		List<Map> files
 		Integer portion = 0
+		Integer numPortion = null
 		Reader bufReader
 		if (isSplit) {
 			def fm = cds.currentCsvConnection.connectionFileManager.cloneManager(null, dataset.dslCreator) as FileManager
@@ -431,48 +588,69 @@ class CSVDriver extends FileDriver {
 			files = fm.fileList.rows(filesParams)
 			if (files.isEmpty())
 				throw new ExceptionGETL("File(s) \"${cds.fileName()}\" not found or invalid path \"${((CSVConnection) cds.connection).currentPath()}\"!")
-			bufReader = getFileReader(dataset as FileDataset, params, (Integer)files[portion].number)
+			numPortion = files[portion].number as Integer
 		}
 		else {
 			files = [] as List<Map>
-			bufReader = getFileReader(dataset as FileDataset, params, null)
 		}
+		bufReader = getFileReader(dataset as FileDataset, params, numPortion)
 
 		Closure processError = (params.processError != null)?params.processError as Closure:null
 		def isValid = BoolUtils.IsValue(params.isValid, cds.isConstraintsCheck())
 		CsvPreference pref = new CsvPreference.Builder(p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
 		CsvMapReader reader
-		if (escaped) {
+		if (escaped)
 			reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
-		}
-		else {
+		else
 			reader = new CsvMapReader(bufReader, pref)
-		}
 
 		try {
 			String[] header
-			List<Field> fileFields = []
+			List<Field> fileFields
 			if (p.isHeader) {
 				header = reader.getHeader(true)
-				if (!ignoreHeader) {
-					fileFields = header2fields(header)
-				}
+				if (fieldOrderByHeader)
+					fileFields = header2fields(header, dataset.field)
 				else {
 					header = fields2header(dataset.field, null)
+					fileFields = dataset.field
 				}
 			}
 			else {
+				fileFields = dataset.field
 				header = fields2header(dataset.field, null)
+				if (fieldOrderByHeader) {
+					try (def newBufReader = getFileReader(dataset as FileDataset, params, numPortion)) {
+						CsvMapReader newReader
+						if (escaped)
+							newReader = new CsvMapReader(new CSVEscapeTokenizer(newBufReader, pref, p.isHeader), pref)
+						else
+							newReader = new CsvMapReader(newBufReader, pref)
+
+						def colHeader = newReader.getHeader(true)
+						def fieldSize = fileFields.size()
+						def newHeader = header.toList()
+						for (int i = fieldSize; i < colHeader.length; i++) {
+							def colName = "_getl_csv_col_$i".toString()
+							newHeader.add(colName)
+							fileFields.add(new Field(name: colName))
+						}
+						header = newHeader.toArray(new String()[])
+					}
+				}
 			}
+
 			header = (header*.toLowerCase()).toArray(new String()[])
 
 			if (skipRows > 0)
 				(1..skipRows).each { reader.getHeader(false) }
 
-			ArrayList<String> listFields = new ArrayList<String>()
-			if (prepareCode != null) {
-				listFields = (ArrayList<String>)prepareCode.call(fileFields)
-			}
+			List<String> listFields
+			if (prepareCode != null)
+				listFields = prepareCode.call(fileFields.findAll { field -> !field.name.matches('(?i)^[_]getl[_]csv[_]col[_]\\d+') }) as List<String>
+			else
+				listFields = fileFields.findAll { field -> !field.name.matches('(?i)^[_]getl[_]csv[_]col[_]\\d+') }
+						.collect { field -> field.name }
 			
 			CellProcessor[] cp = fields2cellProcessor(dataset: dataset, fields: listFields, header: header,
 					isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped,

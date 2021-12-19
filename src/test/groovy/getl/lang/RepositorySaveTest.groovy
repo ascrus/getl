@@ -35,16 +35,8 @@ import groovy.transform.Field
     attributes.a1 = 1
 }
 
-@SuppressWarnings('GrMethodMayBeStatic')
-String getLogDir() { TFS.systemPath + '/repository.logs' }
-new File(getLogDir()).mkdirs()
-
 @SaveToRepository(type = 'Connections', env = 'dev', mask = 'test:*')
 void connections() {
-    options {
-        jdbcConnectionLoggingPath = logDir
-        fileManagerLoggingPath = logDir
-    }
     cloneConnection('test:con', con)
     assert embeddedConnection('test:con').password == repositoryStorageManager.encryptText('12345')
     embeddedConnection('test:con').attributes.a1 = 1
@@ -65,10 +57,6 @@ void datasets() {
 
 @SaveToRepository(type = 'Files', mask = 'test:*')
 void filemanagers1() {
-    options {
-        jdbcConnectionLoggingPath = logDir
-        fileManagerLoggingPath = logDir
-    }
     files('test:file1', true) {
         rootPath = '/test1'
     }
@@ -76,10 +64,6 @@ void filemanagers1() {
 
 @SaveToRepository(type = 'Files', env = 'Dev, Prod', mask = 'test:*', overwrite = true)
 void filemanagers_ftp() {
-    options {
-        jdbcConnectionLoggingPath = logDir
-        fileManagerLoggingPath = logDir
-    }
     ftp('test:ftp1', true) {
         rootPath = '/ftp'
         login = 'user1'
@@ -93,10 +77,6 @@ void filemanagers_ftp() {
 
 @SaveToRepository(type = 'Files', env = 'Dev', mask = 'test:*', overwrite = true)
 void filemanagers2_dev() {
-    options {
-        jdbcConnectionLoggingPath = logDir
-        fileManagerLoggingPath = logDir
-    }
     files('test:file2', true) {
         rootPath = '/test2.dev'
     }
@@ -104,10 +84,6 @@ void filemanagers2_dev() {
 
 @SaveToRepository(type = 'Files', env = 'Prod', mask = 'test:*', overwrite = true)
 void filemanagers2_prod() {
-    options {
-        jdbcConnectionLoggingPath = logDir
-        fileManagerLoggingPath = logDir
-    }
     files('test:file2', true) {
         rootPath = '/test2.prod'
     }

@@ -1,11 +1,10 @@
+//file:noinspection SqlNoDataSourceInspection
 package getl.h2
 
 import getl.jdbc.sub.BulkLoadMapping
 import groovy.transform.InheritConstructors
-
 import getl.csv.*
 import getl.data.*
-import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.utils.*
@@ -22,6 +21,7 @@ class H2Driver extends JDBCDriver {
 		super.registerParameters()
 		methodParams.register("createDataset", ["transactional", "not_persistent"])
 		methodParams.register('bulkLoadFile', ['expression'])
+		methodParams.register('dropSchema', ['cascade'])
 	}
 
 	@Override
@@ -31,30 +31,38 @@ class H2Driver extends JDBCDriver {
 		commitDDL = false
 		allowExpressions = true
 		caseObjectName = "UPPER"
+		caseQuotedName = true
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
 
+		/* TODO: changed read fields from local temp tables */
+//		supportLocalTemporaryRetrieveFields = false
+
 		sqlExpressions.ddlAutoIncrement = 'AUTO_INCREMENT'
+		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Driver.Support> supported() {
+	List<Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
-				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
-				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE,
-				 Driver.Support.BOOLEAN, Driver.Support.ARRAY, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
+				[Support.GLOBAL_TEMPORARY, Support.LOCAL_TEMPORARY, Support.MEMORY,
+				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX,
+				 Support.UUID, Support.TIME, Support.DATE, Support.TIMESTAMP_WITH_TIMEZONE,
+				 Support.BOOLEAN, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
+				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.AUTO_INCREMENT
+				 /*,Driver.Support.ARRAY*/]
+		/* TODO: H2 ARRAY NOT FULL */
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Driver.Operation> operations() {
-		return super.operations() +
-				[Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
-				 Driver.Operation.CREATE, Driver.Operation.BULKLOAD, Driver.Operation.MERGE]
+	List<Operation> operations() {
+		return super.operations() + [Operation.BULKLOAD, Operation.MERGE]
 	}
+
+	@Override
+	Boolean timestamptzReadAsTimestamp() { return true }
 
 	@Override
 	String defaultConnectURL() {
@@ -152,7 +160,7 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParams}')
         dest.writeRows = 0
 		dest.updateRows = 0
 		def loadFile = source.fullFileName()
-		def count = executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
+		def count = executeCommand(sql.replace('{file_name}', FileUtils.ConvertToUnixPath(loadFile)), [isUpdate: true])
 		source.readRows = count
 		dest.writeRows = count
 		dest.updateRows = count
@@ -169,7 +177,7 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParams}')
 	@Override
 	protected String sessionID() {
 		String res = null
-		def rows = sqlConnect.rows("SELECT SESSION_ID() AS session_id;")
+		def rows = sqlConnect.rows("SELECT SESSION_ID() AS session_id")
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 		
 		return res
@@ -208,28 +216,29 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			return
 		}
 
-		if (field.typeName != null) {
-			if (field.typeName.matches("(?i)UUID")) {
-				field.type = Field.Type.UUID
-				field.dbType = java.sql.Types.VARCHAR
-				field.length = 36
-				field.precision = null
-				return
-			}
+		if (field.typeName == null)
+			return
 
-			if (field.typeName.matches("(?i)BLOB")) {
-				field.type = Field.Type.BLOB
-				field.dbType = java.sql.Types.BLOB
-				field.precision = null
-				return
-			}
-
-			if (field.typeName.matches("(?i)CLOB")) {
-				field.type = Field.Type.TEXT
-				field.dbType = java.sql.Types.CLOB
-				field.precision = null
-//				return
-			}
+		if (field.typeName.matches("(?i)UUID")) {
+			field.type = Field.uuidFieldType
+			field.dbType = java.sql.Types.VARCHAR
+			field.length = 36
+			field.precision = null
+		}
+		else if (field.typeName.matches("(?i)BLOB")) {
+			field.type = Field.blobFieldType
+			field.dbType = java.sql.Types.BLOB
+			field.precision = null
+		}
+		else if (field.typeName.matches("(?i)CLOB")) {
+			field.type = Field.textFieldType
+			field.dbType = java.sql.Types.CLOB
+			field.precision = null
+		}
+		else if (field.type == Field.arrayFieldType) {
+			def match = field.typeName =~ /(?i)(\w+)\s+ARRAY.*/
+			if (match.find())
+				field.arrayType = match.group(1).toUpperCase()
 		}
 	}
 
@@ -246,5 +255,25 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			throw new ExceptionGETL('The file must be encoded in utf-8 for batch download!')
 		if (csvFile.isHeader())
 			throw new ExceptionGETL('It is not allowed to use the header in the file for bulk load!')
+	}
+
+	@Override
+	String type2sqlType(Field field, Boolean useNativeDBType) {
+		if (field.type != Field.arrayFieldType || (useNativeDBType && field.typeName != null))
+			return super.type2sqlType(field, useNativeDBType)
+
+		if (field.arrayType == null)
+			throw new ExceptionGETL("It is required to specify the type of the array in \"arrayType\" for field \"${field.name}\"!")
+
+		return "${field.arrayType} array" + (((field.length?:0) > 0)?"[${field.length}]":'')
+	}
+
+	@Override
+	protected Map<String, Object> dropSchemaParams(String schemaName, Map<String, Object> dropParams) {
+		def res = super.dropSchemaParams(schemaName, dropParams)
+		if (BoolUtils.IsValue(dropParams.cascade))
+			res.cascade = 'CASCADE'
+
+		return res
 	}
 }

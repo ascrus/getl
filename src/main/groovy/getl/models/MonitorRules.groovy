@@ -357,7 +357,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
             // Retrieving rows from a rule query
             def ruleQuery = rule.query.cloneDatasetConnection() as QueryDataset
-            ruleQuery.queryParams.putAll(rule.objectVars + modelVars)
+            ruleQuery.setAttributes(rule.objectVars + modelVars)
             def statRows = ruleQuery.rows()
             if (statRows.isEmpty()) {
                 dslCreator.logWarn("Rule \"${rule.queryName}\" has no rows and is skipped")

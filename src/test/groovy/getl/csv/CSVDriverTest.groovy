@@ -351,7 +351,7 @@ class CSVDriverTest extends GetlTest {
         )
 
         def text2 = new File(ds2.fullFileName()).text
-        assertEquals('1,name 1,2020-12-31,1,12345.67\r\n2,name 2,2020-12-31,0,\r\n3,name 3,2020-12-31,0,\r\n', text2)
+        assertEquals('1,name 1,2020-12-31,true,12345.67\r\n2,name 2,2020-12-31,false,\r\n3,name 3,2020-12-31,false,\r\n', text2)
 
         ds1.drop()
         ds2.drop()
@@ -526,7 +526,7 @@ class CSVDriverTest extends GetlTest {
                 nullAsValue = '\u0001'
                 write()
                 assertEquals('''id|name|v1|v2|v3|v4|v5
-1|"one"|1|"\\"string\\""|2019-12-31|123.45|1
+1|"one"|1|"\\"string\\""|2019-12-31|123.45|true
 2|"two"|\u0001|\u0001|\u0001|\u0001|\u0001
 ''',read())
 
@@ -534,7 +534,7 @@ class CSVDriverTest extends GetlTest {
                 nullAsValue = '\u0002'
                 write()
                 assertEquals('''id|name|v1|v2|v3|v4|v5
-1|one|1|"""string"""|2019-12-31|123.45|1
+1|one|1|"""string"""|2019-12-31|123.45|true
 2|two|\u0002|\u0002|\u0002|\u0002|\u0002
 ''',read())
 
@@ -542,7 +542,7 @@ class CSVDriverTest extends GetlTest {
                 nullAsValue = '\\\\'
                 write()
                 assertEquals('''id|name|v1|v2|v3|v4|v5
-1|"one"|1|"\\"string\\""|2019-12-31|123.45|1
+1|"one"|1|"\\"string\\""|2019-12-31|123.45|true
 2|"two"|\\\\|\\\\|\\\\|\\\\|\\\\
 ''',read())
 
@@ -550,7 +550,7 @@ class CSVDriverTest extends GetlTest {
                 nullAsValue = '\\\\'
                 write()
                 assertEquals('''id|name|v1|v2|v3|v4|v5
-1|one|1|"""string"""|2019-12-31|123.45|1
+1|one|1|"""string"""|2019-12-31|123.45|true
 2|two|\\\\|\\\\|\\\\|\\\\|\\\\
 ''',read())
             }
@@ -766,6 +766,238 @@ class CSVDriverTest extends GetlTest {
 
             r = rows[1]
             assertNull(r.id)
+        }
+    }
+
+    @Test
+    void testEncode() {
+        Getl.Dsl {
+            def csv1 = csvTemp {
+                useConnection csvTempConnection {
+                    header = true
+                    fieldDelimiter = ';'
+                    extension = 'csv'
+                    locale = (IsJava8())?'ru-RU':'ce-RU'
+                    formatDate = 'dd MMM yyyy'
+                    formatDateTime = 'dd MMM yyyy HH:mm:ss'
+                    decimalSeparator = ','
+                    groupSeparator = ' '
+                    formatBoolean = 'да|нет'
+                }
+                fileName = 'test_encode1'
+                field('id') { type = integerFieldType; isNull = false }
+                field('name') { length = 12; isNull = false }
+                field('long_id') { type = bigintFieldType; isNull = false }
+                field('date') { type = dateFieldType; isNull = false }
+                field('ts') { type = datetimeFieldType; isNull = false }
+                field('value') { type = numericFieldType; length = 9; precision = 2; isNull = false }
+                field('complete') { type = booleanFieldType; isNull = false }
+                field('uuid') { type = uuidFieldType; isNull = false }
+
+                textFile(datasetFile()) {
+                    temporaryFile = true
+                    it.writeln('id;name;long_id;date;ts;value;complete;uuid')
+                    it.writeln('1;Наименование;5000000000;31 янв 2021;28 фев 2020 01:02:03;999 123,45;да;123e4567-e89b-12d3-a456-556642440000')
+                }
+
+                eachRow {row ->
+                    assertEquals(1, row.id)
+                    assertEquals('Наименование', row.name)
+                    assertEquals(5000000000, row.long_id)
+                    assertEquals(DateUtils.ParseDate('2021-01-31'), row.date as Date)
+                    assertEquals(DateUtils.ParseDateTime('2020-02-28 01:02:03.000'), row.ts as Date)
+                    assertEquals(999123.45, row.value)
+                    assertTrue(row.complete as Boolean)
+                    assertEquals('123e4567-e89b-12d3-a456-556642440000', row.uuid.toString())
+                }
+            }
+
+            def csv2 = csvTemp {
+                useConnection csvTempConnection()
+                header = true
+                fieldDelimiter = ';'
+                extension = 'csv'
+                locale = (IsJava8())?'ru-RU':'ce-RU'
+                formatDate = 'dd MMM yyyy'
+                formatDateTime = 'dd MMM yyyy HH:mm:ss'
+                decimalSeparator = ','
+                groupSeparator = ' '
+                formatBoolean = 'ДА|НЕТ'
+                fileName = 'test_encode2'
+                field = csv1.field
+                etl.rowsTo {
+                    writeRow { add ->
+                        csv1.eachRow { row ->
+                            add row
+                        }
+                    }
+                }
+
+                eachRow {row ->
+                    assertEquals(1, row.id)
+                    assertEquals('Наименование', row.name)
+                    assertEquals(5000000000, row.long_id)
+                    assertEquals(DateUtils.ParseDate('2021-01-31'), row.date as Date)
+                    assertEquals(DateUtils.ParseDateTime('2020-02-28 01:02:03.000'), row.ts as Date)
+                    assertEquals(999123.45, row.value)
+                    assertTrue(row.complete as Boolean)
+                    assertEquals('123e4567-e89b-12d3-a456-556642440000', row.uuid.toString())
+                }
+            }
+
+            assertEquals(csv1.datasetFile().text, csv2.datasetFile().text)
+
+            csv2.field.clear()
+            csv2.retrieveFields()
+            assertEquals(csv1.field, csv2.field)
+        }
+    }
+
+    private static void printFields(List<Field> field) {
+        field.each { println "${it.name} ${it.type}${(it.length > 0)?"(${it.length}, ${it.precision})":''}" +
+                "${(!it.isNull)?' NOT NULL':''}${(it.trim)?' TRIM':''}" }
+    }
+
+    @Test
+    void testDetectFieldsFromFile1() {
+        Getl.Dsl {
+            def con = csvConnection {
+                path = '{GETL_TEST}/csv'
+            }
+
+            csv {
+                useConnection con
+                fileName = 'test1.csv'
+                if (!existsFile())
+                    return
+
+                fieldDelimiter = ';'
+                decimalSeparator = ','
+                groupSeparator = ' '
+                uniFormatDateTime = 'dd.MM.yyyy HH:mm:ss'
+                quoteStr = '\u0001'
+
+                retrieveFields()
+                printFields(field)
+
+                eachRow { row ->
+                    assertNotNull(row.id)
+                    assertNotNull(row."изменено")
+                    assertNotNull(row."название компании")
+                    assertNotNull(row."фио")
+                    assertNotNull(row."телефон")
+                    assertNotNull(row.mail)
+                    assertNotNull(row."тип имущества")
+                    assertNotNull(row."предмет лизинга")
+                    assertNotNull(row."стоимость имущества")
+                    assertNotNull(row."валюта сделки")
+                    assertNotNull(row."планируемый срок лизинга")
+                    assertTrue(row."размер аванса" == null || row."размер аванса" > 0)
+                }
+            }
+        }
+    }
+
+    @Test
+    void testDetectFieldsFromFile2() {
+        Getl.Dsl {
+            def con = csvConnection {
+                path = '{GETL_TEST}/csv'
+            }
+
+            csv {
+                useConnection con
+                fileName = 'test2.csv'
+                if (!existsFile())
+                    return
+
+                fieldDelimiter = ';'
+                locale = 'ce-RU'
+                formatDate = 'dd MMM yyyy'
+                formatDateTime = 'dd MMM yyyy HH:mm:ss'
+                decimalSeparator = ','
+                groupSeparator = ' '
+                codePage = 'cp1251'
+
+                retrieveFields()
+                printFields(field)
+            }
+        }
+    }
+
+    @Test
+    void testDetectFieldsFromFile3() {
+        Getl.Dsl {
+            def con = csvConnection {
+                path = '{GETL_TEST}/csv'
+            }
+
+            csv {
+                useConnection con
+                fileName = 'test3.csv'
+                if (!existsFile())
+                    return
+
+                header = false
+                fieldDelimiter = ';'
+                uniFormatDateTime = 'yyyy-MM-dd HH:mm:ss'
+                formatBoolean = 't|f'
+
+                retrieveFields()
+                printFields(field)
+            }
+        }
+    }
+
+    @Test
+    void testReadAdditionalColumns() {
+        Getl.Dsl {
+            csvTemp {
+                header = true
+                fieldDelimiter = ','
+                field('id') { type = integerFieldType }
+                field('name')
+                field('value') { type = numericFieldType; length = 6; precision = 2 }
+
+                textFile(datasetFile()) {
+                    isTemporaryFile = true
+                    writeln('id,name,value,date,description')
+                    writeln('1,"Name 1",100.0,2021-01-01,Description 1')
+                }
+                shouldFail { rows() }
+
+                fieldOrderByHeader = true
+
+                def rl = rows()
+                assertEquals(1, rl.size())
+                def row = rl[0]
+                assertEquals(1, row.id)
+                assertEquals('Name 1', row.name)
+                assertEquals(100.0, row.value)
+
+                textFile(datasetFile()) {
+                    writeln('value,id,name,date,description')
+                    writeln('100.0,1,"Name 1",2021-01-01,Description 1')
+                }
+                rl = rows()
+                assertEquals(1, rl.size())
+
+                row = rl[0]
+                assertEquals(1, row.id)
+                assertEquals('Name 1', row.name)
+                assertEquals(100.0, row.value)
+
+                header = false
+                textFile(datasetFile()) {
+                    writeln('1,"Name 1",100.0,2021-01-01,Description 1')
+                }
+                rl = rows()
+                assertEquals(1, rl.size())
+                row = rl[0]
+                assertEquals(1, row.id)
+                assertEquals('Name 1', row.name)
+                assertEquals(100.0, row.value)
+            }
         }
     }
 }

@@ -42,17 +42,15 @@ class NetsuiteDriver extends JDBCDriver {
 				[Driver.Support.VIEW]
 	}
 
-	/*
-	@Override
-	public List<Driver.Operation> operations() {
-		return super.operations()
-	}
-	*/
+	/*@Override
+	List<Operation> operations() {
+		return [Operation.RETRIEVEFIELDS, Operation.READ_METADATA, Operation.INSERT, Operation.UPDATE, Operation.DELETE]
+	}*/
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	Map getSqlType () {
-		Map res = super.getSqlType()
+	Map<String, Map<String, Object>> getSqlType () {
+		def res = super.getSqlType()
 		res.DOUBLE.name = 'float'
 		res.BOOLEAN.name = 'bit'
 		res.BLOB.name = 'varbinary'

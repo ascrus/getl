@@ -70,7 +70,7 @@ ORDER BY start_timestamp DESC
 LIMIT 1'''
                 def rows = rows()
                 assertEquals(1, rows.size())
-                assertEquals('SELECT /*+label(test_limit)*/ "table_schema","table_name" FROM "v_catalog"."tables" tab LIMIT 1 OFFSET 1', rows[0].request)
+                assertEquals('SELECT /*+label(test_limit)*/ table_schema,table_name FROM v_catalog.tables tab LIMIT 1 OFFSET 1', rows[0].request)
             }
         }
     }

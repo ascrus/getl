@@ -99,7 +99,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * How field update with retrieve from metadata
 	 */
-	static enum UpdateFieldType {NONE, CLEAR, APPEND, MERGE, MERGE_EXISTS}
+	static enum UpdateFieldType {NONE, CLEAR, APPEND_ONLY, MERGE_EXISTS
+	}
 
 	/**
 	 * How lookup find key
@@ -152,7 +153,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (datasetClass == null)
 			throw new ExceptionGETL("Required parameter \"dataset\"")
 		
-		def dataset = Class.forName(datasetClass).newInstance() as Dataset
+		def dataset = Class.forName(datasetClass).getDeclaredConstructor().newInstance() as Dataset
 		dataset.importParams(params)
 
 		return dataset
@@ -290,6 +291,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void setField(List<Field> value) {
 		workSetField = true
 		try {
+			field.clear()
 			saveFields(value)
 		}
 		finally {
@@ -315,11 +317,15 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param value field description list
 	 */
 	protected void saveFields(List<Field> value) {
-		this.field.clear()
 		value.each { Field f ->
+			if (indexOfField(f.name) != -1)
+				return
+
 			Field n = f.copy()
-			if (connection != null) connection.driver.prepareField(n)
-			this.field << n
+			if (connection != null)
+				connection.driver.prepareField(n)
+
+			this.field.add(n)
 		}
 	}
 	
@@ -561,43 +567,58 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Update data set fields with new
 	 */
-	void updateFields (UpdateFieldType updateFieldType, List<Field> sourceFields, Closure prepare = null) {
-		if (updateFieldType == UpdateFieldType.NONE) return
-		List<Field> r = []
-		def c = 0
-		def l = getField()
-		sourceFields.each { Field v ->
-			c++
-			if (updateFieldType != UpdateFieldType.CLEAR) {
-				def i = indexOfField(v.name)
-				if (i == -1) {
-					if (prepare != null) prepare(c, v)
-					r << v
-				} else {
-					def af = l[i]
-					if (updateFieldType == UpdateFieldType.APPEND) {
-						r << af
+	void updateFields(UpdateFieldType updateFieldType, List<Field> sourceFields, Closure prepare = null) {
+		if (updateFieldType == UpdateFieldType.NONE)
+			return
+
+		if (updateFieldType == UpdateFieldType.CLEAR)
+			field.clear()
+
+		def cur = 0
+		sourceFields.each { Field newField ->
+			cur++
+			Field dsField
+			switch (updateFieldType) {
+				case UpdateFieldType.CLEAR:
+					dsField = newField.copy()
+					if (prepare != null)
+						prepare(cur, dsField)
+					if (connection != null)
+						connection.driver.prepareField(dsField)
+
+					field.add(dsField)
+					break
+				case UpdateFieldType.APPEND_ONLY:
+					def i = indexOfField(newField.name)
+					if (i == -1) {
+						dsField = newField.copy()
+						if (prepare != null)
+							prepare(cur, dsField)
+						if (connection != null)
+							connection.driver.prepareField(dsField)
+
+						field.add(dsField)
 					}
+					break
+				case UpdateFieldType.MERGE_EXISTS:
+					newField = newField.copy()
+					if (prepare != null)
+						prepare(cur, newField)
+					if (connection != null)
+						connection.driver.prepareField(newField)
+
+					dsField = fieldByName(newField.name)
+					if (dsField != null)
+						dsField.assign(newField)
 					else {
-						v.assign(af)
-						if (prepare != null) prepare(c, v)
-						r << v
+						dsField = newField.copy()
+						field.add(dsField)
 					}
-				}
-			} else {
-				if (prepare != null) prepare(c, v)
-				r << v
+					break
+				default:
+					throw new ExceptionGETL("Unknown update type \"$updateFieldType\"!")
 			}
 		}
-		
-		if (updateFieldType == UpdateFieldType.MERGE_EXISTS) {
-			removeFields { Field rf ->
-				(findField(r, rf.name) == -1)
-			}
-		}
-		
-		prepareFields(r)
-		saveFields(r)
 	}
 	
 	/**
@@ -667,13 +688,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	@JsonIgnore
 	Status getStatus() { status }
 
-	/**
-	 * Initialization list of fields
-	 */
-	protected void doInitFields (List<Field> sourceFields) {
-		if (!sourceFields.isEmpty() && !isManualSchema()) {
-			updateFields(UpdateFieldType.MERGE_EXISTS, sourceFields)
-		}
+	/** Initialization list of fields */
+	protected void doInitFields(List<Field> sourceFields) {
+		updateFields(UpdateFieldType.MERGE_EXISTS, sourceFields)
 	}
 	
 	/** Error parse read rows */
@@ -1569,7 +1586,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Reset typeName for all fields
 	 */
 	void resetFieldsTypeName () {
-		getField().each { Field f -> f.typeName = null }
+		getField().each { Field f ->
+			f.typeName = null
+			f.columnClassName = null
+		}
 	}
 	
 	/**

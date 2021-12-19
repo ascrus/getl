@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -81,6 +82,10 @@ class Field implements Serializable, Cloneable {
 	/** Database type name */
 	@JsonIgnore
 	public String typeName
+
+	/** Metadata column class name */
+	@JsonIgnore
+	public String columnClassName
 	
 	private Boolean isNull = true
 	/** Value can not be null */
@@ -153,6 +158,12 @@ class Field implements Serializable, Cloneable {
 	String getCompute() { return this.compute }
 	/** Compute columns */
 	void setCompute(String value) { this.compute = value }
+
+	private String checkValue
+	/** Check value expression */
+	String getCheckValue() { checkValue }
+	/** Check value expression */
+	void setCheckValue(String value) { this.checkValue = value }
 
 	private String arrayType
 	/** Primitive type for array */
@@ -237,7 +248,8 @@ class Field implements Serializable, Cloneable {
 		def n = [:]
 		n.name = name
 		n.type = type.toString()
-		if (typeName != null) n."typeName" = typeName
+		if (typeName != null) n.typeName = typeName
+		if (columnClassName != null) n.columnClassName = columnClassName
 		
 		if (AllowLength(this) && length != null) n.length = length
 		if (AllowPrecision(this) && precision != null) n.precision = precision
@@ -251,6 +263,7 @@ class Field implements Serializable, Cloneable {
 		if (arrayType != null) n.arrayType = arrayType
 		if (defaultValue != null) n.defaultValue = defaultValue
 		if (compute != null) n.compute = compute
+		if (checkValue != null) n.checkValue = checkValue
 		if (format != null) n.format = format
 		if (alias != null) n.alias = alias
 		if (trim) n.trim = trim
@@ -277,6 +290,7 @@ class Field implements Serializable, Cloneable {
 		def typeStr = StringUtils.NullIsEmpty(mf.type as String)
 		def type = (typeStr != null)? Type.valueOf(typeStr): Type.STRING
 		def typeName = StringUtils.NullIsEmpty(mf.typeName as String)
+		def columnClassName = StringUtils.NullIsEmpty(mf.columnClassName as String)
 		def isNull = BoolUtils.IsValue(mf.isNull,true)
 		def length = NumericUtils.Obj2Integer(mf.length)
 		def precision = NumericUtils.Obj2Integer(mf.precision)
@@ -289,6 +303,7 @@ class Field implements Serializable, Cloneable {
 		def arrayType = StringUtils.NullIsEmpty(mf.arrayType as String)
 		def defaultValue = StringUtils.NullIsEmpty(mf.defaultValue as String)
 		def compute = StringUtils.NullIsEmpty(mf.compute as String)
+		def checkValue = StringUtils.NullIsEmpty(mf.checkValue as String)
 		def minValue = (mf.minValue instanceof String && (mf.minValue as String).length() == 0)?null:mf.minValue
 		def maxValue = (mf.maxValue instanceof String && (mf.maxValue as String).length() == 0)?null:mf.maxValue
 		def format = StringUtils.NullIsEmpty(mf.format as String)
@@ -299,11 +314,11 @@ class Field implements Serializable, Cloneable {
 		def extended = mf.extended as Map<String, Object>
 
 		def res = new Field(
-					name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,
+					name: name, type: type, typeName: typeName, columnClassName: columnClassName, isNull: isNull, length: length, precision: precision,
 					isKey: isKey, ordKey: ordKey, isPartition: isPartition, ordPartition: ordPartition,
 					isAutoincrement: isAutoincrement, isReadOnly: isReadOnly, arrayType: arrayType,
-					defaultValue: defaultValue, compute: compute, minValue: minValue, maxValue: maxValue,
-					format: format, alias: alias, trim: trim,
+					defaultValue: defaultValue, compute: compute, checkValue: checkValue,
+				    minValue: minValue, maxValue: maxValue, format: format, alias: alias, trim: trim,
 					decimalSeparator: decimalSeparator, description: description, extended: extended
 		)
 
@@ -331,6 +346,7 @@ class Field implements Serializable, Cloneable {
 		s.name = name
 		s.type = type
 		s.typeName = typeName
+		s.columnClassName = columnClassName
 		s.isNull = isNull
 		s.length = length
 		s.precision = precision
@@ -343,6 +359,7 @@ class Field implements Serializable, Cloneable {
 		s.arrayType = arrayType
 		s.defaultValue = defaultValue
 		s.compute = compute
+		s.checkValue = checkValue
 		s.minValue = minValue
 		s.maxValue = maxValue
 		s.format = format
@@ -362,6 +379,7 @@ class Field implements Serializable, Cloneable {
 	void assign(Field f) {
 		type = (f.type != Type.OBJECT)?f.type:type
 		typeName = (f.typeName != null)?f.typeName:typeName
+		columnClassName = (f.columnClassName != null)?f.columnClassName:columnClassName
 		dbType = (f.dbType != null)?f.dbType:dbType
 		isNull = (!f.isNull)?false:isNull
 		isKey = (f.isKey)?true:isKey
@@ -375,6 +393,7 @@ class Field implements Serializable, Cloneable {
 		arrayType = (f.arrayType != null)?f.arrayType:arrayType
 		defaultValue = (f.defaultValue != null)?f.defaultValue:defaultValue
 		compute = (f.compute != null)?f.compute:compute
+		checkValue = (f.checkValue != null)?f.checkValue:checkValue
 		minValue = (f.minValue != null)?f.minValue:minValue
 		maxValue = (f.maxValue != null)?f.maxValue:maxValue
 		format = (f.format != null)?f.format:format
@@ -404,10 +423,10 @@ class Field implements Serializable, Cloneable {
 	@Synchronized
 	Field copy() {
 		return new Field(
-				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull,
+				name: this.name, type: this.type, typeName: this.typeName, columnClassName: this.columnClassName, dbType: this.dbType, isNull: this.isNull,
 				length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isPartition: this.isPartition, ordPartition: this.ordPartition, isAutoincrement: this.isAutoincrement,
-				isReadOnly: this.isReadOnly, arrayType: this.arrayType, defaultValue: this.defaultValue, compute: this.compute,
+				isReadOnly: this.isReadOnly, arrayType: this.arrayType, defaultValue: this.defaultValue, compute: this.compute, checkValue: this.checkValue,
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias,
 				trim: this.trim, decimalSeparator: this.decimalSeparator, description: this.description,
 				extended: CloneUtils.CloneMap(extended, false)
@@ -478,10 +497,12 @@ class Field implements Serializable, Cloneable {
         if (this.precision != o.precision) return false
         if (this.dbType != o.dbType) return false
         if (this.typeName?.toUpperCase() != o.typeName?.toUpperCase()) return false
+		if (this.columnClassName?.toUpperCase() != o.columnClassName?.toUpperCase()) return false
         if (this.decimalSeparator != o.decimalSeparator) return false
         if (this.alias?.toUpperCase() != o.alias?.toUpperCase()) return false
 		if (this.arrayType?.toUpperCase() != o.arrayType?.toUpperCase()) return false
         if (this.compute != o.compute) return false
+		if (this.checkValue != o.checkValue) return false
         if (this.defaultValue != o.defaultValue) return false
         if (this.minValue != o.minValue) return false
         if (this.maxValue != o.maxValue) return false
@@ -517,41 +538,6 @@ class Field implements Serializable, Cloneable {
 		if (this.isAutoincrement != o.isAutoincrement) return false
 
 		return true
-	}
-
-	/** Convert field type to dsl type name */
-	static String TypeToDsl(Type type) {
-		return type.toString().toLowerCase() + 'FieldType'
-	}
-
-	String generateDsl() {
-		def l = [] as List<String>
-		l << "type = ${TypeToDsl(type)}".toString()
-		if (AllowLength(this) && length != null) l << "length = $length".toString()
-		if (AllowPrecision(this) && precision != null) l << "precision = $precision".toString()
-		if (!isNull) l << 'isNull = false'
-		if (BoolUtils.IsValue(isKey)) {
-			l << 'isKey = true'
-			if (ordKey > 0) l << "ordKey = $ordKey".toString()
-		}
-		if (BoolUtils.IsValue(isPartition)) {
-			l << 'isPartition = true'
-			if (ordPartition != null) l << "ordPartition = $ordPartition".toString()
-		}
-		if (BoolUtils.IsValue(isAutoincrement)) l << 'isAutoincrement = true'
-		if (BoolUtils.IsValue(isReadOnly)) l << 'isReadOnly = true'
-		if (defaultValue != null) l << "defaultValue = '$defaultValue'".toString()
-		if (compute != null) l << "compute = '$compute'".toString()
-		if (arrayType != null) l << "arrayType = '$arrayType'".toString()
-		if (minValue != null) l << "minValue = $minValue".toString()
-		if (maxValue != null) l << "minValue = $maxValue".toString()
-		if (format != null) l << "format = '$format'".toString()
-		if (alias != null) l << "alias = '$alias'".toString()
-		if (BoolUtils.IsValue(trim)) l << 'trim = true'
-		if (decimalSeparator != null) l << "decimalSeparator = '$decimalSeparator'".toString()
-		if (description != null) l << "description = '$description'".toString()
-
-		return "field('$name') { ${l.join('; ')} }"
 	}
 
 	@Override

@@ -12,6 +12,7 @@ import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.*
+import groovy.transform.Synchronized
 
 import java.util.regex.Pattern
 
@@ -73,6 +74,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	@JsonIgnore
 	Connection getConnection() { connection }
 	/***  Source connection */
+	@Synchronized
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('The SQLScripter only supports jdbc connections!')
@@ -80,14 +82,20 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		useConnection(value as JDBCConnection)
 	}
 	/** Use specified source JDBC connection */
+	@Synchronized
 	JDBCConnection useConnection(JDBCConnection value) {
 		this.connection = value as JDBCConnection
 		return value
 	}
 
+	/** Current source JDBC connection */
+	@JsonIgnore
+	JDBCConnection getCurrentJDBCConnection() { connection as JDBCConnection }
+
 	/** The name of the connection in the repository */
 	String getConnectionName() { connection?.dslNameObject }
 	/** The name of the connection in the repository */
+	@Synchronized
 	void setConnectionName(String value) {
 		if (value != null) {
 			GetlValidate.IsRegister(this)
@@ -135,8 +143,9 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file name sql batch file
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
+	@Synchronized
 	void loadFile(String fileName, String codePage = 'utf-8') {
-		def fn = FileUtils.ResourceFileName(fileName, dslCreator)
+		def fn = FileUtils.ResourceFileName(FileUtils.TransformFilePath(fileName), dslCreator)
 		if (fn == null)
 			throw new ExceptionGETL("Script file \"$fileName\" not found!")
 		def file = new File(fn)
@@ -151,6 +160,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param codePage file use specified encoding page (default utf-8)
 	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
 	 */
+	@Synchronized
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
 		def paths = [] as List<String>
 		if (dslCreator != null)
@@ -176,8 +186,12 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	/** SQL generated script */
 	protected void setLastSql(String value) {
 		lastSql = value
-		if (debugMode)
-			println lastSql
+		if (debugMode) {
+			def str = lastSql
+			if (StringUtils.RightStr(value, 1) != ';')
+				str += ';'
+			println str
+		}
 	}
 
 	/** Commands history */
@@ -189,82 +203,83 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	/** DML history */
 	public final StringBuffer historyDML = new StringBuffer()
 
+	@SuppressWarnings('GroovyAssignabilityCheck')
 	private void doLoadPoint(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
-		def m = lastSql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+		if (dslCreator == null)
+			throw new ExceptionGETL('The scripter does not have an "dslCreator" assigned!')
+
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		def m = lastSql =~ /(?is)load_point\s+([^\s]+)\s+to\s+([^\s]+)/
 		if (m.size() == 0)
 			throw new ExceptionGETL("Uncorrect syntax for statement LOAD_POINT: \"$lastSql\"!")
-		//noinspection GroovyAssignabilityCheck
-		def point = m[0][2] as String
-		//noinspection GroovyAssignabilityCheck
-		def varName = m[0][5] as String
-		
-		def pointList = point.split('[.]').toList()
-		while (pointList.size() < 4) pointList.add(0, null)
-		def dbName = pointList[0]
-		def schemaName = pointList[1]
-		def tableName = pointList[2]
-		def pointName = pointList[3]
-		//noinspection GroovyAssignabilityCheck
-		def methodName = m[0][8] as String
-		
-		if (tableName == null)
-			throw new ExceptionGETL("SQLScripter: need table name for LOAD_POINT statement!")
-		if (pointName == null)
-			throw new ExceptionGETL("SQLScripter: need pointer name for LOAD_POINT statement!")
-		
-		def pm = new SavePointManager(connection: pointConnection?:connection, tableName: tableName, saveMethod: methodName)
-		if (dbName != null) pm.dbName = dbName
-		if (schemaName != null) pm.schemaName = schemaName
-		
-		if (pm.isExists()) {
-			def res = pm.lastValue(pointName)
-			def value = (res.type == null)?null:res.value
-			vars.put(varName, value)
-		}
-		else {
+		def point = m[0][1] as String
+		def varName = m[0][2] as String
+
+		def pm = dslCreator.historypoint(point)
+		if (pm.isExists())
+			vars.put(varName, pm.lastValue(true))
+		else
 			vars.put(varName, null)
-		}
 	}
-	
-	@groovy.transform.Synchronized
-	private void doSavePoint (SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
-		def m = lastSql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+
+	@SuppressWarnings('GroovyAssignabilityCheck')
+	private void doSavePoint(SQLParser parser) {
+		if (dslCreator == null)
+			throw new ExceptionGETL('The scripter does not have an "dslCreator" assigned!')
+
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		def m = lastSql =~ /(?is)save_point\s+([^\s]+)\s+from\s+([^\s]+)/
         if (m.size() == 0)
 			throw new ExceptionGETL("Uncorrect syntax for SAVE_POINT statement: \"$lastSql\"!")
-		//noinspection GroovyAssignabilityCheck
-		def point = m[0][2] as String
-		//noinspection GroovyAssignabilityCheck
-		def varName = m[0][5] as String
+		def point = m[0][1] as String
+		def varName = m[0][2] as String
 		def value = allVars.get(varName)
-		if (value == null) throw new ExceptionGETL("SQLScripter: variable \"$varName\" has empty value for SAVE_POINT statement!")
-		
-		def pointList = point.split('[.]').toList()
-		while (pointList.size() < 4) pointList.add(0, null)
-		def dbName = pointList[0]
-		def schemaName = pointList[1]
-		def tableName = pointList[2]
-		def pointName = pointList[3]
-		//noinspection GroovyAssignabilityCheck
-		def methodName = m[0][8] as String
-		
-		if (tableName == null)
-			throw new ExceptionGETL("SQLScripter: need table name for SAVE_POINT operator")
-		if (pointName == null)
-			throw new ExceptionGETL("SQLScripter: need pointer name for SAVE_POINT operator")
-		
-		def pm = new SavePointManager(connection: pointConnection?:connection, tableName: tableName, saveMethod: methodName)
-		if (dbName != null) pm.dbName = dbName
-		if (schemaName != null) pm.schemaName = schemaName
-		
-		if (!pm.exists) pm.create(false)
-		pm.saveValue(pointName, value)
+		if (value == null)
+			throw new ExceptionGETL("SQLScripter: variable \"$varName\" has null value for SAVE_POINT statement!")
+
+		def pm = dslCreator.historypoint(point)
+		if (!pm.exists)
+			pm.create(false)
+		pm.saveValue(value)
 	}
-	
+
+	private void doRunFile(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		def posCmd = parser.lexer.findKeyWord('RUN_FILE')
+		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
+		if (posParam.length() == 0)
+			throw new ExceptionGETL('Required file name from command RUN_FILE!')
+
+		if (!FileUtils.IsResourceFileName(posParam, true) && !FileUtils.ExistsFile(posParam))
+			throw new ExceptionGETL("Script file \"$posParam\" not found and cannot be running!")
+
+		SQLScripter ns = new SQLScripter(connection: connection, logEcho: logEcho, debugMode: debugMode,
+				vars: vars, extVars: extVars)
+		try {
+			ns.runFile(true, posParam)
+			vars.putAll(ns.vars)
+		}
+		finally {
+			lastSql = ns.lastSql
+			historyCommands.append(ns.historyCommands)
+			historyDDL.append(ns.historyDDL)
+			historyDML.append(ns.historyDML)
+			rowCount += ns.rowCount
+		}
+	}
+
+	private void doSwitchLogin(SQLParser parser) {
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		def posCmd = parser.lexer.findKeyWord('SWITCH_LOGIN')
+		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
+		if (posParam.length() == 0)
+			throw new ExceptionGETL('Required login from command SWITCH_LOGIN!')
+		connection.useLogin(posParam)
+	}
+
 	/*** Do update command */
 	private void doDML(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
 		def rc = connection.executeCommand(command: lastSql)
 		if (rc > 0)
 			rowCount += rc
@@ -279,7 +294,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 
 	/*** Do update command */
 	private void doDDL(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
 		connection.executeCommand(command: lastSql)
 
 		historyDDL.append(lastSql)
@@ -288,14 +303,16 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 
 	/*** Do other script */
 	private void doOther(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
-		connection.executeCommand(command: lastSql)
+		if (!parser.scripts(true).isEmpty()) {
+			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+			connection.executeCommand(command: lastSql)
+		}
 	}
 	
 	/** Do select command */
 	private void doSelect(SQLParser parser) {
 		try {
-			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim() + ';')
+			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
 			QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
 			def rows = ds.rows()
 
@@ -318,7 +335,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			throw new ExceptionGETL("Invalid SET statement: ${parser.lexer.script}")
 
 		def setScript = matcher.group(1)
-		setLastSql(StringUtils.EvalMacroString(setScript, allVars).trim() + ';')
+		setLastSql(StringUtils.EvalMacroString(setScript, allVars).trim())
 
 		QueryDataset query = new QueryDataset(connection: connection, query: lastSql)
 		def rows = query.rows(limit: 1)
@@ -353,7 +370,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			throw new ExceptionGETL("No script specified for FOR statement: $parseScript")
 
 		def queryText = parseScript.substring(listHeader[0].first as Integer, (listHeader[listHeader.size() - 1].last as Integer) + 1)
-		setLastSql(StringUtils.EvalMacroString(queryText, allVars).trim() + ';')
+		setLastSql(StringUtils.EvalMacroString(queryText, allVars).trim())
 		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1).trim()
 
 		QueryDataset query = new QueryDataset(connection: connection, query: lastSql)
@@ -415,7 +432,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			sc += ' FROM ' + connection.currentJDBCDriver.sysDualTable
 		}
 		sc += ' WHERE (\n' + StringUtils.EvalMacroString(queryText.trim(), allVars) + '\n)'
-		lastSql = setLastSql(sc + ';')
+		lastSql = setLastSql(sc)
 
 		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1)
 
@@ -427,6 +444,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 					vars: vars, extVars: extVars)
 			try {
 				ns.runSql(true)
+				vars.putAll(ns.vars)
 				if (ns.isRequiredExit())
 					requiredExit = true
 			}
@@ -480,7 +498,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			text = parseScript.substring(posText).trim().trim()
 
 		if (text != null && text.length() > 0)
-			logger.write(logEcho, StringUtils.EvalMacroString(text, allVars))
+			logger.write(logEcho, StringUtils.UnescapeJava(StringUtils.EvalMacroString(text, allVars)))
 	}
 
 	private void doError(SQLParser parser) {
@@ -507,6 +525,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * Run SQL script
 	 * @param useParsing enable script command parsing (defaults to extensionForSqlScripts from connection)
 	 */
+	@Synchronized
 	void runSql(Boolean useParsing = null) {
 		if (connection == null)
 			throw new ExceptionGETL('Not defined jdbc connection for work!')
@@ -545,49 +564,63 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			def parser = new SQLParser(st[i])
 			def type = parser.statementType()
 
-			switch (type) {
-				case SQLParser.StatementType.INSERT: case SQLParser.StatementType.UPDATE:
-				case SQLParser.StatementType.DELETE: case SQLParser.StatementType.MERGE:
-				case SQLParser.StatementType.TRUNCATE: case SQLParser.StatementType.START_TRANSACTION:
-				case SQLParser.StatementType.COMMIT: case SQLParser.StatementType.ROLLBACK:
-					doDML(parser)
-					break
-				case SQLParser.StatementType.CREATE: case SQLParser.StatementType.ALTER:
-				case SQLParser.StatementType.DROP:
-					doDDL(parser)
-					break
-				case SQLParser.StatementType.SELECT:
-					doSelect(parser)
-					break
-				case SQLParser.StatementType.GETL_SET:
-					doSetVar(parser)
-					break
-				case SQLParser.StatementType.GETL_ECHO:
-					doEcho(parser)
-					break
-				case SQLParser.StatementType.GETL_FOR:
-					doFor(parser)
-					break
-				case SQLParser.StatementType.GETL_IF:
-					doIf(parser)
-					break
-				case SQLParser.StatementType.GETL_COMMAND:
-					doCommand(parser)
-					break
-				case SQLParser.StatementType.GETL_ERROR:
-					doError(parser)
-					break
-				case SQLParser.StatementType.GETL_EXIT:
-					requiredExit = true
-					break
-				case SQLParser.StatementType.GETL_LOAD_POINT:
-					doLoadPoint(parser)
-					break
-				case SQLParser.StatementType.GETL_SAVE_POINT:
-					doSavePoint(parser)
-					break
-				default:
-					doOther(parser)
+			try {
+				switch (type) {
+					case SQLParser.StatementType.INSERT: case SQLParser.StatementType.UPDATE:
+					case SQLParser.StatementType.DELETE: case SQLParser.StatementType.MERGE:
+					case SQLParser.StatementType.TRUNCATE: case SQLParser.StatementType.START_TRANSACTION:
+					case SQLParser.StatementType.COMMIT: case SQLParser.StatementType.ROLLBACK:
+						doDML(parser)
+						break
+					case SQLParser.StatementType.CREATE: case SQLParser.StatementType.ALTER:
+					case SQLParser.StatementType.DROP:
+						doDDL(parser)
+						break
+					case SQLParser.StatementType.SELECT:
+						doSelect(parser)
+						break
+					case SQLParser.StatementType.GETL_SET:
+						doSetVar(parser)
+						break
+					case SQLParser.StatementType.GETL_ECHO:
+						doEcho(parser)
+						break
+					case SQLParser.StatementType.GETL_FOR:
+						doFor(parser)
+						break
+					case SQLParser.StatementType.GETL_IF:
+						doIf(parser)
+						break
+					case SQLParser.StatementType.GETL_COMMAND:
+						doCommand(parser)
+						break
+					case SQLParser.StatementType.GETL_ERROR:
+						doError(parser)
+						break
+					case SQLParser.StatementType.GETL_EXIT:
+						requiredExit = true
+						break
+					case SQLParser.StatementType.GETL_LOAD_POINT:
+						doLoadPoint(parser)
+						break
+					case SQLParser.StatementType.GETL_SAVE_POINT:
+						doSavePoint(parser)
+						break
+					case SQLParser.StatementType.GETL_RUN_FILE:
+						doRunFile(parser)
+						break
+					case SQLParser.StatementType.GETL_SWITCH_LOGIN:
+						doSwitchLogin(parser)
+						break
+					case SQLParser.StatementType.SINGLE_COMMENT: case SQLParser.StatementType.MULTI_COMMENT:
+						continue
+					default:
+						doOther(parser)
+				}
+			}
+			catch (Exception e) {
+				logger.severe("Error run script:\n${st[i]}")
+				throw e
 			}
 		}
 	}
@@ -595,7 +628,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	private Pattern scriptVariablePattern = Pattern.compile('^[:](\\w+)$')
 
 	/** Detect count script variable name in comment */
-	String detectScriptVariable(SQLParser parser) {
+	private String detectScriptVariable(SQLParser parser) {
 		def tokens = parser.lexer.tokens
 		def count = tokens.size()
 		def i = 0
@@ -605,7 +638,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			def type = token.type as Lexer.TokenType
 			if (type == Lexer.TokenType.COMMENT)
 				c = i
-			else if (type != Lexer.TokenType.LINE_FEED)
+			else if (!(type in [Lexer.TokenType.LINE_FEED, Lexer.TokenType.SINGLE_COMMENT]))
 				break
 
 			i++
@@ -630,6 +663,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
 	 * @param codePage text encoding (default utf-8)
 	 */
+	@Synchronized
 	void runFile(String fileName, String codePage = 'utf-8') {
 		loadFile(fileName, codePage)
 		runSql()
@@ -641,6 +675,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
 	 * @param codePage text encoding (default utf-8)
 	 */
+	@Synchronized
 	void runFile(Boolean useParsing, String fileName, String codePage = 'utf-8') {
 		loadFile(fileName, codePage)
 		runSql(useParsing)
@@ -650,6 +685,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * Run SQL script
 	 * @param sql script to execute
 	 */
+	@Synchronized
 	void exec(String sql) {
 		script = sql
 		runSql()
@@ -660,6 +696,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param useParsing enable script command parsing
 	 * @param sql script to execute
 	 */
+	@Synchronized
 	void exec(Boolean useParsing, String sql) {
 		script = sql
 		runSql(useParsing)
@@ -678,7 +715,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			newPointConnection = this.pointConnection
 
 		def className = this.getClass().name
-		def res = Class.forName(className).newInstance() as SQLScripter
+		def res = Class.forName(className).getDeclaredConstructor().newInstance() as SQLScripter
 
 		if (newConnection != null)
 			res.connection = newConnection

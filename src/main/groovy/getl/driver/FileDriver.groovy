@@ -272,7 +272,7 @@ class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	protected Reader getFileReader (FileDataset dataset, Map params, Integer portion = null) {
+	protected Reader getFileReader(FileDataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn as String
@@ -520,19 +520,19 @@ class FileDriver extends Driver {
 	}
 	
 	@Override
-	void startTran() {
+	void startTran(Boolean useSqlOperator = false) {
 		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-	void commitTran() {
+	void commitTran(Boolean useSqlOperator = false) {
 		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-	void rollbackTran() {
+	void rollbackTran(Boolean useSqlOperator = false) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	

@@ -213,7 +213,7 @@ println time() + 'finish' '''
 
         def count = 0
         def codePage = (Config.isWindows())?'cp866':'utf-8'
-        def cmd = (Config.isWindows())?'cmd /c groovy check_run.groovy':'groovy check_run.groovy'
+        def cmd = (Config.isWindows())?'groovy.bat check_run.groovy':'groovy check_run.groovy'
 
         def outConsole = new StringBuilder()
         def outErrors = new StringBuilder()
@@ -230,7 +230,7 @@ println time() + 'finish' '''
             println outErrors.toString()
 
         assertEquals(0, exitCode)
-        assertEquals(6, count)
+        assertEquals(7, count)
 
         assertEquals(7, outConsole.readLines().size())
         assertEquals(0, outErrors.length())

@@ -151,7 +151,21 @@ class FileDataset extends Dataset {
 	void setDecimalSeparator(String value) { params.decimalSeparator = value }
 	/** Decimal separator for number fields */
 	String decimalSeparator() { decimalSeparator?:fileConnection?.decimalSeparator() }
-	
+
+	/** Group separator for number fields */
+	String getGroupSeparator() { params.groupSeparator as String }
+	/** Group separator for number fields */
+	void setGroupSeparator(String value) { params.groupSeparator = value }
+	/** Group separator for number fields */
+	String groupSeparator() { groupSeparator?:fileConnection?.groupSeparator() }
+
+	/** Regional locale for parsing date-time and numeric fields */
+	String getLocale() { params.locale as String }
+	/** Regional locale for parsing date-time and numeric fields */
+	void setLocale(String value) { params.locale = value }
+	/** Regional locale for parsing date-time and numeric fields */
+	String locale() { locale?:fileConnection?.locale }
+
 	@Override
 	@JsonIgnore
 	String getObjectName() { (fileName != null)?(fileName() + ((extension() != null)?".${extension()}":'')):'file' }

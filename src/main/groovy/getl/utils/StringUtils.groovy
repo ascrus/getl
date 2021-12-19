@@ -113,7 +113,7 @@ class StringUtils {
 				def foundVars = 0
 				subVars.each { group ->
 					def subVarName = group[0] as String
-					if (vars.get(group[1]) != null) {
+					if (vars.get((group[1] as String).toLowerCase()) != null) {
 						def varSubName = '{' + (group[1] as String) + '}'
 						vn = vn.replace(subVarName, varSubName)
 						foundVars++
@@ -131,7 +131,7 @@ class StringUtils {
 			if (!vars.containsKey(vl) || (varValue instanceof Map)) {
 				if (errorWhenUndefined)
 					throw new ExceptionGETL("Unknown variable \"$vn\", " +
-							"known vars: ${vars.keySet().toList().join(', ')}")
+							"known vars: ${vars.keySet().toList().sort().join(', ')}")
 
 				sb.append(varName)
 

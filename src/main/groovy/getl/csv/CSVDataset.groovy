@@ -1,8 +1,10 @@
+//file:noinspection unused
 package getl.csv
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
+
 import getl.data.Connection
 import getl.data.FileDataset
 import getl.exception.ExceptionGETL
@@ -66,13 +68,13 @@ class CSVDataset extends FileDataset {
 	//@JsonIgnore
 	Boolean isHeader() { BoolUtils.IsValue(header, currentCsvConnection?.isHeader()) }
 
-	/** Ignore header field name */
-	Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
-	/** Ignore header field name */
-	void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
-	/** Ignore header field name */
+	/** The order of the fields is determined by the file header */
+	Boolean getFieldOrderByHeader() { params.fieldOrderByHeader as Boolean }
+	/** The order of the fields is determined by the file header */
+	void setFieldOrderByHeader(Boolean value) { params.fieldOrderByHeader = value }
+	/** The order of the fields is determined by the file header */
 	//@JsonIgnore
-	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, currentCsvConnection?.isIgnoreHeader()) }
+	Boolean isFieldOrderByHeader() { BoolUtils.IsValue(fieldOrderByHeader, currentCsvConnection?.isFieldOrderByHeader()) }
 	
 	/** Required format values for output to file */
 	Boolean getFormatOutput () { params.formatOutput }
@@ -113,19 +115,6 @@ class CSVDataset extends FileDataset {
 	void setQuoteMode(QuoteMode value) { params.quoteMode = value }
 	/** Mode of quote value */
 	QuoteMode quoteMode() { quoteMode?:currentCsvConnection?.getQuoteMode() }
-	
-	/** OS locale for parsing date-time fields
-	 * <br>P.S. You can set locale for separately field in Field.extended.locale
-	 */
-	String getLocale() { params.locale as String }
-	/** OS locale for parsing date-time fields
-	 * <br>P.S. You can set locale for separately field in Field.extended.locale
-	 */
-	void setLocale(String value) { params.locale = value }
-	/** OS locale for parsing date-time fields
-	 * <br>P.S. You can set locale for separately field in Field.extended.locale
-	 */
-	String locale() { locale?:currentCsvConnection?.locale }
 
 	/** File settings preset */
 	String getPresetMode() { params.presetMode as String }
@@ -186,7 +175,7 @@ class CSVDataset extends FileDataset {
 	List<String> inheritedConnectionParams() {
 		super.inheritedConnectionParams() +
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
-					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
+					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'fieldOrderByHeader',
 					'nullAsValue']
 	}
 

@@ -87,7 +87,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (className == null)
 			throw new ExceptionGETL("Required class name as \"manager\" property!")
 
-		Manager manager = Class.forName(className).newInstance() as Manager
+		Manager manager = Class.forName(className).getDeclaredConstructor().newInstance() as Manager
 		manager.importParams(parameters)
 
 		return manager
@@ -318,7 +318,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (res == null && dslCreator != null && dslNameObject != null) {
 			def historyPath = dslCreator.options.fileManagerLoggingPath
 			if (historyPath != null) {
-				def objName = ParseObjectName.Parse(dslNameObject)
+				def objName = ParseObjectName.Parse(dslNameObject, false)
 				res = historyPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment?:'prod'}.{date}.sql"
 			}
 		}
@@ -1637,12 +1637,9 @@ FROM (
 		if (useStory) {
 			if (ds == null)
 				throw new ExceptionGETL("For use store db required set \"ds\" property")
-			if (ds.field.isEmpty()) {
-				if (ds.isManualSchema())
-					throw new ExceptionGETL("Empty fields structure for dataset history")
+			if (ds.field.isEmpty())
 				ds.retrieveFields()
-			}
-			
+
 			String storyTable = "T_${StringUtils.RandomStr().replace('-', '_').toUpperCase()}"
 			storyFiles = new TableDataset(connection: ds.connection, tableName: storyTable, manualSchema: true, type: JDBCDataset.Type.LOCAL_TEMPORARY)
 			storyFiles.field = fileList.field

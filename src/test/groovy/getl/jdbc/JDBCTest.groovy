@@ -23,6 +23,7 @@ class JDBCTest extends GetlTest {
                 field('value') { type = numericFieldType; length = 12; precision = 2 }
 
                 create()
+                assertNull(field('id1').typeName)
                 assertTrue(field('id1').isKey)
                 assertEquals(1, field('id1').ordKey)
                 assertTrue(field('id2').isKey)
@@ -33,6 +34,7 @@ class JDBCTest extends GetlTest {
                         added id1: 1, id2: DateUtils.ParseDateTime('2019-12-31 23:59:59.000'), name: 'test', value: 123.45
                     }
                 }
+                assertNull(field('id1').typeName)
                 assertTrue(field('id1').isKey)
                 assertEquals(1, field('id1').ordKey)
                 assertTrue(field('id2').isKey)
@@ -41,12 +43,14 @@ class JDBCTest extends GetlTest {
                 eachRow {
                     assertNotNull(it.id1)
                 }
+                assertEquals('INTEGER', field('id1').typeName)
                 assertTrue(field('id1').isKey)
                 assertEquals(1, field('id1').ordKey)
                 assertTrue(field('id2').isKey)
                 assertEquals(2, field('id2').ordKey)
 
                 retrieveFields()
+                assertEquals('INTEGER', field('id1').typeName)
                 assertTrue(field('id1').isKey)
                 assertEquals(1, field('id1').ordKey)
                 assertTrue(field('id2').isKey)
@@ -167,6 +171,22 @@ class JDBCTest extends GetlTest {
             }
             assertEquals(s1.count, historypoint('group:hp1').lastValue())
             assertEquals(s2.date, historypoint('group:hp2').lastValue())
+
+            sql {
+                useConnection con
+                exec 'LOAD_POINT group:hp1 TO h1_value;'
+                assertEquals(s1.count, vars.h1_value)
+                exec 'LOAD_POINT group:hp2 TO h2_value;'
+                assertEquals(s2.date, vars.h2_value)
+
+                vars.h1_value = s1.count + 1
+                exec 'SAVE_POINT group:hp1 FROM h1_value'
+                assertEquals(s1.count + 1, vars.h1_value)
+
+                vars.h2_value = DateUtils.AddDate('dd', 1, s2.date)
+                exec 'SAVE_POINT group:hp2 FROM h2_value'
+                assertEquals(DateUtils.AddDate('dd', 1, s2.date), vars.h2_value)
+            }
         }
     }
 
@@ -243,32 +263,120 @@ DROP TABLE test_sqlscripter_result;
 
                 def dml = historyDML.readLines()
                 assertEquals('/*:count_rows*/', dml[0])
-                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (2, \'test 2\');', dml[1])
+                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (2, \'test 2\')', dml[1])
                 assertEquals('/*:count_rows*/', dml[2])
-                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (4, \'test 4\');', dml[3])
+                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (4, \'test 4\')', dml[3])
                 assertEquals('/*:count_rows*/', dml[4])
-                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (6, \'test 6\');', dml[5])
-                assertEquals('COMMIT;', dml[6])
-                assertEquals('TRUNCATE TABLE test_sqlscripter;', dml[7])
+                assertEquals('        INSERT INTO test_sqlscripter_result(id, name) VALUES (6, \'test 6\')', dml[5])
+                assertEquals('COMMIT', dml[6])
+                assertEquals('TRUNCATE TABLE test_sqlscripter', dml[7])
 
                 def ddl = historyDDL.readLines()
-                assertEquals('CREATE TABLE test_sqlscripter_result (id int PRIMARY KEY);', ddl[0])
-                assertEquals('ALTER TABLE test_sqlscripter_result ADD name varchar(50) NOT NULL;', ddl[1])
-                assertEquals('CREATE INDEX test_sqlscripter_result_name ON test_sqlscripter_result (name);', ddl[2])
-                assertEquals('DROP TABLE test_sqlscripter_result;', ddl[3])
+                assertEquals('CREATE TABLE test_sqlscripter_result (id int PRIMARY KEY)', ddl[0])
+                assertEquals('ALTER TABLE test_sqlscripter_result ADD name varchar(50) NOT NULL', ddl[1])
+                assertEquals('CREATE INDEX test_sqlscripter_result_name ON test_sqlscripter_result (name)', ddl[2])
+                assertEquals('DROP TABLE test_sqlscripter_result', ddl[3])
             }
         }
     }
 
     @Test
-    void testFor() {
-        def file = new File('tests/jdbc/stats.sql')
-        if (!file.exists())
-            return
+    void testSqlScripterVarCount() {
+        Getl.Dsl {
+            useEmbeddedConnection embeddedConnection()
+            embeddedTable('#count_vars', true) {
+                schemaName = 'public'
+                tableName = 'count_vars_table'
+                field('startdate') { type = datetimeFieldType; isKey = true }
+                field('enddate') { type = datetimeFieldType; isKey = true }
+                field('value') { type = integerFieldType; isNull = false }
+                create()
+            }
 
-        def sql = file.getText('utf-8')
-        def parser = new SQLParser(sql)
-        parser.lexer.tokens.collect { "[${it.type}]${it.value}" }.each { println it }
-        //parser.scripts().each { println it }
+            sql {
+                vars.date1 = null
+                vars.date2 = null
+                exec '''
+SET SELECT  case when '${date1}' = 'null' then date_trunc('day', sysdate -30) else '${date1}' end AS datefrom;
+SET SELECT  case when '${date2}'= 'null' then date_trunc('day', sysdate -1)  else '${date2}' end AS dateto;
+ECHO Date from ${datefrom} to ${dateto}
+
+/*
+  Start processing
+*/
+
+-- Insert dates to table
+/*:count_ins_dates*/
+insert into public.count_vars_table (startdate, enddate, value) values ('${datefrom}', '${dateto}', 0);
+ECHO Inserted ${count_ins_dates} rows to public.count_vars_table.
+IF (${count_ins_dates} <> 1) DO {
+  ERROR Error insert row!
+}
+
+------------------
+
+/*:count_upd_dates*/
+update public.count_vars_table set value = 1 where value = 0;
+ECHO Updated ${count_upd_dates} rows from public.count_vars_table.
+IF (${count_upd_dates} <> 1) DO {
+  ERROR Error update row (${count_upd_dates} row detected)!
+}
+
+------------------
+
+/*:rows*/
+SELECT * FROM public.count_vars_table;
+ECHO Selected rows from public.count_vars_table:\\n${rows}
+------------------
+
+/*:count_del_dates*/
+delete from public.count_vars_table;
+ECHO Deleted ${count_del_dates} rows from public.count_vars_table.
+IF (${count_del_dates} <> 1) DO {
+  ERROR Error delete row!
+}
+
+'''
+                assertEquals(1, (vars.rows as List).size())
+            }
+        }
+    }
+
+    @Test
+    void testScriptSwitchLogin() {
+        Getl.Dsl {
+            embeddedConnection('#test_switch_login', true) {
+                executeCommand("CREATE USER test1 PASSWORD 'test1' ADMIN; CREATE USER test2 PASSWORD 'test2' ADMIN;")
+                storedLogins.test1 = 'test1'
+                storedLogins.test2 = 'test2'
+                sql {
+                    exec '''ECHO Switch login to test1 ...
+SWITCH_LOGIN test1;
+'''
+                    assertEquals('test1', it.currentJDBCConnection.login)
+
+                    exec '''ECHO Switch login to test2 ...
+SWITCH_LOGIN test2;
+'''
+                    assertEquals('test2', it.currentJDBCConnection.login)
+                }
+                connected = false
+            }
+        }
+    }
+
+    @Test
+    void testScriptRunFile() {
+        Getl.Dsl {
+            embeddedConnection('#test_run_file', true) {
+                sql {
+                    vars.script_param = 1
+                    exec '''ECHO Run scrip.sql ...
+RUN_FILE resource:/jdbc/script.sql
+'''
+                    assertEquals('COMPLETE', vars.script_result)
+                }
+            }
+        }
     }
 }

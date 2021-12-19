@@ -152,8 +152,10 @@ class LangSpec extends BaseSpec {
     /**
      * Load project properties from resource config file getl-properties.conf
      * @param env environment
+     * @param filePath path to property file
+     * @return property file
      */
-    void loadProjectProperties(String env = null, String filePath = null) {
+    File loadProjectProperties(String env = null, String filePath = null) {
         File mainFile
         Boolean isResource
         if (filePath != null) {
@@ -163,28 +165,28 @@ class LangSpec extends BaseSpec {
 
             mainFile = new File(filePath)
             isResource = false
-            dslCreator.logFinest("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+            dslCreator.logConfig("Loading configuration from \"${mainFile.canonicalPath}\" ...")
         }
         else if (FileUtils.ExistsFile('./getl-properties.conf')) {
             mainFile = new File('./getl-properties.conf')
             isResource = false
-            dslCreator.logFinest("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+            dslCreator.logConfig("Loading configuration from \"${mainFile.canonicalPath}\" ...")
         }
         else {
             mainFile = FileUtils.FileFromResources('/getl-properties.conf')
             isResource = true
-            dslCreator.logFinest("Loading configuration from \"resource:/getl-properties.conf\" ...")
+            dslCreator.logConfig("Loading configuration from \"resource:/getl-properties.conf\" ...")
         }
 
         if (mainFile == null && BoolUtils.IsValue(dslCreator.getGetlSystemParameter('groovyConsole')) && FileUtils.ExistsFile('./resources/getl-properties.conf')) {
             mainFile = new File('./resources/getl-properties.conf')
             dslCreator.repositoryStorageManager.otherResourcePaths.add(new File('./resources').canonicalPath)
             isResource = false
-            dslCreator.logFinest("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+            dslCreator.logConfig("Loading configuration from \"${mainFile.canonicalPath}\" ...")
         }
 
         if (mainFile == null)
-            return
+            return mainFile
 
         def mainConfig = ConfigSlurper.LoadConfigFile(file: mainFile, codePage: 'utf-8',
                 environment: env, configVars: dslCreator.configVars, owner: dslCreator)
@@ -197,16 +199,18 @@ class LangSpec extends BaseSpec {
             childFile = new File(mainFile.parent + '/getl-properties-ext.conf')
 
         if (childFile == null || !childFile.exists())
-            return
+            return mainFile
 
         if (isResource)
-            dslCreator.logFinest("Loading extended configuration from \"resource:/getl-properties-ext.conf\" ...")
+            dslCreator.logConfig("Loading extended configuration from \"resource:/getl-properties-ext.conf\" ...")
         else
-            dslCreator.logFinest("Loading extended configuration from \"${childFile.canonicalPath}\" ...")
+            dslCreator.logConfig("Loading extended configuration from \"${childFile.canonicalPath}\" ...")
 
         def childConfig = ConfigSlurper.LoadConfigFile(file: childFile, codePage: 'utf-8',
                 environment: env, configVars: dslCreator.configVars, owner: dslCreator)
         MapUtils.MergeMap(getlConfigProperties, childConfig, true, false)
+
+        return mainFile
     }
 
     /** Number of threads for simultaneous loading of repository objects */

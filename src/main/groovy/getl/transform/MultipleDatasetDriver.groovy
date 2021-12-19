@@ -61,13 +61,13 @@ class MultipleDatasetDriver extends Driver {
 	}
 
 	@Override
-	void startTran() { }
+	void startTran(Boolean useSqlOperator = false) { }
 
 	@Override
-	void commitTran() { }
+	void commitTran(Boolean useSqlOperator = false) { }
 
 	@Override
-	void rollbackTran() { }
+	void rollbackTran(Boolean useSqlOperator = false) { }
 
 	@Override
 	void createDataset(Dataset dataset, Map params) { }

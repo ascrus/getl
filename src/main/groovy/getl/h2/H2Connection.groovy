@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import getl.jdbc.JDBCConnection
+import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -25,6 +26,7 @@ class H2Connection extends JDBCConnection {
 		if (connectProperty.LOCK_TIMEOUT == null)
 			connectProperty.LOCK_TIMEOUT = 10000
 		connectProperty.CASE_INSENSITIVE_IDENTIFIERS = true
+		/* TODO: Now work! */
 		connectProperty.ALIAS_COLUMN_NAME = true
 	}
 
@@ -64,4 +66,12 @@ class H2Connection extends JDBCConnection {
 
 	@Override
 	String currentConnectDatabase() { FileUtils.TransformFilePath(connectDatabase, false) }
+
+	/** Return current connection setting value */
+	String readSettingValue(String name) {
+		def rows = new QueryDataset(connection: this, query: "SELECT VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE NAME = \'${name.toUpperCase()}\'").rows()
+		if (rows.isEmpty())
+			return null
+		return rows[0].value as String
+	}
 }

@@ -3,10 +3,9 @@ package getl.mssql
 import getl.data.Field
 import getl.jdbc.JDBCDataset
 import getl.jdbc.TableDataset
-import getl.data.Dataset
-import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
+import java.sql.Types
 
 /**
  * MSSQL driver class
@@ -31,38 +30,43 @@ class MSSQLDriver extends JDBCDriver {
 		fieldEndPrefix = ']'
 		tablePrefix = '['
 		tableEndPrefix = ']'
-		commitDDL = true
+		commitDDL = false // true
 		transactionalDDL = true
 		transactionalTruncate = true
-		createViewTypes = ['CREATE', 'CREATE OR ALTER']
+
+		createViewTypes = ['CREATE']
 
 		sqlExpressions.convertTextToTimestamp = 'CONVERT(datetime, \'{value}\', 101)'
 		sqlExpressions.now = 'GETDATE()'
 		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
+		sqlExpressions.ddlStartTran = 'BEGIN TRANSACTION'
+
+		ruleQuotedWords.add('DOUBLE')
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Driver.Support> supported() {
-		return super.supported() +
-				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
-				 Driver.Support.INDEX, Driver.Support.UUID,
-				 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE,
-				 Driver.Support.BOOLEAN, Driver.Support.MULTIDATABASE]
+	List<Support> supported() {
+		def res = super.supported() +
+				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.UUID, Support.TIME, Support.DATE,
+				 Support.TIMESTAMP_WITH_TIMEZONE, Support.BOOLEAN, Support.MULTIDATABASE, Support.START_TRANSACTION]
+		if (serverVersion > 12)
+			res.addAll([Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST])
+
+		return res
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
+	/*@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		return super.operations() +
 				[Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
 				 Driver.Operation.CREATE]
-	}
+	}*/
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	Map getSqlType () {
-		Map res = super.getSqlType()
+	Map<String, Map<String, Object>> getSqlType () {
+		def res = super.getSqlType()
 		res.DOUBLE.name = 'float'
 		res.BOOLEAN.name = 'bit'
 		res.BLOB.name = 'varbinary'
@@ -75,6 +79,9 @@ class MSSQLDriver extends JDBCDriver {
 
 		return res
 	}
+
+	@Override
+	Boolean timestamptzReadAsTimestamp() { return true }
 
 	@Override
 	String defaultConnectURL () {
@@ -97,13 +104,25 @@ class MSSQLDriver extends JDBCDriver {
 			params.offs = null
 		}
 	}
-	
+
+	private Integer serverVersion = 12
+
+	@SuppressWarnings('SqlNoDataSourceInspection')
 	@Override
 	protected String sessionID() {
 		String res = null
 		//noinspection SpellCheckingInspection
-		def rows = sqlConnect.rows('SELECT @@SPID AS session_id')
-		if (!rows.isEmpty()) res = rows[0].session_id.toString()
+		def rows = sqlConnect.rows('SELECT @@SPID AS session_id, CAST(SERVERPROPERTY(\'productversion\') AS varchar(50)) AS server_version')
+		if (!rows.isEmpty()) {
+			res = rows[0].session_id.toString()
+			def ver = rows[0].server_version as String
+			def match = ver =~ /^(\d+)[.]\d+.*/
+			if (match.size() > 0) {
+				serverVersion = ((match[0] as ArrayList)[1] as String).toInteger()
+				if (serverVersion > 12)
+					createViewTypes = ['CREATE', 'CREATE OR ALTER']
+			}
+		}
 		
 		return res
 	}
@@ -119,6 +138,7 @@ class MSSQLDriver extends JDBCDriver {
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)DATETIMEOFFSET")) {
 				field.type = Field.timestamp_with_timezoneFieldType
+				field.dbType = Types.TIMESTAMP_WITH_TIMEZONE
 				field.getMethod = '({field} as microsoft.sql.DateTimeOffset).timestamp'
 				return
 			}

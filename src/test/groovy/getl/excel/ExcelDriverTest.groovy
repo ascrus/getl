@@ -130,7 +130,10 @@ class ExcelDriverTest extends GetlTest {
                 schemaFileName = 'tests/excel/report.schema'
                 loadDatasetMetadata()
 
-                eachRow { println it }
+                eachRow {  row ->
+                    //println row
+                    assertNotNull(row."период")
+                }
             }
         }
     }

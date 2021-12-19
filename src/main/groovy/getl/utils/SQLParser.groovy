@@ -13,9 +13,8 @@ import groovy.transform.CompileStatic
 class SQLParser {
 	/** List of type statements */
 	static enum StatementType {
-		SELECT, INSERT, UPDATE, DELETE, MERGE, TRUNCATE, CREATE, ALTER, DROP, COMMIT, ROLLBACK, START_TRANSACTION,
-		GETL_ECHO, GETL_IF, GETL_SET, GETL_FOR, GETL_COMMAND, GETL_EXIT,
-		GETL_ERROR, GETL_LOAD_POINT, GETL_SAVE_POINT
+		SELECT, INSERT, UPDATE, DELETE, MERGE, TRUNCATE, CREATE, ALTER, DROP, COMMIT, ROLLBACK, START_TRANSACTION, SINGLE_COMMENT, MULTI_COMMENT,
+		GETL_ECHO, GETL_IF, GETL_SET, GETL_FOR, GETL_COMMAND, GETL_EXIT, GETL_ERROR, GETL_LOAD_POINT, GETL_SAVE_POINT, GETL_RUN_FILE, GETL_SWITCH_LOGIN
 	}
 
 	/**
@@ -42,43 +41,54 @@ class SQLParser {
 
 	@SuppressWarnings('SpellCheckingInspection')
 	private Map<String, String> regexp = [
-			GETL_ECHO: '(?i)[@]{0,1}ECHO .+',
-			GETL_IF: '(?i)[@]{0,1}IF DO',
-			GETL_SET: '(?i)[@]{0,1}SET .+',
-			GETL_FOR: '(?i)[@]{0,1}FOR DO',
-			GETL_COMMAND: '(?i)[@]{0,1}COMMAND',
-			GETL_EXIT: '(?i)[@]{0,1}EXIT',
-			GETL_ERROR: '(?i)[@]{0,1}ERROR .+',
-			GETL_LOAD_POINT: '(?i)[@]{0,1}LOAD[_]POINT .+ TO .+ WITH (INSERT|MERGE)',
-			GETL_SAVE_POINT: '(?i)[@]{0,1}SAVE[_]POINT .+ FROM .+ WITH (INSERT|MERGE)',
-	        INSERT: '(?i)INSERT INTO\\s+.+\\s+.+',
-			UPDATE: '(?i)UPDATE .+\\s+SET\\s+.+',
-			DELETE: '(?i)DELETE FROM.+\\s+WHERE\\s+.+',
-			MERGE: '(?i)MERGE INTO\\s+.+',
-			TRUNCATE: '(?i)TRUNCATE TABLE\\s+.+',
+			GETL_ECHO: '(?i)^[@]{0,1}ECHO .+',
+			GETL_IF: '(?i)^[@]{0,1}IF DO',
+			GETL_SET: '(?i)^[@]{0,1}SET .+',
+			GETL_FOR: '(?i)^[@]{0,1}FOR DO',
+			GETL_COMMAND: '(?i)^[@]{0,1}COMMAND',
+			GETL_EXIT: '(?i)^[@]{0,1}EXIT',
+			GETL_ERROR: '(?i)^[@]{0,1}ERROR .+',
+			GETL_LOAD_POINT: '(?i)^[@]{0,1}LOAD[_]POINT .+ TO .+',
+			GETL_SAVE_POINT: '(?i)^[@]{0,1}SAVE[_]POINT .+ FROM .+',
+			GETL_RUN_FILE: '(?i)^[@]{0,1}RUN[_]FILE( .+){0,1}',
+			GETL_SWITCH_LOGIN: '(?i)^[@]{0,1}SWITCH[_]LOGIN .+',
+	        INSERT: '(?i)^INSERT INTO .*',
+			UPDATE: '(?i)^UPDATE (.+ ){0,1}SET .+',
+			DELETE: '(?i)^DELETE FROM .*',
+			MERGE: '(?i)^MERGE INTO .*',
+			TRUNCATE: '(?i)^TRUNCATE TABLE .*',
 			START_TRANSACTION: '(?i)^(START\\s+|BEGIN\\s+)?TRAN(SACTION)?$',
-			COMMIT: 'COMMIT',
-			ROLLBACK: 'ROLLBACK',
-			CREATE: '(?i)CREATE (\\w+[ ]){0,2}(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
-			ALTER: '(?i)ALTER (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
-			DROP: '(?i)DROP (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .+',
-			SELECT: '(?i)(WITH)?.*SELECT(?!(.+ INTO ){1}).* FROM .+'
+			COMMIT: '^COMMIT',
+			ROLLBACK: '^ROLLBACK',
+			CREATE: '(?i)^CREATE (\\w+[ ]){0,2}(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*',
+			ALTER: '(?i)^ALTER (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*',
+			DROP: '(?i)^DROP (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*',
+			SELECT: '(?i)^(WITH)?.*SELECT(?!(.+ INTO ){1}).* FROM .*'
 	]
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
-	StatementType statementType(List tokens = lexer.tokens) {
+	StatementType statementType(List<Map> tokens = lexer.tokens) {
 		if (lexer == null)
 			throw new ExceptionParser('Required lexer for parsing!', tokens)
 		if (tokens == null)
 			throw new ExceptionParser('Lexer not parsing!', tokens)
+		if (tokens.isEmpty())
+			return null
 
 		StatementType res = null
-		def worlds = lexer.keyWords()
+		def worlds = Lexer.KeyWords(tokens)
 		for (item in regexp) {
 			if (worlds.matches(item.value)) {
 				res = StatementType.valueOf(item.key)
 				break
 			}
+		}
+
+		if (res == null) {
+			if ((tokens[0].type as Lexer.TokenType) == Lexer.TokenType.SINGLE_COMMENT)
+				res = StatementType.SINGLE_COMMENT
+			else if ((tokens[0].type as Lexer.TokenType) == Lexer.TokenType.COMMENT)
+				res = StatementType.MULTI_COMMENT
 		}
 
 		return res
@@ -88,7 +98,7 @@ class SQLParser {
 	 * Generate list of sql script for lexer tokens
 	 * @return sql scripts
 	 */
-	List<String> scripts() {
+	List<String> scripts(Boolean ignoreComments = false) {
 		if (lexer == null)
 			throw new ExceptionParser('Required lexer for parsing!', null)
 
@@ -108,7 +118,8 @@ class SQLParser {
 			def curPos = tokens[0].first as Integer
 
 			def isFirstOperator = true
-			for (int i = 0; i < tokens.size(); i++) {
+			def countTokens = tokens.size()
+			for (int i = 0; i < countTokens; i++) {
 				def token = tokens[i] as Map
 				def type = token.type as Lexer.TokenType
 				def value = token.value as String
@@ -120,7 +131,7 @@ class SQLParser {
 
 						i = lexer.FindByType(tokens, Lexer.TokenType.LINE_FEED, i)
 						if (i == -1)
-							i = tokens.size() - 1
+							i = countTokens - 1
 
 						token = tokens[i]
 						def lastPos = (token.last as Integer)
@@ -182,12 +193,18 @@ class SQLParser {
 					isFirstOperator = false
 			}
 
-			if (curPos < (tokens[tokens.size() - 1].first as Integer)) {
-				def lastPos = (tokens[tokens.size() - 1].last as Integer)
+			if (curPos <= (tokens[countTokens - 1].first as Integer)) {
+				def lastPos = (tokens[countTokens - 1].last as Integer)
 				addToRes.call(lexer.script.substring(curPos, lastPos + 1))
 			}
 		}
 
-		return res.collect { it.trim() }
+		res = res.collect { it.trim() }
+		if (ignoreComments)
+			res.removeAll {
+				statementType(new Lexer(it, Lexer.sqlScriptType).tokens) in [StatementType.SINGLE_COMMENT, StatementType.MULTI_COMMENT]
+			}
+
+		return res
 	}
 }

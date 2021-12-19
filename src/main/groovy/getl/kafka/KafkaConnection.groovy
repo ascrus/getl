@@ -99,4 +99,11 @@ class KafkaConnection extends Connection {
     void setDecimalSeparator(String value) { params.decimalSeparator = value }
     /** Decimal separator for number fields */
     String decimalSeparator() { decimalSeparator?:'.' }
+
+    /** Group separator for number fields */
+    String getGroupSeparator() { params.groupSeparator as String }
+    /** Group separator for number fields */
+    void setGroupSeparator(String value) { params.groupSeparator = value }
+    /** Group separator for number fields */
+    String groupSeparator() { groupSeparator }
 }

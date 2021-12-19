@@ -11,8 +11,9 @@ import getl.tfs.TDS
 import getl.utils.Config
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
-import org.h2.value.ValueTimestampTimeZone
 import org.junit.Test
+
+import java.sql.Timestamp
 
 /**
  * Created by ascru on 21.11.2016.
@@ -25,9 +26,10 @@ class H2DriverTest extends JDBCDriverProto {
     protected JDBCConnection newCon() {
 		if (FileUtils.ExistsFile(configName))
             Config.LoadConfig(fileName: configName)
-        needCatalog = 'GETL'
-		return new TDS()
-	}
+		def res = new TDS()
+        needCatalog = res.connectDatabase.toUpperCase()
+        return res
+    }
 
     @Test
     void testVersion() {
@@ -39,14 +41,13 @@ class H2DriverTest extends JDBCDriverProto {
 
     @Test
     void testSessionProperties() {
-        def c = new H2Connection(inMemory: true, sessionProperty: ['exclusive': 1])
-        def q = new QueryDataset(connection: c, query: 'SELECT VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE NAME = \'EXCLUSIVE\'')
+        def c = new H2Connection(inMemory: true, sessionProperty: [exclusive: 1])
 
         c.connected = true
-        assertEquals('TRUE', q.rows().get(0).value)
+        assertEquals('TRUE', c.readSettingValue('EXCLUSIVE'))
 
         c.exclusive = 0
-        assertEquals('FALSE', q.rows().get(0).value)
+        assertEquals('FALSE', c.readSettingValue('EXCLUSIVE'))
 
 		c.connected = false
     }
@@ -57,6 +58,7 @@ class H2DriverTest extends JDBCDriverProto {
         assertFalse((con.driver as JDBCDriver).retrieveObjects(schemaName: 'test', tableName: '$Test_Chars', null).isEmpty())
     }
 
+    @Test
     void testTZ() {
         def ds = TDS.dataset()
         ds.tableName = 'test'
@@ -73,17 +75,7 @@ class H2DriverTest extends JDBCDriverProto {
         }
 
         ds.field.clear()
-
-        (ds.connection as JDBCConnection).sqlConnection.eachRow('select * from test') { r ->
-            def t = r.dtz as org.h2.api.TimestampWithTimeZone
-            println t
-            def x = ValueTimestampTimeZone.fromDateValueAndNanos(t.YMD, t.nanosSinceMidnight, t.timeZoneOffsetSeconds).getTimestamp(TimeZone.default)
-            println x
-        }
-
-        ds.eachRow { r ->
-            println r
-        }
+        assertTrue(ds.rows()[0].dtz instanceof Timestamp)
     }
 
     @Test
@@ -174,8 +166,8 @@ class H2DriverTest extends JDBCDriverProto {
 
             table1.truncate()
             table1.bulkLoadCsv(file1) {
-                map.name = 'Upper(description)'
-                map.value = 'Cast(value as Numeric(12, 2)) * 10'
+                map.name = 'Upper("DESCRIPTION")'
+                map.value = 'Cast("VALUE" as Numeric(12, 2)) * 10'
             }
             i = 0
             table1.eachRow(order: ['id']) { row ->

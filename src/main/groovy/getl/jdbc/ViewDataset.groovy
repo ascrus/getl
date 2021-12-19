@@ -13,7 +13,7 @@ class ViewDataset extends TableDataset {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
-		methodParams.register('createView', [])
+		methodParams.register('createView', ['select', 'replace', 'ifNotExists'])
 	}
 
 	@Override
@@ -38,7 +38,7 @@ class ViewDataset extends TableDataset {
 	@JsonIgnore
 	Boolean isExists() {
 		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName(), schemaName: schemaName(),
-					tableName: tableName, type: ["VIEW"])
+					tableName: tableName, type: ["VIEW"], retrieveInfo: false)
 		
 		return (!ds.isEmpty())
 	}
@@ -50,7 +50,6 @@ class ViewDataset extends TableDataset {
 	void createView(Map procParams) {
 		validConnection()
 
-		procParams = procParams?:[:]
 		methodParams.validation('createView', procParams,
 				[connection.driver.methodParams.params('createView')])
 

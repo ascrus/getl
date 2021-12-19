@@ -10,6 +10,7 @@ import org.junit.Test
 
 import javax.sql.rowset.serial.SerialBlob
 import javax.sql.rowset.serial.SerialClob
+import java.sql.Array
 import java.sql.Timestamp
 
 /**
@@ -202,12 +203,11 @@ class GenerationUtilsTest extends getl.test.GetlTest {
     @Test
     void testFields2List() {
         def d = TDS.dataset()
-        List<String> s = []
-        Field.Type.values().each {
-            d.field << new Field(name: "FIELD_${it.toString()}", type: it)
-            if (!(it in [Field.Type.ROWID, Field.Type.BLOB])) s << "\"FIELD_${it.toString()}\""
+        List<String> s = ['ID', '"DATE"', 'VALUE', '"PRECISION"']
+        s.each { name ->
+            d.addField Field.New(name.replace('"', ''))
         }
-        def f = GenerationUtils.Fields2List(d, ['FIELD_ROWID', 'FIELD_BLOB'])
+        def f = GenerationUtils.Fields2List(d)
         assertTrue(s.equals(f))
     }
 
@@ -253,9 +253,9 @@ class GenerationUtilsTest extends getl.test.GetlTest {
     @Test
     void testGenerateRowCopyWithMap() {
         def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/]
-        def c = new TDS()
+        def c = new TDS().tap { connected = true }
         def l = [] as List<Field>
-        def r = [:]
+        def r = [:] as Map<String, Object>
         t.each {
             def f = new Field(name: "field_${it.toString()}", type: it, isNull: false)
             if (f.type in [Field.Type.STRING, Field.Type.TEXT, Field.Type.BLOB, Field.Type.NUMERIC]) f.length = 20
@@ -264,20 +264,23 @@ class GenerationUtilsTest extends getl.test.GetlTest {
             def v = GenerationUtils.GenerateValue(f)
             switch (it) {
                 case Field.Type.BLOB:
-                    v = new SerialBlob(v)
+                    v = new SerialBlob((byte[])v)
                     break
                 case Field.Type.TEXT:
-                    v = new SerialClob(v.chars)
+                    v = new SerialClob((v as String).chars)
                     break
+                case Field.Type.ARRAY:
+                    v = c.currentJDBCDriver.sqlConnect.connection.createArrayOf('INTEGER', (v as List).toArray())
             }
             r.put("field_${it.toString().toLowerCase()}".toString(), v)
         }
         def stat = GenerationUtils.GenerateRowCopy(c.driver as JDBCDriver, l, true)
-        def d = [:]
+        def d = [:] as Map<String, Object>
         c.connected = true
-        stat.code.call(c.javaConnection, r, d)
-        r."field_text" = r."field_text".getSubString(1L, r."field_text".length() as Integer)
-        r."field_blob" = r."field_blob".getBytes(1L, r."field_blob".length() as Integer)
+        (stat.code as Closure).call(c.javaConnection, r, d)
+        r.field_text = r.field_text.getSubString(1L, r.field_text.length() as Integer)
+        r.field_blob = r.field_blob.getBytes(1L, r.field_blob.length() as Integer)
+        r.field_array = ((int[])(r.field_array as Array).array).toList()
         assertTrue(r.equals(d))
     }
 
