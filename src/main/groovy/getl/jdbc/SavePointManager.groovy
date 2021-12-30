@@ -260,8 +260,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		
 		// Mapping fields
 		table_field.each { Field field ->
-			def fieldName = drv.prepareObjectName(fields."${field.alias}"?:field.alias)
-			map."${field.alias}" = fieldName
+			def fieldName = drv.prepareObjectName(fields.get(field.alias)?:field.alias, table)
+			map.put(field.alias, fieldName)
 			field.name = fieldName
 		}
 		

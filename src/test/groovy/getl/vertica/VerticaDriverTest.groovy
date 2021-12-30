@@ -554,7 +554,8 @@ LIMIT 1'''
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 field('value') { type = doubleFieldType }
-                field('num') { type = numericFieldType }
+                field('num') { type = numericFieldType; length = 12; precision = 2 }
+                field('double') { type = numericFieldType }
                 field('num_small') { type = numericFieldType; length = 9 }
                 field('num_medium') { type = numericFieldType; length = 15 }
                 field('num_large') { type = numericFieldType; length = 30 }
@@ -566,8 +567,8 @@ LIMIT 1'''
                 useConnection oracleConnection {}
                 schemaName = 'test'
                 tableName = 'table1'
-                field = csvFile.field
                 field('dt') { typeName = 'date' }
+                importFields(csvFile)
             }
 
             verticaTable {verTable ->
@@ -581,8 +582,9 @@ LIMIT 1'''
                 assertEquals(csvFile.fieldByName('name').isNull, fieldByName('name').isNull)
                 assertEquals(csvFile.fieldByName('name').length * 2, fieldByName('name').length)
                 assertEquals(csvFile.fieldByName('value'), fieldByName('value'))
-                assertEquals(38, fieldByName('num').length)
-                assertEquals(12, fieldByName('num').precision)
+                assertEquals(12, fieldByName('num').length)
+                assertEquals(2, fieldByName('num').precision)
+                assertEquals(Field.doubleFieldType, fieldByName('double').type)
                 assertEquals(Field.integerFieldType, fieldByName('num_small').type)
                 assertEquals(Field.bigintFieldType, fieldByName('num_medium').type)
                 assertEquals(csvFile.fieldByName('num_large'), fieldByName('num_large'))
@@ -596,10 +598,11 @@ LIMIT 1'''
                 assertEquals(csvFile.fieldByName('name').isNull, fieldByName('name').isNull)
                 assertEquals(csvFile.fieldByName('name').length * 2, fieldByName('name').length)
                 assertEquals(csvFile.fieldByName('value'), fieldByName('value'))
-                assertEquals(38, fieldByName('num').length)
-                assertEquals(12, fieldByName('num').precision)
-                assertEquals(csvFile.fieldByName('num_small'), fieldByName('num_small'))
-                assertEquals(csvFile.fieldByName('num_medium'), fieldByName('num_medium'))
+                assertEquals(12, fieldByName('num').length)
+                assertEquals(2, fieldByName('num').precision)
+                assertEquals(Field.doubleFieldType, fieldByName('double').type)
+                assertEquals(Field.integerFieldType, fieldByName('num_small').type)
+                assertEquals(Field.bigintFieldType, fieldByName('num_medium').type)
                 assertEquals(csvFile.fieldByName('num_large'), fieldByName('num_large'))
                 assertEquals(csvFile.fieldByName('dt'), fieldByName('dt'))
                 assertEquals(csvFile.fieldByName('ts'), fieldByName('ts'))

@@ -32,7 +32,7 @@ class MapTableSpec extends DatasetSpec {
     void setSourceName(String value) { datasetName = value }
     /** Source dataset */
     @JsonIgnore
-    Dataset getSource() { ownerModel.dslCreator.dataset(datasetName) }
+    Dataset getSource() { modelDataset }
 
     /** Source dataset as JDBC table */
     @JsonIgnore
@@ -52,6 +52,8 @@ class MapTableSpec extends DatasetSpec {
     void setDestinationName(String value) { linkTo(value) }
     /** Set destination table name */
     void linkTo(String destinationName) {
+        checkGetlInstance()
+
         if (destinationName == null)
             throw new ExceptionModel("$sourceName: destination name can not be null!")
 
@@ -78,7 +80,10 @@ class MapTableSpec extends DatasetSpec {
     }
     /** Destination dataset */
     @JsonIgnore
-    Dataset getDestination() { ownerModel.dslCreator.dataset(destinationName) }
+    Dataset getDestination() {
+        checkGetlInstance()
+        return ownerModel.dslCreator.dataset(destinationName)
+    }
 
     /** Destination dataset as JDBC table */
     @JsonIgnore
@@ -104,7 +109,8 @@ class MapTableSpec extends DatasetSpec {
     /** Get a list of partitions from the specified dataset */
     @JsonIgnore
     Dataset getPartitionsDataset() {
-        return (partitionsDatasetName != null)?ownerModel.dslCreator.dataset(partitionsDatasetName):null
+        checkGetlInstance()
+        return (partitionsDatasetName != null)?ownerModel.dslCreator?.dataset(partitionsDatasetName):null
     }
     /** Get a list of partitions from the specified dataset */
     @JsonIgnore
@@ -113,11 +119,12 @@ class MapTableSpec extends DatasetSpec {
     /** Use a list of partitions from the specified dataset */
     void usePartitionsFrom(String listDatasetName) { partitionsDatasetName = listDatasetName }
     /** Use a list of partitions from the specified dataset */
-    void usePartitionsFrom(Dataset listDataset) {
-        if (listDataset != null) {
-            def name = listDataset.dslNameObject
-            if (name == null)
-                throw new ExceptionModel("$sourceName: the dataset $listDataset must be registered in the repository!")
+    void usePartitionsFrom(Dataset value) {
+        checkGetlInstance()
+        if (value != null) {
+            def name = value.dslNameObject
+            if (name == null || value.dslCreator == null)
+                throw new ExceptionModel("$sourceName: the dataset \"$value\" must be registered in the repository!")
 
             partitionsDatasetName = name
         }
@@ -139,14 +146,15 @@ class MapTableSpec extends DatasetSpec {
      * @param queryParams parameters for getting a list of partitions from a dataset
      * @return list of partitions
      */
-    List readListPartitions(Map queryParams = null) {
-        def res = listPartitions
+    List<Map<String, Object>> readListPartitions(Map queryParams = null) {
+        def res = listPartitions.collect { [partition: it] }
         if (res.isEmpty() && partitionsDatasetName != null) {
             def qp = [:]
             if (queryParams != null)
                 qp.put('queryParams', queryParams)
-            res = partitionsDataset.rows(qp).collect { row -> row.values()[0] }
+            res = partitionsDataset.rows(qp)
         }
+
         return res
     }
 }

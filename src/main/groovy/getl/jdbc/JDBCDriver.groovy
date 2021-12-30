@@ -65,8 +65,9 @@ class JDBCDriver extends Driver {
 		allowExpressions = false
 		lengthTextInBytes = false
 
-		caseObjectName = "NONE" // LOWER OR UPPER
+		caseObjectName = 'NONE'
 		caseQuotedName = false
+		caseRetrieveObject = 'NONE'
 		supportLocalTemporaryRetrieveFields = true
 		globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
 		localTemporaryTablePrefix = 'LOCAL TEMPORARY'
@@ -85,7 +86,7 @@ class JDBCDriver extends Driver {
 		ruleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
 
 		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP',
-						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY',
+						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY', 'USER', 'ROLE',
 						   'PRIMARY', 'UNIQUE', 'KEY', 'CONSTRAINT', 'DEFAULT', 'CHECK', 'COMPUTE', 'NULL',
 						   'AND', 'OR', 'XOR', 'NOT', 'ON', 'IDENTITY',
 						   'IF', 'EXISTS', 'IN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'FOR', 'CURSOR',
@@ -242,11 +243,14 @@ class JDBCDriver extends Driver {
 				break
 			
 			case Types.CHAR: case Types.NCHAR:
-			case Types.LONGVARCHAR: case Types.LONGNVARCHAR:
 			case Types.VARCHAR: case Types.NVARCHAR:
 				res = Field.stringFieldType
 				break
-			
+
+			case Types.LONGVARCHAR: case Types.LONGNVARCHAR: case Types.CLOB: case Types.NCLOB: case Types.SQLXML:
+				res = Field.textFieldType
+				break
+
 			case Types.BOOLEAN: case Types.BIT:
 				res = Field.booleanFieldType
 				break
@@ -262,10 +266,6 @@ class JDBCDriver extends Driver {
 			case Types.BLOB: case Types.VARBINARY:
 			case Types.LONGVARBINARY: case Types.BINARY:
 				res = Field.blobFieldType
-				break
-				
-			case Types.CLOB: case Types.NCLOB:
-				res = Field.textFieldType
 				break
 				
 			case Types.DATE:
@@ -577,16 +577,17 @@ class JDBCDriver extends Driver {
 				}
 				catch (Exception e) {
 					if (server != null) {
-						con.logger.warning("Cannot connect to $url")
+						con.logger.warning("Unable to connect to server \"$url\" with login \"$login\": ${e.message}")
 					}
 					else {
-						con.logger.exception(e, getClass().name, "driver: $drvName, url: $url, login: $login")
+						con.logger.severe("Unable to connect to server \"$url\" with login \"$login\": ${e.message}")
 						throw e
 					}
 				}
 			}
 			con.sysParams."currentConnectURL" = url
-			if (server != null) con.sysParams."balancerServer" = server
+			if (server != null)
+				con.sysParams."balancerServer" = server
 
 			sql.getConnection().setAutoCommit(con.autoCommit())
 			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
@@ -699,12 +700,12 @@ class JDBCDriver extends Driver {
 		ResultSet rs = sqlConnect.connection.metaData.getCatalogs()
 		try {
 			while (rs.next()) {
-				def catalogName = prepareObjectName(rs.getString('TABLE_CAT'))
+				def catalogName = rs.getString('TABLE_CAT') // prepareObjectName(rs.getString('TABLE_CAT'))
 				if (catalogName != null && useMask) {
 					if (!Path.MatchList(catalogName, maskList))
 						continue
 				}
-				res << catalogName
+				res.add(catalogName)
 			}
 		}
 		finally {
@@ -752,12 +753,12 @@ class JDBCDriver extends Driver {
 		ResultSet rs = sqlConnect.connection.metaData.getSchemas(catalog, schemaPattern)
 		try {
 			while (rs.next()) {
-				def schemaName = prepareObjectName(rs.getString('TABLE_SCHEM'))
+				def schemaName = rs.getString('TABLE_SCHEM') // prepareObjectName(rs.getString('TABLE_SCHEM'))
 				if (schemaName != null && useMask) {
 					if (!Path.MatchList(schemaName, maskList))
 						continue
 				}
-				res << schemaName
+				res.add(schemaName)
 			}
 		}
 		finally {
@@ -777,9 +778,9 @@ class JDBCDriver extends Driver {
 		def isSupportDB = isSupport(Support.DATABASE)
 		def isSupportSchemas = isSupport(Support.SCHEMA)
 		def isSupportMultiDB = isSupport(Support.MULTIDATABASE)
-		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName?:jdbcConnection.connectDatabase):null):null
-		String schemaPattern = (isSupportSchemas)?(prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName()):null
-		String tableNamePattern = prepareObjectName(params.tableName as String)
+		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareRetrieveObject(params.dbName as String)?:jdbcConnection.dbName?:jdbcConnection.connectDatabase):null):null
+		String schemaPattern = (isSupportSchemas)?(prepareRetrieveObject(params.schemaName as String)?:jdbcConnection.schemaName()):null
+		String tableNamePattern = prepareRetrieveObject(params.tableName as String)
 
 		def maskList = [] as List<Path>
 		if (params.tableMask != null) {
@@ -802,7 +803,7 @@ class JDBCDriver extends Driver {
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)
 		try {
 			while (rs.next()) {
-				def tableName = prepareObjectName(rs.getString('TABLE_NAME'))
+				def tableName = rs.getString('TABLE_NAME') // prepareObjectName(rs.getString('TABLE_NAME'))
 				if (tableName != null && useMask) {
 					if (!Path.MatchList(tableName, maskList))
 						continue
@@ -810,9 +811,9 @@ class JDBCDriver extends Driver {
 
 				def t = [:]
 				if (isSupportDB && isSupportMultiDB)
-					t.dbName = prepareObjectName(rs.getString('TABLE_CAT'))
+					t.dbName = rs.getString('TABLE_CAT')
 				if (isSupportSchemas)
-					t.schemaName = prepareObjectName(rs.getString('TABLE_SCHEM'))
+					t.schemaName = rs.getString('TABLE_SCHEM')
 				t.tableName = tableName
 				t.type = rs.getString('TABLE_TYPE')
 				t.description = rs.getString('REMARKS')
@@ -840,14 +841,14 @@ class JDBCDriver extends Driver {
 	/** Prepare database, schema and table name for retrieve field operation */
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = [:] as Map<String, String>
-		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
+		names.dbName = prepareRetrieveObject(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 
 		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType] && tempSchemaName != null)
 			names.schemaName = tempSchemaName
 		else
-			names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName(), defaultSchemaName]) as String)
+			names.schemaName = prepareRetrieveObject(ListUtils.NotNullValue([dataset.schemaName(), defaultSchemaName]) as String)
 
-		names.tableName = prepareObjectName(dataset.tableName as String)
+		names.tableName = prepareRetrieveObject(dataset.tableName as String)
 
 		return names
 	}
@@ -898,7 +899,9 @@ class JDBCDriver extends Driver {
 					if (f.isAutoincrement)
 						f.defaultValue = null
 
-					res << f
+					prepareField(f)
+
+					res.add(f)
 				}
 			}
 			finally {
@@ -980,7 +983,8 @@ class JDBCDriver extends Driver {
 	static List<Field> fieldsTableWithoutMetadata(JDBCDataset table) {
 		QueryDataset query = new QueryDataset(connection: table.connection)
 		query.query = "SELECT * FROM ${table.fullNameDataset()} WHERE 0 = 1"
-		if (query.rows().size() > 0) throw new ExceptionGETL("Find bug in \"fieldsTableWithoutMetadata\" method from \"${getClass().name}\" driver!")
+		if (query.rows().size() > 0)
+			throw new ExceptionGETL("Find bug in \"fieldsTableWithoutMetadata\" method from \"${getClass().name}\" driver!")
 		query.field.each { Field f -> f.isReadOnly = false }
 		return query.field
 	}
@@ -1067,6 +1071,8 @@ class JDBCDriver extends Driver {
 	protected String caseObjectName
 	/** Cased quoted field names */
 	protected Boolean caseQuotedName
+	/** Case retrieve objects (NONE, LOWER, UPPER) */
+	protected String caseRetrieveObject
 
 	protected String defaultDBName
 	protected String defaultSchemaName
@@ -1327,28 +1333,51 @@ class JDBCDriver extends Driver {
 	/** Finish prefix for fields name */
 	String getFieldEndPrefix() { fieldEndPrefix }
 
+	/** Prepare the object name for use when reading metadata */
+	String prepareRetrieveObject(String name, String prefix = null, String prefixEnd = null) {
+		if (name == null)
+			return null
+
+		def res = name
+		def needQuote = !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
+
+		if (!needQuote || caseQuotedName) {
+			switch (caseRetrieveObject) {
+				case "LOWER":
+					res = name.toLowerCase()
+					break
+				case "UPPER":
+					res = name.toUpperCase()
+			}
+		}
+
+		if (prefixEnd == null && prefix != null)
+			prefixEnd = prefix
+
+		//noinspection RegExpRedundantEscape
+		if (prefix != null && prefix.length() > 0 && !res.matches("^[\\$prefix].+[\\$prefixEnd]\$"))
+			if (needQuote)
+				res = prefix + res + prefixEnd
+
+		return res
+	}
+
+	/** Prepare object name for use in queries */
 	String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
 		if (name == null)
 			return null
 
-		def needQuote = !name.matches(ruleNameNotQuote) || (name.toUpperCase() in ruleQuotedWords)
+		String res = (dataset != null)?(dataset.fieldByName(name)?.name?:name):name
+		def needQuote = !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
 
-		String res = name
-		switch (caseObjectName) {
-			case "LOWER":
-				if (!needQuote || !caseQuotedName)
+		if (!needQuote || caseQuotedName) {
+			switch (caseObjectName) {
+				case "LOWER":
 					res = name.toLowerCase()
-				break
-			case "UPPER":
-				if (!needQuote || !caseQuotedName)
+					break
+				case "UPPER":
 					res = name.toUpperCase()
-				break
-			default:
-				if (dataset != null) {
-					def f = dataset.fieldByName(name)
-					if (f != null)
-						res = f.name
-				}
+			}
 		}
 
 		if (prefixEnd == null && prefix != null)
@@ -1381,7 +1410,7 @@ class JDBCDriver extends Driver {
 	}
 
 	String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
-		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix, dataset)
+		return prepareRetrieveObject(name, tablePrefix, tableEndPrefix)
 	}
 
 	String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
@@ -1437,9 +1466,9 @@ class JDBCDriver extends Driver {
 
         def ds = dataset as TableDataset
 
-		def r = prepareObjectName(ds.params.tableName as String)
-		def dbName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.dbName()):null
-		def schemaName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.schemaName()):null
+		def r = prepareTableNameForSQL(ds.params.tableName as String)
+		def dbName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareTableNameForSQL(ds.dbName()):null
+		def schemaName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareTableNameForSQL(ds.schemaName()):null
 		if (schemaName != null)
 			r = schemaName + '.' + r
 		if (dbName != null) {
@@ -1645,22 +1674,24 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	protected List<Field> meta2Fields(ResultSetMetaData meta, Boolean isTable) {
-		def result = [] as List<Field>
+		def res = [] as List<Field>
         //noinspection GroovyAssignabilityCheck
         for (Integer i = 0; i < meta.getColumnCount(); i++) {
 			def c = i + 1
             //noinspection GroovyAssignabilityCheck
-            Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)) as String, dbType: meta.getColumnType(c),
+            Field f = new Field(name: meta.getColumnLabel(c), dbType: meta.getColumnType(c),
 								typeName: meta.getColumnTypeName(c), columnClassName: meta.getColumnClassName(c),
 								length: meta.getPrecision(c), precision: meta.getScale(c), 
 								isAutoincrement: meta.isAutoIncrement(c), isNull: meta.isNullable(c), isReadOnly: (!isTable && meta.isReadOnly(c)))
+
 			if (f.isAutoincrement)
 				f.defaultValue = null
+
 			prepareField(f)
 
-			result << f
+			res.add(f)
 		}
-		return result
+		return res
 	}
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
@@ -2697,16 +2728,19 @@ $sql
 			def sourceField = map."${targetField.toLowerCase()}"  as String
 			
 			if (sourceField != null) {
-				if (source.fieldByName(sourceField) != null) sourceField = "s." + prepareFieldNameForSQL(sourceField)
+				if (source.fieldByName(sourceField) != null)
+					sourceField = "s." + prepareFieldNameForSQL(sourceField)
 			}
 			else {			
 				// Exclude fields from sql
-				if (sourceField == null && map.containsKey(targetField.toLowerCase())) return
+				if (sourceField == null && map.containsKey(targetField.toLowerCase()))
+					return
 				
 				// Find field in destination if not exists by map
 				if (sourceField == null && autoMap) {
 					sourceField = source.fieldByName(targetField)?.name
-					if (sourceField != null) sourceField = "s." + prepareFieldNameForSQL(sourceField)
+					if (sourceField != null)
+						sourceField = "s." + prepareFieldNameForSQL(sourceField)
 				}
 			}
 			

@@ -11,6 +11,7 @@ import getl.models.opts.WorkflowSpec
 import getl.models.opts.WorkflowSpec.Operation
 import getl.models.sub.BaseModel
 import getl.models.sub.BaseSpec
+import getl.models.sub.WorkflowUserCode
 import getl.proc.Executor
 import getl.utils.BoolUtils
 import getl.utils.CloneUtils
@@ -47,6 +48,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
         def list = [] as List<WorkflowSpec>
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
+            p.remove('id')
             list.add(new WorkflowSpec(own, p))
         }
         usedSteps = list
@@ -65,7 +67,10 @@ class Workflows extends BaseModel<WorkflowSpec> {
      * @return script result
      */
     Map result(String scriptName) {
-        return _result.get(scriptName)?:[:]
+        if (scriptName == null || scriptName.length() == 0)
+            throw new ExceptionModel("Required script name for result function!")
+
+        return _result.get(scriptName.toUpperCase())?:[:]
     }
 
     @Synchronized('_result')
@@ -137,9 +142,9 @@ class Workflows extends BaseModel<WorkflowSpec> {
     @SuppressWarnings('UnnecessaryQualifiedReference')
     static private WorkflowSpec findStepByName(List<WorkflowSpec> nodes, String stepName) {
         WorkflowSpec res = null
-
+        stepName = stepName.toUpperCase()
         nodes.each { node ->
-            if (node.stepName == stepName) {
+            if (node.stepName.toUpperCase() == stepName) {
                 res = node
                 directive = Closure.DONE
                 return
@@ -161,6 +166,9 @@ class Workflows extends BaseModel<WorkflowSpec> {
      * @return found step
      */
     WorkflowScriptSpec scriptByName(String scriptName) {
+        if (scriptName == null || scriptName.length() == 0)
+            throw new ExceptionModel("Required script name for result function!")
+
         def res = findNodeByScriptName(usedSteps, scriptName)
         return (res != null)?new WorkflowScriptSpec(res, true, res.findScript(scriptName)):null
     }
@@ -170,10 +178,10 @@ class Workflows extends BaseModel<WorkflowSpec> {
     @SuppressWarnings('UnnecessaryQualifiedReference')
     static private WorkflowSpec findNodeByScriptName(List<WorkflowSpec> nodes, String scriptName) {
         WorkflowSpec res = null
-
+        scriptName = scriptName.toUpperCase()
         nodes.each { node ->
             node.scripts.each { name, scriptParams ->
-                if (name == scriptName) {
+                if (name.toUpperCase() == scriptName) {
                     res = node
                     directive = Closure.DONE
                     return
@@ -223,6 +231,9 @@ class Workflows extends BaseModel<WorkflowSpec> {
                         @DelegatesTo(WorkflowScriptSpec)
                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowScriptSpec'])
                                 Closure cl = null) {
+        if (scriptName == null || scriptName.length() == 0)
+            throw new ExceptionModel("Required script name for result function!")
+
         def parent = scriptByName(scriptName)
         if (parent == null)
             throw new ExceptionModel("Script \"$scriptName\" not found in workflow!")
@@ -242,7 +253,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                        @DelegatesTo(WorkflowSpec)
                        @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                                Closure cl = null) {
-        if (stepName == null)
+        if (stepName == null || stepName.length() == 0)
             throw new ExceptionModel('Step name required!')
 
         if (!usedSteps.isEmpty())
@@ -283,20 +294,22 @@ class Workflows extends BaseModel<WorkflowSpec> {
     /**
      * Start workflow processes
      * @param addVars variable for execution steps over step variables
-     * @param conditionClassLoader class loader for running conditions
+     * @param userClassLoader class loader for running user script
      * @param scriptClassLoader class loader for running specified script (closure parameter is passed the name of the class)
      * @return number of steps successfully completed
      */
-    Integer execute(Map addVars = [:], URLClassLoader conditionClassLoader = null,
+    Integer execute(Map addVars = [:], URLClassLoader userClassLoader = null,
                     @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                             Closure<URLClassLoader> scriptClassLoader = null) {
         dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
-        def userCodes = generateUserCode(conditionClassLoader, addVars)
+        generateUserCode(userClassLoader, addVars)
         cleanResults()
+
+        addVars = addVars?:[:]
 
         def res = 0
         usedSteps.each { node ->
-            res =+ stepExecute(node, userCodes, addVars?:[:], scriptClassLoader)
+            res =+ stepExecute(node, addVars, scriptClassLoader)
         }
         dslCreator.logInfo("--- Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
 
@@ -306,7 +319,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
     /** Prepare step or script name */
     static private stepName2CodeName(String stepName) {
         return stepName.replace(' ', '_sss_').replace('.', '_qqq_')
-                .replace('-', '_ddd_').replace(':', '_ggg_')
+                .replace('-', '_ddd_').replace(':', '_ggg_').toLowerCase()
     }
 
     /** Condition name from class of user codes */
@@ -324,8 +337,13 @@ class Workflows extends BaseModel<WorkflowSpec> {
         return "final_${stepName2CodeName(stepName)}"
     }
 
+    /** Class script with step processing code */
+    private String scriptUserCode
+    /** Generated class with step processing code */
+    private WorkflowUserCode generatedUserCode
+
     /** Generate class of user codes */
-    private Getl generateUserCode(URLClassLoader classLoader, Map addVars) {
+    private void generateUserCode(URLClassLoader classLoader, Map addVars) {
         def conditions = [:] as Map<String, String>
         findConditions(usedSteps[0], conditions)
 
@@ -335,14 +353,40 @@ class Workflows extends BaseModel<WorkflowSpec> {
         def finals = [:] as Map<String, String>
         findFinalCode(usedSteps[0], finals)
 
-        if (conditions.isEmpty() && inits.isEmpty() && finals.isEmpty())
-            return null
+        if (conditions.isEmpty() && inits.isEmpty() && finals.isEmpty()) {
+            scriptUserCode = null
+            generatedUserCode = null
+            return
+        }
 
         def className = "Workflow_${StringUtils.RandomStr().replace('-', '')}"
         def sb = new StringBuilder()
-        sb.append """class $className extends getl.lang.Getl {
-public getl.models.Workflows proc
-Map result(String scriptName) { proc.result(scriptName) }\n\n"""
+        sb.append """package getl.user.workflow
+import getl.data.*
+import getl.utils.*
+import getl.models.*
+import getl.models.opts.*
+import static getl.utils.DateUtils.AddDate as addDate
+import static getl.utils.DateUtils.ClearTime as clearTime
+import static getl.utils.DateUtils.CurrentDate as currentDate
+import static getl.utils.DateUtils.DiffDate as diffDate
+import static getl.utils.DateUtils.FirstDateOfMonth as firstDateOfMonth
+import static getl.utils.DateUtils.FormatDate as formatDate
+import static getl.utils.DateUtils.FormatTime as formatTime
+import static getl.utils.DateUtils.FormatDateTime as formatDateTime
+import static getl.utils.DateUtils.LastDateOfMonth as lastDateOfMonth
+import static getl.utils.DateUtils.LastDayOfMonth as lastDayOfMonth
+import static getl.utils.DateUtils.Now as now
+import static getl.utils.DateUtils.PartOfDate as partOfDate
+import static getl.utils.DateUtils.TruncDay as truncDay
+import static getl.utils.NumericUtils.IsEven as isEven
+import static getl.utils.NumericUtils.IsMultiple as isMultiple
+import static getl.utils.NumericUtils.Round as round
+import static getl.utils.StringUtils.AddLedZeroStr as addLedZero
+import static getl.utils.StringUtils.LeftStr as leftStr
+import static getl.utils.StringUtils.RightStr as rightStr
+class $className extends getl.models.sub.WorkflowUserCode {
+"""
 
         conditions.each { stepName, code ->
             sb.append "Boolean ${conditionName(stepName)}() {\n$code\n}\n"
@@ -360,18 +404,16 @@ Map result(String scriptName) { proc.result(scriptName) }\n\n"""
 
 return $className"""
 
-//        println sb.toString()
-        def classGenerated = GenerationUtils.EvalGroovyScript(sb.toString(), null, false, classLoader,
-                dslCreator) as Class<Getl>
-        def obj = dslCreator.callScript(classGenerated, [proc: this], addVars).result as Getl
-
-        return obj
+        // println sb.toString()
+        scriptUserCode = sb.toString()
+        def classGenerated = GenerationUtils.EvalGroovyScript(scriptUserCode, null, false, classLoader, dslCreator) as Class<Getl>
+        generatedUserCode = dslCreator.callScript(classGenerated, [currentModel: this], modelVars + addVars).result as WorkflowUserCode
     }
 
     /** Build list of conditions code */
     private void findConditions(WorkflowSpec node, Map<String, String> list) {
         if (node.condition != null)
-            list.put(node.stepName, node.condition)
+            list.put(node.stepName.toUpperCase(), node.condition)
 
         node.nested.each {findConditions(it, list) }
     }
@@ -379,7 +421,7 @@ return $className"""
     /** Build list of initialization code */
     private void findInitCode(WorkflowSpec node, Map<String, String> list) {
         if (node.initCode != null)
-            list.put(node.stepName, node.initCode)
+            list.put(node.stepName.toUpperCase(), node.initCode)
 
         node.nested.each {findInitCode(it, list) }
     }
@@ -387,13 +429,13 @@ return $className"""
     /** Build list of finalization code */
     private void findFinalCode(WorkflowSpec node, Map<String, String> list) {
         if (node.finalCode != null)
-            list.put(node.stepName, node.finalCode)
+            list.put(node.stepName.toUpperCase(), node.finalCode)
 
         node.nested.each {findFinalCode(it, list) }
     }
 
     /** Run workflow step */
-    private Integer stepExecute(WorkflowSpec node, Getl userCodes, Map addVars,
+    private Integer stepExecute(WorkflowSpec node, Map addVars,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                         Closure<URLClassLoader> scriptClassLoader,
                                 String parentStep = null) {
@@ -401,10 +443,26 @@ return $className"""
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
 
+        def runMethod = { String methodName, Boolean isConditional ->
+            def resMethod = null
+            try {
+                if (isConditional)
+                    resMethod = generatedUserCode."$methodName"()
+                else
+                    generatedUserCode."$methodName"()
+            }
+            catch (Exception e) {
+                dslCreator.logError("Condition code execution error for step \"$stepLabel\": ${e.message}")
+                dslCreator.logging.dump(e, 'workflow', "${dslNameObject}.$stepLabel", scriptUserCode)
+                throw e
+            }
+
+            return resMethod
+        }
+
         // Check condition for step
         if (node.condition != null) {
-            def methodName = conditionName(node.stepName)
-            def conditionResult = userCodes."$methodName"()
+            def conditionResult = runMethod(conditionName(node.stepName), true)
             if (!BoolUtils.IsValue(conditionResult)) {
                 dslCreator.logWarn("Conditions for \"$stepLabel\" step do not require its execute!")
                 return res
@@ -413,8 +471,7 @@ return $className"""
 
         // Calc initialization code for step
         if (node.initCode != null) {
-            def methodName = initCodeName(node.stepName)
-            userCodes."$methodName"()
+            runMethod(initCodeName(node.stepName), false)
         }
 
         try {
@@ -430,7 +487,7 @@ return $className"""
                 if (runClass == null)
                     throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
 
-                classes.put(scriptName, runClass)
+                classes.put(scriptName.toUpperCase(), runClass)
                 if (RepositorySave.isAssignableFrom(runClass))
                     isRepositorySave = true
             }
@@ -449,7 +506,7 @@ return $className"""
                 new Executor().tap { exec ->
                     dslCreator = this.dslCreator
                     useList node.scripts.keySet().toList()
-                    setCountProc node.countThreads ?: 1
+                    setCountProc node.countThreads?:1
                     abortOnError = true
                     dumpErrors = true
                     debugElementOnError = true
@@ -460,9 +517,21 @@ return $className"""
                         def className = scriptParams.className as String
                         dslCreator.logFinest("Execute script \"$scriptName\" by class $className with step \"${node.stepName}\" ...")
 
-                        def runClass = classes.get(scriptName)
+                        def runClass = classes.get(scriptName.toUpperCase())
                         def classParams = ReadClassFields(runClass)
                         def scriptVars = (scriptParams.vars as Map<String, Object>)?:([:] as Map<String, Object>)
+
+                        if (generatedUserCode != null) {
+                            def userVars = generatedUserCode.vars(scriptName)
+                            if (userVars != null)
+                                scriptVars.putAll(userVars)
+                        }
+
+                        scriptVars.each { name, val ->
+                            if (val instanceof String || val instanceof GString)
+                                scriptVars.put(name, StringUtils.EvalMacroString(val.toString(), modelVars + scriptVars + addVars, false))
+                        }
+
                         def execVars = [:] as Map<String, Object>
                         classParams.each { field ->
                             def fieldName = field.name as String
@@ -489,7 +558,7 @@ return $className"""
                                     if (val instanceof Map)
                                         map.putAll(val as Map)
                                     else if (val instanceof String)
-                                        map.putAll(ConvertUtils.String2Structure(val as String) as Map)
+                                        map.putAll(ConvertUtils.String2Map(val as String) as Map)
                                     else
                                         throw new ExceptionModel("It is not possible to convert " +
                                                 "type \"${val.getClass().name}\" to type \"${Map.name}\"!")
@@ -514,7 +583,7 @@ return $className"""
                                     if (val instanceof List)
                                         list.addAll(val as List)
                                     else if (val instanceof String)
-                                        list.addAll(ConvertUtils.String2Structure(val as String) as List)
+                                        list.addAll(ConvertUtils.String2List(val as String))
                                     else
                                         throw new ExceptionModel("It is not possible to convert " +
                                                 "type \"${val.getClass().name}\" to type \"${List.name}\"!")
@@ -533,14 +602,14 @@ return $className"""
                         def scriptResult = dslCreator.callScript(runClass, execVars, addVars)
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {
                             synchronized (_result) {
-                                _result.put(scriptName, scriptResult.result as Map)
+                                _result.put(scriptName.toUpperCase(), scriptResult.result as Map)
                             }
                         }
 
                         return true
                     }
 
-                    if (node.countThreads > 1)
+                    if (!isRepositorySave)
                         run(runScript)
                     else {
                         node.scripts.each { scriptName, scriptParams ->
@@ -554,19 +623,18 @@ return $className"""
 
             // Calc finalization code for step
             if (node.finalCode != null) {
-                def methodName = finalCodeName(node.stepName)
-                userCodes."$methodName"()
+                runMethod(finalCodeName(node.stepName), false)
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, userCodes, addVars?:[:], scriptClassLoader, stepLabel)
+                res += stepExecute(subNode, addVars?:[:], scriptClassLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, userCodes, addVars?:[:], scriptClassLoader, stepLabel)
+                    stepExecute(errStep, addVars?:[:], scriptClassLoader, stepLabel)
             }
             finally {
                 throw e
@@ -610,7 +678,7 @@ return $className"""
      * @return list of field with attribute name, type and defaultValue
      */
     @SuppressWarnings('UnnecessaryQualifiedReference')
-    static List<Map<String, Object>> ReadClassFields(Class<Getl> scriptClass) {
+    static List<Map<String, Object>> ReadClassFields(Class<Getl> scriptClass, Boolean ignoreClosure = false) {
         if (scriptClass == null)
             throw new ExceptionModel('Required script class!')
 
@@ -625,11 +693,10 @@ return $className"""
         fields.each { field ->
             def name = field.name
             def prop = script.hasProperty(name as String)
-            if (groovy.lang.Closure.isAssignableFrom(prop.type))
-                return
-
             def mod = prop.modifiers
             if (!Modifier.isPublic(mod) || Modifier.isStatic(mod))
+                return
+            if (ignoreClosure && groovy.lang.Closure.isAssignableFrom(prop.type))
                 return
 
             def val = script[name]

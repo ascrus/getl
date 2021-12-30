@@ -64,7 +64,7 @@ abstract class JDBCDriverProto extends GetlTest {
         return _con
     }
 
-    String getUseTableName() { 'getl_test_data' }
+    String getUseTableName() { 'getl_Test_Data' }
     TableDataset table
     List<Field> getFields () {
         def res =
@@ -219,7 +219,7 @@ abstract class JDBCDriverProto extends GetlTest {
 			f.name = f.name.toLowerCase()
 			f.defaultValue = null
 
-			if (f.type == Field.Type.BIGINT && (con.driver as JDBCDriver).sqlType.BIGINT.name.toUpperCase() == 'NUMBER') {
+			if (f.type == Field.Type.BIGINT && ((con.driver as JDBCDriver).sqlType.BIGINT.name as String).toUpperCase() == 'NUMBER') {
 				f.type = Field.Type.NUMERIC
 				f.length = null
 			}
@@ -923,6 +923,19 @@ IF ('{support_update}' = 'true') DO {
             }
 
             drop()
+        }
+    }
+
+    @Test
+    void testExpressionString2Timestamp() {
+        def date = DateUtils.ParseSQLTimestamp('2021-12-31 23:59:59.000')
+        new QueryDataset().tap {
+            useConnection con
+            query = "SELECT ${con.expressionString2Timestamp(date)} AS dt{ FROM %dual%}"
+            queryParams.dual = con.sysDualTable
+            eachRow { row ->
+                assertEquals(date, row.dt)
+            }
         }
     }
 }

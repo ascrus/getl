@@ -2,6 +2,7 @@ package getl.driver
 
 import getl.csv.CSVDataset
 import getl.data.*
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.ParamMethodValidator
 
@@ -72,6 +73,8 @@ abstract class Driver {
 		methodParams.register("eachRow", [])
 		methodParams.register("openWrite", [])
 		methodParams.register("executeCommand", [])
+		methodParams.register('prepareImportFields', ['resetTypeName', 'resetKey', 'resetNotNull',
+													  'resetDefault', 'resetCheck', 'resetCompute'])
 	}
 
 	/**
@@ -159,4 +162,57 @@ abstract class Driver {
 	 * @param csvFile CSV dataset
 	 */
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) { }
+
+	/**
+	 * Preparing import fields from another dataset<br><br>
+	 * <b>Import options:</b><br>
+	 * <ul>
+	 *     <li> resetTypeName: reset the name of the field type</li>
+	 *     <li>resetKey: reset primary key</li>
+	 *     <li>resetNotNull: reset not null</li>
+	 *     <li>resetDefault: reset default value</li>
+	 *     <li>resetCheck: reset check expression</li>
+	 *     <li>resetCompute: reset compute expression</li>
+	 *</ul>
+	 * @param dataset source
+	 * @param importParams import options
+	 * @return list of prepared field
+	 */
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+		if (importParams == null)
+			importParams = [:]
+
+		methodParams.validation('prepareImportFields', importParams, null)
+
+		def resetTypeName = BoolUtils.IsValue(importParams.resetTypeName)
+		def resetKey = BoolUtils.IsValue(importParams.resetKey)
+		def resetNotNull = BoolUtils.IsValue(importParams.resetNotNull)
+		def resetDefault = BoolUtils.IsValue(importParams.resetDefault)
+		def resetCheck = BoolUtils.IsValue(importParams.resetCheck)
+		def resetCompute = BoolUtils.IsValue(importParams.resetCompute)
+		def isCompatibleDataset = getClass().isInstance(dataset)
+
+		def res = dataset.fieldClone()
+
+		res.each { field ->
+			if (resetTypeName || !isCompatibleDataset) {
+				field.typeName = null
+				field.columnClassName = null
+			}
+			if (resetKey || !dataset.connection.driver.isSupport(Support.PRIMARY_KEY)) {
+				field.isKey = null
+				field.ordKey = null
+			}
+			if (resetNotNull || !dataset.connection.driver.isSupport(Support.NOT_NULL_FIELD))
+				field.isNull = null
+			if (resetDefault || !isCompatibleDataset || !dataset.connection.driver.isSupport(Support.DEFAULT_VALUE))
+				field.defaultValue = null
+			if (resetCheck || !isCompatibleDataset || !dataset.connection.driver.isSupport(Support.CHECK_FIELD))
+				field.checkValue = null
+			if (resetCompute || !isCompatibleDataset || !dataset.connection.driver.isSupport(Support.COMPUTE_FIELD))
+				field.compute = null
+		}
+
+		return res
+	}
 }

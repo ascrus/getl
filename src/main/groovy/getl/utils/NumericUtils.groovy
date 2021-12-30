@@ -16,7 +16,6 @@ import java.text.ParsePosition
  */
 @CompileStatic
 class NumericUtils {
-
 	/**
 	 * Valid even of integer
 	 * @param value

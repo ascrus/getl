@@ -11,7 +11,7 @@ class WorkflowTest extends GetlDslTest {
     @Test
     void testReadFields() {
         def res = Workflows.ReadClassFields(WorkflowStepTestScript)
-        assertEquals(4, res.size())
+        assertEquals(6, res.size())
         assertEquals([name: 'stepName', type: 'java.lang.String'], res[0])
         assertEquals([name: 'stepNum', type: 'java.lang.Integer'], res[1])
         assertEquals([name: 'map', type: 'java.util.Map'], res[2])
@@ -25,49 +25,49 @@ class WorkflowTest extends GetlDslTest {
                 start('Start 1') {
                     countThreads = 2
 
-                    initCode = 'ifUnitTestMode { configContent.init_code = true }'
-                    finalCode = 'ifUnitTestMode { configContent.final_code = true }'
+                    initCode = '''ifUnitTestMode { configContent.init_code = true }; vars('root2').onEvent = { 'SCRIPT EVENT' }'''
+                    finalCode = '''ifUnitTestMode { configContent.final_code = true }; assert result('root2').varEvent == 'SCRIPT EVENT' '''
 
-                    exec('root1') {
+                    exec('Root1') {
                         className = WorkflowStepTestScript.name
-                        vars = [stepName: stepName, stepNum: 1, map: [a: '1', b: '2'], list: ['a', 'b', 'c']]
+                        vars = [stepName: stepName, stepNum: 1, map: [a: '1', b: '2'], list: ['a', 'b', 'c'], macro: '{stepNum}:{stepName}']
                     }
-                    exec('root2') {
+                    exec('Root2') {
                         className = WorkflowStepTestScript.name
-                        vars = [stepName: stepName, stepNum: 2]
+                        vars = [stepName: stepName, stepNum: 2, macro: '{stepNum}:{stepName}']
                     }
 
                     onError {
                         exec {
                             className = WorkflowStepTestScript.name
-                            vars = [stepName: stepName, stepNum: -1]
+                            vars = [stepName: stepName, stepNum: -1, macro: '{stepNum}:{stepName}']
                         }
                     }
 
                     later {
                         condition = '''configContent.countProcessed == 2 && result('root1').processed == 1 && result('root2').processed == 2'''
 
-                        exec('later1') {
+                        exec('Later1') {
                             className = WorkflowStepTestScript.name
-                            vars = [stepName: stepName, stepNum: 101, map: "[a: '1', b: '2']", list: "['a', 'b', 'c']"]
+                            vars = [stepName: stepName, stepNum: 101, map: "[a: '1', b: '2']", list: "['a', 'b', 'c']", macro: '{stepNum}:{stepName}']
                         }
-                        exec('later2') {
+                        exec('Later2') {
                             className = WorkflowStepTestScript.name
-                            vars = [stepName: stepName, stepNum: 102]
+                            vars = [stepName: stepName, stepNum: 102, macro: '{stepNum}:{stepName}']
                         }
 
                         onError {
                             exec {
                                 className = WorkflowStepTestScript.name
-                                vars = [stepName: stepName, stepNum: -101]
+                                vars = [stepName: stepName, stepNum: -101, macro: '{stepNum}:{stepName}']
                             }
                         }
 
                         later {
                             condition = '''configContent.countProcessed == 4 && result('later1').processed == 101 && result('later2').processed == 102'''
-                            exec('child1') {
+                            exec('Child1') {
                                 className = WorkflowStepTestScript.name
-                                vars = [stepName: stepName, stepNum: 201, map: "a: '1', b: '2'", list: "'a', 'b', 'c'"]
+                                vars = [stepName: stepName, stepNum: 201, map: "a: '1', b: '2'", list: "'a', 'b', 'c'", macro: '{stepNum}:{stepName}']
                             }
                         }
                     }
@@ -95,7 +95,7 @@ class WorkflowTest extends GetlDslTest {
                 assertEquals([a: '1', b: '2'], result('child1').map)
                 assertEquals(['a', 'b', 'c'], result('child1').list)
 
-                script('root1').vars.remove('list')
+                assertNotNull(script('root1').vars.remove('list'))
                 step('Start 1') {
                     objectVars.list = ['aa', 'bb', 'cc']
                 }

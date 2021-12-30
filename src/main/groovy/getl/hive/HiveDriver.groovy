@@ -37,7 +37,7 @@ class HiveDriver extends JDBCDriver {
         tablePrefix = '`'
         fieldPrefix = '`'
 
-        caseObjectName = "LOWER"
+        //caseObjectName = "LOWER"
         connectionParamBegin = ';'
         connectionParamJoin = ';'
 
@@ -53,8 +53,9 @@ class HiveDriver extends JDBCDriver {
         defaultSchemaName = 'default'
 
         sqlExpressions.now = 'CURRENT_TIMESTAMP'
-
         sqlExpressions.sysDualTable = '(SELECT 1 AS row_num) AS dual'
+
+        ruleNameNotQuote = '(?i)^[a-z]+[a-z0-9_]*$'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")

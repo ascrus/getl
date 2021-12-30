@@ -70,6 +70,8 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
 
+            p.remove('id')
+
             def convertDuration = { String propName ->
                 if (p.containsKey(propName)) {
                     def m = p.get(propName) as Map<String, Integer>
@@ -456,7 +458,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         }
 
         new Flow(dslCreator).tap {
-            statusTable.currentJDBCConnection.transaction {
+            statusTable.currentJDBCConnection.transaction(true) {
                 writeTo(dest: statusTable, dest_operation: 'INSERT') { addStatus ->
                     histtab.eachRow(where: 'operation = \'INSERT\'') { row ->
                         addStatus row

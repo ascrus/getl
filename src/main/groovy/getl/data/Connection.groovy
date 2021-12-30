@@ -651,19 +651,28 @@ class Connection implements Cloneable, GetlRepository {
 
 	/**
 	 * Perform operations within a transaction connection
-	 * @param cl your code
+	 * @param cl execution code
 	 */
 	void transaction(Closure cl) {
-		if (!isSupportTran)
+		transaction(false, cl)
+	}
+
+	/**
+	 * Perform operations within a transaction connection
+	 * @param onlyIfSupported execute in transaction mode if supported, otherwise execute outside of transaction
+	 * @param cl execution code
+	 */
+	void transaction(Boolean onlyIfSupported, Closure cl) {
+		if (!isSupportTran && !onlyIfSupported)
 			throw new ExceptionGETL("Connection \"${toString()}\" does not support transactions!")
 
-		startTran()
+		startTran(onlyIfSupported)
 		try {
 			cl.call()
-			commitTran()
+			commitTran(onlyIfSupported)
 		}
 		catch (Exception e) {
-			rollbackTran()
+			rollbackTran(onlyIfSupported)
 			throw e
 		}
 	}

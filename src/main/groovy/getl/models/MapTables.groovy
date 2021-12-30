@@ -64,6 +64,8 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.datasetName = p.sourceName
+
+            p.remove('id')
             p.remove('sourceName')
 
             MapUtils.RemoveKeys(p) { k, v ->
@@ -177,7 +179,15 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     @Override
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
-        validDataset((obj as MapTableSpec).destination, destinationConnectionName)
+        checkModelDataset((obj as MapTableSpec).destination, destinationConnectionName)
+
+        def node = obj as MapTableSpec
+        if (node.partitionsDatasetName != null) {
+            def ds = dslCreator.findDataset(node.partitionsDatasetName)
+            if (ds == null)
+                throw new ExceptionDSL("Dataset of the list of partitions \"${node.partitionsDatasetName}\" not found!")
+            checkDataset(node.partitionsDataset)
+        }
     }
 
     /**

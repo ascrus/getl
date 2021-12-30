@@ -141,7 +141,10 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 
 	/** Current JDBC connection */
 	@JsonIgnore
-	JDBCConnection getCurrentJDBCConnection() { historyTable?.connection as JDBCConnection }
+	JDBCConnection getCurrentJDBCConnection() {
+		checkManager()
+		return historyTable.connection as JDBCConnection
+	}
 
 	/** Append history value as new row */
 	static public final String insertSave = 'INSERT'
@@ -215,6 +218,8 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	/** Clone current manager */
 	@Synchronized
 	HistoryPointManager cloneHistoryPointManager(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
+		checkManager()
+
 		Map p = CloneUtils.CloneMap(this.params, false)
 
 		if (otherParams != null)
@@ -264,27 +269,14 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		}
 	}
 
-	/** Check history table parameters */
-	protected checkHistoryTable() {
-		if (historyTable == null)
-			throw new ExceptionGETL('Required history table!')
-
-		prepareTable(historyTable)
-	}
-
 	/** Set fields mapping */
 	@Synchronized('operationLock')
 	protected void prepareManager(Boolean createTable) {
 		if (isPrepare)
 			return
 
-		checkHistoryTable()
-
-		if (sourceName == null)
-			throw new ExceptionGETL('Required source name!')
-
-		if (sourceType == null)
-			throw new ExceptionGETL('Required source type!')
+		checkManager()
+		prepareTable(historyTable)
 
 		if (createTable)
 			localCreate(true)
@@ -348,7 +340,8 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	 */
 	@Synchronized('operationLock')
 	Boolean create(Boolean ifNotExists = false) {
-		checkHistoryTable()
+		checkManager()
+		prepareTable(historyTable)
 		localCreate(ifNotExists)
 	}
 	
@@ -359,7 +352,8 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	 */
 	@Synchronized('operationLock')
 	Boolean drop(Boolean ifExists = false) {
-		checkHistoryTable()
+		checkManager()
+		prepareTable(historyTable)
 		
 		if (ifExists && !exists)
 			return false
@@ -375,15 +369,21 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	 */
 	@Synchronized('operationLock')
 	@JsonIgnore
-	Boolean isExists() { historyTable.exists }
+	Boolean isExists() {
+		checkManager()
+		return historyTable.exists
+	}
 	
 	/** Full history table name */
 	@JsonIgnore
-	String getFullTableName() {	historyTable?.fullTableName }
+	String getFullTableName() {
+		checkManager()
+		return historyTable.fullTableName
+	}
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { historyTable?.objectName }
+	String getObjectName() { historyTable?.objectName?:'HISTORY POINT' }
 	
 	/**
 	 * Return last value of history point by source
@@ -487,19 +487,38 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	 */
 	@Synchronized('operationLock')
 	void clearValue () {
-		checkHistoryTable()
+		checkManager()
+		prepareTable(historyTable)
 		historyTable.deleteRows("source = '$sourceName'")
 	}
 
 	/** Delete all rows in history point table */
 	@Synchronized('operationLock')
 	void truncate(Map truncateParams = null) {
-		checkHistoryTable()
+		checkManager()
+		prepareTable(historyTable)
 		historyTable.truncate(truncateParams)
 	}
 
 	@Override
 	Object clone() {
 		return cloneHistoryPointManager()
+	}
+
+	/** Manager check */
+	void checkManager() {
+		if (historyTable == null)
+			throw new ExceptionGETL('Required to specify a history table for storing the values of incremental points!')
+
+		if (sourceName == null)
+			throw new ExceptionGETL('Requires a name for the source!')
+
+		if (sourceType == null)
+			throw new ExceptionGETL('Required to set the type of increment for the source!')
+		if (!(sourceType.toUpperCase() in [identitySourceType, timestampSourceType]))
+			throw new ExceptionGETL("Unknown source type \"$sourceType\"!")
+
+		if (!(saveMethod.toUpperCase() in  ['MERGE', 'INSERT']))
+			throw new ExceptionGETL("Unknown type \"$saveMethod\" to store point, valid types MERGE and INSERT!")
 	}
 }

@@ -17,7 +17,7 @@ class DB2Driver extends JDBCDriver {
 	protected void initParams() {
 		super.initParams()
 
-		caseObjectName = 'UPPER'
+		//caseObjectName = 'UPPER'
 		connectionParamBegin = ':'
 		connectionParamJoin = ';'
 		connectionParamFinish = ';'

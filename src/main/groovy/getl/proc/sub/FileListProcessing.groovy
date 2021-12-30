@@ -663,7 +663,7 @@ abstract class FileListProcessing implements GetlRepository {
                         if (!source.story.exists)
                             throw new ExceptionFileListProcessing('A history caching table was specified, but no history table was specified in the source!')
 
-                        source.story.currentJDBCConnection.transaction {
+                        source.story.currentJDBCConnection.transaction(true) {
                             def count = new Flow(dslCreator).copy(source: cacheTable, dest: source.story)
                             if (count == 0)
                                 throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")

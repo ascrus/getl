@@ -22,7 +22,8 @@ class FirebirdDriver extends JDBCDriver {
         //commitDDL = true
         transactionalDDL = true
 
-        caseObjectName = "UPPER"
+        caseObjectName = 'UPPER'
+        caseRetrieveObject = 'UPPER'
         //caseQuotedName = false
 
         sqlExpressions.now = 'cast(\'NOW\' as timestamp)'

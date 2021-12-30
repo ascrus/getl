@@ -8,7 +8,6 @@ import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
-import getl.utils.Logs
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -19,7 +18,7 @@ import java.sql.Connection
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ImpalaDriver extends JDBCDriver {
+class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
     @Override
     protected void registerParameters() {
         super.registerParameters()
@@ -38,7 +37,7 @@ class ImpalaDriver extends JDBCDriver {
         tablePrefix = '`'
         fieldPrefix = '`'
 
-        caseObjectName = "LOWER"
+        //caseObjectName = "LOWER"
         connectionParamBegin = ';'
         connectionParamJoin = ';'
 
@@ -235,5 +234,26 @@ class ImpalaDriver extends JDBCDriver {
         return res
     }
 
-    /* TODO: Where bulk load? */
+    @Override
+    List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+        def res = super.prepareImportFields(dataset, importParams)
+
+        if (!(dataset instanceof ImpalaTable)) {
+            res.each { field ->
+                switch (field.type) {
+                    case Field.dateFieldType:
+                        field.type = Field.datetimeFieldType
+                        break
+                    case Field.timeFieldType:
+                        field.type = Field.datetimeFieldType
+                        break
+                    case Field.timestamp_with_timezoneFieldType:
+                        field.type = Field.datetimeFieldType
+                        break
+                }
+            }
+        }
+
+        return res
+    }
 }

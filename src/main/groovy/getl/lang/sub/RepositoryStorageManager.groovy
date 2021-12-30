@@ -531,7 +531,7 @@ class RepositoryStorageManager {
         }
 
         if (groupPath != null) {
-            res.currentJDBCConnection.transaction {
+            res.currentJDBCConnection.transaction(true) {
                 new SQLScripter().with {
                     useConnection res.currentJDBCConnection
                     vars.table = res.fullTableName

@@ -526,16 +526,76 @@ class Field implements Serializable, Cloneable {
 		//noinspection UnnecessaryQualifiedReference
 		if (!other.canEqual(this)) return false
 
-		def o = other as Field
+		return compare(other as Field)
+	}
 
+	/** Compare from field */
+	boolean compare(Field o, Boolean softComparison = false, Boolean compareExpressions = true) {
 		if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
-		if (this.type != o.type && !(this.type in [Type.STRING, Type.TEXT] && o.type in [Type.STRING, Type.TEXT])) return false
-		if (this.isNull != o.isNull) return false
-		if (this.isKey != o.isKey) return false
-		if (this.isPartition != o.isPartition) return false
-		if (AllowLength(this) && (this.length?:-1) != (o.length?:-1)) return false
-		if (AllowPrecision(this) && (this.precision?:-1) != (o.precision?:-1)) return false
-		if (this.isAutoincrement != o.isAutoincrement) return false
+
+		if (this.type != o.type) {
+			if (!softComparison)
+				return false
+
+			def ct = false
+			switch (this.type) {
+				case integerFieldType:
+					ct = (o.type == bigintFieldType) || (o.type == numericFieldType && (o.length?:0) >= 9 && (o.precision?:0) == 0)
+					break
+				case stringFieldType: case textFieldType:
+					ct = (o.type in [stringFieldType, textFieldType])
+					break
+				case dateFieldType:
+					ct = (o.type == datetimeFieldType)
+					break
+				case doubleFieldType: case numericFieldType:
+					ct == (o.type in [numericFieldType, doubleFieldType])
+					break
+			}
+			if (!ct)
+				return false
+		}
+
+		if (this.isAutoincrement != o.isAutoincrement)
+			return false
+
+		if (!softComparison) {
+			if (this.isNull != o.isNull)
+				return false
+			if (this.isKey != o.isKey)
+				return false
+			if (this.isAutoincrement != o.isAutoincrement)
+				return false
+			if (AllowLength(this) && (this.length ?: -1) != (o.length ?: -1))
+				return false
+			if (AllowPrecision(this) && (this.precision ?: -1) != (o.precision ?: -1))
+				return false
+		}
+		else {
+			if (BoolUtils.IsValue(this.isNull) && !BoolUtils.IsValue(o.isNull))
+				return false
+			if (!BoolUtils.IsValue(this.isKey) && BoolUtils.IsValue(o.isKey))
+				return false
+			if (AllowLength(this) && (this.length ?: -1) > (o.length ?: -1))
+				return false
+			if (AllowPrecision(this) && (this.precision ?: -1) > (o.precision ?: -1))
+				return false
+		}
+		if (this.isPartition != o.isPartition)
+			return false
+		if (this.arrayType != o.arrayType)
+			return false
+		if (this.isReadOnly != o.isReadOnly)
+			return false
+
+		if (compareExpressions) {
+			if (this.defaultValue != o.defaultValue)
+				return false
+			if (this.checkValue != o.checkValue)
+				return false
+			if (this.compute != o.compute)
+				return false
+		}
 
 		return true
 	}

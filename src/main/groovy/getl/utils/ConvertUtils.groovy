@@ -5,6 +5,7 @@ import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 
 import java.sql.Time
+import java.util.regex.Pattern
 
 /**
  * Convert library functions class
@@ -193,6 +194,132 @@ class ConvertUtils {
 			}
 			catch (Exception e) {
 				throw new ExceptionGETL("Can't convert text \"$value\" to list: ${e.message}")
+			}
+		}
+
+		return res
+	}
+
+	@SuppressWarnings('RegExpRedundantEscape')
+	static private final Pattern SingleQuotedString = Pattern.compile('^[\'].+[\']$')
+	@SuppressWarnings('RegExpRedundantEscape')
+	static private final Pattern DoubleQuotedString = Pattern.compile('^[\\"].+[\\"]$')
+
+	/**
+	 * Convert string expression to list structure
+	 * @param value expression
+	 * @return list
+	 */
+	static List String2List(String value) {
+		if (value == null)
+			return null
+
+		value = value.trim()
+		if (value.length() == 0)
+			return []
+
+		if ((value[0] == '[' && value[value.length() - 1] == ']') ||
+				(value[0] == '(' && value[value.length() - 1] == ')') ||
+				(value[0] == '{' && value[value.length() - 1] == '}'))
+			value = value.substring(1, value.length() - 1)
+
+		def lexer = new Lexer(value, Lexer.javaScriptType)
+		def res = []
+		lexer.toList().each { list ->
+			if (list.isEmpty()) {
+				res.add(null)
+				return
+			}
+
+			def val = lexer.script.substring(list[0].first as Integer, (list[list.size() - 1].last as Integer + 1))
+			if (val.isInteger())
+				res.add(val.toInteger())
+			else if (val.isLong())
+				res.add(val.toLong())
+			else if (val.isBigInteger())
+				res.add(val.toBigInteger())
+			else if (val.isBigDecimal())
+				res.add(val.toBigDecimal())
+			else if (val.isDouble())
+				res.add(val.toDouble())
+			else {
+				if (val.matches(SingleQuotedString) || val.matches(DoubleQuotedString))
+					res.add(val.substring(1, val.length() - 1))
+				else
+					res.add(val)
+			}
+		}
+
+		return res
+	}
+
+	/**
+	 * Convert string expression to map structure
+	 * @param value expression
+	 * @return map
+	 */
+	static Map<String, Object> String2Map(String value) {
+		if (value == null)
+			return null
+
+		value = value.trim()
+		if (value.length() == 0)
+			return [:] as Map<String, Object>
+
+		if ((value[0] == '[' && value[value.length() - 1] == ']') ||
+				(value[0] == '(' && value[value.length() - 1] == ')') ||
+				(value[0] == '{' && value[value.length() - 1] == '}'))
+			value = value.substring(1, value.length() - 1)
+
+		def lexer = new Lexer(value, Lexer.javaScriptType)
+		def res = [:] as Map<String, Object>
+		lexer.toList().each { list ->
+			if (list.isEmpty())
+				return
+
+			def i = list.findIndexOf { elem -> elem.type == Lexer.TokenType.SINGLE_WORD && (elem.value as String).indexOf(':') != -1 }
+			if (i == -1)
+				throw new ExceptionGETL('The name in the map structure is not specified!')
+
+			def findColon = (list[i].value as String)
+			if (i == 0 && findColon[0] == ':')
+				throw new ExceptionGETL('The name in the map structure is not specified!')
+			if (i == list.size() - 1 && findColon[findColon.length() - 1] == ':') {
+				def name = lexer.script.substring(list[0].first as Integer, (list[i].last as Integer) + 1)
+				res.put(name.substring(0, name.lastIndexOf(':')), null)
+				return
+			}
+
+			def name = lexer.script.substring(list[0].first as Integer, (list[i].last as Integer) + 1)
+			def pos = name.lastIndexOf(':')
+			name = name.substring(0, pos).trim()
+			if (name.matches(SingleQuotedString) || name.matches(DoubleQuotedString))
+				name = name.substring(1, name.length() - 1)
+
+			String val = ''
+			def elemWithPos = list[i].value as String
+			if (elemWithPos[elemWithPos.length() - 1] != ':') {
+				pos = elemWithPos.lastIndexOf(':')
+				val = elemWithPos.substring(pos + 1)
+			}
+			if (i < list.size() - 1)
+				val += lexer.script.substring(list[i + 1].first as Integer, (list[list.size() - 1].last as Integer) + 1).trim()
+
+			if (val.isInteger())
+				res.put(name, val.toInteger())
+			else if (val.isLong())
+				res.put(name, val.toLong())
+			else if (val.isBigInteger())
+				res.put(name, val.toBigInteger())
+			else if (val.isBigDecimal())
+				res.put(name, val.toBigDecimal())
+			else if (val.isDouble())
+				res.put(name, val.toDouble())
+			else {
+				if (val.matches(SingleQuotedString) || val.matches(DoubleQuotedString))
+					res.put(name, val.substring(1, val.length() - 1))
+				else
+					res.put(name, val)
 			}
 		}
 

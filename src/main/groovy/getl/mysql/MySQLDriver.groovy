@@ -164,12 +164,12 @@ class MySQLDriver extends JDBCDriver {
 		return res
 	}
 
-	@Override
+	/*@Override
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = super.prepareForRetrieveFields(dataset)
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 		return names
-	}
+	}*/
 
 	@Override
 	protected ResultSet readPrimaryKey(Map<String, String> names) {

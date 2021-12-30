@@ -28,8 +28,8 @@ class ParseObjectName {
     }
 
     static private Pattern patternGroupMask = Pattern.compile('(?i)^([\\w\\-\\*\\.])+$')
-    static private Pattern patternFullObjectMask = Pattern.compile('(?iu)^([^\\\\:/$%?^#~!@&+=|])+$')
-    static private Pattern patternSimpleObjectMask = Pattern.compile('(?iu)^([^\\\\:/$%?^~!@&+=|])+$')
+    static private Pattern patternFullObjectMask = Pattern.compile('(?iu)^([^\\\\:/$%?^#~!@&+=|<>])+$')
+    static private Pattern patternSimpleObjectMask = Pattern.compile('(?iu)^([^\\\\:/$%?^~!@&+=|<>])+$')
 
     /** Invalid characters regexp */
     static public String incorrectChars = '\\\\:/$%?^#*~!@&+=|`<>\'\\";'

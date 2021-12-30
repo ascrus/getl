@@ -681,4 +681,13 @@ class JDBCConnection extends Connection implements UserLogins {
 		methodParams.validation('dropSchema', dropParams, [driver.methodParams.params('dropSchema')])
 		currentJDBCDriver.dropSchema(schemaName, dropParams)
 	}
+
+	/** Return SQL expression converting text to timestamp value for current RDBMS */
+	String expressionString2Timestamp(Object value) {
+		return currentJDBCDriver.sqlExpressionValue('convertTextToTimestamp', [value: value])
+	}
+
+	/** Name dual system table */
+	@JsonIgnore
+	String getSysDualTable() { currentJDBCDriver.sysDualTable }
 }

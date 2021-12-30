@@ -234,4 +234,9 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
                     "\"$ownerModel.dslNameObject\".\"$this\": $unknownKeys, " +
                     "allow attributes: $allowAttrs")
     }
+
+    /** Check model owner */
+    protected void checkGetlInstance() {
+        ownerModel.checkGetlInstance()
+    }
 }

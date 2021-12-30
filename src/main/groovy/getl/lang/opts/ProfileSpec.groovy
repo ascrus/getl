@@ -15,8 +15,8 @@ class ProfileSpec extends BaseSpec {
         statistics = new ProcessTime(
                 dslCreator: owner as Getl,
                 name: name,
-                logLevel: (owner as Getl).options().processTimeLevelLog,
-                debug: ((!isProfile)?(owner as Getl).options().processTimeDebug: true),
+                logLevel: (owner as Getl).options.processTimeLevelLog,
+                debug: ((!isProfile)?(owner as Getl).options.processTimeDebug:false),
                 objectName: objectName?:'row',
                 abbrName: (!isProfile)?'STAT':null
         )

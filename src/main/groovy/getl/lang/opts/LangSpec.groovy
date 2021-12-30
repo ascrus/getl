@@ -40,7 +40,7 @@ class LangSpec extends BaseSpec {
     private Getl getDslCreator() { ownerObject as Getl }
 
     /** Fixing the execution time of processes in the log */
-    Boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing, true) }
+    Boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing, false) }
      /** Fixing the execution time of processes in the log */
     void setProcessTimeTracing(Boolean value) { saveParamValue('processTimeTracing', value) }
 
@@ -112,11 +112,6 @@ class LangSpec extends BaseSpec {
     Boolean getCheckProcessForThreads() { BoolUtils.IsValue(params.checkProcessForThreads) }
     /** Check permission to work processes when they start */
     void setCheckProcessForThreads(Boolean value) { saveParamValue('checkProcessForThreads', value) }
-
-    /** The default output level of the echo command to the log for sql object */
-    Level getSqlEchoLogLevel() { (params.sqlEchoLogLevel as Level)?:processTimeLevelLog }
-    /** The default output level of the echo command to the log for sql object */
-    void setSqlEchoLogLevel(Level value) { saveParamValue('sqlEchoLogLevel', value) }
 
     /** Logging path of sql statements for connections */
     String getJdbcConnectionLoggingPath() { params.jdbcConnectionLoggingPath as String }

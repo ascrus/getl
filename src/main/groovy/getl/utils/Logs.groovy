@@ -805,7 +805,7 @@ class Logs {
 		
 		def fn = dumpFile()
 		
-		finest("Saving dump information to file $fn from error ${error?.message} ...")
+		config("Saving dump information to file $fn from error ${error?.message} ...")
 		FileUtils.ValidFilePath(fn)
 
 		File df = new File(fn)

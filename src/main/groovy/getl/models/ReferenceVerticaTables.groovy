@@ -56,6 +56,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.datasetName = p.workTableName
+
+            p.remove('id')
             p.remove('workTableName')
 
             MapUtils.RemoveKeys(p) { k, v ->
@@ -116,8 +118,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     }
 
     @Override
-    protected void validDataset(Dataset ds, String connectionName = null) {
-        super.validDataset(ds, connectionName)
+    protected void checkModelDataset(Dataset ds, String connectionName = null) {
+        super.checkModelDataset(ds, connectionName)
 
         def dsn = ds.dslNameObject
         if (!(ds instanceof VerticaTable))

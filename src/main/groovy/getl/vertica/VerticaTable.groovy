@@ -4,12 +4,9 @@ package getl.vertica
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.Connection
-import getl.data.Dataset
-import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.jdbc.opts.*
-import getl.oracle.OracleTable
 import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.vertica.opts.*
@@ -31,12 +28,10 @@ class VerticaTable extends TableDataset {
     /** Fill field value with value from table on insert and when calling function REFRESH_COLUMNS */
     static public final lookupDefaultUsingType = 'DEFAULT USING'
 
-    @Override
+    /*@Override
     protected void registerParameters() {
         super.registerParameters()
-
-        methodParams.register('importFields', ['convertToUtf', 'allowClob', 'allowNumericWithoutLength'])
-    }
+    }*/
 
     @Override
     void setConnection(Connection value) {
@@ -398,109 +393,6 @@ class VerticaTable extends TableDataset {
         currentVerticaConnection.executeCommand('CREATE TABLE {exists} {table} LIKE {source} {proj} {grant}', [queryParams: p])
     }
 
-    /**
-     * Convert Oracle table fields to suitable Vertica field types
-     * @param oraTable Oracle table
-     * @param allowClob allow clob fields
-     * @param allowNumericWithoutLength convert numeric fields with no length specified
-     * @param convertToUtf convert length of text fields to store utf 8 encoding
-     * @return converted list of fields for Vertica
-     */
-    static List<Field> ProcessOracleFields(OracleTable oraTable, Boolean allowClob = true,
-                                           Boolean allowNumericWithoutLength = true, Boolean convertToUtf = true) {
-        if (oraTable.field.isEmpty())
-            oraTable.retrieveFields()
-
-        def res = [] as List<Field>
-        oraTable.field.each { oraField ->
-            def field = oraField.clone() as Field
-            field.typeName = null
-            field.columnClassName = null
-            ProcessOracleField(field/*, allowClob, allowNumericWithoutLength, convertToUtf*/)
-            ProcessOtherField(field, allowClob, allowNumericWithoutLength, convertToUtf)
-            res << field
-        }
-
-        return res
-    }
-
-    /**
-     * Convert dataset fields to suitable Vertica field types
-     * @param allowClob allow clob fields
-     * @param allowNumericWithoutLength convert numeric fields with no length specified
-     * @param convertToUtf convert length of text fields to store utf 8 encoding
-     */
-    static void ProcessOtherField(Field field, Boolean allowClob = true,
-                                  Boolean allowNumericWithoutLength = true, Boolean convertToUtf = true) {
-        if (field.type == Field.stringFieldType) {
-            assert (field.length ?: 0) > 0
-            if (convertToUtf)
-                field.length = field.length * 2
-        }
-
-        else if (field.type == Field.textFieldType) {
-            if (!allowClob)
-                throw new ExceptionGETL("Detected clob field ${field.name}!")
-
-            if (field.length <= 65000)
-                field.length = 65000
-        }
-
-        else if (field.type == Field.numericFieldType) {
-            if ((field.length ?: 0) == 0) {
-                if (!allowNumericWithoutLength)
-                    throw new ExceptionGETL("Detected numeric field ${field.name} without def lenght!")
-
-                field.length = 38
-                field.precision = 12
-            }
-        }
-    }
-
-    /**
-     * Convert Oracle table fields to suitable Vertica field types
-     * @param allowClob allow clob fields
-     * @param allowNumericWithoutLength convert numeric fields with no length specified
-     * @param convertToUtf convert length of text fields to store utf 8 encoding
-     */
-    static void ProcessOracleField(Field field/*, Boolean allowClob = true,
-                                           Boolean allowNumericWithoutLength = true, Boolean convertToUtf = true*/) {
-        if (field.type == Field.numericFieldType) {
-            if ((field.precision ?: 0) == 0) {
-                if (field.name.matches('(?i).+[_]ID')) {
-                    field.type = Field.bigintFieldType
-                    field.length = null
-                    field.precision = null
-                }
-                else if ((field.length ?: 0) > 0) {
-                    if ((field.length ?: 0) < 10) {
-                        field.type = Field.integerFieldType
-                        field.length = null
-                        field.precision = null
-                    } else if ((field.length ?: 0) < 20) {
-                        field.type = Field.bigintFieldType
-                        field.length = null
-                        field.precision = null
-                    }
-                }
-            }
-        }
-        else if (field.type == Field.dateFieldType) {
-            field.type = Field.datetimeFieldType
-        }
-    }
-
-    /**
-     * Convert Oracle table fields to suitable Vertica field types
-     * @param oraTable Oracle table
-     * @param allowClob allow clob fields
-     * @param allowNumericWithoutLength convert numeric fields with no length specified
-     */
-    void setOracleFields(OracleTable oraTable, Boolean allowClob = true, Boolean allowNumericWithoutLength = true,
-                         Boolean convertToUtf = true) {
-        setField(ProcessOracleFields(oraTable, allowClob, allowNumericWithoutLength, convertToUtf))
-    }
-
     @SuppressWarnings('GroovyMissingReturnStatement')
     @Override
     void retrieveOpts() {
@@ -519,47 +411,6 @@ class VerticaTable extends TableDataset {
                 def part = rows[0].partition_expression
                 this.createOpts.partitionBy = (part != '')?part:null
             }
-        }
-    }
-
-    /**
-     * Import fields from another dataset<br><br>
-     * <b>Import options:</b><br>
-     * <ul>
-     *     <li>
-     *         convertToUtf: increase the length of text fields for storage encoded in UTF8 (true by default)
-     *     </li>
-     *     <li>
-     *         allowClob: allow import of Oracle clob fields
-     *     </li>
-     *     <li>
-     *         allowNumericWithoutLength: allow import of numeric fields with no specified length
-     *     </li>
-     *</ul>
-     * @param dataset source
-     * @param importParams import options
-     */
-    @Override
-    void importFields(Dataset dataset, Map importParams = [:]) {
-        super.importFields(dataset, importParams)
-
-        if (dataset instanceof VerticaTable)
-            return
-
-        if (importParams == null)
-            importParams = [:]
-
-        def convertToUtf = BoolUtils.IsValue(importParams.convertToUtf, true)
-        /*def allowClob = BoolUtils.IsValue(importParams.allowClob, true)
-        def allowNumericWithoutLength = BoolUtils.IsValue(importParams.allowNumericWithoutLength , true)*/
-
-        def isOracle = (dataset instanceof OracleTable)
-
-        field.each { field ->
-            if (isOracle)
-                ProcessOracleField(field/*, allowClob, allowNumericWithoutLength, convertToUtf*/)
-
-            ProcessOtherField(field, convertToUtf)
         }
     }
 }

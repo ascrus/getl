@@ -43,7 +43,7 @@ def res = [:] as Map<String, Object>
 //noinspection GroovyVariableNotAssigned
 sql {scripter ->
     useConnection con
-    con.transaction {
+    con.transaction(true) {
         scripts.each { fileName ->
             if (FileUtils.FileExtension(fileName) == '') fileName += '.sql'
             logFinest "Executing SQL script file \"$fileName\" ..."

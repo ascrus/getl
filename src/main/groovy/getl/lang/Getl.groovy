@@ -453,6 +453,12 @@ Examples:
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false)}\"")
                     }
+
+                    if (en.sqlEchoLevel != null) {
+                        logging.sqlEchoLogLevel = Logs.ObjectToLevel(en.sqlEchoLevel)
+                        if (logging.sqlEchoLogLevel)
+                            logFine("SQL command echo is logged with level ${logging.sqlEchoLogLevel}")
+                    }
                 }
                 procs.repository = { Map<String, Object> en ->
                     instance.repositoryStorageManager {
@@ -540,27 +546,21 @@ Examples:
                 }
                 procs.profile = { Map<String, Object> en ->
                     if (en.enabled != null) {
-                        processTimeTracing = BoolUtils.IsValue(en.enabled, true)
+                        processTimeTracing = BoolUtils.IsValue(en.enabled, false)
                         if (processTimeTracing)
                             logFine("Enabled output of profiling results to the log")
 
                         if (en.level != null) {
                             processTimeLevelLog = Logs.ObjectToLevel(en.level)
-                            if (processTimeLevelLog)
+                            if (processTimeLevelLog && processTimeTracing)
                                 logFine("Output profiling messages with level $processTimeLevelLog")
                         }
 
                         if (en.debug != null) {
                             processTimeDebug = BoolUtils.IsValue(en.debug)
-                            if (processTimeDebug)
+                            if (processTimeDebug && processTimeTracing)
                                 logFine("Profiling the start of process commands")
                         }
-                    }
-
-                    if (en.sqlEchoLevel != null) {
-                        sqlEchoLogLevel = Logs.ObjectToLevel(en.sqlEchoLevel)
-                        if (sqlEchoLogLevel)
-                            logFine("SQL command echo is logged with level $sqlEchoLogLevel")
                     }
                 }
                 procs.project = { Map<String, Object> en ->
@@ -2308,7 +2308,7 @@ Examples:
                         }
                     }
                     catch (Exception err) {
-                        logging.manager.exception(err, 'method error', script.getClass().name)
+                        logging.manager.severe("An error occurred while processing the error for script \"${script.getClass().name}\": ${err.message}")
                     }
                     finally {
                         throw e
@@ -2703,13 +2703,13 @@ Examples:
                         break
                     case List:
                         if (!(value instanceof List)) {
-                            value = ConvertUtils.String2Structure(value.toString())
+                            value = ConvertUtils.String2List(value.toString())
                         }
 
                         break
                     case Map:
                         if (!(value instanceof Map)) {
-                            value = ConvertUtils.String2Structure(value.toString())
+                            value = ConvertUtils.String2Map(value.toString())
                         }
 
                         break
@@ -4621,7 +4621,7 @@ Examples:
         else
             parent.connection = defaultJdbcConnection(RepositoryDatasets.QUERYDATASET)
 
-        parent.logEcho = _langOpts.sqlEchoLogLevel.toString()
+        parent.logEcho = _logOpts.sqlEchoLogLevel.toString()
         parent.extVars = configVars
 
         if (owner instanceof GetlRepository) {

@@ -519,7 +519,7 @@ class RepositoryTest extends TestDsl {
 
                 mapTable('table1') {
                     assertEquals('csv', destinationName)
-                    assertEquals([DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')], readListPartitions())
+                    assertEquals([DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')], readListPartitions().collect { it.values()[0] })
                 }
             }
 

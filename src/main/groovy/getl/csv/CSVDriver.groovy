@@ -46,7 +46,8 @@ class CSVDriver extends FileDriver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
-		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW]
+		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW, Driver.Support.PRIMARY_KEY,
+		 Driver.Support.NOT_NULL_FIELD]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

@@ -102,14 +102,15 @@ class TableSpec extends DatasetSpec {
      * @param queryParams parameters for getting a list of partitions from a dataset
      * @return list of partitions
      */
-    List readListPartitions(Map queryParams = null) {
-        def res = listPartitions
+    List<Map<String, Object>> readListPartitions(Map queryParams = null) {
+        def res = listPartitions.collect { [partition: it] }
         if (res.isEmpty() && partitionsDatasetName != null) {
             def qp = [:]
             if (queryParams != null)
                 qp.put('queryParams', queryParams)
-            res = partitionsDataset.rows(qp).collect { row -> row.values()[0] }
+            res = partitionsDataset.rows(qp)
         }
+
         return res
     }
 }

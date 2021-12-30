@@ -455,10 +455,10 @@ ORDER BY t1.id"""
         Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
-            embeddedTable('#historyTable', true)
+            embeddedTable('historyTable', true)
 
             historypoint('history1', true) {
-                historyTableName = '#historyTable'
+                historyTableName = 'historyTable'
                 saveMethod = mergeSave
                 sourceName = 'source1'
                 sourceType = identitySourceType
@@ -663,7 +663,7 @@ ORDER BY t1.id"""
             assertEquals(2, listConnections().size())
             assertEquals(1, listConnections('getl.testdsl.h2:h*').size())
             assertEquals(1, listConnections('getl.testdsl.csv:c*').size())
-            assertEquals(5, listDatasets().size())
+            assertEquals(6, listDatasets().size())
             assertEquals(1, listDatasets('getl.testdsl.h2:query*').size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(1, listHistorypoints('getl.testdsl.h2:h*').size())
@@ -672,7 +672,7 @@ ORDER BY t1.id"""
 
             forGroup 'getl.testdsl.h2'
             assertEquals(1, listConnections().size())
-            assertEquals(3, listDatasets().size())
+            assertEquals(4, listDatasets().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(0, listFilemanagers().size())
 

@@ -4,6 +4,7 @@ package getl.models.sub
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
+import getl.data.Field
 import getl.data.FileDataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
@@ -83,7 +84,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         checkModel(false)
 
         def table = dslCreator.dataset(datasetName)
-        validDataset(table)
+        checkModelDataset(table)
         def dslDatasetName = table.dslNameObject
 
         def parent = (usedDatasets.find { t -> t.datasetName == dslDatasetName })
@@ -128,56 +129,88 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
             throw new ExceptionModel("The model connection is not specified!")
 
         super.checkModel(checkObjects)
+        checkDataset(storyDataset)
     }
 
     @Override
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
-        validDataset((obj as DatasetSpec).modelDataset)
+        def spec = obj as DatasetSpec
+        checkModelDataset(spec.modelDataset)
+
+        def hp = (spec.historyPointName != null)?dslCreator.findHistorypoint(spec.historyPointName):null
+        if (spec.historyPointName != null) {
+            if (hp == null)
+                throw new ExceptionDSL("Increment point manager \"${spec.historyPointName}\" not found!")
+            hp.checkManager()
+        }
+        if (spec.incrementFieldName != null) {
+            def field = spec.modelDataset.fieldByName(spec.incrementFieldName)
+            if (field == null)
+                throw new ExceptionDSL("Increment field \"${spec.incrementFieldName}\" was not found in dataset \"${spec.modelDataset}\"!")
+            if (hp != null) {
+                switch (hp.sourceType) {
+                    case hp.identitySourceType:
+                        if (!(field.type in [Field.integerFieldType, Field.bigintFieldType, Field.numericFieldType]))
+                            throw new ExceptionDSL("Field \"${spec.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
+                                    "type \"${hp.sourceType}\" of incremental manager \"$hp\" (allowed INTEGER, BIGINT and NUMERIC types)!")
+                        break
+                    case hp.timestampSourceType:
+                        if (!(field.type in [Field.dateFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]))
+                            throw new ExceptionDSL("Field \"${spec.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
+                                    "type \"${hp.sourceType}\" of incremental manager \"$hp\" (allowed DATE, DATETIME and TIMESTAMP_WITH_TIMEZONE types)!")
+                }
+            }
+        }
     }
 
-    /**
-     * Valid dataset parameters
-     * @param ds validation dataset
-     * @param connectionName the name of the connection used for the dataset
-     */
-    protected void validDataset(Dataset ds, String connectionName = null) {
+    protected checkDataset(Dataset ds) {
         if (ds == null)
-            throw new ExceptionDSL('No dataset specified!')
+            return
 
-        if (ds.dslNameObject == null)
+        if (dslCreator.findDataset(ds) == null)
             throw new ExceptionModel("Dataset \"$ds\" is not registered in the repository!")
 
         def dsn = ds.dslNameObject
         if (ds.connection == null)
-            throw new ExceptionModel("The connection for the dataset \"$dsn\" is not specified!")
-        if (ds.connection.dslNameObject != (connectionName?:modelConnectionName))
-            throw new ExceptionModel("The connection of dataset \"$dsn\" does not match the specified connection to the model connection!")
+            throw new ExceptionModel("The connection for the dataset \"$dsn\" [$ds] is not specified!")
 
         if (ds instanceof TableDataset) {
             def jdbcTable = ds as TableDataset
-            /*if (jdbcTable.schemaName == null)
-                throw new ExceptionModel("Table \"$dsn\" [$ds] does not have a schema!")*/
             if (jdbcTable.tableName == null)
                 throw new ExceptionModel("Table \"$dsn\" [$ds] does not have a table name!")
         }
         else if (ds instanceof ViewDataset) {
             def viewTable = ds as ViewDataset
-            /*if (viewTable.schemaName == null)
-                throw new ExceptionModel("View \"$dsn\" does not have a schema!")*/
             if (viewTable.tableName == null)
-                throw new ExceptionModel("View \"$dsn\" does not have a table name!")
+                throw new ExceptionModel("View \"$dsn\" [$ds] does not have a table name!")
         }
         else if (ds instanceof QueryDataset) {
             def queryTable = ds as QueryDataset
             if (queryTable.query == null && queryTable.scriptFilePath == null)
-                throw new ExceptionModel("Query \"$dsn\" does not have a sql script!")
+                throw new ExceptionModel("Query \"$dsn\" [$ds] does not have a sql script!")
         }
         else if (ds instanceof FileDataset) {
             def fileTable = ds as FileDataset
             if (fileTable.fileName == null)
-                throw new ExceptionModel("File dataset \"$dsn\" does not have a file name!")
+                throw new ExceptionModel("File dataset \"$dsn\" [$ds] does not have a file name!")
         }
+    }
+
+    /**
+     * Check dataset model
+     * @param ds checking dataset
+     * @param connectionName the name of the connection used for the dataset
+     */
+    protected void checkModelDataset(Dataset ds, String connectionName = null) {
+        if (ds == null)
+            throw new ExceptionDSL('No dataset specified!')
+
+        checkDataset(ds)
+
+        def dsn = ds.dslNameObject
+        if (ds.connection.dslNameObject != (connectionName?:modelConnectionName))
+            throw new ExceptionModel("The connection of dataset \"$dsn\" does not match the specified connection to the model connection!")
     }
 
     /**
@@ -195,6 +228,6 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * @param name source dataset name
      */
     Boolean datasetInModel(String name) {
-        return usedDatasets.find {it.datasetName == name } != null
+        return usedDatasets.find {it.datasetName == name.toLowerCase() } != null
     }
 }

@@ -2,11 +2,9 @@
 package getl.models.opts
 
 import getl.exception.ExceptionModel
-import getl.lang.Getl
 import getl.lang.sub.ParseObjectName
 import getl.models.Workflows
 import getl.models.sub.BaseSpec
-import getl.utils.GenerationUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -128,7 +126,7 @@ class WorkflowSpec extends BaseSpec {
                             @DelegatesTo(WorkflowScriptSpec)
                             @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowScriptSpec'])
                                     Closure cl = null) {
-        if (name == null)
+        if (name == null || name.length() == 0)
             throw new ExceptionModel("The script name in step \"$stepName\" is required!")
 
         if (!ParseObjectName.CheckNameCharacters(name))
@@ -179,7 +177,7 @@ class WorkflowSpec extends BaseSpec {
                                    @DelegatesTo(WorkflowSpec)
                                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                                            Closure cl = null) {
-        if (stepName == null)
+        if (stepName == null || stepName.length() == 0)
             throw new ExceptionModel('Step name required!')
 
         if (ownerWorkflow.stepByName(stepName) != null)
@@ -196,7 +194,13 @@ class WorkflowSpec extends BaseSpec {
     }
 
     /** Find script */
-    Map<String, Object> findScript(String scriptName) { scripts.get(scriptName) }
+    Map<String, Object> findScript(String scriptName) {
+        if (scriptName == null || scriptName.length() == 0)
+            throw new ExceptionModel("Required script name for find script function!")
+
+        scriptName = scriptName.toUpperCase()
+        return scripts.find { it.key.toUpperCase() == scriptName }.value
+    }
 
     /**
      * Define step in workflow

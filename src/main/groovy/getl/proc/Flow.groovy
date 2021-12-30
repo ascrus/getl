@@ -749,7 +749,7 @@ class Flow {
 			}
 		}
 		catch (Exception e) {
-			logger.exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
+			logger.severe("Error copying rows from \"${sourceDescription}\" to \"${destDescription}\": ${e.message}")
 
 			if (autoTran && dest.connection.isTran())
 				Executor.RunIgnoreErrors(dslCreator) {
@@ -866,22 +866,24 @@ class Flow {
 		countRow = 0
 
 		if (code == null) code = params.process as Closure
-		if (code == null) throw new ExceptionGETL("Required process code for write to destination dataset")
+		if (code == null)
+			throw new ExceptionGETL("Required process code for write to destination dataset")
 		
 		Dataset dest = params.dest as Dataset
-		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
-		if (dest.connection == null) throw new ExceptionGETL("Required specify a connection for the destination!")
+		if (dest == null)
+			throw new ExceptionGETL("Required parameter \"dest\"")
+		if (dest.connection == null)
+			throw new ExceptionGETL("Required specify a connection for the destination!")
 
-		String destDescription
 		if (dest == null && params.tempDest != null) {
-			if (params.tempFields == null) throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDest}\"")
+			if (params.tempFields == null)
+				throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDest}\"")
 			dest = TFS.dataset(params.tempDest as String)
-			destDescription = "temp.${params.tempDest}"
 			dest.setField((List<Field>)params.tempFields)
 		}
-		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
-		if (destDescription == null) destDescription = dest.objectName
-		
+		if (dest == null)
+			throw new ExceptionGETL("Required parameter \"dest\"")
+
 		def autoTran = BoolUtils.IsValue(params.autoTran, true)
 		autoTran = autoTran &&
 				dest.connection.isSupportTran &&
@@ -889,7 +891,8 @@ class Flow {
 				!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 		
 		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
-		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset not support bulk load")
+		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD))
+			throw new ExceptionGETL("Destination dataset not support bulk load")
 		def bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP)
 		def bulkEscaped = BoolUtils.IsValue(params.bulkEscaped)
 		
@@ -956,7 +959,7 @@ class Flow {
 		catch (Exception e) {
 			isError = true
 			writer.isWriteError = true
-			logger.exception(e, getClass().name + ".writeTo", writer.objectName)
+			logger.severe("Error writing rows to \"${writer.objectName}\": ${e.message}")
 			if (autoTran && !isBulkLoad && dest.connection.isTran())
 				Executor.RunIgnoreErrors(dslCreator) {
 					dest.connection.rollbackTran()
@@ -987,7 +990,7 @@ class Flow {
 				dest.bulkLoadFile(bulkParams)
 			}
 			catch (Exception e) {
-				logger.exception(e, getClass().name + ".writeTo", "${destDescription}")
+				logger.severe("Error loading CSV file \"${bulkDS.fullFileName()}\" to \"${writer.objectName}\": ${e.message}")
 				
 				if (autoTran && dest.connection.isTran())
 					Executor.RunIgnoreErrors(dslCreator) {
@@ -1018,10 +1021,12 @@ class Flow {
 		methodParams.validation("writeAllTo", params)
 
 		if (code == null) code = params.process as Closure
-		if (code == null) throw new ExceptionGETL("Required process code for write to destination datasets")
+		if (code == null)
+			throw new ExceptionGETL("Required process code for write to destination datasets")
 
 		Map<String, Dataset> dest = params.dest as Map<String, Dataset>
-		if (dest == null || dest.isEmpty()) throw new ExceptionGETL("Required parameter \"dest\"")
+		if (dest == null || dest.isEmpty())
+			throw new ExceptionGETL("Required parameter \"dest\"")
 		
 		def autoTran = BoolUtils.IsValue(params.autoTran, true)
 		def writeSynch = BoolUtils.IsValue(params."writeSynch", false)
@@ -1050,7 +1055,8 @@ class Flow {
 				destParams.put(n, p)
 			}
 
-			if (d.connection == null) throw new ExceptionGETL("Required specify a connection for the \"$n\" destination!")
+			if (d.connection == null)
+				throw new ExceptionGETL("Required specify a connection for the \"$n\" destination!")
 			
 			// Valid auto transaction
 			def isAutoTran = autoTran &&
@@ -1078,7 +1084,8 @@ class Flow {
 			
 			// Valid support bulk load
 			if (isBulkLoad) {
-				if (!d.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset \"${n}\" not support bulk load")
+				if (!d.connection.driver.isOperation(Driver.Operation.BULKLOAD))
+					throw new ExceptionGETL("Destination dataset \"${n}\" not support bulk load")
 				if (d.field.isEmpty()) d.retrieveFields()
 				TFSDataset bulkDS = TFS.dataset()
 				bulkDS.escaped = bulkEscaped
@@ -1104,7 +1111,8 @@ class Flow {
 						List<Field> lf = []
 						useFields.each { String fn ->
 							def f = d.fieldByName(fn)
-							if (f == null) throw new ExceptionGETL("Can not find field \"${fn}\" in \"${d.objectName}\" for list result of prepare code")
+							if (f == null)
+								throw new ExceptionGETL("Can not find field \"${fn}\" in \"${d.objectName}\" for list result of prepare code")
 							lf << f
 						}
 						bulkDS.setField(lf)
@@ -1173,10 +1181,11 @@ class Flow {
 		
 		writer.each { String n, Dataset d ->
 			try {
-				if (!writeSynch) d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
+				if (!writeSynch)
+					d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
 			}
 			catch (Exception e) {
-				logger.exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)
+				logger.severe("Error writing rows to \"${d.objectName}\": ${e.message}")
 				closeDestinations(true)
 				rollbackTrans(["ALL", "COPY"])
 				throw e
@@ -1190,7 +1199,7 @@ class Flow {
 			writer.each { String n, Dataset d ->
 				d.isWriteError = true
 			}
-			logger.exception(e, getClass().name + ".writeAllTo.code", curUpdater)
+			logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\": ${e.message}")
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1202,8 +1211,7 @@ class Flow {
 			}
 		}
 		catch (Exception e) {
-			def destDescription = writer.keySet().toList().join(",")
-			logger.exception(e, getClass().name + ".writeAllTo.doneWrite", destDescription)
+			logger.severe("Error saving buffer to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\": ${e.message}")
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1213,8 +1221,7 @@ class Flow {
 			closeDestinations(false)
 		}
 		catch (Exception e) {
-			def destDescription = writer.keySet().toList().join(",")
-			logger.exception(e, getClass().name + ".writeAllTo.closeWrite", destDescription)
+			logger.severe("Close error \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\": ${e.message}")
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1223,12 +1230,12 @@ class Flow {
 		startTrans(["BULK"])
 		bulkLoadDS.each { String n, Dataset d ->
 			Dataset ds = dest.get(n) as Dataset
+			Map bp = bulkParams.get(n) as Map
 			try {
-				Map bp = bulkParams.get(n) as Map
 				ds.bulkLoadFile(bp)
 			}
 			catch (Exception e) {
-				logger.exception(e, getClass().name + ".writeToAll.bulkLoadFile", "${ds.objectName}")
+				logger.severe("Error loading CSV file \"${bp.source}\" to \"${ds.objectName}\": ${e.message}")
 				rollbackTrans(["ALL", "COPY", "BULK"])
 				throw e
 			}
@@ -1255,11 +1262,14 @@ class Flow {
 		countRow = 0
 
 		if (code == null) code = params.process as Closure
-		if (code == null) throw new ExceptionGETL('Required \"process\" code closure')
+		if (code == null)
+			throw new ExceptionGETL('Required \"process\" code closure')
 		
 		Dataset source = params.source as Dataset
-		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
-		if (source.connection == null) throw new ExceptionGETL("Required specify a connection for the source!")
+		if (source == null)
+			throw new ExceptionGETL("Required parameter \"source\"")
+		if (source.connection == null)
+			throw new ExceptionGETL("Required specify a connection for the source!")
 
 		if (source == null && params.tempSourceName != null) {
 			source = TFS.dataset((String)(params.tempSourceName), true)

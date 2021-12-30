@@ -10,7 +10,6 @@ import getl.models.ReferenceVerticaTables
 import getl.models.sub.DatasetSpec
 import getl.proc.Flow
 import getl.utils.BoolUtils
-import getl.utils.Logs
 import getl.utils.StringUtils
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable

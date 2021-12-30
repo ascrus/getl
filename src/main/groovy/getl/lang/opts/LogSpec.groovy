@@ -63,14 +63,15 @@ class LogSpec extends BaseSpec {
     /** The level of message logging to a file (default FINEST) */
     void setLogConsoleLevel(Level value) { manager.logConsoleLevel = value }
 
-    /**
-     * Print stack trace for error
-     */
+    /** Print stack trace for error */
     Boolean getLogPrintStackTraceError() { manager.printStackTraceError }
-    /**
-     * Print stack trace for error
-     */
+    /** Print stack trace for error */
     Boolean setLogPrintStackTraceError(Boolean value) { manager.printStackTraceError = value }
+
+    /** The default output level of the echo command to the log for sql object */
+    Level getSqlEchoLogLevel() { (params.sqlEchoLogLevel as Level)?:Level.FINE }
+    /** The default output level of the echo command to the log for sql object */
+    void setSqlEchoLogLevel(Level value) { saveParamValue('sqlEchoLogLevel', value) }
 
     /** Convert string value level to type */
     Level strToLevel(String level) { Logs.StrToLevel(level) }

@@ -1,5 +1,6 @@
 package getl.oracle
 
+import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import groovy.transform.InheritConstructors
@@ -26,6 +27,7 @@ class OracleDriver extends JDBCDriver {
 		super.initParams()
 
 		caseObjectName = 'UPPER'
+		caseRetrieveObject = 'UPPER'
 		commitDDL = true
 		transactionalDDL = true
 
@@ -307,5 +309,18 @@ end;'''
         }
 
         return url
+	}
+
+	@Override
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+		def res = super.prepareImportFields(dataset, importParams)
+		if (!(dataset instanceof OracleTable)) {
+			res.each { field ->
+				if (field.type in [Field.dateFieldType, Field.timeFieldType])
+					field.type = Field.datetimeFieldType
+			}
+		}
+
+		return res
 	}
 }

@@ -122,6 +122,55 @@ class FlowTest extends GetlDslTest {
             extCheck = table2.select('SELECT Min(extends) AS min_ext, Max(extends) AS max_ext FROM {table}')
             assertEquals(0, extCheck[0].min_ext)
             assertEquals(0, extCheck[0].max_ext)
+
+            table1.drop(ifExists: true)
+            table2.drop(ifExists: true)
+        }
+    }
+
+    @Test
+    void testRowChange() {
+        Getl.Dsl() {
+            TDSTable tab = embeddedTable {
+                useConnection embeddedConnection()
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('dt') { type = datetimeFieldType; defaultValue = 'Now()' }
+                field('value') { type = numericFieldType; length = 12; precision = 2 }
+
+                create()
+            }
+
+            assertNull(etl.findRow(tab, [id: 0]))
+
+            etl.addRow(tab, [id: 1, name: 'Name 1', value: 123.45])
+            assertEquals(1, tab.countRow())
+            assertEquals([id: 1, name: 'Name 1', value: 123.45], etl.findRow(tab, [id: 1]))
+
+            shouldFail { etl.addRow(tab, [id: 1, name: 'Name 1', value: 123.45]) }
+
+            etl.addRow(tab, [id: 2, name: 'Name 2', value: 234.56])
+            assertEquals(2, tab.countRow())
+            assertEquals([id: 2, name: 'Name 2', value: 234.56], etl.findRow(tab, [id: 2]))
+
+            etl.updateRow(tab, [id: 1, value: 12.34])
+            assertEquals([id: 1, name: 'Name 1', value: 12.34], etl.findRow(tab, [id: 1]))
+
+            etl.updateRow(tab, [id: 2, value: 23.45])
+            assertEquals([id: 2, name: 'Name 2', value: 23.45], etl.findRow(tab, [id: 2]))
+
+
+            shouldFail { etl.updateRow(tab, [id: 0, value: 0]) }
+
+            etl.deleteRow(tab, [id: 1])
+            assertEquals(1, tab.countRow())
+
+            etl.deleteRow(tab, [id: 2])
+            assertEquals(0, tab.countRow())
+
+            shouldFail { etl.deleteRow(tab, [id: 1]) }
+
+            tab.drop(ifExists: true)
         }
     }
 }

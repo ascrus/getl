@@ -72,7 +72,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])
-		methodParams.register('importFields', ['resetTypeName', 'resetAttributes'])
 	}
 
 	/** Initialization dataset parameters */
@@ -466,10 +465,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Clone fields to other list
 	 */
-	List<Field> fieldClone () {
-		List<Field> result = []
-		getField().each { Field f -> result << f.copy() }
-		return result
+	List<Field> fieldClone() {
+		return field.collect { field -> field.copy() }
 	}
 	
 	/**
@@ -583,8 +580,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 					dsField = newField.copy()
 					if (prepare != null)
 						prepare(cur, dsField)
-					if (connection != null)
-						connection.driver.prepareField(dsField)
+					/*if (connection != null)
+						connection.driver.prepareField(dsField)*/
 
 					field.add(dsField)
 					break
@@ -594,8 +591,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 						dsField = newField.copy()
 						if (prepare != null)
 							prepare(cur, dsField)
-						if (connection != null)
-							connection.driver.prepareField(dsField)
+						/*if (connection != null)
+							connection.driver.prepareField(dsField)*/
 
 						field.add(dsField)
 					}
@@ -604,8 +601,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 					newField = newField.copy()
 					if (prepare != null)
 						prepare(cur, newField)
-					if (connection != null)
-						connection.driver.prepareField(newField)
+					/*if (connection != null)
+						connection.driver.prepareField(newField)*/
 
 					dsField = fieldByName(newField.name)
 					if (dsField != null)
@@ -639,12 +636,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Retrieve fields from dataset
 	 */
-	List<String> retrieveFields (Closure prepare) { retrieveFields(UpdateFieldType.CLEAR, prepare) }
+	List<String> retrieveFields(Closure prepare) { retrieveFields(UpdateFieldType.CLEAR, prepare) }
 	
 	/**
 	 * Retrieve fields from dataset
 	 */
-	List<String> retrieveFields () { retrieveFields(UpdateFieldType.CLEAR, null) }
+	List<String> retrieveFields() { retrieveFields(UpdateFieldType.CLEAR, null) }
 
 	
 	/**
@@ -905,8 +902,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				f.isNull = true
 			if (clearKey)
 				f.isKey = false
-			if (clearDefaultValue)
+			if (clearDefaultValue) {
 				f.defaultValue = null
+				f.checkValue = null
+				f.compute = null
+			}
 
 			f.isAutoincrement = false
 			f.isReadOnly = false
@@ -1087,7 +1087,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				errorsDataset.write(errorRow)
 			}
 			catch (Exception we) {
-				logger.exception(we, getClass().name, objectName + ".errorsDataset")
+				logger.severe("Failed to save error row for dataset \"$objectName\": ${we.message}")
 				throw we
 			}
 			
@@ -1190,15 +1190,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Write row
 	 */
-	void write (Map row) {
-		if (status != Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+	void write(Map row) {
+		if (status != Status.WRITE)
+			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 		try {
 			if (logWriteToConsole) println("$this: $row")
 			this.connection.driver.write(this, row)
 		}
 		catch (Exception e) {
 			isWriteError = true
-			logger.exception(e, getClass().name, objectName)
+			logger.severe("Failed to save row for dataset \"$objectName\": ${e.message}")
 			throw e
 		}
 	}
@@ -1206,8 +1207,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Write list of row
 	 */
-	void writeList (List<Map> rows) {
-		if (status != Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+	void writeList(List<Map> rows) {
+		if (status != Status.WRITE)
+			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 		try {
 			rows.each { Map row ->
 				if (logWriteToConsole) println("$this: $row")
@@ -1216,7 +1218,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 		catch (Exception e) {
 			isWriteError = true
-			logger.exception(e, getClass().name, objectName)
+			logger.severe("Failed to save row list for dataset \"$objectName\": ${e.message}")
 			throw e
 		}
 	}
@@ -1741,40 +1743,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/**
-	 * Import fields from another dataset<br><br>
-	 * <b>Import options:</b><br>
-	 * <ul>
-	 *     <li>
-	 *         resetTypeName: reset the name of the field type, if the fields are imported from another type of
-	 *     	   connection, then it is reset regardless of the flag
-	 *     </li>
-	 *     <li>
-	 *         resetAttributes: reset additional field attributes, if fields are imported from another type
-	 *         of connection, then they are reset regardless of the flag
-	 *     </li>
-	 *</ul>
+	 * Import fields from another dataset
 	 * @param dataset source
 	 * @param importParams import options
 	 */
 	void importFields(Dataset dataset, Map importParams = [:]) {
-		if (importParams == null)
-			importParams = [:]
-
-		methodParams.validation('importFields', importParams, null)
-
-		def resetTypeName = BoolUtils.IsValue(importParams.resetTypeName)
-		def resetAttributes = BoolUtils.IsValue(importParams.resetAttributes)
-
-		field.clear()
-		setField(dataset.field)
-
-		def isCompatibleDataset = getClass().isInstance(dataset)
-
-		if (resetTypeName || !isCompatibleDataset)
-			resetFieldsTypeName()
-
-		if (resetAttributes || !isCompatibleDataset)
-			resetFieldToDefault(false, false, true)
+		setField(connection.driver.prepareImportFields(dataset, importParams))
 	}
 
 	/**
@@ -1838,5 +1812,33 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			if (needField.isKey && !dsField.isKey)
 				throw new ExceptionGETL("Field \"${needField.name}\" must be a key field!")
 		}
+	}
+
+	/** Dataset field comparison status */
+	enum EqualFieldStatus {ADDED, CHANGED, DELETED}
+
+	/**
+	 * Compare fields with another dataset
+	 * @param compared compared fields
+	 * @param softComparison compare for compatibility of storing values in fields
+	 * @param compareExpressions compare default, check and compute expressions
+	 * @return comparison result (field name: comparison status)
+	 */
+	Map<String, EqualFieldStatus> compareFields(List<Field> compared, Boolean softComparison = false, Boolean compareExpressions = true) {
+		def res = [:] as Map<String, EqualFieldStatus>
+		compared.each { field ->
+			def curField = fieldByName(field.name)
+			if (curField == null)
+				res.put(field.name, EqualFieldStatus.DELETED)
+			else if (!curField.compare(field, softComparison, compareExpressions))
+				res.put(field.name, EqualFieldStatus.CHANGED)
+		}
+
+		def comparedNames = compared.collect { field -> field.name.toLowerCase() }
+		field.findAll { field -> !(field.name.toLowerCase() in comparedNames) }.each { field ->
+			res.put(field.name, EqualFieldStatus.ADDED)
+		}
+
+		return res
 	}
 }

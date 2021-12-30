@@ -2,6 +2,7 @@
 package getl.vertica
 
 import getl.jdbc.sub.BulkLoadMapping
+import getl.oracle.OracleDriver
 import groovy.transform.CompileStatic
 import getl.csv.CSVDataset
 import getl.data.*
@@ -35,6 +36,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('createView', ['privileges'])
 		methodParams.register('createSchema', ['authorization', 'privileges'])
 		methodParams.register('dropSchema', ['cascade'])
+		methodParams.register('prepareImportFields', ['convertToUtf'])
 	}
 
 	@Override
@@ -630,7 +632,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	/** Check default privileges type */
-	private String checkPrivelegesType(String privileges, String objectName) {
+	private String checkPrivilegesType(String privileges, String objectName) {
 		if (privileges == null)
 			return null
 
@@ -651,7 +653,7 @@ class VerticaDriver extends JDBCDriver {
 
 		def privileges = createParams.privileges as String
 		if (privileges != null)
-			res.privileges = checkPrivelegesType(privileges, schemaName)
+			res.privileges = checkPrivilegesType(privileges, schemaName)
 
 		return res
 	}
@@ -671,7 +673,86 @@ class VerticaDriver extends JDBCDriver {
 
 		def privileges = createParams.privileges as String
 		if (privileges != null)
-			res.privileges = checkPrivelegesType(privileges, dataset.objectName)
+			res.privileges = checkPrivilegesType(privileges, dataset.objectName)
+
+		return res
+	}
+
+	/**
+	 * Process field to suitable Vertica field types
+	 * @param convertToUtf convert length of text fields to store utf 8 encoding
+	 */
+	static void ProcessField(Field field, Boolean convertToUtf = true) {
+		if (field.type == Field.stringFieldType) {
+			if ((field.length?:0) == 0)
+				field.length = 255
+			else if (convertToUtf)
+				field.length = field.length * 2
+		}
+		else if (field.type in [Field.textFieldType, Field.blobFieldType]) {
+			if (field.length <= 65000)
+				field.length = 65000
+		}
+		else if (field.type == Field.numericFieldType) {
+			if ((field.length?:0) > 0 && (field.precision?:0) == 0) {
+				if (field.length <= 10) {
+					field.type = Field.integerFieldType
+					field.length = null
+					field.precision = null
+				} else if (field.length < 20) {
+					field.type = Field.bigintFieldType
+					field.length = null
+					field.precision = null
+				}
+			}
+
+			if (field.type == Field.numericFieldType && (field.length?:0) == 0) {
+				field.type = Field.doubleFieldType
+				field.length = null
+				field.precision = null
+			}
+		}
+	}
+
+	/**
+	 * Convert Oracle table fields to suitable Vertica field types
+	 * @param field source field
+	 */
+	static void ProcessOracleField(Field field) {
+		if (field.type == Field.dateFieldType)
+			field.type = Field.datetimeFieldType
+	}
+
+	/**
+	 * Preparing import fields from another dataset<br><br>
+	 * <b>Import options:</b><br>
+	 * <ul>
+	 *     <li> resetTypeName: reset the name of the field type</li>
+	 *     <li>resetKey: reset primary key</li>
+	 *     <li>resetNotNull: reset not null</li>
+	 *     <li>resetDefault: reset default value</li>
+	 *     <li>resetCheck: reset check expression</li>
+	 *     <li>resetCompute: reset compute expression</li>
+	 *     <li>convertToUtf: increase the length of text fields for storage encoded in UTF8 (true by default)</li>
+	 *</ul>
+	 * @param dataset source
+	 * @param importParams import options
+	 * @return list of prepared field
+	 */
+	@Override
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+		def res = super.prepareImportFields(dataset, importParams)
+
+		if (!(dataset instanceof VerticaTable)) {
+			def convertToUtf = BoolUtils.IsValue(importParams.convertToUtf, true)
+			def isOracle = (dataset.connection.driver instanceof OracleDriver)
+
+			res.each { field ->
+				ProcessField(field, convertToUtf)
+				if (isOracle)
+					ProcessOracleField(field)
+			}
+		}
 
 		return res
 	}

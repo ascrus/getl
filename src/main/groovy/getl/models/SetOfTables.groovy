@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.FileConnection
+import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
 import getl.models.opts.TableSpec
+import getl.models.sub.BaseSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
@@ -62,6 +64,8 @@ class SetOfTables extends DatasetsModel<TableSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.datasetName = p.sourceTableName
+
+            p.remove('id')
             p.remove('sourceTableName')
 
             MapUtils.RemoveKeys(p) { k, v ->
@@ -118,6 +122,19 @@ class SetOfTables extends DatasetsModel<TableSpec> {
                    @DelegatesTo(TableSpec)
                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
         addDatasets(mask: maskName, code: cl)
+    }
+
+    @Override
+    void checkObject(BaseSpec obj) {
+        super.checkObject(obj)
+
+        def node = obj as TableSpec
+        if (node.partitionsDatasetName != null) {
+            def ds = dslCreator.findDataset(node.partitionsDatasetName)
+            if (ds == null)
+                throw new ExceptionDSL("Dataset of the list of partitions \"${node.partitionsDatasetName}\" not found!")
+            checkDataset(node.partitionsDataset)
+        }
     }
 
     @Override

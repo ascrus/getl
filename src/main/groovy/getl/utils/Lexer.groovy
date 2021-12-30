@@ -603,13 +603,15 @@ class Lexer {
 	 * Return list of statements separated by a semicolon
 	 * @return
 	 */
-	List<List<Map>> statements() {
+	List<List<Map>> statements(TokenType statementType = TokenType.SEMICOLON) {
 		if (tokens == null)
 			return null
+		if (statementType == null)
+			throw new ExceptionGETL('Required statement type!')
 
 		List<List<Map>> res = []
 		def cur = 0
-		def pos = FindByType(tokens, TokenType.SEMICOLON, 0)
+		def pos = FindByType(tokens, statementType, 0)
 		while (pos != -1) {
 			if (pos >= cur) {
 				def list = tokens.subList(cur, pos)
@@ -628,7 +630,7 @@ class Lexer {
 			}
 
 			cur = pos + 1
-			pos = FindByType(tokens, TokenType.SEMICOLON, cur)
+			pos = FindByType(tokens, statementType, cur)
 		}
 
 		def tokenSize = tokens.size()
@@ -856,7 +858,7 @@ class Lexer {
 		def cur = [] as List<Map>
 		while (start <= finish && tokens[start].type  != TokenType.SEMICOLON) {
 			def token = tokens[start]
-			if (((token.type as TokenType) in [TokenType.SINGLE_WORD, TokenType.FUNCTION, TokenType.NUMBER]) &&
+			if (((token.type as TokenType) in [TokenType.SINGLE_WORD, TokenType.FUNCTION, TokenType.NUMBER, TokenType.QUOTED_TEXT]) &&
 					((token.value as String).toUpperCase() == delimiter || (token.delimiter as Map)?.value == delimiter)) {
 				if (token.delimiter != null)
 					cur << token

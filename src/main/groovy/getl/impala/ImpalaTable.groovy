@@ -1,9 +1,9 @@
+//file:noinspection unused
 package getl.impala
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.Connection
-import getl.data.Dataset
 import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.impala.opts.ImpalaBulkLoadSpec
@@ -175,24 +175,5 @@ class ImpalaTable extends TableDataset {
         }
 
         return res
-    }
-
-    @Override
-    void importFields(Dataset dataset, Map importParams = [:]) {
-        super.importFields(dataset, importParams)
-
-        if (dataset instanceof ImpalaTable)
-            return
-
-        field.each { field ->
-            switch (field.type) {
-                case Field.dateFieldType:
-                    field.type = Field.datetimeFieldType
-                    break
-                case Field.timeFieldType:
-                    field.type = Field.datetimeFieldType
-                    break
-            }
-        }
     }
 }

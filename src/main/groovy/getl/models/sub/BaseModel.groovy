@@ -259,7 +259,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     protected void setStoryDatasetName(String value) { useStoryDatasetName(value) }
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
-    protected Dataset getStoryDataset() { (storyDatasetName != null)?_dslCreator.dataset(storyDatasetName):null }
+    protected Dataset getStoryDataset() {
+        checkGetlInstance()
+        return (storyDatasetName != null)?_dslCreator.dataset(storyDatasetName):null
+    }
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
@@ -269,6 +272,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /** Use specified dataset name of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected void useStoryDatasetName(String datasetName) {
+        checkGetlInstance()
         if (datasetName != null)
             _dslCreator.dataset(datasetName)
 
@@ -338,6 +342,12 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
                 node.checkAttrsInternal(validation, allowAttrs)
             }
         }
+    }
+
+    /** Check model owner */
+    protected void checkGetlInstance() {
+        if (_dslCreator == null)
+            throw new ExceptionDSL('Requires a Getl instance for the model!')
     }
 
     @Override

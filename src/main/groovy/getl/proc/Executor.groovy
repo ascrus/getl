@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -10,8 +11,6 @@ import getl.proc.sub.ExecutorThread
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-import org.codehaus.groovy.runtime.StackTraceUtils
-
 import java.util.concurrent.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
@@ -86,7 +85,7 @@ class Executor implements GetlRepository {
 
 	/** Run has errors */
 	private Boolean hasError = false
-	private final Object lockHashError = new Object()
+	//private final Object lockHashError = new Object()
 	
 	/** Threads has errors */
 	@Synchronized
@@ -174,7 +173,7 @@ class Executor implements GetlRepository {
 
 	/** Interrupt flag */
 	private Boolean isInterrupt = false
-	private final Object lockIsInterrupt = new Object()
+	//private final Object lockIsInterrupt = new Object()
 
 	/** Interrupt flag */
 	@Synchronized
@@ -182,7 +181,7 @@ class Executor implements GetlRepository {
 
 	/** Interrupt flag */
 	@Synchronized
-	void setIsInterrupt(Boolean value) { lockIsInterrupt }
+	void setIsInterrupt(Boolean value) { isInterrupt = value }
 
 	/**
 	 * Launches a single code
@@ -319,13 +318,8 @@ class Executor implements GetlRepository {
 							counterProcessed.nextCount()
 						}
 						catch (Throwable e) {
-							if (abortOnError) {
-								logger.exception(e, 'thread element', element.toString())
+							if (abortOnError)
 								throw e
-							}
-
-							if (logErrors)
-								logger.exception(e, 'thread element', element.toString())
 						}
 					}
 				}
@@ -485,13 +479,8 @@ class Executor implements GetlRepository {
 							counterProcessed.nextCount()
 						}
 						catch (Throwable e) {
-							if (abortOnError) {
-								logger.exception(e, 'thread element', element.toString())
+							if (abortOnError)
 								throw e
-							}
-
-							if (logErrors)
-								logger.exception(e, 'thread element', element.toString())
 						}
 					}
 				}

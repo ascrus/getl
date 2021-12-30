@@ -157,6 +157,7 @@ class ExecutorTest extends getl.test.GetlTest {
             thread {
                 useList (1..100000)
                 countProc = 5
+                debugElementOnError = true
 
                 shouldFail {
                     run {
