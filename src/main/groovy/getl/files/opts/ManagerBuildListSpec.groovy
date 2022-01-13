@@ -62,6 +62,11 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Include in the list only files that are in the processing history */
     void setOnlyFromStory(Boolean value) { saveParamValue('onlyFromStory', value) }
 
+    /** Processing previously downloaded but modified files */
+    Boolean getProcessModified() { params.processModified as Boolean }
+    /** Processing previously downloaded but modified files */
+    void setProcessModified(Boolean value) { saveParamValue('processModified', value) }
+
     /** Ignore file processing history */
     Boolean getIgnoreStory() { params.ignoreStory as Boolean }
     /** Ignore file processing history */

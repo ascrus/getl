@@ -349,6 +349,7 @@ class FileManager extends Manager {
 		validConnect()
 		validWrite()
 
-		if (saveOriginalDate) new File(fileName).setLastModified(time)
+		if (saveOriginalDate)
+			new File(fileName).setLastModified(time)
 	}
 }

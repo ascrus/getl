@@ -6,10 +6,12 @@ import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
+import getl.proc.sub.FieldStatistic
 import getl.proc.sub.FlowCopyChild
 import getl.transform.*
 import getl.utils.*
 import getl.tfs.*
+import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import java.util.concurrent.ConcurrentHashMap
@@ -17,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Data flow manager class 
  * @author Alexsey Konstantinov
- *
  */
+@CompileStatic
 class Flow {
 	Flow() {
 		registerParameters()
@@ -51,10 +53,10 @@ class Flow {
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
-				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone',
+				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone', 'onFilter', 'onBulkLoad',
 				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
-				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching'])
+				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
@@ -65,7 +67,7 @@ class Flow {
 											 'bulkAsGZIP', 'bulkEscaped', 'writeSynch', 'onInit', 'onDone', 'process'])
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
-										  'onInit', 'onDone', 'process'])
+										  'onInit', 'onDone', 'process', 'statistics', 'onFilter'])
 	}
 
 	/** Parameters validator */
@@ -126,6 +128,10 @@ class Flow {
 	private Long countRow = 0
 	/** Last number of rows processed */
 	Long getCountRow() { countRow }
+
+	private final Map<String, FieldStatistic> statistics = [:] as Map<String, FieldStatistic>
+	/** Processed fields statistics */
+	Map<String, FieldStatistic> getStatistics() { statistics }
 
 	/** Formalize column mapping */
 	protected static Map<String, Map> ConvertFieldMap(Map<String, String> map) {
@@ -334,13 +340,6 @@ class Flow {
 				dest.field.add(df)
 			}
 		}
-		/*def fieldMap = ConvertFieldMap(map)
-		fieldMap.each { String k, Map v ->
-			Field f = dest.fieldByName(v.name as String)
-			if (f != null) {
-				if (k != null && k != '') f.name = k else dest.removeField(f)
-			}
-		}*/
 	}
 	
 	/**
@@ -353,6 +352,7 @@ class Flow {
 
 		errorsDataset = null
 		countRow = 0
+		statistics.clear()
 
 		if (map_code == null && params.process != null)
 			map_code = params.process as Closure
@@ -458,7 +458,8 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 
-		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):[:]
+		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):([:] as Map<String, String>)
+		List<String> requiredStatistics = (params.statistics != null)?(params.statistics as List<String>)*.toLowerCase():([] as List<String>)
 
 		Map<String, Object> sourceParams
 		if (params.sourceParams != null && !(params.sourceParams as Map).isEmpty()) {
@@ -475,6 +476,8 @@ class Flow {
 		
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
+		Closure filterCode = params.onFilter as Closure
+		Closure bulkLoadCode = params.onBulkLoad as Closure
 
 		def debug = BoolUtils.IsValue(params.debug, false)
 
@@ -643,6 +646,11 @@ class Flow {
 		try {
 			try {
 				source.eachRow(sourceParams) { inRow ->
+					if (filterCode != null) {
+						if (!filterCode.call(inRow))
+							return
+					}
+
 					def isError = false
 					def outRow = [:]
 
@@ -679,12 +687,32 @@ class Flow {
 						}
 					} 
 					if (!isError) {
-						if (!writeSynch) writer.write(outRow) else writer.writeSynch(outRow)
+						if (!writeSynch)
+							writer.write(outRow)
+						else
+							writer.writeSynch(outRow)
+
 						if (isChilds) {
 							childs.each { String name, FlowCopyChild child ->
 								child.processRow(inRow.clone() as Map)
 							}
 						}
+
+						requiredStatistics.each { fieldName ->
+							def val = inRow.get(fieldName) as Comparable
+							if (val != null) {
+								def statVal = statistics.get(fieldName)
+								if (statVal == null)
+									statistics.put(fieldName, new FieldStatistic(fieldName, val))
+								else {
+									if (statVal.minimumValue > val)
+										statVal.minimumValue = val
+									if (statVal.maximumValue < val)
+										statVal.maximumValue = val
+								}
+							}
+						}
+
 						countRow++
 					}
 				}
@@ -711,6 +739,8 @@ class Flow {
 			}
 			
 			if (isBulkLoad) {
+				if (bulkLoadCode != null)
+					bulkLoadCode.call(bulkParams)
 				try {
 					dest.bulkLoadFile(bulkParams)
 				}
@@ -741,7 +771,8 @@ class Flow {
 				}
 			}
 			
-			if (doneCode != null) doneCode.call()
+			if (doneCode != null)
+				doneCode.call()
 			childs.each { String name, FlowCopyChild child ->
 				if (child.onDone != null) {
 					child.onDone.call()

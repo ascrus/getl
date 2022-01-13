@@ -24,7 +24,7 @@ class TFS extends CSVConnection {
 	/** Used temporary directory */
 	static String getSystemPath() {
         if (_systemPath == null) {
-			_systemPath = "${FileUtils.SystemTempDir()}/getl/${FileUtils.UniqueFileName()}"
+			_systemPath = "${FileUtils.SystemTempDir()}/getl_${FileUtils.UniqueFileName()}"
 			FileUtils.ValidPath(_systemPath)
 			new File(_systemPath).deleteOnExit()
 		}

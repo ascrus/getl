@@ -1149,6 +1149,8 @@ class FileUtils {
 			else {
 				def dir = "${TFS.systemPath}/resources.getl"
 				ValidPath(dir, true)
+				if (!(new File(dir).exists()))
+					throw new ExceptionGETL("Failed to create temp directory \"$dir\"!")
 
 				def fn = "$dir/resource_" + fileName.replaceAll('(\\\\|\\/|\\:|\\"|\\\'|\\||\\?|\\$|\\%)', '_')
 				res = new File(fn)

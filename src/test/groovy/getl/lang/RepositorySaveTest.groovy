@@ -165,6 +165,10 @@ void workflows() {
 
                 later('subchild1') {
                     condition = '(configContent.countProcessed == 4)'
+                    exec('subchild2') {
+                        className = WorkflowStepTestScript.name
+                        vars = [stepName: stepName, stepNum: 301]
+                    }
                     exec('subchild1') {
                         className = WorkflowStepTestScript.name
                         vars = [stepName: stepName, stepNum: 201]

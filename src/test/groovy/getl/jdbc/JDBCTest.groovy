@@ -66,12 +66,14 @@ class JDBCTest extends GetlTest {
 
             historypoint {
                 useHistoryTable tab
-                create(true)
-                assertEquals(4, tab.field.size())
 
                 sourceName = 'source1'
                 sourceType = identitySourceType
                 saveMethod = mergeSave
+
+                create(true)
+                assertEquals(4, tab.field.size())
+
                 assertNull(lastValue())
                 def id1 = 100
                 saveValue id1

@@ -229,14 +229,40 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Name in cache for reusing code without generating */
     void setCacheName(String value) { saveParamValue('cacheName', value) }
 
-    /** Code executed before process copy rows */
+    /** Before process copy rows code */
     Closure getOnPrepare() { params.onInit as Closure }
-    /** Code executed before process copy rows */
+    /** Before process copy rows code */
     void setOnPrepare(Closure value) { saveParamValue('onInit', value) }
-
-    /** Code executed before process copy rows */
+    /** Before process copy rows code */
     void prepare(Closure value) {
         setOnPrepare(value)
+    }
+
+    /** After process copy rows code */
+    Closure getOnFinalizing() { params.onDone as Closure }
+    /** After process copy rows code */
+    void setOnFinalizing(Closure value) { saveParamValue('onDone', value) }
+    /** After process copy rows code */
+    void finalizing(Closure value) {
+        setOnPrepare(value)
+    }
+
+    /** Source rows filtering code */
+    Closure getOnFilter() { params.onFilter as Closure }
+    /** Source rows filtering code */
+    void setOnFilter(Closure value) { saveParamValue('onFilter', value) }
+    /** Source rows filtering code */
+    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+        setOnFilter(value)
+    }
+
+    /** Initialization code before bulk load file */
+    Closure getOnBulkLoad() { params.onBulkLoad as Closure }
+    /** Initialization code before bulk load file */
+    void setOnBulkLoad(Closure value) { saveParamValue('onBulkLoad', value) }
+    /** Initialization code before bulk load file */
+    void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+        setOnBulkLoad(value)
     }
 
     /** Save transformation code to dump (default false) */
@@ -290,13 +316,6 @@ class FlowCopySpec extends FlowBaseSpec {
             (params.destChild as Map).put(name, opts.params)
         }
     }
-
-    /** Initialization code before processing */
-    Closure getOnInitCopy() { params.onInit as Closure }
-    /** Initialization code before processing */
-    void setOnInitCopy(Closure value) { saveParamValue('onInit', value) }
-    /** Initialization code before processing */
-    void initCopy(Closure value) { setOnInitCopy(value) }
 
     /** Closure code process row */
     void copyRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])

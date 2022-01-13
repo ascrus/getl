@@ -37,7 +37,7 @@ class WorkflowSpec extends BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.scripts == null)
-            params.scripts = [:] as Map<String, Map<String, Object>>
+            params.scripts = new LinkedHashMap<String, Map<String, Object>>()
         if (params.nested == null)
             params.nested = [] as List<WorkflowSpec>
     }

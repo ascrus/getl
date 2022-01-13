@@ -529,6 +529,12 @@ class Connection implements Cloneable, GetlRepository {
 	/** Connection supports transactions */
 	@JsonIgnore
 	Boolean getIsSupportTran() { driver.isSupport(Driver.Support.TRANSACTIONAL) }
+
+	/** Auto commit transaction */
+	protected Boolean getAutoCommit() { null }
+
+	/** Auto commit transaction (default false) */
+	Boolean autoCommit() { BoolUtils.IsValue(autoCommit, false) }
 	
 	/** Start transaction */
 	void startTran(Boolean onlyIfSupported = false, Boolean useSqlOperator = false) {
@@ -666,13 +672,16 @@ class Connection implements Cloneable, GetlRepository {
 		if (!isSupportTran && !onlyIfSupported)
 			throw new ExceptionGETL("Connection \"${toString()}\" does not support transactions!")
 
-		startTran(onlyIfSupported)
+		if (!autoCommit())
+			startTran(onlyIfSupported)
 		try {
 			cl.call()
-			commitTran(onlyIfSupported)
+			if (!autoCommit())
+				commitTran(onlyIfSupported)
 		}
 		catch (Exception e) {
-			rollbackTran(onlyIfSupported)
+			if (!autoCommit())
+				rollbackTran(onlyIfSupported)
 			throw e
 		}
 	}

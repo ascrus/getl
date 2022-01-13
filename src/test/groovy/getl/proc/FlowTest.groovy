@@ -123,6 +123,19 @@ class FlowTest extends GetlDslTest {
             assertEquals(0, extCheck[0].min_ext)
             assertEquals(0, extCheck[0].max_ext)
 
+            def flow = etl.copyRows(table1, table2) {
+                clear = true
+                copyOnlyMatching = true
+                filter { row -> (row.id >= 1 && row.id <= 10) }
+                requiredStatistics = ['ID']
+            }
+            assertEquals(10, table2.countRow())
+            assertEquals(1, flow.statistics.id.minimumValue)
+            assertEquals(10, flow.statistics.id.maximumValue)
+            def idCheck = table2.select('SELECT Min(id) AS min_id, Max(id) AS max_id FROM {table}')
+            assertEquals(1, idCheck[0].min_id)
+            assertEquals(10, idCheck[0].max_id)
+
             table1.drop(ifExists: true)
             table2.drop(ifExists: true)
         }

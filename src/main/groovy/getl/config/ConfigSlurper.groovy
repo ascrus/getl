@@ -394,7 +394,9 @@ class ConfigSlurper extends ConfigManager {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def res = 0
 		def lines = [] as List<String>
-		def keys = data.keySet().toList().sort()
+		def keys = data.keySet().toList()
+		if (!(data instanceof LinkedHashMap))
+			keys.sort(true)
 		keys.each { key ->
 			if (key == null)
 				return

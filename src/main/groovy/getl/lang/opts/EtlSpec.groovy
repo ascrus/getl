@@ -54,7 +54,8 @@ class EtlSpec extends BaseSpec {
         parent.source = source
         parent.destination = destination
         runClosure(parent, cl)
-        if (!parent.isProcessed) parent.copyRow(null)
+        if (!parent.isProcessed)
+            parent.copyRow(null)
         getGetl().finishProcess(pt, parent.countRow)
 
         return parent

@@ -3,7 +3,6 @@ package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.data.Field
 import getl.exception.ExceptionModel
 import getl.jdbc.HistoryPointManager
 import groovy.transform.InheritConstructors
@@ -33,15 +32,15 @@ class DatasetSpec extends BaseSpec {
     void setHistoryPointName(String value) { saveParamValue('historyPointName', value) }
     /** Incremental manager for storing the last data capture point from the dataset */
     @JsonIgnore
-    HistoryPointManager getHistoryPoint() {
+    HistoryPointManager getHistoryPointObject() {
         checkGetlInstance()
         return (historyPointName != null)?ownerModel.dslCreator.historypoint(historyPointName):null
     }
     /** Incremental manager for storing the last data capture point from the dataset */
     @JsonIgnore
-    void setHistoryPoint() { }
+    void setHistoryPointObject(HistoryPointManager value) { useHistoryPointObject(value) }
     /** Incremental manager for storing the last data capture point from the dataset */
-    void useHistoryPoint(HistoryPointManager value) {
+    void useHistoryPointObject(HistoryPointManager value) {
         checkGetlInstance()
 
         if (value != null) {

@@ -272,11 +272,11 @@ class FileProcessing extends FileListProcessing {
 
             if (man != null) {
                 disconnectFrom([man])
-                if (story != null) {
+                /*if (story != null) {
                     story.connection.connected = false
                     story.connection = null
                     story = null
-                }
+                }*/
                 man = null
             }
         }
@@ -382,8 +382,8 @@ class FileProcessing extends FileListProcessing {
             ConnectTo([src], numberAttempts, timeAttempts)
 
             def element = new ListPoolElement(src)
-            if (currentStory != null)
-                element.story = currentStory?.cloneDatasetConnection() as TableDataset
+            /*if (currentStory != null)
+                element.story = currentStory?.cloneDatasetConnection() as TableDataset*/
             if (delFilesTable != null)
                 element.delTable = delFilesTable.cloneDatasetConnection() as TDSTable
 
@@ -447,13 +447,16 @@ class FileProcessing extends FileListProcessing {
                 def filesSize = (files.sum { it.filesize }) as Long
                 logger.fine("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
+                initStoryWrite()
+
                 sourceList.each { element ->
-                    if (element.story != null) {
+                    /*if (element.story != null) {
                         element.story.connection.startTran(true)
                         element.story.openWrite(operation: 'INSERT')
-                    }
+                    }*/
                     if (element.delTable != null) {
-                        element.delTable.connection.startTran(true)
+                        if (!element.delTable.currentJDBCConnection.autoCommit())
+                            element.delTable.connection.startTran(true)
                         element.delTable.openWrite(operation: 'INSERT')
                     }
                 }
@@ -477,6 +480,7 @@ class FileProcessing extends FileListProcessing {
                             def isDirectly = BoolUtils.IsValue(processingDirectly, false)
 
                             def file = threadItem.item as Map<String, Object>
+                            sayFileInfo(file)
 
                             try {
                                 def filepath = file.get('filepath') as String
@@ -580,9 +584,10 @@ class FileProcessing extends FileListProcessing {
                                     if (procResult == null) {
                                         throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
                                     } else if (procResult == FileProcessingElement.completeResult) {
-                                        if (sourceElement.story != null) {
+                                        storyWrite(file + [fileloaded: new Date()])
+                                        /*if (sourceElement.story != null) {
                                             sourceElement.story.write(file + [fileloaded: new Date()])
-                                        }
+                                        }*/
 
                                         if (processedElement != null && fileDesc != null)
                                             processedElement.uploadLocalFile(fileDesc, element.savedFilePath)
@@ -642,8 +647,18 @@ class FileProcessing extends FileListProcessing {
                     pt.finish(exec.counter.count)
                 }
                 catch (Exception e){
+                    try {
+                        if (!isCachedMode)
+                            doneStoryWrite()
+                        else
+                            rollbackStoryWrite()
+                    }
+                    catch (Exception err) {
+                        logger.severe("Failed to save file history: ${err.message}")
+                    }
+
                     sourceList.each { element ->
-                        if (element.story != null) {
+                        /*if (element.story != null) {
                             if (!isCachedMode)
                                 element.story.doneWrite()
                             element.story.closeWrite()
@@ -653,7 +668,7 @@ class FileProcessing extends FileListProcessing {
                                 else
                                     element.story.connection.rollbackTran(true)
                             }
-                        }
+                        }*/
                         if (element.delTable != null) {
                             element.delTable.closeWrite()
                             if (!element.delTable.currentJDBCConnection.autoCommit())
@@ -670,13 +685,14 @@ class FileProcessing extends FileListProcessing {
                     throw e
                 }
 
+                doneStoryWrite()
                 sourceList.each { element ->
-                    if (element.story != null) {
+                    /*if (element.story != null) {
                         element.story.doneWrite()
                         element.story.closeWrite()
                         if (!element.story.currentJDBCConnection.autoCommit())
                             element.story.connection.commitTran(true)
-                    }
+                    }*/
                     if (element.delTable != null) {
                         element.delTable.doneWrite()
                         element.delTable.closeWrite()

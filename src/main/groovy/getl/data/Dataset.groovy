@@ -1055,7 +1055,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param params	- dynamic parameters
 	 * @param code		- process code
 	 */
-	void eachRow (Map procParams,
+	void eachRow(Map procParams,
 				  @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.EACHROW))
@@ -1610,7 +1610,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			MapUtils.MergeMap(p, otherParams)
 
 		Dataset ds = CreateDatasetInternal([dataset: className] + p)
-		ds.sysParams.dslCreator = dslCreator?:getl
+		ds.sysParams.dslCreator = dslCreator?:getl /* TODO: This is correct? */
 		ds.sysParams.dslNameObject = dslNameObject
 
 		if (newConnection != null)

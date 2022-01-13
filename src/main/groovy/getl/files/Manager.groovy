@@ -45,7 +45,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
 				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode'])
 		methodParams.register('buildList',
-				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder',
+				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder', 'processModified',
 				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'filter', 'threadLevel', 'ignoreExistInStory',
 				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory', 'buildListThread'])
 		methodParams.register('downloadFiles',
@@ -1171,26 +1171,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/**
-	 * Build list files with path processor<br>
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>Path path: path processor</li>
-	 * <li>String maskFile: mask processed files</li>
-	 * <li>TableDataset story: story table on file history</li>
-	 * <li>Boolean createStory: create story table if not exist (default false)</li>
-	 * <li>Boolean recursive: find as recursive</li>
-	 * <li>Boolean takePathInStory: save filepath in story table</li>
-	 * <li>Boolean ignoreExistInStory: ignore already loaded file by story (default true)</li>
-	 * <li>Integer limitDirs: limit processing directory</li>
-	 * <li>Integer limitCountFiles: limit count files</li>
-	 * <li>Integer limitSizeFiles: limit size files</li>
-	 * <li>String filter: sql filter expressions on a list of files</li>
-	 * <li>List&lt;String&gt; fileListSortOrder: sort order of the file list</li>
-	 * <li>Integer threadLevel: thread processing directory</li>
-	 * <li>List&lt;Field&gt; extendFields: list of extended fields</li>
-	 * <li>List&lt;List&lt;String&gt;&gt; extendIndexes: list of extended indexes</li>
-	 * </ul>
-	 * @param params parameters
+	 * Build list files with path processor
+	 * @param params parameters (see buildListFiles)
 	 * @param code processing code for file attributes as boolean code (Map file)
 	 */
 	void buildList(Map lParams, ManagerListProcessing code) {
@@ -1210,6 +1192,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def ignoreExistInStory = BoolUtils.IsValue(lParams.ignoreExistInStory, this.ignoreExistInStory)
 		def createStory = BoolUtils.IsValue(lParams.createStory, this.createStory)
 		def onlyFromStory = BoolUtils.IsValue(lParams.onlyFromStory)
+		def processModified = BoolUtils.IsValue(lParams.processModified)
 		def ignoreStory = BoolUtils.IsValue(lParams.ignoreStory)
 
 		def whereFilter = lParams.filter as String
@@ -1361,8 +1344,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def useFiles = new TableDataset(connection: newFiles.connection,
 				tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
 				type: tableType)
-		useFiles.field = [newFiles.fieldByName('ID')]
-		useFiles.fieldByName('ID').tap {
+		useFiles.field = [newFiles.fieldByName('ID'), Field.New('is_exists') { type = booleanFieldType; isNull = false }]
+		useFiles.field('ID') {
 			isAutoincrement = false
 			isKey = true
 		}
@@ -1407,7 +1390,8 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 			HAVING Min(o.ID) < d.ID
 		);
 """
-			newFiles.connection.startTran()
+			if (!newFiles.currentJDBCConnection.autoCommit())
+				newFiles.connection.startTran()
 			Long countDouble
 			try {
 				countDouble = newFiles.connection.executeCommand(command: sqlDetectDouble, isUpdate: true)
@@ -1427,7 +1411,8 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 DELETE FROM ${newFiles.fullNameDataset()}
 WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 """
-				newFiles.connection.startTran()
+				if (!newFiles.currentJDBCConnection.autoCommit())
+					newFiles.connection.startTran()
 				Long countDelete
 				try {
 					countDelete = newFiles.connection.executeCommand(command: sqlDeleteDouble, isUpdate: true)
@@ -1454,27 +1439,50 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 						tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
 						type: JDBCDataset.Type.LOCAL_TEMPORARY)
 				//noinspection SpellCheckingInspection
-				validFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+				validFiles.field = newFiles.getFields(['LOCALFILENAME', 'FILEDATE', 'FILESIZE'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
 				validFiles.clearKeys()
 				validFiles.fieldByName('LOCALFILENAME').isKey = true
-				if (takePathInStory) validFiles.fieldByName('FILEPATH').isKey = true
+				if (takePathInStory)
+					validFiles.fieldByName('FILEPATH').isKey = true
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
 				try {
 					new Flow(dslCreator).copy(source: newFiles, dest: validFiles, dest_batchSize: 500L)
-					
-					def sqlFoundNew = """
+
+					/*					def sqlFoundNew = """
 SELECT ID
 FROM ${validFiles.fullNameDataset()} f
-WHERE 
+WHERE
 	${(!onlyFromStory)?'NOT ':''}EXISTS(
 		SELECT *
 		FROM ${storyTable.fullNameDataset()} h
 		WHERE h.FILENAME = f.LOCALFILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
 	)
-"""
+"""*/
+
+					def sqlFoundNew = '''SELECT ID, (h.FILENAME IS NOT NULL) AS is_exists
+FROM {table} f
+	LEFT JOIN {story} h ON h.FILENAME = f.LOCALFILENAME {AND %full_path%}  
+WHERE {exists}'''
 					QueryDataset getNewFiles = new QueryDataset(connection: storyTable.connection, query: sqlFoundNew)
+					getNewFiles.queryParams.table = validFiles.fullNameDataset()
+					getNewFiles.queryParams.story = storyTable.fullNameDataset()
+					if (takePathInStory)
+						getNewFiles.queryParams.full_path = 'h.FILEPATH = f.FILEPATH'
+
+					if (!onlyFromStory) {
+						if (!processModified)
+							getNewFiles.queryParams.exists = '(h.FILENAME IS NULL)'
+						else
+							getNewFiles.queryParams.exists = '(h.FILENAME IS NULL) OR ((h.FILENAME IS NOT NULL) AND (h.FILEDATE <> f.FILEDATE OR h.FILESIZE <> f.FILESIZE))'
+					}
+					else {
+						if (!processModified)
+							getNewFiles.queryParams.exists = '(h.FILENAME IS NOT NULL)'
+						else
+							getNewFiles.queryParams.exists = '(h.FILENAME IS NOT NULL) AND (h.FILEDATE <> f.FILEDATE OR h.FILESIZE <> f.FILESIZE)'
+					}
 					new Flow(dslCreator).copy(source: getNewFiles, dest: useFiles, dest_batchSize: 500L)
 				}
 				finally {
@@ -1492,6 +1500,7 @@ SELECT *
 FROM (
 	SELECT {fields}, {story_flag}
 	FROM {table} files {%join%}
+	{WHERE %not_story%}
 ) tab
 {WHERE %filter%}
 {ORDER BY %order%}
@@ -1504,6 +1513,7 @@ FROM (
 	FROM (
 		SELECT {fields}, {story_flag}{, %inc_sum%}
 		FROM {table} files {%join%}
+		{WHERE %not_story%}
 	) x
 	{WHERE %where%}
 ) tab
@@ -1512,9 +1522,11 @@ FROM (
 {LIMIT %limit%}'''
 				queryParams.table = newFiles.fullTableName
 				queryParams.fields = newFiles.sqlFields(['ID', 'FILEINSTORY']).join(', ')
-				queryParams.story_flag = (storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'
+				queryParams.story_flag = (storyTable == null)?'FALSE AS FILEINSTORY':'story.IS_EXISTS AS FILEINSTORY'
+				if (!ignoreExistInStory && storyTable != null)
+					queryParams.not_story = 'NOT story.IS_EXISTS'
 				if (storyTable != null)
-					queryParams.join = "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
+					queryParams.join = "INNER JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 				if (!fileListSortOrder.isEmpty())
 					queryParams.order = fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')
 				if (limitCountFiles != null)
@@ -1665,7 +1677,8 @@ WHERE
 									"""	
 				
 			ds.connection.executeCommand(command: query)
-			ds.connection.startTran()
+			if (!ds.currentJDBCConnection.autoCommit)
+				ds.connection.startTran()
 			ds.openWrite()
 		} 
 		
@@ -1734,7 +1747,8 @@ WHERE
 				}
 			}
 			
-			if (useStory) ds.doneWrite()
+			if (useStory)
+				ds.doneWrite()
 			if (useStory && !ds.currentJDBCConnection.autoCommit())
 				ds.connection.commitTran()
 		}

@@ -387,7 +387,8 @@ Examples:
             if (autoInitFromConfig) {
                 if (loadProperties) {
                     configFile = loadProjectProperties(instance.configuration.environment, extProp.filename as String)
-                    configFilePath = FileUtils.PathFromFile(configFile.canonicalPath)
+                    if (configFile != null)
+                        configFilePath = FileUtils.PathFromFile(configFile.canonicalPath)
                 }
                 if (!extProp?.isEmpty())
                     MapUtils.MergeMap(options.getlConfigProperties,

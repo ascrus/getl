@@ -4,6 +4,7 @@ import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.proc.Flow
+import getl.proc.sub.FieldStatistic
 import getl.tfs.TFSDataset
 import groovy.transform.InheritConstructors
 
@@ -32,19 +33,24 @@ class FlowBaseSpec extends BaseSpec {
     /** Need process code for run */
     protected Boolean getNeedProcessCode() { true }
 
-    /**
-     * Closure code process row
-     */
+    /** Closure code process row */
     Closure getOnProcess() { params.process as Closure }
-    /**
-     * Closure code process row
-     */
+    /** Closure code process row */
     void setOnProcess(Closure value) { saveParamValue('process', value) }
+
+    /** List of fields for which you want to collect statistics */
+    List<String> getRequiredStatistics() { params.statistics as List<String> }
+    /** List of fields for which you want to collect statistics */
+    void setRequiredStatistics(List<String> value) { saveParamValue('statistics', value) }
 
     /** The process worked */
     private Boolean isProcessed = false
     /** The process worked */
     Boolean getIsProcessed() { isProcessed }
+
+    private final Map<String, FieldStatistic> statistics = [:] as Map<String, FieldStatistic>
+    /** Processed fields statistics */
+    Map<String, FieldStatistic> getStatistics() { statistics }
 
     /**
      * Closure code process row
@@ -56,11 +62,16 @@ class FlowBaseSpec extends BaseSpec {
             throw new ExceptionGETL('Required "process" code!')
 
         Flow flow = new Flow(ownerObject as Getl)
+        countRow = 0
+        errorsDataset = null
+        processRowScript = null
+        statistics.clear()
         isProcessed = true
         runProcess(flow)
         countRow = flow.countRow
         errorsDataset = flow.errorsDataset
         processRowScript = flow.scriptMap
+        statistics.putAll(flow.statistics)
     }
 
     /**

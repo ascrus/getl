@@ -315,45 +315,67 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
     @Override
     protected void processFiles() {
-        if (segmented.isEmpty() || destinations.size() == 1) {
-            processSegment(0, source, destinations)
-        }
-        else {
-            if (!disconnectFrom([source] + destinations))
-                throw new ExceptionFileListProcessing("Errors occurred while working with sources!")
+        initStoryWrite()
 
-            def na = numberAttempts
-            def ta = timeAttempts
-            try {
-                new Executor(dslCreator: dslCreator).tap {
-                    useList (0..(destinations.size() - 1))
-                    countProc = list.size()
-                    abortOnError = true
+        try {
+            if (segmented.isEmpty() || destinations.size() == 1) {
+                processSegment(0, source, destinations)
+            } else {
+                if (!disconnectFrom([source] + destinations))
+                    throw new ExceptionFileListProcessing("Errors occurred while working with sources!")
 
-                    run { Integer segment ->
-                        def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}"], dslCreator)
-                        FileUtils.ValidPath(src.localDirectory, true)
-                        def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory], dslCreator)
-                        ConnectTo([src, dst], na, ta)
+                def na = numberAttempts
+                def ta = timeAttempts
 
-                        try {
-                            processSegment(segment, src, [dst])
-                        }
-                        finally {
-                            FileUtils.DeleteFolder(src.localDirectory, true)
-                            disconnectFrom([src, dst])
+                try {
+                    new Executor(dslCreator: dslCreator).tap {
+                        useList(0..(destinations.size() - 1))
+                        countProc = list.size()
+                        abortOnError = true
+
+                        run { Integer segment ->
+                            def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}"], dslCreator)
+                            FileUtils.ValidPath(src.localDirectory, true)
+                            def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory], dslCreator)
+                            ConnectTo([src, dst], na, ta)
+
+                            try {
+                                processSegment(segment, src, [dst])
+                            }
+                            finally {
+                                FileUtils.DeleteFolder(src.localDirectory, true)
+                                disconnectFrom([src, dst])
+                            }
                         }
                     }
                 }
-            }
-            finally {
-                ConnectTo([source] + destinations, na, ta)
+                finally {
+                    ConnectTo([source] + destinations, na, ta)
+                }
             }
         }
+        catch (Exception e) {
+            try {
+                if (!isCachedMode)
+                    doneStoryWrite()
+                else
+                    rollbackStoryWrite()
+            }
+            catch (Exception err) {
+                logger.severe("Failed to save file history: ${err.message}")
+            }
+            throw e
+        }
+        doneStoryWrite()
+        if (cacheTable != null)
+            saveCacheStory()
 
         Operation(destinations, numberAttempts, timeAttempts) { man ->
-            man.changeDirectoryToRoot()
-            man.changeLocalDirectoryToRoot()
+            try {
+                man.changeDirectoryToRoot()
+                man.changeLocalDirectoryToRoot()
+            }
+            catch (Exception ignored) { }
         }
     }
 
@@ -386,13 +408,10 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
         def fileSize = 0L
 
-        def story = currentStory?.cloneDatasetConnection() as TableDataset
-        if (story != null) {
-            story.currentJDBCConnection.startTran(true)
-            story.openWrite()
-        }
         try {
             files.eachRow { infile ->
+                sayFileInfo(infile)
+
                 def ptf = profile("[$segment]: copy file \"${infile.get('filepath')}/${infile.get('filename')}\"", 'byte')
                 def infilename = infile.get('filename') as String
 
@@ -442,7 +461,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 if (afterCopy != null)
                     afterCopy.call(infile, outfile)
 
-                if (story != null) story.write(infile + [fileloaded: new Date()])
+                storyWrite(infile + [fileloaded: new Date()])
 
                 if (isRemoveFile) {
                     Operation([src], numberAttempts, timeAttempts) { man ->
@@ -455,31 +474,16 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
                 ptf.finish(infilesize)
             }
-
-            if (story != null) {
-                story.doneWrite()
-                story.closeWrite()
-                if (!story.currentJDBCConnection.autoCommit())
-                    story.currentJDBCConnection.commitTran(true)
-            }
-        }
-        catch (Throwable e) {
-            if (story != null) {
-                story.closeWrite()
-                if (!story.currentJDBCConnection.autoCommit())
-                    story.currentJDBCConnection.rollbackTran(true)
-            }
-            throw e
         }
         finally {
-            if (story != null) {
-                story.currentJDBCConnection.connected = false
-            }
             files.currentJDBCConnection.connected = false
 
             Operation([src], numberAttempts, timeAttempts) { man ->
-                man.changeLocalDirectoryToRoot()
-                man.removeLocalDirs('.')
+                try {
+                    man.changeLocalDirectoryToRoot()
+                    man.removeLocalDirs('.')
+                }
+                catch (Exception ignored) { }
             }
         }
 

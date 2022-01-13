@@ -33,48 +33,41 @@ class FileCleaner extends FileListProcessing {
 
         def fileSize = 0L
 
-        def story = currentStory
-        if (story != null) {
-            story.currentJDBCConnection.startTran(true)
-            story.openWrite()
-        }
-
+        initStoryWrite()
         def curDir = ''
         try {
             tmpProcessFiles.eachRow { file ->
+                sayFileInfo(file)
+
                 if (file.filepath != curDir) {
                     curDir = file.filepath as String
                     changeDir([source], curDir, false, numberAttempts, timeAttempts)
                 }
+
                 Operation([source], numberAttempts, timeAttempts) { man ->
                     man.removeFile(file.filename as String)
                 }
 
-                if (story != null) story.write(file + [fileloaded: new Date()])
-
+                storyWrite(file + [fileloaded: new Date()])
                 fileSize += file.filesize as Long
-            }
-
-            if (story != null) {
-                story.doneWrite()
-                story.closeWrite()
-                if (!story.currentJDBCConnection.autoCommit())
-                    story.currentJDBCConnection.commitTran(true)
             }
         }
         catch (Throwable e) {
-            if (story != null) {
-                story.closeWrite()
-                if (!story.currentJDBCConnection.autoCommit())
-                    story.currentJDBCConnection.rollbackTran(true)
+            try {
+                if (!isCachedMode)
+                    doneStoryWrite()
+                else
+                    rollbackStoryWrite()
+            }
+            catch (Exception err) {
+                logger.severe("Failed to save file history: ${err.message}")
             }
             throw e
         }
-        finally {
-            if (story != null) {
-                story.currentJDBCConnection.connected = false
-            }
-        }
+
+        doneStoryWrite()
+        if (cacheTable != null)
+            saveCacheStory()
 
         counter.addCount(tmpProcessFiles.readRows)
         logger.info("Removed ${tmpProcessFiles.readRows} files (${FileUtils.SizeBytes(fileSize)})")

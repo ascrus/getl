@@ -1036,6 +1036,7 @@ class RepositoryTest extends TestDsl {
                         assertEquals('Start 1', stepName)
                         assertEquals(executeOperation, operation)
 
+                        assertTrue(scripts instanceof LinkedHashMap)
                         assertEquals(2, scripts.size())
 
                         assertEquals('getl.models.WorkflowStepTestScript', script('top1').className)
@@ -1051,6 +1052,7 @@ class RepositoryTest extends TestDsl {
                         assertEquals(-1, script('error1').vars.stepNum)
 
                         step('child1') {
+                            assertTrue(scripts instanceof LinkedHashMap)
                             assertEquals('(configContent.countProcessed == 2)', condition)
                         }
 
@@ -1067,6 +1069,8 @@ class RepositoryTest extends TestDsl {
                         assertEquals(-101, script('error2').vars.stepNum)
 
                         step('subchild1') {
+                            assertTrue(scripts instanceof LinkedHashMap)
+                            assertEquals(['subchild2', 'subchild1'], scripts.keySet().toList())
                             assertEquals('(configContent.countProcessed == 4)', condition)
                         }
                         assertEquals('getl.models.WorkflowStepTestScript', script('subchild1').className)

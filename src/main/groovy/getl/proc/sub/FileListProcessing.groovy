@@ -3,6 +3,7 @@ package getl.proc.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Field
+import getl.exception.ExceptionDSL
 import getl.files.Manager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -18,6 +19,7 @@ import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.CompileStatic
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -56,6 +58,11 @@ abstract class FileListProcessing implements GetlRepository {
     Boolean getOnlyFromStory() { BoolUtils.IsValue(params.onlyFromStory) }
     /** Include in the list only files that are in the processing history */
     void setOnlyFromStory(Boolean value) { params.onlyFromStory = value }
+
+    /** Processing previously downloaded but modified files */
+    Boolean getProcessModified() { BoolUtils.IsValue(params.processModified) }
+    /** Processing previously downloaded but modified files */
+    void setProcessModified(Boolean value) { params.processModified = value }
 
     /** Ignore file processing history */
     Boolean getIgnoreStory() { BoolUtils.IsValue(params.ignoreStory) }
@@ -103,6 +110,11 @@ abstract class FileListProcessing implements GetlRepository {
         if (value != null)
             order.addAll(value)
     }
+
+    /** Display debug information for processed files */
+    Boolean getDebugMode() { BoolUtils.IsValue(params.debugMode) }
+    /** Display debug information for processed files */
+    void setDebugMode(Boolean value) { params.debugMode = value }
 
     /** Filter processing directories */
     Closure<Boolean> getOnFilterDirs() { params.filterDirs as Closure<Boolean> }
@@ -222,8 +234,11 @@ abstract class FileListProcessing implements GetlRepository {
     /** File processing history cache table */
     protected H2Table cacheTable
 
-    /** Current table for writing the history of file processing by a process */
-    protected TableDataset currentStory
+    /** Story table for adding the history of file processing by a process */
+    private TableDataset storeForAdd
+
+    /** Story table for updating the history of file processing by a process */
+    private TableDataset storeForUpdate
 
     /** Number of processed files */
     Long getCountFiles () { counter.count }
@@ -543,7 +558,7 @@ abstract class FileListProcessing implements GetlRepository {
         source.buildList([path: sourcePath, recursive: true, onlyFromStory: onlyFromStory, fileListSortOrder: order,
                           ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes,
                           limitDirs: limitDirs, limitCountFiles: limitCountFiles, limitSizeFiles: limitSizeFiles,
-                          filter: whereFiles],
+                          filter: whereFiles, processModified: processModified],
                 createBuildList())
         pt.finish(source.countFileList)
 
@@ -565,7 +580,8 @@ abstract class FileListProcessing implements GetlRepository {
         }
 
         cacheTable = null
-        currentStory = null
+        storeForAdd = null
+        storeForUpdate = null
 
         if (tmpProcessFiles != null)
             tmpProcessFiles.drop(ifExists: true)
@@ -639,7 +655,7 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
 
-        if (source.story != null && cacheFilePath != null && !ignoreStory && !onlyFromStory) {
+        if (source.story != null && cacheFilePath != null) {
             def cacheFP = FileUtils.TransformFilePath(cacheFilePath)
             FileUtils.ValidFilePath(cacheFP)
             cacheConnection = new H2Connection().with {
@@ -705,6 +721,8 @@ abstract class FileListProcessing implements GetlRepository {
                 logger.fine("  file \"${FileUtils.TransformFilePath(cacheFilePath)}\" will be used to cache file processing history")
             if (onlyFromStory)
                 logger.fine("  only files that are present in the processing history will be processed")
+            if (processModified)
+                logger.fine("  previously processed modified files are added")
         }
     }
 
@@ -739,22 +757,28 @@ abstract class FileListProcessing implements GetlRepository {
         if (cacheTable == null)
             throw new ExceptionFileListProcessing('Error saving history cache because it is disabled!')
 
-        def foundRows = cacheTable.countRow()
-        if (foundRows > 0) {
-            source.story.connection.startTran(true)
-            try {
-                def count = new Flow(dslCreator).copy(source: cacheTable, dest: source.story)
-                if (foundRows != count)
-                    throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+        source.story.connection.transaction(true) {
+            def foundNewRows = cacheTable.countRow('NOT FILEINSTORY')
+            if (foundNewRows > 0) {
+                def count = new Flow(dslCreator).copy(source: cacheTable, dest: source.story,
+                        sourceParams: [where: 'NOT FILEINSTORY'], destParams: [operation: 'INSERT'])
+                if (foundNewRows != count)
+                    throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundNewRows rows were detected, but $count rows were copied!")
 
-                logger.info("$count rows of file processing history saved to table ${source.story.fullTableName}")
-                cacheTable.truncate(truncate: true)
+                logger.info("$count rows of new file processing history saved to table ${source.story.fullTableName}")
             }
-            catch (Exception e) {
-                source.story.connection.rollbackTran(true)
-                throw e
+
+            def foundExistsRows = cacheTable.countRow('FILEINSTORY')
+            if (foundExistsRows > 0) {
+                def count = new Flow(dslCreator).copy(source: cacheTable, dest: source.story,
+                        sourceParams: [where: 'FILEINSTORY'], destParams: [operation: 'UPDATE'])
+                if (foundExistsRows != count)
+                    throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundExistsRows rows were detected, but $count rows were copied!")
+
+                logger.info("$count rows of already loaded file processing history saved to table ${source.story.fullTableName}")
             }
-            source.story.connection.commitTran(true)
+
+            cacheTable.truncate(truncate: true)
         }
     }
 
@@ -790,10 +814,10 @@ abstract class FileListProcessing implements GetlRepository {
                         source.story.retrieveFields()
 
                     cacheTable.field = source.story.field
+                    cacheTable.field('FILEINSTORY') { type = booleanFieldType; isNull = false }
                     cacheTable.clearKeys()
                     cacheTable.create()
                 }
-                currentStory = (!ignoreStory && !onlyFromStory)?(cacheTable?:source.story):null
 
                 try {
                     processFiles()
@@ -842,6 +866,107 @@ abstract class FileListProcessing implements GetlRepository {
                 cleanProperties()
             }
         }
+    }
+
+    /** Init story or cache story table for writing */
+    protected initStoryWrite() {
+        if (source.story == null || ignoreStory)
+            return
+
+        if (cacheTable == null) {
+            storeForAdd = source.story.cloneDatasetConnection() as TableDataset
+            if (!storeForAdd.currentJDBCConnection.autoCommit())
+                storeForAdd.currentJDBCConnection.startTran(true)
+            storeForAdd.openWrite(operation: 'INSERT')
+
+            if (onlyFromStory || processModified) {
+                storeForUpdate = source.story.cloneDatasetConnection() as TableDataset
+                if (!storeForUpdate.currentJDBCConnection.autoCommit())
+                    storeForUpdate.currentJDBCConnection.startTran(true)
+                storeForUpdate.openWrite(operation: 'UPDATE')
+            }
+        }
+        else {
+            storeForAdd = cacheTable.cloneDatasetConnection() as TableDataset
+            if (!storeForAdd.currentJDBCConnection.autoCommit())
+                storeForAdd.currentJDBCConnection.startTran(true)
+            storeForAdd.openWrite(operation: 'INSERT')
+        }
+    }
+
+    /** Write file to story or cache story table */
+    @Synchronized
+    protected storyWrite(Map file) {
+        if (source.story == null || ignoreStory)
+            return
+
+        if (!BoolUtils.IsValue(file.fileinstory) || cacheTable != null)
+            storeForAdd.write(file)
+        else if (storeForUpdate != null)
+            storeForUpdate.write(file)
+        else
+            throw new ExceptionDSL("File \"${file.filepath}/${file.filename}\" is already present in the download history!")
+    }
+
+    /** Finish writing to story or cache story table */
+    protected doneStoryWrite() {
+        if (source.story == null || ignoreStory)
+            return
+
+        try {
+            try {
+                storeForAdd.doneWrite()
+                if (storeForUpdate != null)
+                    storeForUpdate.doneWrite()
+            }
+            finally {
+                storeForAdd.closeWrite()
+                if (storeForUpdate != null)
+                    storeForUpdate.closeWrite()
+            }
+        }
+        catch (Exception e) {
+            if (!storeForAdd.currentJDBCConnection.autoCommit())
+                storeForAdd.currentJDBCConnection.rollbackTran(true)
+
+            if (storeForUpdate != null && !storeForUpdate.currentJDBCConnection.autoCommit())
+                storeForUpdate.currentJDBCConnection.rollbackTran(true)
+
+            throw e
+        }
+
+        if (!storeForAdd.currentJDBCConnection.autoCommit())
+            storeForAdd.currentJDBCConnection.commitTran(true)
+
+        if (storeForUpdate != null && !storeForUpdate.currentJDBCConnection.autoCommit())
+            storeForUpdate.currentJDBCConnection.commitTran(true)
+
+        storeForAdd.currentJDBCConnection.connected = false
+        if (storeForUpdate != null)
+            storeForUpdate.currentJDBCConnection.connected = false
+    }
+
+    /** Rollback writing to story or cache story table */
+    protected rollbackStoryWrite() {
+        if (source.story == null || ignoreStory)
+            return
+
+        try {
+            storeForAdd.closeWrite()
+            if (storeForUpdate != null)
+                storeForUpdate.closeWrite()
+        }
+        finally {
+            if (!storeForAdd.currentJDBCConnection.autoCommit())
+                storeForAdd.currentJDBCConnection.rollbackTran(true)
+
+            if (storeForUpdate != null && !storeForUpdate.currentJDBCConnection.autoCommit())
+                storeForUpdate.currentJDBCConnection.rollbackTran(true)
+        }
+
+        storeForAdd.currentJDBCConnection.connected = false
+        if (storeForUpdate != null)
+            storeForUpdate.currentJDBCConnection.connected = false
     }
 
     /** Current Getl instance */
@@ -930,4 +1055,10 @@ abstract class FileListProcessing implements GetlRepository {
     /** Current logger */
     @JsonIgnore
     Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
+
+    /** Display processed file information */
+    protected void sayFileInfo(Map file) {
+        if (debugMode)
+            logger.finest("Processing \"${file.filepath}/${file.filename}\" [${file.filedate}, ${FileUtils.SizeBytes(file.filesize)}] ...")
+    }
 }
