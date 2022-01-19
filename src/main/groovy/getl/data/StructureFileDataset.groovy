@@ -25,7 +25,7 @@ class StructureFileDataset extends WebServiceDataset {
 	protected void initParams() {
 		super.initParams()
 		params.attributeField = [] as List<Field>
-		params.attributeValue = [:] as Map<String, Object>
+		params.attributeValue = new HashMap<String, Object>()
 	}
 	
 	@Override
@@ -114,7 +114,7 @@ class StructureFileDataset extends WebServiceDataset {
 	Map<String, Object> getAttributeValue () { params.attributeValue as Map<String, Object> }
 	/** Attribute value */
 	void setAttributeValue (Map<String, Object> value) {
-		Map<String, Object> m = [:]
+		Map<String, Object> m = new HashMap<String, Object>()
 		m.putAll(value)
 		params.attributeValue = m
 	}

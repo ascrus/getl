@@ -16,7 +16,8 @@ class FlowCopyChildSpec extends BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.datasetParams == null) params.datasetParams = [:] as Map<String, Object>
+        if (params.datasetParams == null)
+            params.datasetParams = new HashMap<String, Object>()
     }
 
     /** Dataset for writing */

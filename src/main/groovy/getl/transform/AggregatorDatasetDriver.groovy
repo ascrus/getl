@@ -35,7 +35,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		algorithm = (algorithm as String).toUpperCase()
 		if (!(algorithm in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${algorithm}\"")
 		Closure aggregateCode = generateAggrCode(fieldByGroup, fieldCalc)
-		Map filter = [:]
+		Map filter = new HashMap()
 		fieldCalc.each { name, value ->
 			if (value.filter != null) {
 				filter.put(name.toLowerCase(), value.filter)
@@ -91,7 +91,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		StringBuilder sb = new StringBuilder()
 		sb << """{ Map row, Map data, Map filter ->
 	List<String> key = []
-	Map keyM = [:]
+	Map keyM = new HashMap()
 """
 		def num = 0
 		if (!fieldByGroup.isEmpty()) {

@@ -19,7 +19,7 @@ class CreateSpec extends BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.indexes == null)
-            params.indexes = [:] as Map<String, Object>
+            params.indexes = new HashMap<String, Object>()
         if (params.type == null)
             params.type = JDBCDataset.tableType
     }
@@ -45,7 +45,7 @@ class CreateSpec extends BaseSpec {
     void assignIndexes(Map<String, Object> value) {
         indexes.clear()
         (value as Map<String, Map<String, Object>>)?.each { indexName, indexParams ->
-            def par = [:] as Map<String, Object>
+            def par = new HashMap<String, Object>()
             indexParams.each { name, param ->
                 if (name == 'columns') {
                     if (!(param instanceof List)) {
@@ -85,7 +85,7 @@ class CreateSpec extends BaseSpec {
     protected IndexSpec genIndex(String name, Closure cl) {
         def indexOpts = indexes.get(name) as  Map<String, Object>
         if (indexOpts == null) {
-            indexOpts = [:] as  Map<String, Object>
+            indexOpts = new HashMap<String, Object>()
             indexes.put(name, indexOpts)
         }
         def parent = newIndexParams(true, indexOpts)

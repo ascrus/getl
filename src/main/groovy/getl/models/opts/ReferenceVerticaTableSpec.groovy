@@ -247,7 +247,7 @@ ORDER BY ordinal_position'''
         if (cols.isEmpty())
             throw new ExceptionModel("No columns found for table \"$sourceTable\" in model ${ownerReferenceVerticaTableModel.repositoryModelName}!")
 
-        def p = [:]
+        def p = new HashMap()
         p.putAll(ownerReferenceVerticaTableModel.modelVars)
         p.putAll(objectVars)
         p._model_sourcetable_ = sourceTable.fullTableName

@@ -28,7 +28,7 @@ class BulkLoadSpec extends BaseSpec {
         if (params.orderProcess == null)
             params.orderProcess = [] as List<String>
         if (params.map == null)
-            params.map = [:] as Map<String, String>
+            params.map = new HashMap<String, String>()
     }
 
     /**

@@ -78,16 +78,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	protected void initParams() {
 		params.clear()
 
-		params.attributes = [:] as Map<String, Object>
+		params.attributes = new HashMap<String, Object>()
 
-		def dirs = [:] as Map<String, Object>
+		def dirs = new HashMap<String, Object>()
 		params.directive = dirs
 
-		dirs.create = [:] as Map<String, Object>
-		dirs.drop = [:] as Map<String, Object>
-		dirs.read = [:] as Map<String, Object>
-		dirs.write = [:] as Map<String, Object>
-		dirs.bulkLoad = [:] as Map<String, Object>
+		dirs.create = new HashMap<String, Object>()
+		dirs.drop = new HashMap<String, Object>()
+		dirs.read = new HashMap<String, Object>()
+		dirs.write = new HashMap<String, Object>()
+		dirs.bulkLoad = new HashMap<String, Object>()
 	}
 
 	/**
@@ -127,7 +127,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	static Dataset CreateDataset(Map params) {
 		if (params == null)
-			params = [:]
+			params = new HashMap()
 		else
 			params = CloneUtils.CloneMap(params, false)
 
@@ -215,7 +215,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			attributes.putAll(value)
 	}
 	/** Extended attributes */
-	Map<String, Object> attributes() { (connection?.attributes()?:[:]) + attributes }
+	Map<String, Object> attributes() { (connection?.attributes()?:new HashMap<String, Object>()) + attributes }
 	/** Read extended attribute value */
 	Object attribute(String name) {
 		if (name == null)
@@ -262,7 +262,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Dataset parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Dataset parameters */
 	@JsonIgnore
@@ -383,7 +383,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void setLogWriteToConsole (Boolean value) { params.logWriteToConsole = value }
 
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 
 	/** System parameters */
 	@JsonIgnore
@@ -449,7 +449,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return parameters from save schema
 	 */
 	Map saveParams() {
-		def res = [:]
+		def res = new HashMap<String, Object>()
 		
 		def cp = inheritedConnectionParams()
 		if (!cp.isEmpty()) res.putAll(MapUtils.CopyOnly(connection.params as Map<String, Object>, cp))
@@ -700,17 +700,17 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Create new dataset container
 	 */
-	void create(Map procParams = [:]) {
+	void create(Map procParams = new HashMap()) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.CREATE))
 			throw new ExceptionGETL("Driver not supported create dataset")
 
 		if (procParams == null)
-			procParams = [:]
+			procParams = new HashMap()
 
 		methodParams.validation("create", procParams, [connection.driver.methodParams.params("createDataset")])
 
-		def dirs = directives('create')?:[:]
+		def dirs = directives('create')?:new HashMap<String, Object>()
 		procParams = dirs + procParams
 		
 		connection.driver.createDataset(this, procParams)
@@ -719,15 +719,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Drop exists dataset container
 	 */
-	void drop(Map procParams = [:]) {
+	void drop(Map procParams = new HashMap()) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.DROP))
 			throw new ExceptionGETL("Driver not supported drop dataset")
 		
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = new HashMap()
 		methodParams.validation("drop", procParams, [connection.driver.methodParams.params("dropDataset")])
 
-		def dirs = directives('drop')?:[:]
+		def dirs = directives('drop')?:new HashMap<String, Object>()
 		procParams = dirs + procParams
 		
 		connection.driver.dropDataset(this, procParams)
@@ -736,10 +737,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Clear data of dataset
 	 */
-	void truncate(Map procParams = [:]) {
+	void truncate(Map procParams = new HashMap()) {
 		validConnection()
 
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = new HashMap()
 		methodParams.validation("truncate", procParams, [connection.driver.methodParams.params("clearDataset")])
 
 		connection.driver.clearDataset(this, procParams)
@@ -755,7 +757,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * </ul>
 	 * @param params
 	 */
-	void bulkLoadFile(Map procParams = [:]) {
+	void bulkLoadFile(Map procParams = new HashMap()) {
 		readRows = 0
         writeRows = 0
         updateRows = 0
@@ -765,10 +767,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw new ExceptionGETL("Driver not supported bulk load file!")
 		
 		if (procParams == null)
-			procParams = [:]
+			procParams = new HashMap()
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
 
-		def bulkLoadDir = directives('bulkLoad')?:[:]
+		def bulkLoadDir = directives('bulkLoad')?:new HashMap<String, Object>()
 		procParams = bulkLoadDir + procParams
 		
 		if (getField().size() == 0) {
@@ -871,7 +873,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param listFields
 	 * @return
 	 */
-	List<Map> rows (Map procParams = [:]) {
+	List<Map> rows(Map procParams = new HashMap()) {
 		def rows = new LinkedList<Map>()
 		eachRow(procParams) { row ->
 			rows.add(row)
@@ -882,8 +884,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Process each row dataset with user code
 	 */
-	void eachRow (@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
-		eachRow([:], code)
+	void eachRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
+		eachRow(new HashMap(), code)
 	}
 	
 	/**
@@ -1063,7 +1065,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (status != Status.AVAILABLE)
 			throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
 
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = new HashMap()
 		methodParams.validation("eachRow", procParams, [connection.driver.methodParams.params("eachRow")])
 
 		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
@@ -1072,7 +1075,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			loadDatasetMetadata()
 		}
 
-		def readDir = directives('read')?:[:]
+		def readDir = directives('read')?:new HashMap<String, Object>()
 		procParams = readDir + procParams
 		
 		// Save parse and assert errors to file
@@ -1080,7 +1083,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def doProcessError = { Exception e, Long recNo ->
 			isReadError = true
-			def errorRow = [:]
+			def errorRow = new HashMap()
 			errorRow.row = recNo
 			errorRow.error = e.message
 			try {
@@ -1145,16 +1148,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param params
 	 * @return
 	 */
-	void openWrite(Map procParams = [:]) {
+	void openWrite(Map procParams = new HashMap()) {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.WRITE))
 			throw new ExceptionGETL("Driver is not support write operation")
 		if (status != Status.AVAILABLE)
 			throw new ExceptionGETL("Dataset is not avaible for write operation (current status is ${status})")
 
-		procParams = procParams?:[:]
+		procParams = procParams?:new HashMap()
 		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
-		def writeDir = directives('write')?:[:]
+		def writeDir = directives('write')?:new HashMap<String, Object>()
 		procParams = writeDir + procParams
 
 		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())
@@ -1183,7 +1186,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Open dataset from writing rows with synchronized */
-	void openWriteSynch(Map procParams = [:]) {
+	void openWriteSynch(Map procParams = new HashMap()) {
 		openWrite(procParams)
 	}
 	
@@ -1289,7 +1292,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			}
 		}
 		
-		Map p = [:]
+		Map p = new HashMap()
 		p.putAll(GenerationUtils.Fields2Map(fl))
 		
 		def json = MapUtils.ToJson(p)
@@ -1323,7 +1326,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			}
 		}
 
-		def p = [:] as Map<String, Object>
+		def p = new HashMap<String, Object>()
 		p.putAll(GenerationUtils.Fields2Map(fl))
 		ConfigSlurper.SaveConfigFile(data: p, file: file, owner: dslCreator)
 	}
@@ -1341,7 +1344,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Use hash value for fast seek values in small datasets and sort value for seek values in large datasets
 	 */
 	Map lookup(Map procParams) {
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = new HashMap()
 		methodParams.validation("lookup", procParams)
 		
 		String key = procParams.key as String
@@ -1369,11 +1373,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		Map result
 		def strategy = procParams.strategy as LookupStrategy
 		if (strategy == null || strategy == LookupStrategy.HASH) {
-			result = [:]
+			result = new HashMap()
 		}
 		else
 		if (strategy == LookupStrategy.ORDER) {
-			result = [:] as TreeMap
+			result = new TreeMap()
 		}
 		else {
 			throw new ExceptionGETL("Unknown strategy value \"${procParams.strategy}\"")
@@ -1598,7 +1602,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone current dataset on specified connection
 	 */
 	@Synchronized
-	Dataset cloneDataset(Connection newConnection = null, Map otherParams = [:], Getl getl = null) {
+	Dataset cloneDataset(Connection newConnection = null, Map otherParams = new HashMap(), Getl getl = null) {
 		if (newConnection == null)
 			newConnection = this.connection
 
@@ -1631,7 +1635,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone current dataset and hear connection
 	 */
 	@Synchronized
-	Dataset cloneDatasetConnection(Map otherParams = [:], Getl getl = null) {
+	Dataset cloneDatasetConnection(Map otherParams = new HashMap(), Getl getl = null) {
 		Connection con = this.connection.cloneConnection(null, getl)
 		return cloneDataset(con, otherParams, getl)
 	}
@@ -1747,7 +1751,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param dataset source
 	 * @param importParams import options
 	 */
-	void importFields(Dataset dataset, Map importParams = [:]) {
+	void importFields(Dataset dataset, Map importParams = new HashMap()) {
 		setField(connection.driver.prepareImportFields(dataset, importParams))
 	}
 
@@ -1825,7 +1829,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @return comparison result (field name: comparison status)
 	 */
 	Map<String, EqualFieldStatus> compareFields(List<Field> compared, Boolean softComparison = false, Boolean compareExpressions = true) {
-		def res = [:] as Map<String, EqualFieldStatus>
+		def res = new HashMap<String, EqualFieldStatus>()
 		compared.each { field ->
 			def curField = fieldByName(field.name)
 			if (curField == null)

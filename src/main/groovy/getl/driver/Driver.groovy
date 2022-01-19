@@ -178,9 +178,9 @@ abstract class Driver {
 	 * @param importParams import options
 	 * @return list of prepared field
 	 */
-	List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
 		if (importParams == null)
-			importParams = [:]
+			importParams = new HashMap()
 
 		methodParams.validation('prepareImportFields', importParams, null)
 

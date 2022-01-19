@@ -92,7 +92,7 @@ class MultipleDatasetDriver extends Driver {
 	@Override
 	void write(Dataset dataset, Map row) {
 		Map<String, Dataset> ds = getDestination(dataset)
-		def cond = (dataset.params.condition as Map<String, Closure>)?:[:]
+		def cond = (dataset.params.condition as Map<String, Closure>)?:new HashMap<String, Closure>()
 		
 		// Valid conditions and write only filtered rows		
 		cond.each { String alias, Closure valid ->

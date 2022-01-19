@@ -17,8 +17,8 @@ class MultipleDataset extends Dataset {
 		super.initParams()
 
 		connection = new Connection([driver: MultipleDatasetDriver])
-		params.dest = [:] as Map<String, Dataset>
-		params.condition = [:] as Map<String, Closure>
+		params.dest = new HashMap<String, Dataset>()
+		params.condition = new HashMap<String, Closure>()
 	}
 	
 	/** Destination datasets (alias:dataset) */

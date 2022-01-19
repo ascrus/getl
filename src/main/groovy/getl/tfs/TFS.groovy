@@ -32,7 +32,7 @@ class TFS extends CSVConnection {
     }
 	
 	/** Global temporary file connection object */
-	static public final TFS storage = new TFS([:])
+	static public final TFS storage = new TFS(new HashMap())
 
 	@Override
 	protected void validParams() {

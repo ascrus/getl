@@ -20,7 +20,7 @@ class JSONDataset extends StructureFileDataset {
 	protected void initParams() {
 		super.initParams()
 
-		_driver_params = [:] as Map<String, Object>
+		_driver_params = new HashMap<String, Object>()
 	}
 
 	@Override

@@ -18,7 +18,7 @@ class AggregatorDataset extends VirtualDataset {
 
 		connection = new Connection([driver: AggregatorDatasetDriver])
 		params.fieldByGroup = [] as List<String>
-		params.fieldCalc = [:] as Map<String, Map>
+		params.fieldCalc = new HashMap<String, Map>()
 		params.algorithm = "HASH"
 	}
 

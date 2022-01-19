@@ -73,7 +73,7 @@ class ConfigStores extends ConfigManager {
     }
 
     @Override
-    protected void loadContent(Map<String, Object> readParams = [:]) {
+    protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>()) {
         def fileName = (readParams?.fileName as String)?:this.fileName
         def section = (readParams?.section as String)?:this.section
         def secretKey = (readParams?.secretKey as String)?:this.secretKey
@@ -112,7 +112,7 @@ class ConfigStores extends ConfigManager {
         if (sectionName == null)
             throw new ExceptionGETL('Required section name!')
 
-        Map<String, Object> data = [:]
+        Map<String, Object> data = new HashMap<String, Object>()
 
         if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
         if (!FileUtils.ExistsFile(fileName))

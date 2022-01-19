@@ -152,7 +152,7 @@ class RepositoryStorageManager {
     Boolean getIsResourceStoragePath() { isResourceStoragePath }
 
     /** Subdirectories for storing files for different environments */
-    private final Map<String, String> envDirs = [:] as Map<String, String>
+    private final Map<String, String> envDirs = new HashMap<String, String>()
     /** Subdirectories for storing files for different environments */
     @JsonIgnore
     Map<String, String> getEnvDirs() { envDirs }
@@ -395,7 +395,7 @@ class RepositoryStorageManager {
         if (savingStoryDataset == null)
             return
 
-        def writeParams = [:] as Map<String, Object>
+        def writeParams = new HashMap<String, Object>()
         if (savingStoryDataset instanceof CSVDataset)
             writeParams.append = true
         else

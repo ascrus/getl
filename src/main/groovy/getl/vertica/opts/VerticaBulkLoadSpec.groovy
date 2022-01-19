@@ -19,7 +19,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.parser == null)
-            params.parser = [:] as Map<String, String>
+            params.parser = new HashMap<String, String>()
     }
 
     /**

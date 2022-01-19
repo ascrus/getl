@@ -13,7 +13,8 @@ class VerticaBulkLoadParserSpec extends BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.options == null) params.options = [:] as Map<String, Object>
+        if (params.options == null)
+            params.options = new HashMap<String, Object>()
     }
 
     /**

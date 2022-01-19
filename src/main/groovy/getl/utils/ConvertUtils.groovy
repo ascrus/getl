@@ -178,7 +178,7 @@ class ConvertUtils {
 			if (list[0].indexOf(':') == -1)
 				res = list.collect { str -> str.trim() }
 			else {
-				res = [:]
+				res = new HashMap()
 				list.each { str ->
 					def i = str.indexOf(':')
 					def n = str.substring(0, i).trim()
@@ -264,7 +264,7 @@ class ConvertUtils {
 
 		value = value.trim()
 		if (value.length() == 0)
-			return [:] as Map<String, Object>
+			return new HashMap<String, Object>()
 
 		if ((value[0] == '[' && value[value.length() - 1] == ']') ||
 				(value[0] == '(' && value[value.length() - 1] == ')') ||
@@ -272,7 +272,7 @@ class ConvertUtils {
 			value = value.substring(1, value.length() - 1)
 
 		def lexer = new Lexer(value, Lexer.javaScriptType)
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 		lexer.toList().each { list ->
 			if (list.isEmpty())
 				return

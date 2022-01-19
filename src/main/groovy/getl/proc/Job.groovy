@@ -18,7 +18,7 @@ abstract class Job {
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Job arguments */
-	static public final Map jobArgs = [:] as Map<String, Object>
+	static public final Map jobArgs = new HashMap<String, Object>()
 	
 	/**
 	 * Job arguments (backward compatible) 
@@ -41,7 +41,8 @@ abstract class Job {
 		jobArgs.clear()
 		//noinspection SpellCheckingInspection
 		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
-		if (jobArgs.vars == null) jobArgs.vars = [:]
+		if (jobArgs.vars == null)
+			jobArgs.vars = new HashMap()
 		Config.Init(m)
 		jobVarsToConfig()
 	}

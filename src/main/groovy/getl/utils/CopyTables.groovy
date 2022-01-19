@@ -94,8 +94,8 @@ class CopyTables extends Job {
         def threads = Config.content.threads as Integer?:1
         Logs.Info("Used $threads the copy threads")
 
-        def copyParams = Config.content.copyParams as Map<String, Object>?:[:]
-        def destParams = [:] as Map<String, Object>
+        def copyParams = Config.content.copyParams as Map<String, Object>?:new HashMap<String, Object>()
+        def destParams = new HashMap<String, Object>()
         copyParams.each { name, value ->
             destParams.put("dest_$name".toString(), value)
         }

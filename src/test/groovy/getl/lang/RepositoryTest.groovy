@@ -939,7 +939,7 @@ class RepositoryTest extends TestDsl {
                 embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals(1, attributes.a1)
-                    assertNull(sqlHistoryFile)
+                    //assertNull(sqlHistoryFile)
                     assertEquals('dba', login)
                     assertEquals(repositoryStorageManager.encryptText('12345'), password)
                     assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)
@@ -953,7 +953,7 @@ class RepositoryTest extends TestDsl {
                 def con = embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals(1, attributes.a1)
-                    assertNull(sqlHistoryFile)
+                    //assertNull(sqlHistoryFile)
                     assertEquals('dba', login)
                     assertEquals(repositoryStorageManager.encryptText('12345'), password)
                     assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)

@@ -136,7 +136,7 @@ class ConfigSlurper extends ConfigManager {
 	String getFullName() { fullConfigName(path(), fileName) }
 
 	@Override
-	protected void loadContent(Map<String, Object> readParams = [:]) {
+	protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>()) {
 		def fp = FileUtils.TransformFilePath(readParams?.path as String)?:this.path()
 		def fn = (readParams?.fileName as String)?:this.fileName
 		def fl = (readParams?.files as List<String>)?:this.files
@@ -204,20 +204,21 @@ class ConfigSlurper extends ConfigManager {
 		}
 
 		def cfg = (environment == null)?new groovy.util.ConfigSlurper():new groovy.util.ConfigSlurper(environment)
-		def args = [vars: ListUtils.NotNullValue([configVars, Config.vars, [:]])]
+		def args = [vars: ListUtils.NotNullValue([configVars, Config.vars, new HashMap<String, Object>()])]
 
 		Map<String, Object> res
 		try {
 			cfg.setBinding(args)
 			def data = cfg.parse(text) as Map
-			res = CheckDataMap(cfg, data, [configvars: (data.configvars as Map)?:[:]] + args) as Map<String, Object>
+			res = CheckDataMap(cfg, data, [configvars: (data.configvars as Map)?:new HashMap<String, Object>()] + args) as Map<String, Object>
 			if ((res.configvars as Map)?.isEmpty()) {
 				res.remove('configvars')
 			}
 			else {
 				def vars = res.configvars as Map
 				res.remove('configvars')
-				if (res.vars == null) res.vars = [:]
+				if (res.vars == null)
+					res.vars = new HashMap()
 				(res.vars as Map).putAll(vars)
 			}
 		}
@@ -235,7 +236,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param vars
 	 */
 	static private Map CheckDataMap(groovy.util.ConfigSlurper cfg, Map data, Map vars) {
-		def res = [:]
+		def res = new LinkedHashMap()
 		data.each { key, value ->
 			if (value instanceof Map) {
 				res.put(key, CheckDataMap(cfg, value, vars))
@@ -245,7 +246,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else  if (value instanceof Closure) {
 				Closure cl = value as Closure
-				def val = [:]
+				def val = new LinkedHashMap()
 				val.putAll(vars)
 				def code = cl.rehydrate(val, val, val)
 				//noinspection UnnecessaryQualifiedReference
@@ -280,7 +281,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else  if (value instanceof Closure) {
 				Closure cl = value as Closure
-				def val = [:]
+				def val = new LinkedHashMap()
 				val.putAll(vars)
 				def code = cl.rehydrate(val, val, val)
 				//noinspection UnnecessaryQualifiedReference
@@ -300,7 +301,7 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	@Override
-	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>()) {
 		def fp = FileUtils.TransformFilePath(saveParams?.path as String)?:this.path()
 		def fn = (saveParams?.fileName as String)?:this.fileName
 		def cp = (saveParams?.codePage as String)?:this.codePage
@@ -395,17 +396,18 @@ class ConfigSlurper extends ConfigManager {
 		def res = 0
 		def lines = [] as List<String>
 		def keys = data.keySet().toList()
-		if (!(data instanceof LinkedHashMap))
+		def isLinkMap = (data instanceof LinkedHashMap)
+		if (!isLinkMap)
 			keys.sort(true)
 		keys.each { key ->
 			if (key == null)
 				return
 
-			def value = data.get(key)
-			if (value == null)
-				return
-
 			def varName = PrepareVariableName(key.toString(), isListMap)
+
+			def value = data.get(key)
+			if (value == null && !isLinkMap)
+				return
 
 			if (value instanceof Map) {
 				def map = value as Map
@@ -538,12 +540,16 @@ class ConfigSlurper extends ConfigManager {
 	 */
 	static Boolean SaveObject(def key, def value, StringBuilder writer, Boolean useVars = false, Boolean convertVars = false,
 							  Integer tab = 0, Boolean isListMap = false) {
-		if (value instanceof Closure) return false
+		if (value instanceof Closure)
+			return false
 
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='
 		def keyStr = (key != null)?"${PrepareVariableName(key.toString(), isListMap)}$eqStr ":''
-		if (value instanceof Timestamp) {
+		if (value == null) {
+			writer.append("${tabStr}${keyStr}null")
+		}
+		else if (value instanceof Timestamp) {
 			def str = "getl.utils.DateUtils.ParseSQLTimestamp(getl.utils.DateUtils.defaultDateTimeMask, '${DateUtils.FormatDate(DateUtils.defaultDateTimeMask, value as Timestamp)}', false)"
 			writer.append("${tabStr}${keyStr}$str")
 		}

@@ -442,9 +442,7 @@ class JDBCDriver extends Driver {
 	 * Additional connection properties (use for children driver)
 	 * @return
 	 */
-	protected Map getConnectProperty() {
-		[:]
-	}
+	protected Map getConnectProperty() { new HashMap() }
 	
 	protected String connectionParamBegin
 	protected String connectionParamJoin
@@ -476,7 +474,7 @@ class JDBCDriver extends Driver {
 		JDBCConnection con = jdbcConnection
 		String conParams = ""
 		
-		Map prop = [:]
+		Map prop = new HashMap()
 		prop.putAll(connectProperty)
 		if (con.connectProperty != null) prop.putAll(con.connectProperty)
 		if (!prop.isEmpty()) {
@@ -809,7 +807,7 @@ class JDBCDriver extends Driver {
 						continue
 				}
 
-				def t = [:]
+				def t = new HashMap()
 				if (isSupportDB && isSupportMultiDB)
 					t.dbName = rs.getString('TABLE_CAT')
 				if (isSupportSchemas)
@@ -840,7 +838,7 @@ class JDBCDriver extends Driver {
 
 	/** Prepare database, schema and table name for retrieve field operation */
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
-		def names = [:] as Map<String, String>
+		def names = new HashMap<String, String>()
 		names.dbName = prepareRetrieveObject(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
 
 		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType] && tempSchemaName != null)
@@ -946,7 +944,7 @@ class JDBCDriver extends Driver {
 	/** Read fields from query */
 	protected List<Field> queryFields(Dataset dataset) {
 		def ds = dataset as QueryDataset
-		def sql = sqlForDataset(ds, [:], false)
+		def sql = sqlForDataset(ds, new HashMap(), false)
 		if (sql == null)
 			throw new ExceptionGETL('Invalid sql query for dataset!')
 
@@ -1098,7 +1096,7 @@ class JDBCDriver extends Driver {
 	void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset as JDBCDataset)
 
-        params = params?:[:]
+        params = params?:new HashMap()
 
 		def tableName = fullNameDataset(dataset)
 		def tableType = (dataset as JDBCDataset).type
@@ -1267,7 +1265,7 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
-		def fp = [:] as Map<String, String>
+		def fp = new HashMap<String, String>()
 		fp.column = prepareFieldNameForSQL(f.name)
 		fp.type = type2sqlType(f, useNativeDBType)
 		if (isSupport(Support.PRIMARY_KEY) && !f.isNull)
@@ -1488,7 +1486,7 @@ class JDBCDriver extends Driver {
 	void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset as JDBCDataset)
 
-        params = params?:[:]
+        params = params?:new HashMap()
 
 		def n = fullNameDataset(dataset)
 		def t = ((dataset as JDBCDataset).type in
@@ -1564,7 +1562,7 @@ class JDBCDriver extends Driver {
      */
     String sqlTableBuildSelect(JDBCDataset dataset, Map params) {
         // Load statement directive by driver
-        def dir = [:] as Map<String, String>
+        def dir = new HashMap<String, String>()
         sqlTableDirective(dataset, params, dir)
 
         StringBuilder sb = new StringBuilder()
@@ -1624,7 +1622,7 @@ class JDBCDriver extends Driver {
 			def where = params.where as String
 			if (where != null) {
 				try {
-					where = StringUtils.EvalMacroString(where, dataset.queryParams() + ((params.queryParams as Map) ?: [:]), checkVars)
+					where = StringUtils.EvalMacroString(where, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
 				}
 				catch (Exception e) {
 					throw new ExceptionGETL("Error compiling \"where\" statement for table \"$dataset\": ${e.message}")
@@ -1659,7 +1657,7 @@ class JDBCDriver extends Driver {
 
 		String res
 		try {
-			res = StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:[:]), checkVars)
+			res = StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
 		}
 		catch (Exception e) {
 			throw new ExceptionGETL("Error compiling SQL script for dataset \"$dataset\": ${e.message}")
@@ -1699,7 +1697,8 @@ class JDBCDriver extends Driver {
 	@Synchronized('operationLock')
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		if (params == null) params = [:]
+		if (params == null)
+			params = new HashMap()
 
 		Integer fetchSize = (params.fetchSize as Integer)
 		Closure filter = (params.filter as Closure)
@@ -1805,7 +1804,7 @@ class JDBCDriver extends Driver {
 					if (!isContinue)
 						return
 
-					def outRow = [:] as Map<String, Object>
+					def outRow = new HashMap<String, Object>()
 					copyToMap(con, row, outRow)
 					
 					if (filter != null && !filter(outRow))
@@ -1825,7 +1824,7 @@ class JDBCDriver extends Driver {
 					if (!isContinue)
 						return
 
-					def outRow = [:] as Map<String, Object>
+					def outRow = new HashMap<String, Object>()
 					copyToMap(con, row, outRow)
 					
 					if (filter != null && !filter(outRow))
@@ -1929,14 +1928,14 @@ $sql
 
 	@Override
 	@Synchronized('operationLock')
-	Long executeCommand(String command, Map params = [:]) {
+	Long executeCommand(String command, Map params = new HashMap()) {
 		def result = 0L
 		
 		if (command == null || command.trim().length() == 0)
 			return result
 
 		if (params == null)
-			params = [:]
+			params = new HashMap()
 		
 		if (params.queryParams != null)
 			command = StringUtils.EvalMacroString(command, params.queryParams as Map, false)
@@ -2146,7 +2145,7 @@ $sql
 		}
 		
 		// User mapping
-		def map = (params.map != null)?(MapUtils.MapToLower(params.map as Map) as Map<String, String>):([:] as Map<String, String>)
+		def map = (params.map != null)?(MapUtils.MapToLower(params.map as Map) as Map<String, String>):(new HashMap<String, String>())
 		map.each { destFieldName, sourceFieldName ->
 			if (dest.fieldByName(destFieldName) == null)
 				throw new ExceptionGETL("Unknown field \"$destFieldName\" for destination \"$dest\" in the mapping!")
@@ -2236,7 +2235,7 @@ $sql
 		if (where == null)
 			return null
 
-		def qp = dataset.queryParams() + ((params.queryParams as Map)?:[:])
+		def qp = dataset.queryParams() + ((params.queryParams as Map)?:new HashMap<String, Object>())
 		return StringUtils.EvalMacroString(where, qp, true)
 	}
 
@@ -2623,7 +2622,7 @@ $sql
 	 * @param procParams
 	 * @return
 	 */
-	protected Map unionDatasetMergeParams (JDBCDataset source, JDBCDataset target, Map procParams) { return [:] }
+	protected Map unionDatasetMergeParams (JDBCDataset source, JDBCDataset target, Map procParams) { return new HashMap() }
 	
 	protected String unionDatasetMergeSyntax () {
 		'''MERGE INTO {target} t
@@ -2703,7 +2702,7 @@ $sql
 		if (target.connection != source.connection) throw new ExceptionGETL("Required one identical the connection by datasets")
 		
 		def autoMap = BoolUtils.IsValue(procParams.autoMap, true)
-		def map = (procParams.map as Map)?:[:]
+		def map = (procParams.map as Map)?:new HashMap()
 		def keyField = (procParams.keyField as List<String>)?:([] as List<String>)
 		def autoKeyField = keyField.isEmpty()
 		
@@ -2717,7 +2716,7 @@ $sql
 		if (source.field.isEmpty())
 			throw new ExceptionGETL("Required fields for dest dataset")
 		
-		def mapField = [:]
+		def mapField = new HashMap()
 		target.field.each { Field field ->
 			if (field.name == null || field.name.length() == 0) throw new ExceptionGETL("Target dataset has fields by empty name")
 			
@@ -2761,21 +2760,21 @@ $sql
 		}
 //		println sql
 		
-		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: target.queryParams() + ((procParams.queryParams as Map)?:[:])])
+		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: target.queryParams() + ((procParams.queryParams as Map)?:new HashMap())])
 		
 		return target.updateRows
 	}
 
-	protected Map deleteRowsHint(TableDataset dataset, Map procParams) { [:] }
+	protected Map deleteRowsHint(TableDataset dataset, Map procParams) { new HashMap() }
 
 	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
 
 	Long deleteRows(TableDataset dataset, Map procParams) {
 		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
 		if (where != null)
-			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams() + ((procParams.queryParams as Map)?:[:]))))
+			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams() + ((procParams.queryParams as Map)?:new HashMap()))))
 		else where = ''
-		def hints = deleteRowsHint(dataset, procParams)?:[:]
+		def hints = deleteRowsHint(dataset, procParams)?:new HashMap()
 		def afterDelete = (hints.afterDelete)?:''
 		def afterTable = (hints.afterTable)?:''
 		def afterWhere = (hints.afterWhere)?:''
@@ -2868,7 +2867,7 @@ $sql
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
 		where = where?:(table.readDirective.where)
 		if (where != null && where != '')
-			sql += " WHERE " + StringUtils.EvalMacroString(where, table.queryParams() + (procParams?:[:]))
+			sql += " WHERE " + StringUtils.EvalMacroString(where, table.queryParams() + (procParams?:new HashMap()))
 
 		saveToHistory(sql)
 
@@ -2947,15 +2946,15 @@ FROM {source} {after_from}'''
 			}
 		}
 
-		if (map == null) map = [:] as Map<String, String>
-		def transRules = [:] as Map<String, String>
+		if (map == null) map = new HashMap<String, String>()
+		def transRules = new HashMap<String, String>()
 		map.each {fieldName, expr ->
 			if (dest.fieldByName(fieldName) == null)
 				throw new ExceptionGETL("Field \"$fieldName\" not found in table $dest!")
 			transRules.put(fieldName.toLowerCase(), expr)
 		}
 
-		def transFields = [:] as Map<String, String>
+		def transFields = new HashMap<String, String>()
 		dest.field.each { destField ->
 			def destName = destField.name.toLowerCase()
 			String val
@@ -3003,7 +3002,7 @@ FROM {source} {after_from}'''
 
 	/** Generate query parameters for script of create schema */
 	protected Map<String, Object> createSchemaParams(String schemaName, Map<String, Object> createParams) {
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 		res.schema = prepareObjectNameWithPrefix(schemaName, tablePrefix, tableEndPrefix)
 		if (isSupport(Support.CREATESCHEMAIFNOTEXIST) && BoolUtils.IsValue(createParams.ifNotExists))
 			res.ifNotExists = 'IF NOT EXISTS'
@@ -3019,7 +3018,7 @@ FROM {source} {after_from}'''
 			connection.startTran()
 		try {
 			jdbcConnection.executeCommand(sqlExpressionValue('ddlCreateSchema',
-					createSchemaParams(schemaName, createParams?:([:] as Map<String, Object>))))
+					createSchemaParams(schemaName, createParams?:(new HashMap<String, Object>()))))
 		}
 		catch (Exception e) {
 			if (needTran)
@@ -3033,7 +3032,7 @@ FROM {source} {after_from}'''
 
 	/** Generate query parameters for script of drop schema */
 	protected Map<String, Object> dropSchemaParams(String schemaName, Map<String, Object> dropParams) {
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 		res.schema = prepareObjectNameWithPrefix(schemaName, tablePrefix, tableEndPrefix)
 		if (isSupport(Support.DROPSCHEMAIFEXIST) && BoolUtils.IsValue(dropParams.ifExists))
 			res.ifExists = 'IF EXISTS'
@@ -3049,7 +3048,7 @@ FROM {source} {after_from}'''
 			connection.startTran()
 		try {
 			jdbcConnection.executeCommand(sqlExpressionValue('ddlDropSchema',
-					dropSchemaParams(schemaName, dropParams?:([:] as Map<String, Object>))))
+					dropSchemaParams(schemaName, dropParams?:(new HashMap<String, Object>()))))
 		}
 		catch (Exception e) {
 			if (needTran)
@@ -3087,7 +3086,7 @@ FROM {source} {after_from}'''
 			connection.startTran()
 		try {
 			dataset.currentJDBCConnection.executeCommand(sqlExpressionValue('ddlCreateView',
-					createViewParams(dataset, params?:([:] as Map<String, Object>))))
+					createViewParams(dataset, params?:(new HashMap<String, Object>()))))
 		}
 		catch (Exception e) {
 			if (needTran)
@@ -3142,10 +3141,10 @@ FROM {source} {after_from}'''
 	}
 
 	/** Value from sql expression by name */
-	String sqlExpressionValue(String name, Map<String, Object> extParams = [:]) {
+	String sqlExpressionValue(String name, Map<String, Object> extParams = new HashMap<String, Object>()) {
 		def expr = sqlExpression(name)
 		if (extParams == null)
-			extParams = [:] as Map<String, Object>
-		return StringUtils.EvalMacroString(expr, sqlExpressions + (extParams?:[:]))
+			extParams = new HashMap<String, Object>()
+		return StringUtils.EvalMacroString(expr, sqlExpressions + (extParams?:new HashMap<String, Object>()))
 	}
 }

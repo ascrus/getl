@@ -144,11 +144,12 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Insert/Update/Delete/Merge records from other dataset */
-	Long unionDataset(Map procParams = [:]) {
+	Long unionDataset(Map procParams = new HashMap()) {
 		validConnection()
 		validTableName()
 
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = new HashMap()
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
 
 		return currentJDBCConnection.currentJDBCDriver.unionDataset(this, procParams)
@@ -162,7 +163,7 @@ class TableDataset extends JDBCDataset {
 	Map findKey(Map procParams) {
 		def keys = getFieldKeys()
 		if (keys.isEmpty()) throw new ExceptionGETL("Required key fields")
-		procParams = procParams?:[:]
+		procParams = procParams?:new HashMap()
 		def r = rows(procParams + [onlyFields: keys, limit: 1])
 		if (r.isEmpty()) return null
 
@@ -196,11 +197,11 @@ class TableDataset extends JDBCDataset {
 	 * Delete rows
 	 * @param procParams parameters
 	 */
-	Long deleteRows(Map procParams = [:]) {
+	Long deleteRows(Map procParams = new HashMap()) {
 		validConnection()
 		validTableName()
 
-		procParams = procParams?:[:]
+		procParams = procParams?:new HashMap()
 		methodParams.validation('deleteRows', procParams,
 				[connection.driver.methodParams.params('deleteRows')])
 
@@ -780,7 +781,7 @@ class TableDataset extends JDBCDataset {
 	 * @param map column mapping when copying (dest col: expression)
 	 * @return number of copied rows
 	 */
-	Long copyTo(TableDataset dest, Map<String, String> map = [:]) {
+	Long copyTo(TableDataset dest, Map<String, String> map = new HashMap<String, String>()) {
 		Long res = 0
 		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
 			currentJDBCConnection.transaction {
@@ -806,7 +807,8 @@ class TableDataset extends JDBCDataset {
 		if (query == null)
 			throw new ExceptionGETL('Required query parameter!')
 
-		def ds = new QueryDataset(connection: connection, query: query, queryParams: queryParams() + [table: fullTableName] + (qParams?:[:]))
+		def ds = new QueryDataset(connection: connection, query: query,
+				queryParams: queryParams() + [table: fullTableName] + (qParams?:new HashMap<String, Object>()))
 		return ds.rows()
 	}
 

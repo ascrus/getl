@@ -106,7 +106,7 @@ class ConfigFiles extends ConfigManager {
     String getFullName () { fullConfigName(path, this.fileName) }
 
 	@Override
-    protected void loadContent(Map<String, Object> readParams = [:]) {
+    protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>()) {
         def fp = (readParams?.path as String)?:this.path
         def fn = (readParams?.fileName as String)?:this.fileName
         def fl = (ListUtils.ToList(readParams?.files) as List<String>)?:this.files
@@ -182,7 +182,7 @@ class ConfigFiles extends ConfigManager {
 	}
 
     @Override
-    void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+    void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>()) {
         def fp = (saveParams?.path as String)?:this.path
         def fn = (saveParams?.fileName as String)?:this.fileName
         def cp = (saveParams?.codePage as String)?:this.codePage

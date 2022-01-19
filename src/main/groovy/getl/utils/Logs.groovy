@@ -328,7 +328,7 @@ class Logs {
 	/** Initialize log after load config */
 	@Synchronized('lockLog')
 	void init() {
-		def props = (Config.content.log as Map<String, Object>)?:([:] as Map<String, Object>)
+		def props = (Config.content.log as Map<String, Object>)?:(new HashMap<String, Object>())
 
 		if (props.printConfig != null)
 			printConfigMessage = BoolUtils.IsValue(props.printConfig)

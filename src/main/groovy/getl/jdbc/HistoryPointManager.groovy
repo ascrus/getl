@@ -31,7 +31,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	/** Initialization parameters */
 	protected void initParams() {
 		params.clear()
-		params.attributes = [:] as Map<String, Object>
+		params.attributes = new HashMap<String, Object>()
 	}
 
 	/**
@@ -46,7 +46,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	}
 
 	/** Save point manager parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Save point manager parameters */
 	@JsonIgnore
@@ -60,7 +60,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	}
 
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 
 	/** System parameters */
 	@JsonIgnore
@@ -217,7 +217,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 
 	/** Clone current manager */
 	@Synchronized
-	HistoryPointManager cloneHistoryPointManager(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
+	HistoryPointManager cloneHistoryPointManager(JDBCConnection con = null, Map otherParams = new HashMap(), Getl getl = null) {
 		checkManager()
 
 		Map p = CloneUtils.CloneMap(this.params, false)
@@ -238,7 +238,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 
 	/** Clone current manager */
 	@Synchronized
-	HistoryPointManager cloneHistoryPointManagerConnection(Map otherParams = [:], Getl getl = null) {
+	HistoryPointManager cloneHistoryPointManagerConnection(Map otherParams = new HashMap(), Getl getl = null) {
 		cloneHistoryPointManager(historyTable?.connection?.cloneConnection() as JDBCConnection, otherParams, getl)
 	}
 
@@ -323,7 +323,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		if (ifNotExists && exists)
 			return false
 
-		def indexes = [:] as Map<String, Map<String, List<String>>>
+		def indexes = new HashMap<String, Map<String, List<String>>>()
 		if (saveMethod == "INSERT" && historyTable.connection.driver.isSupport(Driver.Support.INDEX)) {
 			indexes.put("idx_${FileUtils.UniqueFileName()}".toString(), [columns: ['source', 'id DESC']])
 			indexes.put("idx_${FileUtils.UniqueFileName()}".toString(), [columns: ['source', 'dt DESC']])
@@ -444,7 +444,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	void saveValue(Object newValue) {
 		prepareManager(true)
 
-		def row = [:] as Map<String, Object>
+		def row = new HashMap<String, Object>()
 		row.put('source', sourceName)
 		row.put('changed', DateUtils.Now())
 		row.put(sourceFieldName, newValue)

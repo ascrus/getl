@@ -244,7 +244,7 @@ class MapUtilsTest extends GetlTest {
     },
     "h [excess]": 1
 }'''
-        assertEquals(res, MapUtils.ToJson(MapUtils.CompareMap(a, b)))
+        assertEquals(res, MapUtils.ToJson(MapUtils.CompareMap(a, b).sort()))
     }
 
     @Test

@@ -181,13 +181,13 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
         def parse = new ParseObjectName()
 
-        def sourceTables = [:] as Map<String, String>
+        def sourceTables = new HashMap<String, String>()
         sourceList.each { name ->
             parse.name = name as String
             sourceTables.put(parse.objectName, parse.name)
         }
 
-        def destTables = [:] as Map<String, String>
+        def destTables = new HashMap<String, String>()
         destList.each { name ->
             parse.name = name as String
             destTables.put(parse.objectName, parse.name)

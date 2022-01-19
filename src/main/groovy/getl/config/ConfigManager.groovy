@@ -55,7 +55,7 @@ abstract class ConfigManager {
     }
 
     /** Parameters of configuration */
-    final Map<String, Object> params = [:] as Map<String, Object>
+    final Map<String, Object> params = new HashMap<String, Object>()
     /** Parameters of configuration */
     Map<String, Object> getParams() { params }
     /** Parameters of configuration */
@@ -126,14 +126,14 @@ abstract class ConfigManager {
      * Load content configuration from file
      * @param readParams
      */
-    abstract protected void loadContent(Map<String, Object> readParams = [:])
+    abstract protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>())
 
     /**
      * Load content configuration from file
      * @param readParams
      */
     @Synchronized
-    void loadConfig(Map<String, Object> readParams = [:]) {
+    void loadConfig(Map<String, Object> readParams = new HashMap<String, Object>()) {
         if (readParams.files != null) {
             def l = [] as List<String>
             (readParams.files as List).each {
@@ -158,13 +158,13 @@ abstract class ConfigManager {
      * @param content saved configuration
      * @param saveParams save options
      */
-    abstract void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:])
+    abstract void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>())
 
     /**
      * Save current configuration to file
      * @param saveParams save options
      */
-    void saveContent(Map<String, Object> saveParams = [:]) {
+    void saveContent(Map<String, Object> saveParams = new HashMap<String, Object>()) {
         saveConfig(content, saveParams)
     }
 
@@ -196,7 +196,7 @@ abstract class ConfigManager {
         if (section == null)
             return null
 
-        return MapUtils.FindSection(content, section)?:[:]
+        return MapUtils.FindSection(content, section)?:new HashMap()
     }
 
     /**

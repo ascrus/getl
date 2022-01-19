@@ -32,9 +32,9 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.objectVars == null)
-            params.objectVars = [:] as Map<String, Object>
+            params.objectVars = new HashMap<String, Object>()
         if (params.attrs == null)
-            params.attrs = [:] as Map<String, Object>
+            params.attrs = new HashMap<String, Object>()
     }
 
     /** Owner model */
@@ -113,7 +113,7 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
 
         String res
         try {
-            res = StringUtils.EvalMacroString(val.toString(), variables() + (extVars?:[:]))
+            res = StringUtils.EvalMacroString(val.toString(), variables() + (extVars?:new HashMap()))
         }
         catch (Exception e) {
             throw new ExceptionDSL("Error parsing the value of the \"$name\" attribute from \"${objectNameInModel()}\" node: ${e.message}")

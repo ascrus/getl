@@ -235,7 +235,7 @@ class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
     }
 
     @Override
-    List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+    List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
         def res = super.prepareImportFields(dataset, importParams)
 
         if (!(dataset instanceof ImpalaTable)) {

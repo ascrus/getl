@@ -58,6 +58,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             p.datasetName = p.workTableName
 
             p.remove('id')
+            p.remove('index')
             p.remove('workTableName')
 
             MapUtils.RemoveKeys(p) { k, v ->

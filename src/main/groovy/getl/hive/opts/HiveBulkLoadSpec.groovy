@@ -17,7 +17,8 @@ class HiveBulkLoadSpec extends BulkLoadSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.expression == null) params.expression = [:] as Map<String, Object>
+        if (params.expression == null)
+            params.expression = new HashMap<String, Object>()
     }
 
     /** Replace data in table then load file */

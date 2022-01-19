@@ -158,7 +158,7 @@ class ExcelDriver extends FileDriver {
                 if (prepareFilter != null && !prepareFilter.call(row))
                     continue
 
-                def updater = [:] as LinkedHashMap<String, Object>
+                def updater = new LinkedHashMap<String, Object>()
 
                 def cells = row.cellIterator()
                 while (cells.hasNext()) {
@@ -181,7 +181,7 @@ class ExcelDriver extends FileDriver {
                     catch (Exception e) {
                         connection.logger.severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset: ${e.message}")
                         try {
-                            def m = [:] as Map<String, Object>
+                            def m = new HashMap<String, Object>()
                             row.cellMap.each { column, value ->
                                 m.put("col $column".toString(), value?.stringCellValue)
                             }

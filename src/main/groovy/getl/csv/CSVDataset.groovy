@@ -234,7 +234,7 @@ class CSVDataset extends FileDataset {
 
 	@Override
 	Long countRow(Map readParams, Closure<Boolean> filter) {
-		def p = readParams?:[:] + [readAsText: true]
+		def p = (readParams?:new HashMap()) + [readAsText: true]
 		super.countRow(p, filter)
 	}
 	

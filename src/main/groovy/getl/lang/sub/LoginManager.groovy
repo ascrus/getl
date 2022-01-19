@@ -135,9 +135,9 @@ class LoginManager {
      * @return decrypted passwords
      */
     Map<String, Object> decryptObject() {
-        def res = [:] as Map<String, Object>
+        def res = new HashMap<String, Object>()
         res.password = owner.password
-        res.logins = [:] as Map<String, String>
+        res.logins = new HashMap<String, String>()
         (res.logins as Map<String, String>).putAll(owner.storedLogins)
 
         if (!(owner instanceof GetlRepository))
@@ -150,7 +150,7 @@ class LoginManager {
         def rp = getl.dslCreator.repositoryStorageManager
 
         res.password = rp.decryptText(res.password as String)
-        def sl = [:] as Map<String, String>
+        def sl = new HashMap<String, String>()
         (res.logins as Map<String, String>).each {l, p ->
             if (p == null)
                 sl.put(l, p)
@@ -168,11 +168,11 @@ class LoginManager {
      */
     void encryptObject(Map<String, Object> passwords = null) {
         if (passwords == null) {
-            passwords = [:] as Map<String, Object>
+            passwords = new HashMap<String, Object>()
             if (owner.password != null)
                 passwords.password = owner.password
             if (!owner.storedLogins.isEmpty()) {
-                def ls = [:] as Map<String, String>
+                def ls = new HashMap<String, String>()
                 passwords.logins = ls
                 owner.storedLogins.each {l, p ->
                     ls.put(l, p)

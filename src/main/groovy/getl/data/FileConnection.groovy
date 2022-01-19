@@ -29,7 +29,7 @@ class FileConnection extends Connection {
 		methodParams.register('Super', ['path', 'codePage', 'createPath', 'isGzFile', 'extension', 'append',
 										'deleteOnEmpty', 'fileSeparator', 'bufferSize', 'formatDate', 'formatTime',
 										'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean',
-										'decimalSeparator'])
+										'decimalSeparator', 'groupSeparator'])
 	}
 
 	@Override

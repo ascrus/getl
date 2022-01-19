@@ -58,7 +58,7 @@ class CSVDriver extends FileDriver {
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	class ReadParams {
-		public Map params = [:]
+		public Map params = new HashMap()
 		public String path
 		public char quoteStr
 		public String quote
@@ -121,12 +121,12 @@ class CSVDriver extends FileDriver {
 	@Override
 	List<Field> fields(Dataset dataset) {
 		def csv = dataset as CSVDataset
-		ReadParams p = readParamDataset(dataset, [:])
+		ReadParams p = readParamDataset(dataset, new HashMap())
 		
 		def csvFile = new File(p.path)
 		if (!csvFile.exists())
 			throw new ExceptionGETL("File \"${csv.fileName()}\" not found or invalid path \"${csv.currentCsvConnection?.path}\"!")
-		Reader fileReader = getFileReader(csv, [:])
+		Reader fileReader = getFileReader(csv, new HashMap())
 
 		CsvPreference pref = new CsvPreference.Builder(p.quoteStr, (int)p.fieldDelimiter, p.rowDelimiter).useQuoteMode(p.qMode).build()
 		List<Field> res = []
@@ -170,7 +170,7 @@ class CSVDriver extends FileDriver {
 		def decimalFormat = new DecimalFormat('#,##0.#', decimalFormatSymbol)
 		def booleanFormat = (csv.formatBoolean()?.toLowerCase()?:'true|false').split('[|]')
 
-		fileReader = getFileReader(csv, [:])
+		fileReader = getFileReader(csv, new HashMap())
 
 		List<String> row
 		def lengths = res.collect { 0 }
@@ -580,7 +580,7 @@ class CSVDriver extends FileDriver {
 		if (isSplit) {
 			def fm = cds.currentCsvConnection.connectionFileManager.cloneManager(null, dataset.dslCreator) as FileManager
 
-			def vars = [:]
+			def vars = new HashMap()
 			vars.put('number', [type: Field.Type.INTEGER, len: 4])
 			def filePath = new Path([mask: fileMask, vars: vars])
 
@@ -1054,7 +1054,7 @@ class CSVDriver extends FileDriver {
 		if (targetQuoteStr == sourceQuoteStr) decodeQuote += sourceQuoteStr
 		Map convertMap = ['\u0004': "$decodeQuote", '\u0005': '\\\\']
 		
-		Map<String, String> encodeMap = [:]
+		Map<String, String> encodeMap = new HashMap<String, String>()
 		if (!source_escaped) {
 			encodeMap."$sourceQuoteStr$sourceQuoteStr" = '\u0004'
 		}
@@ -1211,7 +1211,7 @@ class CSVDriver extends FileDriver {
 		String targetRowDelimiter = target.rowDelimiter()
 		String targetQuoteStr = target.quoteStr()
 		
-		Map<String, String> encodeMap = [:]
+		Map<String, String> encodeMap = new HashMap<String, String>()
 		if (target.escaped()) {
 			encodeMap."\\" = '\\\\'
 			encodeMap."\n" = '\\n' 

@@ -65,11 +65,11 @@ class FileProcessingElement {
         return errorElement.man
     }
 
-    private final Map<String, Object> threadAttr = [:] as Map<String, Object>
+    private final Map<String, Object> threadAttr = new HashMap<String, Object>()
     /** Thread attributes */
     Map<String, Object> getThreadAttr() { threadAttr }
 
-    private final Map<String, Object> attr = [:] as Map<String, Object>
+    private final Map<String, Object> attr = new HashMap<String, Object>()
     /** File attribute */
     Map<String, Object> getAttr() { attr }
 
@@ -79,6 +79,9 @@ class FileProcessingElement {
 
     /** Processing result */
     public ResultType result
+
+    /** Story dataset field values */
+    public final Map<String, Object> storyValues = new HashMap<String, Object>()
 
     /** File deletion required (if the option to delete source files is enabled) */
     public Boolean removeFile

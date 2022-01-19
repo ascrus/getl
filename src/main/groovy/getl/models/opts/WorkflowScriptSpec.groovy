@@ -17,7 +17,7 @@ class WorkflowScriptSpec extends BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.vars == null)
-            params.vars = [:]
+            params.vars = new HashMap()
     }
 
     /** The class name of the script to run */

@@ -67,7 +67,7 @@ class RepositorySave extends Getl {
 
         def propFile = new File('getl-repository-properties.conf')
         if (!propFile.exists()) {
-            getlRepositoryConfigProperties = [:] as Map<String, Object>
+            getlRepositoryConfigProperties = new HashMap<String, Object>()
             return
         }
 
@@ -139,7 +139,7 @@ class RepositorySave extends Getl {
     /** Processing declared methods */
     Object _processRepositorySave() {
         try {
-            def methods = [:] as Map<String, List<MethodParams>>
+            def methods = new HashMap<String, List<MethodParams>>()
             ObjectTypes.each {typeName ->
                 methods.put(typeName, [] as List<MethodParams>)
             }

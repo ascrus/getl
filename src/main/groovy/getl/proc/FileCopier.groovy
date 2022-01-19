@@ -70,7 +70,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
             throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
         def parent = value.clonePath()
-        def sm = [:] as Map<String, Object>
+        def sm = new HashMap<String, Object>()
         sm.put('filepath', null)
         sm.put('filename', null)
         sm.put('filenameonly', null)
@@ -418,7 +418,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 def outpath = infile.get('_outpath_') as String
                 def outfilename = infile.get('localfilename') as String
 
-                def outfile = [:] as Map<String, Object>
+                def outfile = new HashMap<String, Object>()
                 outfile.putAll(infile)
                 outfile.put('filepath', outpath)
                 outfile.put('filename', outfilename)

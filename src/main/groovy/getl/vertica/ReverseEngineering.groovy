@@ -477,14 +477,14 @@ Example:
 	/**
 	 * Current parameters for write
 	 */
-	private Map<String, String> currentVars = [:]
+	private Map<String, String> currentVars = new HashMap<String, String>()
 
 	/**
 	 * File has write data
 	 */
 	private def isWriteln = false
 
-	void setWrite(String object, String fileMask, Map vars = [:]) {
+	void setWrite(String object, String fileMask, Map vars = new HashMap()) {
 		assert object != null
 		currentObject = object
 
@@ -497,7 +497,7 @@ Example:
 	}
 
 	void write(String script) {
-		def v = [:] as Map<String, String>
+		def v = new HashMap<String, String>()
 		currentVars.each { var ->
 			v.put(var.key, var.value.replace('*', '_').replace('?', '_')
 					.replace('/', '_').replace('\\', '_'))
@@ -527,7 +527,7 @@ Example:
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String eval(String val) {
 		return GenerationUtils.EvalGroovyScript(value: '"""' + val.replace('\\', '\\\\').replace('"', '\\"') + '"""',
-				vars: Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
+				vars: Config.vars + ((Job.jobArgs.vars?:new HashMap<String, Object>()) as Map<String, Object>))
 	}
 
 	/**
@@ -536,13 +536,13 @@ Example:
 	@SuppressWarnings('SpellCheckingInspection')
 	void initReverse() {
 		// Read drop parameters section
-		sectionDrop = (Map)Config.content.drop?:[:]
+		sectionDrop = (Map)Config.content.drop?:new HashMap()
 
 		// Read create parameters section
-		sectionCreate = (Map)Config.content.create?:[:]
+		sectionCreate = (Map)Config.content.create?:new HashMap()
 
 		// Read file name parameters section
-		sectionFileName = (Map)Config.content.filename?:[:]
+		sectionFileName = (Map)Config.content.filename?:new HashMap()
 		fileNamePools = (String)sectionFileName.pools?:'pools'
 		fileNameRoles = (String)sectionFileName.roles?:'roles'
 		fileNameUsers = (String)sectionFileName.users?:'users'

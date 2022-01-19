@@ -35,7 +35,7 @@ class GetlDslTest extends GetlTest {
 
         def propFile = new File('getl-test-properties.conf')
         if (!propFile.exists()) {
-            getlTestConfigProperties = [:] as Map<String, Object>
+            getlTestConfigProperties = new HashMap<String, Object>()
             return
         }
 

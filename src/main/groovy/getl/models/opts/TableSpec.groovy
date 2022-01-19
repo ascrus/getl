@@ -25,7 +25,7 @@ class TableSpec extends DatasetSpec {
         if (params.listPartitions == null)
             params.listPartitions = new CopyOnWriteArrayList(new ArrayList())
         if (params.map == null)
-            params.map = [:] as Map<String, String>
+            params.map = new LinkedHashMap<String, String>()
     }
 
     /** Owner list tables model */
@@ -89,9 +89,9 @@ class TableSpec extends DatasetSpec {
     }
 
     /** source table mapping rules: map.put('sourceField', 'expression') */
-    Map<String, String> getMap() { params.map as Map<String, String> }
+    LinkedHashMap<String, String> getMap() { params.map as LinkedHashMap<String, String> }
     /** source table mapping rules: map.put('sourceField', 'expression') */
-    void setMap(Map<String, String> value) {
+    void setMap(LinkedHashMap<String, String> value) {
         map.clear()
         if (value != null)
             map.putAll(value)
@@ -105,7 +105,7 @@ class TableSpec extends DatasetSpec {
     List<Map<String, Object>> readListPartitions(Map queryParams = null) {
         def res = listPartitions.collect { [partition: it] }
         if (res.isEmpty() && partitionsDatasetName != null) {
-            def qp = [:]
+            def qp = new HashMap()
             if (queryParams != null)
                 qp.put('queryParams', queryParams)
             res = partitionsDataset.rows(qp)

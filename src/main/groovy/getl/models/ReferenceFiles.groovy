@@ -38,6 +38,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.remove('id')
+            p.remove('index')
 
             list.add(new ReferenceFileSpec(own, p))
         }

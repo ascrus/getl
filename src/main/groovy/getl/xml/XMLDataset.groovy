@@ -19,8 +19,8 @@ class XMLDataset extends StructureFileDataset {
 	protected void initParams() {
 		super.initParams()
 
-		_driver_params = [:] as Map<String, Object>
-		params.features = [:] as Map<String, Boolean>
+		_driver_params = new HashMap<String, Object>()
+		params.features = new HashMap<String, Boolean>()
 	}
 	
 	/** Feature parsing options */

@@ -1,6 +1,7 @@
 package getl.proc
 
 import getl.lang.Getl
+import getl.test.GetlTest
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -8,7 +9,7 @@ import org.junit.Test
 
 import java.util.logging.Level
 
-class ExecutorTest extends getl.test.GetlTest {
+class ExecutorTest extends GetlTest {
     def list = [1, 2, 3, 4, 5]
 
     @Test

@@ -33,7 +33,7 @@ abstract class FileListProcessing implements GetlRepository {
     }
 
     /** Manager parameters */
-    private final Map<String, Object> params = [:] as Map<String, Object>
+    private final Map<String, Object> params = new HashMap<String, Object>()
 
     /** Manager parameters */
     Map<String, Object> getParams() { params }
@@ -44,7 +44,7 @@ abstract class FileListProcessing implements GetlRepository {
     }
 
     /** Extended system parameters */
-    private final Map<String, Object> sysParams = [:] as Map<String, Object>
+    private final Map<String, Object> sysParams = new HashMap<String, Object>()
 
     /** System parameters */
     Map<String, Object> getSysParams() { sysParams }
@@ -251,7 +251,7 @@ abstract class FileListProcessing implements GetlRepository {
      */
     @CompileStatic
     static Map ProcessFileVars(String formatDate, Map vars) {
-        Map res = [:]
+        Map res = new HashMap()
         if (vars != null) res.putAll(vars)
         if (formatDate == null) formatDate = 'yyyy-MM-dd_HH-mm-ss'
         res.each { name, value ->
@@ -985,7 +985,7 @@ abstract class FileListProcessing implements GetlRepository {
             man.changeDirectoryToRoot()
         }
 
-        def dirs = [:] as Map<String, Map>
+        def dirs = new HashMap<String, Map>()
         new QueryDataset(connection: tmpConnection, query: "SELECT DISTINCT FILEPATH FROM ${tmpProcessFiles.fullTableName} ORDER BY FILEPATH").eachRow { row ->
             def filepath = row.get('filepath') as String
             if (filepath == '.') return
@@ -996,7 +996,7 @@ abstract class FileListProcessing implements GetlRepository {
                     cc = cc.get(it) as Map
                 }
                 else {
-                    Map n = [:]
+                    Map n = new HashMap()
                     cc.put(it, n)
                     //noinspection GrReassignedInClosureLocalVar
                     cc = n
@@ -1059,6 +1059,6 @@ abstract class FileListProcessing implements GetlRepository {
     /** Display processed file information */
     protected void sayFileInfo(Map file) {
         if (debugMode)
-            logger.finest("Processing \"${file.filepath}/${file.filename}\" [${file.filedate}, ${FileUtils.SizeBytes(file.filesize)}] ...")
+            logger.finest("Processing \"${file.filepath}/${file.filename}\" [${file.filedate}, ${FileUtils.SizeBytes(file.filesize as Long)}] ...")
     }
 }

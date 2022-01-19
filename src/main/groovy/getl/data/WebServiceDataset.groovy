@@ -20,8 +20,8 @@ class WebServiceDataset extends FileDataset {
     protected void initParams() {
         super.initParams()
 
-        params.webParams = [:] as Map<String, Object>
-        params.webVars = [:] as Map<String, Object>
+        params.webParams = new HashMap<String, Object>()
+        params.webVars = new HashMap<String, Object>()
     }
 
     /** Current web service connection */
@@ -43,7 +43,7 @@ class WebServiceDataset extends FileDataset {
     }
     /** Connection url parameters */
     Map<String, Object> webParams() {
-        def res = [:] as Map<String, Object>
+        def res = new HashMap<String, Object>()
         if (connection != null)
             res.putAll(currentWebServiceConnection.webParams)
         res.putAll(webParams)
@@ -61,7 +61,7 @@ class WebServiceDataset extends FileDataset {
     }
     /** Variable parameter values */
     Map<String, Object> webVars() {
-        def res = [:] as Map<String, Object>
+        def res = new HashMap<String, Object>()
         res.putAll(attributes())
         if (connection != null)
             res.putAll(currentWebServiceConnection.webVars)
@@ -100,7 +100,7 @@ class WebServiceDataset extends FileDataset {
      * Read data from web service and save to file
      * @param wp web service read parameters
      */
-    void readFromWeb(Map<String, Object> wp = [:]) {
+    void readFromWeb(Map<String, Object> wp = new HashMap<String, Object>()) {
         methodParams.validation('readFromWeb', wp)
 
         validConnection()

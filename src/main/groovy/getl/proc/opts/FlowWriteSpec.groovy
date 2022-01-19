@@ -21,7 +21,8 @@ class FlowWriteSpec extends FlowBaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.destParams == null) params.destParams = [:] as Map<String, Object>
+        if (params.destParams == null)
+            params.destParams = new HashMap<String, Object>()
     }
 
     /** Destination dataset */

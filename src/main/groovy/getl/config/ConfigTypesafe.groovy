@@ -25,14 +25,14 @@ class ConfigTypesafe extends ConfigManager {
 	void setEvalVars(Boolean value) { super.setEvalVars(false) }
 
 	@Override
-	protected void loadContent(Map<String, Object> readParams = [:]) {
+	protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>()) {
 		String path = (readParams.path) ?: path
 		TypeSafeConfig config = path ? ConfigFactory.load(path) : ConfigFactory.load()
 		mergeConfig(config.root().unwrapped())
 	}
 
 	@Override
-	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>()) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 

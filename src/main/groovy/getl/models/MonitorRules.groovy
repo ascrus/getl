@@ -71,6 +71,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             def p = CloneUtils.CloneMap(node, true)
 
             p.remove('id')
+            p.remove('index')
 
             def convertDuration = { String propName ->
                 if (p.containsKey(propName)) {

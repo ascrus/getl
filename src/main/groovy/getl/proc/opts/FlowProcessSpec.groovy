@@ -19,7 +19,8 @@ class FlowProcessSpec extends FlowBaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
+        if (params.sourceParams == null)
+            params.sourceParams = new HashMap<String, Object>()
     }
 
     /**

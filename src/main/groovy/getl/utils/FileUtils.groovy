@@ -910,7 +910,7 @@ class FileUtils {
 		path = TransformFilePath(path)
 
 		if (params == null)
-			params = [:]
+			params = new HashMap()
 
 		zipName = new File(zipName).canonicalPath
 		def password = params.password as String
@@ -1384,12 +1384,27 @@ class FileUtils {
 	}
 
 	/**
-	 * Return file path
+	 * Added nested path to parent path
 	 * @param path file path (can be empty or dot)
-	 * @param fileName file name
-	 * @return file path
+	 * @param nestedPath added path
+	 * @return new path
 	 */
-	static String PathFile(String path, String fileName) {
-		return ((path != null && path != '.')?'/' + path:'') + '/' + fileName
+	static String AddToPath(String path, String nestedPath) {
+		if (nestedPath == null)
+			throw new ExceptionGETL("Required file name!")
+
+		if (path != null) {
+			path = ConvertToUnixPath(path)
+			if (path[path.length() - 1] == '/')
+				path = path.substring(0, path.length() - 1)
+		}
+
+		if (nestedPath != null) {
+			nestedPath = ConvertToUnixPath(nestedPath)
+			if (nestedPath[0] == '/')
+				nestedPath = nestedPath.substring(1)
+		}
+
+		return ((path != null && path != '.')?path:'') + '/' + nestedPath
 	}
 }

@@ -49,13 +49,14 @@ class Workflows extends BaseModel<WorkflowSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.remove('id')
+            p.remove('index')
             list.add(new WorkflowSpec(own, p))
         }
         usedSteps = list
     }
 
     /** Script execution results */
-    private final Map<String, Map> _result = [:] as Map<String, Map>
+    private final Map<String, Map> _result = new HashMap<String, Map>()
 
     @JsonIgnore
     @Synchronized('_result')
@@ -70,7 +71,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
         if (scriptName == null || scriptName.length() == 0)
             throw new ExceptionModel("Required script name for result function!")
 
-        return _result.get(scriptName.toUpperCase())?:[:]
+        return _result.get(scriptName.toUpperCase())?:new HashMap()
     }
 
     @Synchronized('_result')
@@ -298,14 +299,14 @@ class Workflows extends BaseModel<WorkflowSpec> {
      * @param scriptClassLoader class loader for running specified script (closure parameter is passed the name of the class)
      * @return number of steps successfully completed
      */
-    Integer execute(Map addVars = [:], URLClassLoader userClassLoader = null,
+    Integer execute(Map addVars = new HashMap(), URLClassLoader userClassLoader = null,
                     @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                             Closure<URLClassLoader> scriptClassLoader = null) {
         dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
         generateUserCode(userClassLoader, addVars)
         cleanResults()
 
-        addVars = addVars?:[:]
+        addVars = addVars?:new HashMap()
 
         def res = 0
         usedSteps.each { node ->
@@ -344,13 +345,13 @@ class Workflows extends BaseModel<WorkflowSpec> {
 
     /** Generate class of user codes */
     private void generateUserCode(URLClassLoader classLoader, Map addVars) {
-        def conditions = [:] as Map<String, String>
+        def conditions = new HashMap<String, String>()
         findConditions(usedSteps[0], conditions)
 
-        def inits = [:] as Map<String, String>
+        def inits = new HashMap<String, String>()
         findInitCode(usedSteps[0], inits)
 
-        def finals = [:] as Map<String, String>
+        def finals = new HashMap<String, String>()
         findFinalCode(usedSteps[0], finals)
 
         if (conditions.isEmpty() && inits.isEmpty() && finals.isEmpty()) {
@@ -519,7 +520,7 @@ return $className"""
 
                         def runClass = classes.get(scriptName.toUpperCase())
                         def classParams = ReadClassFields(runClass)
-                        def scriptVars = (scriptParams.vars as Map<String, Object>)?:([:] as Map<String, Object>)
+                        def scriptVars = (scriptParams.vars as Map<String, Object>)?:(new HashMap<String, Object>())
 
                         if (generatedUserCode != null) {
                             def userVars = generatedUserCode.vars(scriptName)
@@ -532,7 +533,7 @@ return $className"""
                                 scriptVars.put(name, StringUtils.EvalMacroString(val.toString(), modelVars + scriptVars + addVars, false))
                         }
 
-                        def execVars = [:] as Map<String, Object>
+                        def execVars = new HashMap<String, Object>()
                         classParams.each { field ->
                             def fieldName = field.name as String
                             def fieldType = field.type as String
@@ -554,7 +555,7 @@ return $className"""
                                         return map
 
                                     if (map == null)
-                                        map = [:]
+                                        map = new HashMap()
                                     if (val instanceof Map)
                                         map.putAll(val as Map)
                                     else if (val instanceof String)
@@ -627,14 +628,14 @@ return $className"""
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, addVars?:[:], scriptClassLoader, stepLabel)
+                res += stepExecute(subNode, addVars?:new HashMap(), scriptClassLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, addVars?:[:], scriptClassLoader, stepLabel)
+                    stepExecute(errStep, addVars?:new HashMap(), scriptClassLoader, stepLabel)
             }
             finally {
                 throw e
@@ -701,7 +702,7 @@ return $className"""
 
             def val = script[name]
 
-            def p = [:] as Map<String, Object>
+            def p = new HashMap<String, Object>()
             p.name = name
             p.type = prop.type.name
             if (val != null)

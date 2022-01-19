@@ -111,7 +111,7 @@ class SalesForceDriver extends Driver {
 		List<Map> objects = []
 
 		sObjectResults.each { DescribeGlobalSObjectResult row ->
-			def t = [:]
+			def t = new HashMap()
 
 			t.'objectName' = row.name
 			t.'label' = row.label
@@ -216,8 +216,8 @@ class SalesForceDriver extends Driver {
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
-        String where = (params.where) ?: ''
-        Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
+        String where = (params.where)?:''
+        Map<String, String> orderBy = ((params.orderBy)?:new HashMap<String, String>()) as Map<String, String>
 
         Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
@@ -266,7 +266,7 @@ class SalesForceDriver extends Driver {
                         SObject[] records = qr.records
 
                         records.each { SObject record ->
-                            Map row = [:]
+                            Map row = new HashMap()
                             fields.each {
                                 row[it.toLowerCase()] = parseTypes(record.getSObjectField(it), dataset.fieldByName(it))
                             }
@@ -308,7 +308,7 @@ class SalesForceDriver extends Driver {
         String sfObjectName = dataset.params.sfObjectName
         Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
-        Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
+        Map<String, String> orderBy = ((params.orderBy)?:new HashMap<String, String>()) as Map<String, String>
 
         Integer chunkSize = ListUtils.NotNullValue([params.chunkSize, dataset.params.chunkSize, 0]) as Integer
 

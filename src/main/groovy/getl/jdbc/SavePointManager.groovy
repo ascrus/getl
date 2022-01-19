@@ -32,8 +32,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	protected void initParams() {
 		params.clear()
 
-		params.fields = [:] as Map<String, String>
-		params.attributes = [:] as Map<String, Object>
+		params.fields = new HashMap<String, String>()
+		params.attributes = new HashMap<String, Object>()
 	}
 
 	/**
@@ -48,7 +48,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Save point manager parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new  HashMap<String, Object>()
 
 	/** Save point manager parameters */
 	@JsonIgnore
@@ -62,7 +62,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 
 	/** System parameters */
 	@JsonIgnore
@@ -211,7 +211,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	void setDescription(String value) { params.description = value }
 
 	/** Preparing map fields */
-	private final Map<String, Object> map = [:] as Map<String, Object>
+	private final Map<String, Object> map = new HashMap<String, Object>()
 	
 	/** Save point table fields */
 	private final List<Field> table_field = [
@@ -226,7 +226,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 	/** Clone current dataset on specified connection */
 	@Synchronized
-	SavePointManager cloneSavePointManager(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
+	SavePointManager cloneSavePointManager(JDBCConnection con = null, Map otherParams = new HashMap(), Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
 
 		if (otherParams != null)
@@ -245,7 +245,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	@Synchronized
-	SavePointManager cloneSavePointManagerConnection(Map otherParams = [:]) {
+	SavePointManager cloneSavePointManagerConnection(Map otherParams = new HashMap()) {
 		cloneSavePointManager(currentJDBCConnection?.cloneConnection() as JDBCConnection, otherParams)
 	}
 
@@ -292,14 +292,15 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	Boolean create(Boolean ifNotExists = false) {
 		prepareTable()
 		
-		if (ifNotExists && table.exists) return false
-		def indexes = [:]
+		if (ifNotExists && table.exists)
+			return false
+		def indexes = new HashMap<String, Map>()
 		if (saveMethod == "INSERT" && currentJDBCConnection.driver.isSupport(Driver.Support.INDEX)) {
 			indexes."idx_${table.objectName.replace('.', '_')}_getl_savepoint" = [columns: [map.source, map.type, "${map.value} DESC"]]
 		}
 		table.create(indexes: indexes)
 		
-		true
+		return true
 	}
 	
 	/**
@@ -518,7 +519,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		def valueField = (map.value as String).toLowerCase()
 		source = source.toUpperCase()
 		
-		def row = [:]
+		def row = new HashMap()
 		row.put(sourceField, source)
 		row.put(typeField, type)
 		row.put(timeField, DateUtils.Now())
@@ -574,8 +575,9 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @return type and value
 	 */
 	Map convertValue(Field.Type type, String format, def value) {
-		def res = [:]
-		if (value == null) return res
+		def res = new HashMap()
+		if (value == null)
+			return res
 		
 		switch (type) {
 			case Field.Type.DATE: case Field.Type.DATETIME:

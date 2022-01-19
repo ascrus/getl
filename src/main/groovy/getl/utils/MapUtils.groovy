@@ -43,10 +43,10 @@ class MapUtils {
 	 * @param m
 	 * @return
 	 */
-	static Map MapToLower(Map<String, Object> m) {
+	static Map<String, Object> MapToLower(Map<String, Object> m) {
 		if (m == null) return null
 		
-		def r = [:]
+		def r = new HashMap<String, Object>()
 		m.each { String k, v ->
 			r.put(k.toLowerCase(), v)
 		}
@@ -60,10 +60,10 @@ class MapUtils {
 	 * @param keys
 	 * @return
 	 */
-	static Map CleanMap (Map m, List<String> keys) {
+	static Map CleanMap(Map m, List<String> keys) {
 		if (m == null) return null
 		
-		Map result = [:]
+		Map result = new HashMap()
 		result.putAll(m)
 		keys.each {
 			result.remove(it)
@@ -122,7 +122,7 @@ class MapUtils {
 	static Map GetLevel (Map map, String level) {
 		if (map == null) return null
 		
-		Map result = [:]
+		Map result = new HashMap()
 		def lengthLevel = level.length()
 		map.each { k, v ->
 			def s = k.toString()
@@ -142,7 +142,7 @@ class MapUtils {
 	static Map Copy(Map map) {
 		if (map == null) return null
 		
-		Map m = [:]
+		Map m = new HashMap()
 		m.putAll(map)
 		
 		return m
@@ -157,7 +157,7 @@ class MapUtils {
 	static Map Copy(Map map, List<String> excludeKeys) {
 		if (map == null) return null
 		
-		Map m = [:]
+		Map m = new HashMap()
 		m.putAll(map)
 		if (!excludeKeys.isEmpty()) m = CleanMap(m, excludeKeys)
 		
@@ -173,7 +173,7 @@ class MapUtils {
 	static Map CopyOnly(Map <String, Object> map, List<String> includeKeys) {
 		if (map == null) return null
 		
-		Map res = [:]
+		Map res = new HashMap()
 		def keys = ListUtils.ToLowerCase(includeKeys)
 		
 		map.each { String k, v ->
@@ -191,9 +191,10 @@ class MapUtils {
 	 * @return
 	 */
 	static List<String> Unknown(Map<String, Object> map, List<String> definedKey, Boolean ignoreComments = false) {
-		if (map == null) map = [:] as Map<String, Object>
+		if (map == null)
+			map = new HashMap<String, Object>()
 		
-		List<String> res = []
+		List<String> res = [] as List<String>
 		(map as Map<String, Object>).each { k, v ->
 			if (ignoreComments && k.substring(0, 1) == "_") return
 			def o = definedKey.find { d ->
@@ -277,7 +278,7 @@ class MapUtils {
 		for (Integer i = 0; i < sections.length - 1; i++) {
 			String s = sections[i]
 			if (cur.get(s) == null) {
-				def m = [:] as Map <String, Object>
+				def m = new HashMap<String, Object>()
 				cur.put(s, m)
 				cur = m
 			}
@@ -330,7 +331,7 @@ class MapUtils {
 		def c = added as Map<String, Object>
         def subSource = source.get(key) as Map<String, Object>
         if (subSource == null) {
-            subSource = [:] as Map<String, Object>
+            subSource = new HashMap<String, Object>()
             source.put(key, subSource)
         }
 		c.each { String subKey, value ->
@@ -357,7 +358,7 @@ class MapUtils {
 		else {
 			throw new ExceptionGETL("Invalid arguments for processing")
 		}
-		Map<String, Object> res = [:]
+		Map<String, Object> res = new HashMap<String, Object>()
 		if (args != null) {
 			for (Integer i = 0; i < la.size(); i++) {
 				def str = la[i]
@@ -427,7 +428,7 @@ class MapUtils {
 	static Map EvalMacroValues(Map value, Map vars) {
 		if (value == null) return null
 		
-		def res = [:]
+		def res = new HashMap()
 		value.each { k, v ->
 			if (v instanceof String || v instanceof GString) {
 				def val = v.toString().replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace('${', '\u0001{').replace('$', '\\$').replace('\u0001{', '${')
@@ -457,7 +458,7 @@ class MapUtils {
      * @return
      */
 	static HashMap Lazy2HashMap(Map data) {
-        def res = [:] as HashMap
+        def res = new HashMap()
         data.each { key, value ->
 			if (value instanceof LazyMap)
 				value = Lazy2HashMap((Map)value)
@@ -562,7 +563,7 @@ class MapUtils {
 	static Map<String, Object> Xml2Map(def node) {
 		def rootName = node.name().localPart as String
         def rootMap = Xml2MapAttrs(node)
-        def res = [:] as Map<String, Object>
+        def res = new HashMap<String, Object>()
         res.put("$rootName".toString(), rootMap)
         return res
     }
@@ -575,7 +576,7 @@ class MapUtils {
 	@CompileDynamic
 	@SuppressWarnings("GrUnresolvedAccess")
 	static private Map<String, Object> Xml2MapAttrs(def node) {
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 
 		if (node.attributes().size() > 0)
 			try {
@@ -599,7 +600,7 @@ class MapUtils {
      */
 	@CompileDynamic
 	static private Map<String, Object> XmlChildren2Map(def children) {
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 
 		children.each { def node ->
 			try {
@@ -626,7 +627,7 @@ class MapUtils {
 				else {
 					Map values
 					if (!res.containsKey(name)) {
-						values = [:] as Map
+						values = new HashMap()
 						res."$name" = values
 					} else {
 						values = res."$name" as Map
@@ -825,7 +826,7 @@ class MapUtils {
         if (typeName == null)
             throw new ExceptionGETL('Required \"typeName\" parameter!')
 
-        def res = [:] as Map<String, Object>
+        def res = new HashMap<String, Object>()
         if (typeName.matches('xs.*[:].+')) {
             res.typeName = typeName.substring(typeName.indexOf(':') + 1)
         }
@@ -896,7 +897,7 @@ class MapUtils {
 	 * @return
 	 */
 	static Map ConvertString2Object(Map source) {
-		def res = [:]
+		def res = new LinkedHashMap()
 		source.each { k, v ->
 			if (v instanceof Map) {
 				res.put(k, ConvertString2Object(v as Map))
@@ -941,7 +942,7 @@ class MapUtils {
 	}
 
 	static Map<String, Object> ConfigObject2Map(ConfigObject data) {
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 		data.each { k, v ->
 			if (v instanceof ConfigObject)
 				v = ConfigObject2Map(v)
@@ -1001,8 +1002,8 @@ class MapUtils {
 		if (original == null || comparison == null)
 			throw new NullPointerException('Parameters cannot be null!')
 
-		def res = [:] as Map<String, Object>
-		def empty = [:]
+		def res = new HashMap<String, Object>()
+		def empty = new HashMap()
 		original.each { key, value ->
 			def isMissing = comparison.containsKey(key)
 			if (!isMissing) {
@@ -1023,7 +1024,7 @@ class MapUtils {
 			}
 			else if (value == null && cv != null) {
 				if (cv instanceof Map)
-					res.put(key.toString() + ' [excess]', CompareMap([:], cv as Map))
+					res.put(key.toString() + ' [excess]', CompareMap(new HashMap(), cv as Map))
 				else
 					res.put(key.toString() + ' [excess]', cv)
 			}
@@ -1040,7 +1041,7 @@ class MapUtils {
 			if (value == null) return
 			if (!original.containsKey(key)) {
 				if (value instanceof Map)
-					res.put(key.toString() + ' [excess]', CompareMap([:], value as Map))
+					res.put(key.toString() + ' [excess]', CompareMap(new HashMap(), value as Map))
 				else
 					res.put(key.toString() + ' [excess]', value)
 			}
@@ -1095,7 +1096,7 @@ class MapUtils {
 		if (map == null)
 			return null
 
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 
 		if (mask == null)
 			res.putAll(map)
@@ -1121,7 +1122,7 @@ class MapUtils {
 		if (map == null)
 			return null
 
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 
 		if (topName == null)
 			throw new ExceptionGETL('It is required to specify the name of the main attribute in "topName"!')

@@ -36,4 +36,9 @@ class FileReadSpec extends BaseSpec {
     Long getLimit() { params.limit as Long }
     /** Read no more than the specified number of rows */
     void setLimit(Long value) { saveParamValue('limit', value) }
+
+    /** Save read errors to errors dataset */
+    Boolean getSaveErrors() { params.saveErrors as Boolean }
+    /** Save read errors to errors dataset */
+    void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 }

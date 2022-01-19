@@ -27,7 +27,7 @@ class CSVConnection extends FileConnection {
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped',
 					'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
 					'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale',
-					'constraintsCheck', 'presetMode'])
+					'constraintsCheck', 'presetMode', 'formatOutput'])
 	}
 
 	@Override

@@ -92,7 +92,7 @@ class Executor implements GetlRepository {
 	Boolean getIsError () { hasError }
 
 	/** How exceptions in process stopping execute */
-	private final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
+	private final Map<Object, Throwable> exceptions = (new HashMap<Object, Throwable>())
 	/** How exceptions in process stopping execute */
 	@Synchronized
 	Map<Object, Throwable> getExceptions() { exceptions }
@@ -329,6 +329,7 @@ class Executor implements GetlRepository {
 				processRunError(e, node, num, element, threadList)
 			}
 			finally {
+				node.put('finish', new Date())
 				try {
 					if (Thread.currentThread() instanceof ExecutorThread) {
 						def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
@@ -357,7 +358,6 @@ class Executor implements GetlRepository {
 					node.remove('threadSubmit')
 					(node.element as List).clear()
 					node.remove('element')
-					node.put('finish', new Date())
 				}
 			}
 		}
@@ -368,7 +368,7 @@ class Executor implements GetlRepository {
 			def size = elements.size()
 			if (limit?:0 > 0 && limit < size) size = limit
 			for (Integer i = 0; i < size; i++) {
-				def r = [:] as Map<String, Object>
+				def r = new HashMap<String, Object>()
 				r.num = i
 				r.element = elements[i]
 				r.threadSubmit = (threadPool.submit({ -> (runCode.clone() as Closure).call(r) } as Callable) as Future)
@@ -490,6 +490,7 @@ class Executor implements GetlRepository {
 				processRunError(e, node, num, curElement, threadList)
 			}
 			finally {
+				node.put('finish', new Date())
 				try {
 					if (onFinishingThread != null)
 						onFinishingThread.call(node)
@@ -521,7 +522,6 @@ class Executor implements GetlRepository {
 				node.remove('threadSubmit')
 				(node.element as List).clear()
 				node.remove('element')
-				node.put('finish', new Date())
 			}
 		}
 
@@ -530,7 +530,7 @@ class Executor implements GetlRepository {
 		runThreads = true
 		try {
 			for (Integer i = 0; i < listElements.size(); i++) {
-				def r = [:] as Map<String, Object>
+				def r = new HashMap<String, Object>()
 				r.num = i
 				r.element = listElements[i]
 				r.threadSubmit = (threadPool.submit({ -> (runCode.clone() as Closure).call(r) } as Callable) as Future)
@@ -590,12 +590,12 @@ class Executor implements GetlRepository {
 	}
 
 	@Synchronized
-	private void processRunError(Throwable e, Map m, Object num, Object element, List elements) {
+	private void processRunError(Throwable e, Map node, Object num, Object element, List elements) {
 		try {
-			threadActive.remove(m)
+			threadActive.remove(node)
 			threadPool?.shutdownNow()
 
-			m.putAll([finish: new Date(), threadSubmit: null])
+			node.putAll([threadSubmit: null, error: e])
 			setError(element, e)
 			def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
 			if (dumpErrors)
@@ -663,7 +663,6 @@ class Executor implements GetlRepository {
 							}
 						}
 						removeNodeToThreadActive(node)
-						node.put('finish', new Date())
 						node.remove('threadSubmit')
 						node.remove('element')
 					}
@@ -671,6 +670,9 @@ class Executor implements GetlRepository {
 			}
 			catch (Throwable e) {
 				processRunError(e, node, num, element, elements)
+			}
+			finally {
+				node.put('finish', new Date())
 			}
 		}
 

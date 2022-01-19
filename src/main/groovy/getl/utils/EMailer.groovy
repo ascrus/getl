@@ -20,7 +20,7 @@ class EMailer implements GetlRepository {
 	protected void initParams() { }
 
 	/** Emailer parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Emailer parameters */
 	@JsonIgnore

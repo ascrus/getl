@@ -25,7 +25,7 @@ class StorageLogins extends HashMap<String, String> {
 
     @Override
     void putAll(Map logins) {
-        def m = [:] as Map<String, String>
+        def m = new HashMap<String, String>()
         logins.each { login, password ->
             m.put(login.toString(), manager.encryptPassword(password.toString()))
         }

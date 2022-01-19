@@ -145,7 +145,7 @@ class VerticaTable extends TableDataset {
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     protected Map<String, Object> processPartitionParams(def startPartition, def finishPartition, Boolean truncateToDate) {
-        def res = [:] as Map<String, Object>
+        def res = new HashMap<String, Object>()
 
         if (startPartition instanceof String || startPartition instanceof GString)
             res.start = '\'' + startPartition + '\''
@@ -384,7 +384,7 @@ class VerticaTable extends TableDataset {
         if (sourceTable.tableName == null)
             throw new ExceptionGETL('Requires to specify the source table name!')
 
-        def p = [:] as Map<String, Object>
+        def p = new HashMap<String, Object>()
         p.table = fullTableName
         p.source = sourceTable.fullTableName
         p.exists = (ifNotExists)?'IF NOT EXISTS':''

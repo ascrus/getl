@@ -133,7 +133,7 @@ end;'''
 	@Override
 	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = ((dataset as TableDataset).readDirective?:[:]) + (params as Map<String, Object>)
+		Map<String, Object> dl = ((dataset as TableDataset).readDirective?:new HashMap<String, Object>()) + (params as Map<String, Object>)
 		if (dl.scn != null) {
 			Long scn
 			if (dl.scn instanceof String)
@@ -312,7 +312,7 @@ end;'''
 	}
 
 	@Override
-	List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
 		def res = super.prepareImportFields(dataset, importParams)
 		if (!(dataset instanceof OracleTable)) {
 			res.each { field ->

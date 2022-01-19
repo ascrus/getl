@@ -30,7 +30,7 @@ class WebServiceDriver extends FileDriver {
             throw new ExceptionGETL('It is required to set the server address in "webUrl"!')
 
         if (wp == null)
-            wp = [:] as Map<String, Object>
+            wp = new HashMap<String, Object>()
 
         def connectTimeout = con.webConnectTimeout
         def readTimeout = con.webReadTimeout

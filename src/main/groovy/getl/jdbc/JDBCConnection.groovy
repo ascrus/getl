@@ -198,7 +198,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Extend connection properties */
 	Map getConnectProperty() {
 		if (params.connectProperty == null)
-			params.connectProperty = [:]
+			params.connectProperty = new HashMap()
 
 		return params.connectProperty as Map
 	}
@@ -215,7 +215,8 @@ class JDBCConnection extends Connection implements UserLogins {
 	
 	/** Session properties */
 	Map<String, Object> getSessionProperty() {
-		if (params.sessionProperty == null) params.sessionProperty = [:] as Map<String, Object>
+		if (params.sessionProperty == null)
+			params.sessionProperty = new HashMap<String, Object>()
 		return params.sessionProperty as Map<String, Object>
 	}
 	/** Session properties */
@@ -398,7 +399,7 @@ class JDBCConnection extends Connection implements UserLogins {
 										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 												 Closure<Boolean> filter = null) {
 		if (params == null)
-			params = [:]
+			params = new HashMap()
 		def retrieveInfo = BoolUtils.IsValue(params.retrieveInfo, true)
 		def result = [] as List<TableDataset>
 		(retrieveObjects(MapUtils.Copy(params, ['retrieveInfo']), filter) as List<Map>).each { row ->
@@ -443,7 +444,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Return datasets list
 	 */
 	List<TableDataset> retrieveDatasets() {
-		retrieveDatasets([:], null)
+		retrieveDatasets(new HashMap(), null)
 	}
 	
 	@Override
@@ -620,10 +621,10 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * @param command sql operator
 	 * @param params parameters (Map queryParams and Boolean isUpdate)
 	 */
-	Long executeCommand(String command, Map execParams = [:]) {
+	Long executeCommand(String command, Map execParams = new HashMap()) {
 		if (!driver.isOperation(Driver.Operation.EXECUTE))
 			throw new ExceptionGETL("Connection $this not support executed scripts!")
-		executeCommand((execParams?:[:]) + [command: command])
+		executeCommand((execParams?:new HashMap()) + [command: command])
 	}
 
 	static public final Integer transactionIsolationNone = java.sql.Connection.TRANSACTION_NONE

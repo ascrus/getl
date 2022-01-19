@@ -66,6 +66,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
             p.datasetName = p.sourceName
 
             p.remove('id')
+            p.remove('index')
             p.remove('sourceName')
 
             MapUtils.RemoveKeys(p) { k, v ->

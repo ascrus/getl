@@ -108,9 +108,9 @@ class WorkflowSpec extends BaseSpec {
     }
 
     /** List of scripts for processing */
-    Map<String, Map<String, Object>> getScripts() { params.scripts as Map<String, Map<String, Object>> }
+    LinkedHashMap<String, Map<String, Object>> getScripts() { params.scripts as LinkedHashMap<String, Map<String, Object>> }
     /** List of scripts for processing */
-    void setScripts(Map<String, Map<String, Object>> value) {
+    void setScripts(LinkedHashMap<String, Map<String, Object>> value) {
         scripts.clear()
 
         if (value != null)
@@ -137,8 +137,8 @@ class WorkflowSpec extends BaseSpec {
             throw new ExceptionModel("The script named \"$name\" is already defined in the " +
                     "\"${exists.ownerWorkflowSpec.stepName}\" step!")
 
-        def scriptParams = [:] as Map<String, Object>
-        scriptParams.vars = [:] as Map<String, Object>
+        def scriptParams = new HashMap<String, Object>()
+        scriptParams.vars = new HashMap<String, Object>()
 
         def parent = new WorkflowScriptSpec(this, true, scriptParams)
         parent.runClosure(cl)

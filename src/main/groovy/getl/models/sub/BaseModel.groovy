@@ -66,10 +66,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         super.initSpec()
 
         if (params.modelVars == null)
-            params.modelVars = [:] as Map<String, Object>
+            params.modelVars = new HashMap<String, Object>()
 
         if (params.modelAttrs == null)
-            params.modelAttrs = [:] as Map<String, Object>
+            params.modelAttrs = new HashMap<String, Object>()
 
         if (params.usedObjects == null)
             params.usedObjects = new CopyOnWriteArrayList<>(new ArrayList<T>())
@@ -85,7 +85,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         objParams?.each { obj ->
             objects << newSpec(obj)
         }
-        params.putAll(importParams)
+        //params.putAll(importParams)
+        MapUtils.MergeMap(params, importParams)
         params.usedObjects = objects
     }
 
@@ -165,7 +166,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
 
         String res
         try {
-            res = StringUtils.EvalMacroString(val.toString(), modelVariables() + (extVars?:[:]))
+            res = StringUtils.EvalMacroString(val.toString(), modelVariables() + (extVars?:new HashMap()))
         }
         catch (Exception e) {
             throw new ExceptionDSL("Error parsing the value of the \"$name\" model attribute: ${e.message}")

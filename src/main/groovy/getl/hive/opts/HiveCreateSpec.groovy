@@ -16,9 +16,12 @@ class HiveCreateSpec extends CreateSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
-        if (params.clustered == null) params.clustered = [:] as Map<String, Object>
-        if (params.skewed == null) params.skewed = [:] as Map<String, Object>
+        if (params.tblproperties == null)
+            params.tblproperties = new HashMap<String, Object>()
+        if (params.clustered == null)
+            params.clustered = new HashMap<String, Object>()
+        if (params.skewed == null)
+            params.skewed = new HashMap<String, Object>()
     }
 
     /** Clustered options */

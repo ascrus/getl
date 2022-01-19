@@ -278,11 +278,15 @@ class FileProcessingTest extends TestDsl {
                     proc.result = proc.completeResult
                 }
 
-                if (cacheProcessing)
+                if (cacheProcessing) {
                     saveCachedData {
                         etl.copyRows(csvTemp('#cache'), h2Table('h2:sales_json'))
                         csvTemp('#cache').drop()
                     }
+                    rollbackCachedData {
+                        csvTemp('#cache').drop()
+                    }
+                }
             }
 
             if (firstRun) {

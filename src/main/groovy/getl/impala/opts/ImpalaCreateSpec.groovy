@@ -16,9 +16,10 @@ class ImpalaCreateSpec extends CreateSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
-        if (params.serdeproperties == null) params.serdeproperties = [:] as Map<String, Object>
-        if (params.sortBy == null) params.sortBy = [] as List<String>
+        if (params.tblproperties == null) params.tblproperties = new HashMap<String, Object>()
+        if (params.serdeproperties == null) params.serdeproperties = new HashMap<String, Object>()
+        if (params.sortBy == null)
+            params.sortBy = [] as List<String>
     }
 
     /** Name of type row format */

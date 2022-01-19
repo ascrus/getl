@@ -25,7 +25,7 @@ class ExecutorThread extends Thread {
         Object cloneObject
     }
 
-    private final Map<String, List<CloneObject>> cloneObjects = [:] as Map<String, List<CloneObject>>
+    private final Map<String, List<CloneObject>> cloneObjects = new HashMap<String, List<CloneObject>>()
 
     /** Thread parameters */
     private final Map<String, Object> _params = [cloneObjects: cloneObjects] as Map<String, Object>

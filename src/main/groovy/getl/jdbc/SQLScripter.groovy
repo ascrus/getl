@@ -54,7 +54,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Local variables */
-	private final Map<String, Object> vars = [:] as Map<String, Object>
+	private final Map<String, Object> vars = new HashMap<String, Object>()
 	/** Local variables */
 	Map<String, Object> getVars() { vars }
 	/** Local variables */

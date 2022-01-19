@@ -8,7 +8,7 @@ import getl.exception.ExceptionGETL
  *
  */
 class ParamMethodValidator {
-	private final Map<String, Object> methodParams = [:] as Map<String, Object>
+	private final Map<String, Object> methodParams = new HashMap<String, Object>()
 
 	/**
 	 * Register list of parameters by method

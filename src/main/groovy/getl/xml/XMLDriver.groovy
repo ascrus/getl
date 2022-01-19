@@ -47,7 +47,7 @@ class XMLDriver extends WebServiceDriver {
 		List<Field> attrs = dataset.attributeField?:[]
 		if (attrs.isEmpty()) return
 		
-		sb << "Map<String, Object> attrValue = [:]\n"
+		sb << "Map<String, Object> attrValue = new HashMap<String, Object>()\n"
 		def a = 0
 		attrs.each { Field d ->
 			a++
@@ -159,7 +159,7 @@ class XMLDriver extends WebServiceDriver {
 	}
 }
 """
-		sb << '	Map<String, Object> row = [:]\n'
+		sb << '	Map<String, Object> row = new HashMap<String, Object>()\n'
 		sb << genScript.body
 		sb << "	code.call(row)\n"
 		sb << "}\n}"
@@ -183,7 +183,7 @@ class XMLDriver extends WebServiceDriver {
 	 */
 	@CompileStatic
 	void readAttrs(XMLDataset dataset, Map params) {
-		params = params?:[:]
+		params = params?:new HashMap()
 		def data = readData(dataset, params)
 		
 		StringBuilder sb = new StringBuilder()

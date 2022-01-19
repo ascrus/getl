@@ -30,7 +30,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	protected void initParams() {
 		params.clear()
 
-		params.attributes = [:] as Map<String, Object>
+		params.attributes = new HashMap<String, Object>()
 	}
 
 	/**
@@ -45,7 +45,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Save point manager parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Save point manager parameters */
 	@JsonIgnore
@@ -67,7 +67,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 
 	/** System parameters */
 	@JsonIgnore
@@ -190,7 +190,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	
 	/** Clone sequenced and its connection */
 	@Synchronized
-	Sequence cloneSequenceConnection(Map otherParams = [:]) {
+	Sequence cloneSequenceConnection(Map otherParams = new HashMap()) {
 		cloneSequence(connection?.cloneConnection() as JDBCConnection, otherParams)
 	}
 	
@@ -200,7 +200,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * @return
 	 */
 	@Synchronized
-	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
+	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = new HashMap(), Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
 
 		if (otherParams != null)

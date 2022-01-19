@@ -17,7 +17,7 @@ class BaseSpec implements Cloneable {
     /** Create options instance */
     BaseSpec(Object owner) {
         _owner = owner
-        _params = [:] as Map<String, Object>
+        _params = new HashMap<String, Object>()
         _savedOptions = new Stack<Map<String, Object>>()
         initSpec()
     }
@@ -35,7 +35,7 @@ class BaseSpec implements Cloneable {
             }
         }
         else {
-            _params = [:] as Map<String, Object>
+            _params = new HashMap<String, Object>()
             initSpec()
         }
     }
@@ -47,7 +47,7 @@ class BaseSpec implements Cloneable {
      */
     BaseSpec importParams(Map<String, Object> importParams, Boolean useExternalParams = false) {
         if (!useExternalParams) {
-            _params = [:] as Map<String, Object>
+            _params = new HashMap<String, Object>()
             initSpec()
             importFromMap(importParams)
         }

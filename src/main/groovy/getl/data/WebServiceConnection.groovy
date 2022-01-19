@@ -23,8 +23,8 @@ class WebServiceConnection extends FileConnection {
     protected void initParams() {
         super.initParams()
 
-        params.webParams = [:] as Map<String, Object>
-        params.webVars = [:] as Map<String, Object>
+        params.webParams = new HashMap<String, Object>()
+        params.webVars = new HashMap<String, Object>()
     }
 
     /** Url connection */

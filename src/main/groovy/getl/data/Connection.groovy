@@ -25,7 +25,7 @@ class Connection implements Cloneable, GetlRepository {
 		validParams()
 
 		if (parameters == null)
-			parameters = [:]
+			parameters = new HashMap()
 
 		Class<Driver> connectionDriverClass = driverClass()
 		Class<Driver> driverClass = (parameters.driver as Class<Driver>)?:connectionDriverClass
@@ -63,7 +63,7 @@ class Connection implements Cloneable, GetlRepository {
 	protected void initParams() {
 		params.clear()
 
-		params.attributes = [:] as Map<String, Object>
+		params.attributes = new HashMap<String, Object>()
 	}
 
 	/** Validation parameters */
@@ -95,7 +95,7 @@ class Connection implements Cloneable, GetlRepository {
 	 */
 	static Connection CreateConnection(Map params) {
 		if (params == null)
-			params = [:]
+			params = new HashMap()
 		else
 			params = CloneUtils.CloneMap(params, false)
 
@@ -265,7 +265,7 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Connection parameters
 	 */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Connection parameters */
 	@JsonIgnore
@@ -278,7 +278,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 
 	/** System parameters */
 	@JsonIgnore
@@ -384,7 +384,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * Return objects list of connection 
 	 * @return List of objects
 	 */
-	List<Object> retrieveObjects () { retrieveObjects([:], null) }
+	List<Object> retrieveObjects () { retrieveObjects(new HashMap(), null) }
 	
 	/**
 	 * Return objects list of connection
@@ -400,7 +400,7 @@ class Connection implements Cloneable, GetlRepository {
 	 */
 	List<Object> retrieveObjects (@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 										  Closure<Boolean> filter) {
-		retrieveObjects([:], filter)
+		retrieveObjects(new HashMap(), filter)
 	}
 	
 	/**
@@ -412,7 +412,8 @@ class Connection implements Cloneable, GetlRepository {
 	List<Object> retrieveObjects(Map params,
 								  @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 										  Closure<Boolean> filter) {
-		if (params == null) params = [:]
+		if (params == null)
+			params = new HashMap()
 		methodParams.validation("retrieveObjects", params,
 				[driver.methodParams.params("retrieveObjects")])
 		
@@ -612,7 +613,8 @@ class Connection implements Cloneable, GetlRepository {
 		if (!driver.isOperation(Driver.Operation.EXECUTE))
 			throw new ExceptionGETL("Driver not supported execute command")
 		
-		if (params == null) params = [:]
+		if (params == null)
+			params = new HashMap()
 		methodParams.validation("executeCommand", params, [driver.methodParams.params("executeCommand")])
 		
 		String command = params.command
@@ -638,7 +640,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * @return
 	 */
 	@Synchronized
-	Connection cloneConnection(Map otherParams = [:], Getl getl = null) {
+	Connection cloneConnection(Map otherParams = new HashMap(), Getl getl = null) {
 		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false, ignoreCloneClasses())
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)

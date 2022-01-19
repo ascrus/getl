@@ -48,7 +48,7 @@ class FlowBaseSpec extends BaseSpec {
     /** The process worked */
     Boolean getIsProcessed() { isProcessed }
 
-    private final Map<String, FieldStatistic> statistics = [:] as Map<String, FieldStatistic>
+    private final Map<String, FieldStatistic> statistics = new HashMap<String, FieldStatistic>()
     /** Processed fields statistics */
     Map<String, FieldStatistic> getStatistics() { statistics }
 

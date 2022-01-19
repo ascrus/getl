@@ -252,7 +252,7 @@ class FileDriver extends Driver {
 	 */
 	@CompileStatic
 	protected Map getDatasetParams(FileDataset dataset, Map params, Integer portion = null) {
-		def res = [:]
+		def res = new HashMap()
 		res.fn = fullFileNameDataset(dataset, portion)
 		res.isGzFile = dataset.isGzFile()
 		res.codePage = ListUtils.NotNullValue([params.codePage, dataset.codePage()])

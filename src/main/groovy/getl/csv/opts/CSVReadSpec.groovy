@@ -2,7 +2,6 @@ package getl.csv.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileReadSpec
-import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -58,9 +57,4 @@ class CSVReadSpec extends FileReadSpec {
     Long getSkipRows() { params.skipRows as Long }
     /** Skip n-lines after the header */
     void setSkipRows(Long value) { saveParamValue('skipRows', value) }
-
-    /** Save errors to error dataset */
-    Boolean getSaveErrors() { params.saveErrors as Boolean }
-    /** Save errors to error dataset */
-    void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 }

@@ -20,13 +20,13 @@ class FlowCopySpec extends FlowBaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.sourceParams == null)
-            params.sourceParams = [:] as Map<String, Object>
+            params.sourceParams = new HashMap<String, Object>()
         if (params.destParams == null)
-            params.destParams = [:] as Map<String, Object>
+            params.destParams = new HashMap<String, Object>()
         if (params._childs == null)
-            params._childs = [:] as Map<String, FlowCopyChildSpec>
+            params._childs = new HashMap<String, FlowCopyChildSpec>()
         if (params.map == null)
-            params.map = [:] as HashMap<String, String>
+            params.map = new HashMap<String, String>()
     }
 
     /** Source dataset */
@@ -311,7 +311,7 @@ class FlowCopySpec extends FlowBaseSpec {
 
     /** Preparing parameters */
     private void prepareParams() {
-        params.destChild = [:] as Map<String, Dataset>
+        params.destChild = new HashMap<String, Dataset>()
         childs.each { String name, FlowCopyChildSpec opts ->
             (params.destChild as Map).put(name, opts.params)
         }

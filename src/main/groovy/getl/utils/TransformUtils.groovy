@@ -19,7 +19,7 @@ class TransformUtils {
     static Map DenormalizeColumn(String text, String fieldDelimited, String valueDelimited) {
 		if (text == null) return null
 		def fields = text.split(fieldDelimited)
-		def values = [:]
+		def values = new HashMap()
 		fields.each { String v ->
 			def i = v.indexOf(valueDelimited)
 			def name = (i >= 0)?v.substring(0, i).trim():v.trim()

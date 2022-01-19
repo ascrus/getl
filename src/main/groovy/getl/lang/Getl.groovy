@@ -185,7 +185,8 @@ Examples:
         _initGetlProperties(null, jobArgs.getlprop as Map<String, Object>, true)
         logInfo("### Start script ${getClass().name}")
 
-        if (jobArgs.vars == null) jobArgs.vars = [:]
+        if (jobArgs.vars == null)
+            jobArgs.vars = new HashMap()
         def vars = jobArgs.vars as Map
         configuration.manager.init(jobArgs)
         configuration.manager.setVars(vars)
@@ -378,7 +379,7 @@ Examples:
                                           Boolean loadProperties, String unitClassName = null) {
         def instance = this
         if (extProp == null)
-            extProp = [:] as Map<String, Object>
+            extProp = new HashMap<String, Object>()
 
         File configFile
         String configFilePath
@@ -398,7 +399,7 @@ Examples:
                 if (unitTestMode)
                     logWarn('Used to work in unit testing mode!')
 
-                def procs = [:] as Map<String, Closure>
+                def procs = new HashMap<String, Closure>()
                 procs.logging = { Map<String, Object> en ->
                     if (en.logConsoleLevel != null) {
                         logging.logConsoleLevel = Logs.ObjectToLevel(en.logConsoleLevel)
@@ -733,7 +734,8 @@ Examples:
 
         Version.SayInfo(true, this)
 
-        if (MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper'])
+        if (!IsCurrentProcessInThread() && getGetlSystemParameter('mainClass') == null &&
+                MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper', 'java.lang.Thread'])
             groovyStarter()
     }
 
@@ -2112,7 +2114,7 @@ Examples:
      * @param extVars extend script variables
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = [:], Map extVars = null) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = new HashMap(), Map extVars = null) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         return runGroovyClass(groovyClass, runOnce, vars, extVars)
@@ -2125,7 +2127,7 @@ Examples:
      * @param extVars extend script variables
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = [:], Map extVars = null) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = new HashMap(), Map extVars = null) {
         runGroovyScriptFile(fileName, false, vars, extVars)
     }
 
@@ -2188,7 +2190,7 @@ Examples:
      * @param extVars extend script variables
      * @return exit code
      */
-    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:], Map extVars = null) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = new HashMap(), Map extVars = null) {
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
         if (previouslyRun && BoolUtils.IsValue(runOnce))
@@ -2218,7 +2220,7 @@ Examples:
     }
 
     /** Extended script variables */
-    private final Map scriptExtendedVars = [:]
+    private final Map scriptExtendedVars = new HashMap()
     /** Extended script variables */
     @JsonIgnore
     @Synchronized('scriptExtendedVars')
@@ -2232,7 +2234,7 @@ Examples:
      * @param extVars extend script variables
      * @return exitCode and result
      */
-    protected Map<String, Object> runGroovyInstance(Script script, Boolean runScript = true, Map vars = [:], Map extVars = null) {
+    protected Map<String, Object> runGroovyInstance(Script script, Boolean runScript = true, Map vars = new HashMap(), Map extVars = null) {
         def exitCode = 0
         def result = null
 
@@ -2362,7 +2364,7 @@ Examples:
      * @param extVars extend script variables
      * @return exitCode and result
      */
-    Map<String, Object> runGroovyClass(Class groovyClass, Map vars = [:], Map extVars = null) {
+    Map<String, Object> runGroovyClass(Class groovyClass, Map vars = new HashMap(), Map extVars = null) {
         runGroovyClass(groovyClass, false, vars, extVars)
     }
 
@@ -2437,7 +2439,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exitCode and result
      */
-    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:], Map extVars = null) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = new HashMap(), Map extVars = null) {
         return runGroovyClass(scriptClass, runOnce, vars, extVars)
     }
 
@@ -2447,7 +2449,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exitCode and result
      */
-    Map<String, Object> callScript(Class<Getl> scriptClass, Map vars = [:], Map extVars = null) {
+    Map<String, Object> callScript(Class<Getl> scriptClass, Map vars = new HashMap(), Map extVars = null) {
         return runGroovyClass(scriptClass, false, vars, extVars)
     }
 
@@ -2529,7 +2531,7 @@ Examples:
      * @param extVars additional variables for the script
      * @return
      */
-    Getl useScript(Class<Getl> scriptClass, Map vars = [:], Map extVars = null) {
+    Getl useScript(Class<Getl> scriptClass, Map vars = new HashMap(), Map extVars = null) {
         def script = scriptClass.getDeclaredConstructor().newInstance() as Getl
         return useScript(script, vars, extVars)
     }
@@ -2541,7 +2543,7 @@ Examples:
      * @param extVars additional variables for the script
      * @return
      */
-    Getl useScript(Getl script, Map vars = [:], Map extVars = null) {
+    Getl useScript(Getl script, Map vars = new HashMap(), Map extVars = null) {
         script.setUsedMode(true)
         runGroovyInstance(script, false, vars, extVars)
         return script

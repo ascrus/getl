@@ -71,7 +71,7 @@ class TDS extends H2Connection {
 
 	static {
 		lock = new Object()
-		storage = new TDS([:])
+		storage = new TDS(new HashMap())
 	}
 
     /** Temp path of database file */

@@ -52,7 +52,7 @@ class LockManager {
     }
 
     /** List of lock */
-    protected final Map<String, LockObject> locks = [:] as Map<String, LockObject>
+    protected final Map<String, LockObject> locks = new HashMap<String, LockObject>()
 
     /** lock list is empty */
     @Synchronized

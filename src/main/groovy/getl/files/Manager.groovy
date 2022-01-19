@@ -63,7 +63,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		params.clear()
 
 		params.rootPath = '/'
-		params.attributes = [:] as Map<String, Object>
+		params.attributes = new HashMap<String, Object>()
 		params.fileListSortOrder = [] as List<String>
 
 		writeErrorsToLog = true
@@ -75,7 +75,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	static Manager CreateManager(Map params) {
 		if (params == null)
-			params = [:]
+			params = new HashMap()
 		else
 			params = CloneUtils.CloneMap(params, false)
 
@@ -174,7 +174,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	static TypeFile getAllType() { TypeFile.ALL }
 	
 	/** Parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 	/** Parameters */
 	@JsonIgnore
 	Map<String, Object> getParams() { params }
@@ -187,7 +187,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 	/** System parameters */
 	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
@@ -1002,7 +1002,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 						def m = path.analyzeDir(fn, file)
 						if (m != null) {
 							if (code != null) {
-								Map nf = [:]
+								Map nf = new HashMap()
 								nf.filepath = curPath
 								nf.putAll(file)
 								nf.filetype = file.type.toString()
@@ -1176,7 +1176,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param code processing code for file attributes as boolean code (Map file)
 	 */
 	void buildList(Map lParams, ManagerListProcessing code) {
-		lParams = lParams?:[:]
+		lParams = lParams?:new HashMap()
 		methodParams.validation('buildList', lParams)
 
 		validConnect()
@@ -1568,7 +1568,7 @@ FROM (
 	 * Download files of list
 	 */
 	void buildList() {
-		buildList([:], null as Closure)
+		buildList(new HashMap(), null as Closure)
 	}
 	
 	/**
@@ -1582,7 +1582,7 @@ FROM (
 
 	/** Build list of files */
 	void buildList(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> filter) {
-		buildList([:], filter)
+		buildList(new HashMap(), filter)
 	}
 
 	/** Build list of files */
@@ -1660,7 +1660,7 @@ FROM (
 			
 			new Flow(dslCreator).writeTo(dest: storyFiles, dest_batchSize: 500L) { updater ->
 				fileList.eachRow { Map file ->
-					def row = [:]
+					def row = new HashMap()
 					row.putAll(file)
 					updater(row)
 				} 
@@ -1727,7 +1727,7 @@ WHERE
 				}
 				
 				if (useStory) {
-					Map row = [:]
+					Map row = new HashMap()
 					row.putAll(file)
 					row.filename = localFileName
 					row.fileloaded = DateUtils.Now()
@@ -1784,14 +1784,14 @@ WHERE
 	 * @return - list of download files
 	 */
 	void downloadFiles(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure onDownloadFile) {
-		downloadFiles([:], onDownloadFile)
+		downloadFiles(new HashMap(), onDownloadFile)
 	}
 	
 	/**
 	 * Download files of list
 	 */
 	void downloadFiles() {
-		downloadFiles([:], null)
+		downloadFiles(new HashMap(), null)
 	}
 
 	/**
@@ -2167,7 +2167,7 @@ WHERE
 		if (fileList == null)
 			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
-		def dirs = [:] as Map<String, Map>
+		def dirs = new HashMap<String, Map>()
 		QueryDataset paths = new QueryDataset(connection: fileList.connection,
 				query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
 		paths.eachRow { row ->
@@ -2179,7 +2179,7 @@ WHERE
 					c = c.get(it) as Map
 				}
 				else {
-					Map n = [:]
+					Map n = new HashMap()
 					c.put(it, n)
 					//noinspection GrReassignedInClosureLocalVar
 					c = n
@@ -2198,7 +2198,7 @@ WHERE
 	Map<String, Object> buildTreeDirs() {
 		validConnect()
 
-		def res = [:] as Map<String, Object>
+		def res = new HashMap<String, Object>()
 		def objects = listDir()
 		for (Integer i = 0; i < objects.size(); i++) {
 			def obj = objects.item(i)
@@ -2413,7 +2413,7 @@ WHERE
 	 * @return
 	 */
 	protected Map<String, String> toStringParams() {
-		def res = [:] as Map<String, String>
+		def res = new HashMap<String, String>()
 		if (rootPath != null)
 			res.root = FileUtils.TransformFilePath(rootPath, false)
 

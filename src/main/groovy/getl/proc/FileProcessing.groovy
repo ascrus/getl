@@ -108,6 +108,16 @@ class FileProcessing extends FileListProcessing {
         setOnSaveCachedData(cl)
     }
 
+    /** Code to rollback cached data of processed files on errors by group */
+    Closure getOnRollbackCachedData() { params.rollbackCachedData as Closure }
+    /** Code to rollback cached data of processed files on errors by group */
+    void setOnRollbackCachedData(Closure value) { params.rollbackCachedData = value }
+    /** Code to rollback cached data of processed files on errors by group */
+    void rollbackCachedData(@ClosureParams(value = SimpleType, options = ['java.util.Map'])
+                                Closure cl) {
+        setOnRollbackCachedData(cl)
+    }
+
     /** Run initialization code when starting a thread */
     Closure getOnStartingThread() { params.startingThread as Closure }
     /** Run initialization code when starting a thread */
@@ -272,11 +282,6 @@ class FileProcessing extends FileListProcessing {
 
             if (man != null) {
                 disconnectFrom([man])
-                /*if (story != null) {
-                    story.connection.connected = false
-                    story.connection = null
-                    story = null
-                }*/
                 man = null
             }
         }
@@ -382,8 +387,6 @@ class FileProcessing extends FileListProcessing {
             ConnectTo([src], numberAttempts, timeAttempts)
 
             def element = new ListPoolElement(src)
-            /*if (currentStory != null)
-                element.story = currentStory?.cloneDatasetConnection() as TableDataset*/
             if (delFilesTable != null)
                 element.delTable = delFilesTable.cloneDatasetConnection() as TDSTable
 
@@ -450,10 +453,6 @@ class FileProcessing extends FileListProcessing {
                 initStoryWrite()
 
                 sourceList.each { element ->
-                    /*if (element.story != null) {
-                        element.story.connection.startTran(true)
-                        element.story.openWrite(operation: 'INSERT')
-                    }*/
                     if (element.delTable != null) {
                         if (!element.delTable.currentJDBCConnection.autoCommit())
                             element.delTable.connection.startTran(true)
@@ -584,10 +583,7 @@ class FileProcessing extends FileListProcessing {
                                     if (procResult == null) {
                                         throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
                                     } else if (procResult == FileProcessingElement.completeResult) {
-                                        storyWrite(file + [fileloaded: new Date()])
-                                        /*if (sourceElement.story != null) {
-                                            sourceElement.story.write(file + [fileloaded: new Date()])
-                                        }*/
+                                        storyWrite(element.storyValues + file + [fileloaded: new Date()])
 
                                         if (processedElement != null && fileDesc != null)
                                             processedElement.uploadLocalFile(fileDesc, element.savedFilePath)
@@ -657,18 +653,16 @@ class FileProcessing extends FileListProcessing {
                         logger.severe("Failed to save file history: ${err.message}")
                     }
 
+                    if (isCachedMode && onRollbackCachedData != null) {
+                        try {
+                            onRollbackCachedData.call(groupFields)
+                        }
+                        catch (Exception err) {
+                            logger.severe("Failed to rollback cache data: ${err.message}")
+                        }
+                    }
+
                     sourceList.each { element ->
-                        /*if (element.story != null) {
-                            if (!isCachedMode)
-                                element.story.doneWrite()
-                            element.story.closeWrite()
-                            if (!element.story.currentJDBCConnection.autoCommit()) {
-                                if (!isCachedMode)
-                                    element.story.connection.commitTran(true)
-                                else
-                                    element.story.connection.rollbackTran(true)
-                            }
-                        }*/
                         if (element.delTable != null) {
                             element.delTable.closeWrite()
                             if (!element.delTable.currentJDBCConnection.autoCommit())
@@ -687,12 +681,6 @@ class FileProcessing extends FileListProcessing {
 
                 doneStoryWrite()
                 sourceList.each { element ->
-                    /*if (element.story != null) {
-                        element.story.doneWrite()
-                        element.story.closeWrite()
-                        if (!element.story.currentJDBCConnection.autoCommit())
-                            element.story.connection.commitTran(true)
-                    }*/
                     if (element.delTable != null) {
                         element.delTable.doneWrite()
                         element.delTable.closeWrite()

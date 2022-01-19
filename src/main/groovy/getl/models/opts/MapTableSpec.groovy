@@ -20,7 +20,7 @@ class MapTableSpec extends DatasetSpec {
         if (params.listPartitions == null)
             params.listPartitions = new CopyOnWriteArrayList(new ArrayList())
         if (params.map == null)
-            params.map = [:] as Map<String, String>
+            params.map = new LinkedHashMap<String, String>()
     }
 
     /** Owner processing model */
@@ -133,9 +133,9 @@ class MapTableSpec extends DatasetSpec {
     }
 
     /** Mapping the relationship of the fields of the destination table to the source table: map.put('destinationField', 'sourceField') */
-    Map<String, String> getMap() { params.map as Map<String, String> }
+    LinkedHashMap<String, String> getMap() { params.map as LinkedHashMap<String, String> }
     /** Mapping the relationship of the fields of the destination table to the source table: map.put('destinationField', 'sourceField') */
-    void setMap(Map<String, String> value) {
+    void setMap(LinkedHashMap<String, String> value) {
         map.clear()
         if (value != null)
             map.putAll(value)
@@ -149,7 +149,7 @@ class MapTableSpec extends DatasetSpec {
     List<Map<String, Object>> readListPartitions(Map queryParams = null) {
         def res = listPartitions.collect { [partition: it] }
         if (res.isEmpty() && partitionsDatasetName != null) {
-            def qp = [:]
+            def qp = new HashMap()
             if (queryParams != null)
                 qp.put('queryParams', queryParams)
             res = partitionsDataset.rows(qp)

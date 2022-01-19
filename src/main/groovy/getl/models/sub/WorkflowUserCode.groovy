@@ -9,7 +9,7 @@ import getl.models.Workflows
  * @author Alexsey Konstantinov
  */
 class WorkflowUserCode extends Getl {
-    private Map<String, Map<String, Object>> scriptVars = [:] as Map<String, Map<String, Object>>
+    private Map<String, Map<String, Object>> scriptVars = new HashMap<String, Map<String, Object>>()
 
     /** Current workflow model */
     public Workflows currentModel
@@ -29,7 +29,7 @@ class WorkflowUserCode extends Getl {
         scriptName = scriptName.toUpperCase()
         def sv = scriptVars.get(scriptName)
         if (sv == null) {
-            sv = [:] as Map<String, Object>
+            sv = new HashMap<String, Object>()
             scriptVars.put(scriptName, sv)
         }
         return sv

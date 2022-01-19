@@ -66,6 +66,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
             p.datasetName = p.sourceTableName
 
             p.remove('id')
+            p.remove('index')
             p.remove('sourceTableName')
 
             MapUtils.RemoveKeys(p) { k, v ->

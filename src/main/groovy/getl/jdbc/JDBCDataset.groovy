@@ -17,7 +17,7 @@ class JDBCDataset extends Dataset {
 	protected void initParams() {
 		super.initParams()
 
-		params.queryParams = [:] as Map<String, Object>
+		params.queryParams = new HashMap<String, Object>()
 	}
 
 	/** Current JDBC connection */

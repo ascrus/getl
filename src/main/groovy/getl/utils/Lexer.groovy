@@ -546,7 +546,7 @@ class Lexer {
 		List curTokens = tokens
 		tokens = stackTokens.pop() as List
 
-		Map prevToken = [:]
+		Map prevToken = new HashMap()
 		def size = tokens.size()
 		if (size != 0)
 			prevToken = (Map) tokens.get(size - 1)

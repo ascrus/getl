@@ -144,7 +144,7 @@ class Config {
 	}
 	
 	/**	 Load configuration content from file */
-	static void LoadConfig(Map readParams = [:]) { configClassManager.loadConfig(readParams) }
+	static void LoadConfig(Map readParams = new HashMap()) { configClassManager.loadConfig(readParams) }
 
 	/**
 	 * Merge specified configuration to current content
@@ -184,7 +184,7 @@ class Config {
 	 * Save content to configuration file
 	 * @param writer
 	 */
-	static void SaveConfig(Map saveParams = [:]) { configClassManager.saveContent(saveParams) }
+	static void SaveConfig(Map saveParams = new HashMap()) { configClassManager.saveContent(saveParams) }
 
 	/**
 	 * Check configuration content is empty
@@ -197,7 +197,7 @@ class Config {
 	 * @return list of environment variables
 	 */
 	static Map<String, String> SystemProps() {
-		def res = [:] as Map<String, String>
+		def res = new HashMap<String, String>()
 		res.putAll(System.getenv())
 		System.properties.each { prop ->
 			res.put(prop.key.toString(), prop.value as String)

@@ -328,7 +328,7 @@ class VerticaDriver extends JDBCDriver {
 
 		// Find filled columns
 		def filledCols = [] as List<String>
-		def patternFilledCols = [:] as Map<String, Pattern>
+		def patternFilledCols = new HashMap<String, Pattern>()
 		map.each { node ->
 			if (node.sourceFieldName != null && (node.destinationFieldName == null || node.expression != null)) {
 				def sourceFieldName = node.sourceFieldName.toLowerCase()
@@ -459,7 +459,7 @@ class VerticaDriver extends JDBCDriver {
 			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs}"
 			params.offs = null
 		}
-		Map<String, Object> dl = ((dataset as TableDataset).readDirective as Map)?:[:] + params
+		Map<String, Object> dl = (((dataset as TableDataset).readDirective as Map<String, Object>)?:new HashMap<String, Object>()) + params as Map<String, Object>
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }
@@ -740,7 +740,7 @@ class VerticaDriver extends JDBCDriver {
 	 * @return list of prepared field
 	 */
 	@Override
-	List<Field> prepareImportFields(Dataset dataset, Map importParams = [:]) {
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
 		def res = super.prepareImportFields(dataset, importParams)
 
 		if (!(dataset instanceof VerticaTable)) {

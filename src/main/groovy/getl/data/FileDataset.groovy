@@ -1,6 +1,7 @@
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.opts.FileReadSpec
 import getl.data.sub.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
@@ -356,5 +357,16 @@ class FileDataset extends Dataset {
 	@CompileStatic
 	Long countRow(Closure<Boolean> filter) {
 		countRow(null, filter)
+	}
+
+	/** Read file options */
+	FileReadSpec getReadOpts() { new FileReadSpec(this, true, readDirective) }
+
+	/** Read file options */
+	FileReadSpec readOpts(@DelegatesTo(FileReadSpec) Closure cl = null) {
+		def parent = readOpts
+		parent.runClosure(cl)
+
+		return parent
 	}
 }

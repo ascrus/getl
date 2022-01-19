@@ -215,7 +215,7 @@ class Field implements Serializable, Cloneable {
 	/** Field description (comments) */
 	void setDescription(String value) { this.description = value }
 	
-	private final Map<String, Object> extended = [:] as Map<String, Object>
+	private final Map<String, Object> extended = new HashMap<String, Object>()
 	/** Extended attributes */
 	Map<String, Object> getExtended() { return this.extended }
 	/** Extended attributes */
@@ -245,7 +245,7 @@ class Field implements Serializable, Cloneable {
 	
 	/** Build map from field */
 	Map toMap() {
-		def n = [:]
+		def n = new HashMap()
 		n.name = name
 		n.type = type.toString()
 		if (typeName != null) n.typeName = typeName
@@ -342,7 +342,7 @@ class Field implements Serializable, Cloneable {
 	 * Attribute to string
 	 */
 	String toString() {
-		def s = [:]
+		def s = new HashMap()
 		s.name = name
 		s.type = type
 		s.typeName = typeName

@@ -38,7 +38,7 @@ logFine "  files: ${scripts.join(', ')}"
 logFinest "Connect to server $con ..."
 con.connected = true
 
-def res = [:] as Map<String, Object>
+def res = new HashMap<String, Object>()
 
 //noinspection GroovyVariableNotAssigned
 sql {scripter ->

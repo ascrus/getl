@@ -43,7 +43,7 @@ class VerticaConnection extends JDBCConnection {
 		return query.rows()[0]
 	}
 
-	private final Map<String, String> attachedVertica = [:] as Map<String, String>
+	private final Map<String, String> attachedVertica = new HashMap<String, String>()
 
 	/** Detect database name from connection */
 	static protected String DatabaseFromConnection(VerticaConnection con) {

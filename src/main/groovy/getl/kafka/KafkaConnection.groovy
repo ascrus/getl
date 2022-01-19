@@ -23,7 +23,7 @@ class KafkaConnection extends Connection {
     @Override
     void initParams() {
         super.initParams()
-        params.connectProperties = [:] as Map<String, Object>
+        params.connectProperties = new HashMap<String, Object>()
     }
 
     @Override

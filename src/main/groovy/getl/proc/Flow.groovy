@@ -109,7 +109,7 @@ class Flow {
 	}
 	
 	/** Flow parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Flow parameters */
 	Map<String, Object> getParams() { params }
@@ -129,15 +129,15 @@ class Flow {
 	/** Last number of rows processed */
 	Long getCountRow() { countRow }
 
-	private final Map<String, FieldStatistic> statistics = [:] as Map<String, FieldStatistic>
+	private final Map<String, FieldStatistic> statistics = new HashMap<String, FieldStatistic>()
 	/** Processed fields statistics */
 	Map<String, FieldStatistic> getStatistics() { statistics }
 
 	/** Formalize column mapping */
 	protected static Map<String, Map> ConvertFieldMap(Map<String, String> map) {
-		def result = [:] as Map<String, Map>
+		def result = new HashMap<String, Map>()
 		map.each { k, v ->
-			def m = [:]
+			def m = new HashMap()
 			if (v != null) {
 				String[] l = v.split(";")
 				m.name = l[0].toLowerCase()
@@ -409,8 +409,8 @@ class Flow {
 				!dest.connection.isTran() &&
 				!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 
-		def destChild = params.destChild as Map<String, Map<String, Object>>?:([:] as Map<String, Map<String, Object>>)
-		def childs = [:] as Map<String, FlowCopyChild>
+		def destChild = params.destChild as Map<String, Map<String, Object>>?:(new HashMap<String, Map<String, Object>>())
+		def childs = new HashMap<String, FlowCopyChild>()
 		destChild.each { String name, Map<String, Object> childParams ->
 			def dataset = childParams.dataset as Dataset
 			if (dataset == null)
@@ -458,7 +458,7 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 
-		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):([:] as Map<String, String>)
+		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):(new HashMap<String, String>())
 		List<String> requiredStatistics = (params.statistics != null)?(params.statistics as List<String>)*.toLowerCase():([] as List<String>)
 
 		Map<String, Object> sourceParams
@@ -466,7 +466,7 @@ class Flow {
 			sourceParams = params.sourceParams as Map<String, Object>
 		}
 		else {
-			sourceParams = ((MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:[:]) as Map<String, Object>
+			sourceParams = ((MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:new HashMap<String, Object>())
 		}
 
 		Closure prepareSource = sourceParams.prepare as Closure
@@ -481,7 +481,7 @@ class Flow {
 
 		def debug = BoolUtils.IsValue(params.debug, false)
 
-		def formats = [:] as Map<String, String>
+		def formats = new HashMap<String, String>()
 		formats.formatDate = params.formatDate as String
 		formats.formatTime = params.formatTime as String
 		formats.formatDateTime = params.formatDateTime as String
@@ -503,18 +503,18 @@ class Flow {
 			destParams = params.destParams as Map<String, Object>
 		}
 		else {
-			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:[:]) as Map<String, Object>
+			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:new HashMap<String, Object>()) as Map<String, Object>
 		}
 
-		Map<String, Object> bulkParams = [:]
+		Map<String, Object> bulkParams = new HashMap<String, Object>()
 		TFSDataset bulkDS = null
 		if (isBulkLoad) {
-			bulkParams.putAll(destParams?:[:])
+			bulkParams.putAll(destParams?:new HashMap<String, Object>())
 			if (bulkAsGZIP)
 				bulkParams.compressed = "GZIP"
 			if (autoTran)
 				bulkParams.autoCommit = false
-			destParams = [:]
+			destParams = new HashMap<String, Object>()
 
 			if (dest.field.isEmpty())
 				dest.retrieveFields()
@@ -526,7 +526,7 @@ class Flow {
 			childs.each { String name, FlowCopyChild child ->
 				def dataset = child.dataset
 
-				def bulkChildParams = [:] as Map<String, Object>
+				def bulkChildParams = new HashMap<String, Object>()
 				child.bulkParams = bulkChildParams
 				if (child.datasetParams != null)
 					bulkChildParams.putAll(child.datasetParams)
@@ -560,7 +560,7 @@ class Flow {
 		}
 		
 		Closure auto_map_code
-		Map generateResult = [:]
+		Map generateResult = new HashMap()
 		Map<String, String> mapRules = null
 
 		Closure<List<String>> initDest = {
@@ -652,7 +652,7 @@ class Flow {
 					}
 
 					def isError = false
-					def outRow = [:]
+					def outRow = new HashMap()
 
 					if (auto_map_code != null) {
 						try {
@@ -675,7 +675,7 @@ class Flow {
 								throw e
 							}
 							isError = true
-							Map errorRow = [:]
+							Map errorRow = new HashMap()
 							errorRow.putAll(outRow)
 							errorRow.error = StringUtils.ProcessAssertionError(e)
 							errorsDataset.write(errorRow)
@@ -831,7 +831,7 @@ class Flow {
 	 */
 	static protected Map<String, String> PrepareMap(Dataset source, Dataset dest, Map<String, String> map,
 										  Boolean copyOnlyMatching, Boolean autoMap, List<String> excludeFields) {
-		def res = [:] as Map<String, String>
+		def res = new HashMap<String, String>()
 
 		if (autoMap) {
 			source.field.each { f ->
@@ -939,10 +939,10 @@ class Flow {
 			destParams = params.destParams as Map<String, Object>
 		}
 		else {
-			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:[:]) as Map<String, Object>
+			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:new HashMap<String, Object>())
 		}
 
-		Map<String, Object> bulkParams = [:]
+		Map<String, Object> bulkParams = new HashMap<String, Object>()
 		
 		TFSDataset bulkDS = null
 		Dataset writer
@@ -962,7 +962,7 @@ class Flow {
 			bulkParams.source = bulkDS
 			if (bulkParams.abortOnError == null) bulkParams.abortOnError = true
 			
-			destParams = [:]
+			destParams = new HashMap<String, Object>()
 			writer = bulkDS
 			writeSynch = false
 		}
@@ -1071,18 +1071,19 @@ class Flow {
 
 		if (initCode != null) initCode.call()
 		
-		Map<Connection, String> destAutoTran = [:]
-		def destParams = [:]
-		def bulkParams = [:]
-		Map<String, Dataset> bulkLoadDS = [:]
-		Map<String, Dataset> writer = [:]
+		Map<Connection, String> destAutoTran = new HashMap<Connection, String>()
+		def destParams = new HashMap()
+		def bulkParams = new HashMap()
+		Map<String, Dataset> bulkLoadDS = new HashMap<String, Dataset>()
+		Map<String, Dataset> writer = new HashMap<String, Dataset>()
 		dest.each { String n, Dataset d ->
 			// Get destination params
 			if (params.destParams != null && (params.destParams as Map).get(n) != null) {
 				destParams.put(n, (params.destParams as Map).get(n) as Map<String, Object>)
 			}
 			else {
-				Map<String, Object> p = (MapUtils.GetLevel(params, "dest_${n}_") as Map<String, Object>) ?: [:]
+				Map<String, Object> p = (MapUtils.GetLevel(params, "dest_${n}_") as Map<String, Object>)
+						?:new HashMap<String, Object>()
 				destParams.put(n, p)
 			}
 
@@ -1130,7 +1131,7 @@ class Flow {
 				if (bp.abortOnError == null) bp.abortOnError = true
 				
 				bulkParams.put(n, bp)
-				destParams.put(n, [:])
+				destParams.put(n, new HashMap())
 				
 				if (bp.prepare != null) {
 					List<String> useFields = (bp.prepare as Closure).call() as List<String>
@@ -1312,7 +1313,7 @@ class Flow {
 			sourceParams = params.sourceParams as Map<String, Object>
 		}
 		else {
-			sourceParams = ((MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:[:]) as Map<String, Object>
+			sourceParams = ((MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:new HashMap<String, Object>())
 		}
 
 		Closure initCode = params.onInit as Closure
@@ -1328,7 +1329,7 @@ class Flow {
 				errorsDataset.field = source.field
 				errorsDataset.resetFieldToDefault()
 				errorsDataset.field << new Field(name: "error")
-				errorsDataset.openWrite([:])
+				errorsDataset.openWrite(new HashMap())
 			}
 
 			List<String> result = []
@@ -1346,7 +1347,7 @@ class Flow {
 					if (!isSaveErrors) {
 						throw e
 					}
-					Map errorRow = [:]
+					Map errorRow = new HashMap()
 					errorRow.putAll(row)
 					errorRow.error = StringUtils.ProcessAssertionError(e)
 					errorsDataset.write(errorRow)

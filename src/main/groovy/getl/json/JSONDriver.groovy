@@ -54,7 +54,7 @@ class JSONDriver extends WebServiceDriver {
 		List<Field> attrs = dataset.attributeField?:[]
 		if (attrs.isEmpty()) return
 		
-		sb << "Map<String, Object> attrValue = [:]\n"
+		sb << "Map<String, Object> attrValue = new HashMap<String, Object>()\n"
 		def a = 0
 		attrs.each { Field d ->
 			a++
@@ -128,7 +128,7 @@ class JSONDriver extends WebServiceDriver {
 	 */
 	@CompileStatic
 	void readAttrs (JSONDataset dataset, Map params) {
-		params = params?:[:]
+		params = params?:new HashMap()
 		def data = readData(dataset, params)
 		
 		StringBuilder sb = new StringBuilder()
@@ -276,7 +276,7 @@ class JSONDriver extends WebServiceDriver {
 		def format = ds.uniFormatDateTime()?:ds.formatTimestampWithTz()
 		def gen = new JsonGenerator.Options().dateFormat(format, Locale.default).timezone(TimeZone.default.getID()).build()
 		if (ds.rootNode != '.') {
-			def jsonRoot = [:] as Map<String, Object>
+			def jsonRoot = new HashMap<String, Object>()
 			MapUtils.SetValue(jsonRoot, ds.rootNode, writeRows)
 			jsonRoot.put(ds.rootNode, writeRows)
 			new StreamingJsonBuilder(writer, jsonRoot, gen)

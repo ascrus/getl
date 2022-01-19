@@ -100,7 +100,7 @@ class GenerationUtils {
 		def rootNode = dataset.rootNode
 		if (rootNode == null) {
 			sb << """def $rootElement = $methodParam as Map
-	Map<String, Object> $rowMap = [:]
+	Map<String, Object> $rowMap = new HashMap<String, Object>()
 $body
 	code.call($rowMap)
 """
@@ -133,7 +133,7 @@ $body
 				return
 			}
 		}
-		Map<String, Object> row = [:]
+		Map<String, Object> row = new HashMap<String, Object>()
 $body
 		code.call(row)
 		if (code.directive == Closure.DONE)
@@ -150,7 +150,7 @@ $body
 					return
 				}
 			}
-			Map<String, Object> row = [:]
+			Map<String, Object> row = new HashMap<String, Object>()
 $body
 			code.call(row)
 		}
@@ -218,7 +218,7 @@ $body
 			return null
 
 		// Map sections hierarchy
-		def sections = [:] as Map<String, Map>
+		def sections = new HashMap<String, Map>()
 		// Sections id
 		def idxSections = [] as List<String>
 		// List using format date time fields
@@ -265,7 +265,7 @@ $body
 				else
 					curSectName = curSectName + '.' + name
 				if (!sect.containsKey(name)) {
-					def newSect = [:] as Map<String, Map>
+					def newSect = new HashMap<String, Map>()
 					sect.put(name, newSect)
 					idxSections.add(curSectName)
 					sect = newSect
@@ -317,7 +317,7 @@ $body
 			sbBody.append('\n')
 		}
 
-		def res = [:] as Map<String, String>
+		def res = new HashMap<String, String>()
 		res.put('head', sbHead.toString())
 		res.put('body', sbBody.toString())
 
@@ -1170,7 +1170,7 @@ $body
 	
 	@CompileStatic
 	static Map GenerateRowValues(List<Field> field, Boolean lengthTextInBytes = false, def rowID = null) {
-		Map row = [:]
+		Map row = new HashMap()
 		field.each { Field f ->
 			def fieldName = f.name.toLowerCase()
 			def value = GenerateValue(f, lengthTextInBytes, rowID)
@@ -1215,10 +1215,11 @@ $body
 	 * @return code for generating a record with field values
 	 */
 	@CompileStatic
-	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = [:]) {
+	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = new HashMap()) {
 		if (excludeFields == null) excludeFields = [] as List<String>
 		excludeFields = (excludeFields as List<String>)*.toLowerCase()
-		if (rules == null) rules = [:]
+		if (rules == null)
+			rules = new HashMap()
 		def absAll = BoolUtils.IsValue(rules.get('_abs_'))
 		def minValueAll = rules.get('_minValue_') as Integer
 		def maxValueAll = rules.get('_maxValue_') as Integer
@@ -1246,7 +1247,7 @@ $body
 			def minValue = ListUtils.NotNullValue(f.minValue, minValueAll) as Integer
 			def maxValue = ListUtils.NotNullValue(f.maxValue, maxValueAll) as Integer
 
-			def rule = (rules.get(fieldName)?:[:]) as Map<String, Object>
+			def rule = (rules.get(fieldName)?:new HashMap<String, Object>()) as Map<String, Object>
 			if (rule.isNull != null) isNull = BoolUtils.IsValue(rule.isNull)
 			if (rule.containsKey('length')) length = rule.length as Integer
 			if (rule.containsKey('precision')) precision = rule.precision as Integer
@@ -1484,7 +1485,7 @@ sb << """
 		if (fields == null)
 			return null
 		
-		def res = [:]
+		def res = new HashMap()
 		def l = [] as List<Map>
 		res.put(propName, l)
 
@@ -1861,7 +1862,7 @@ sb << """
 	 */
 	@CompileStatic
 	static Map RowKeyMapValues(List<Field> fields, Map row, List<String> excludeFields) {
-		Map res = [:]
+		Map res = new HashMap()
 		if (excludeFields != null) excludeFields = excludeFields*.toLowerCase() else excludeFields = []
 		fields.each { Field f ->
 			if (f.isKey) {
@@ -1896,8 +1897,8 @@ sb << """
 	 * @return
 	 */
 	@CompileStatic
-	static Map RowMapValues (List<String> fields, Map row, Boolean toLower) {
-		Map res = [:]
+	static Map RowMapValues(List<String> fields, Map row, Boolean toLower) {
+		Map res = new HashMap()
 		if (toLower) {
 			fields.each { String n ->
 				n = n.toLowerCase()

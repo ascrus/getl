@@ -74,14 +74,14 @@ class Path implements Cloneable, GetlRepository {
 		if (description == null || description.length() == 0)
 			throw new ExceptionGETL('Parameter "params" required!')
 		registerMethod()
-		def params = [:] as Map<String, Object>
+		def params = new HashMap<String, Object>()
 		def i = description.indexOf('?')
 		if (i == -1)
 			params.mask = description
 		else {
 			params.mask = description.substring(0, i)
 
-			def vars = [:] as Map<String, Map>
+			def vars = new LinkedHashMap<String, Map>()
 			def list = description.substring(i + 1).replace('\\|', '\u0001').replace('\\;', '\u0002')
 					.split(';')
 
@@ -114,7 +114,7 @@ class Path implements Cloneable, GetlRepository {
 				if (varMaxLen != null && !varMaxLen.integer)
 					throw new ExceptionGETL("Incorrect value \"$varMaxLen\" of parameter \"max_length\" in variable \"$varName\"!")
 
-				def varParams = [:] as Map<String, Object>
+				def varParams = new LinkedHashMap<String, Object>()
 				if (varType != null)
 					varParams.put('type', varType)
 				if (varFormat != null) {
@@ -224,7 +224,7 @@ class Path implements Cloneable, GetlRepository {
 	String getLikeFile() { this.likeFile }
 
 	/** Compiled variables */
-	private Map<String, Map> vars = (MapUtils.UnmodifiableMap(new HashMap<String, Map>()) as Map<String, Map>)
+	private Map<String, Map> vars = (MapUtils.UnmodifiableMap(new LinkedHashMap<String, Map>()) as Map<String, Map>)
 
 	/**
 	 * Compiled mask variables<br><br>
@@ -254,7 +254,7 @@ class Path implements Cloneable, GetlRepository {
 	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
-	private final Map<String, Map<String, Object>> maskVariables = ([:] as Map<String, Map<String, Object>>)
+	private final Map<String, Map<String, Object>> maskVariables = (new LinkedHashMap<String, Map<String, Object>>())
 
 	/**
 	 * Variable parameters for compiling mask
@@ -290,10 +290,10 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Date formatter for variables */
-	private final Map<String, DateTimeFormatter> varDateFormatter = [:] as Map<String, DateTimeFormatter>
+	private final Map<String, DateTimeFormatter> varDateFormatter = new HashMap<String, DateTimeFormatter>()
 
 	/** System parameters */
-	private final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = new HashMap<String, Object>()
 	/** System parameters */
 	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
@@ -330,9 +330,9 @@ class Path implements Cloneable, GetlRepository {
 		if (name == null || name == '')
 			throw new ExceptionGETL('Name required for variable!')
 
-		def var = maskVariables.get(name) as Map
+		def var = maskVariables.get(name) as Map<String, Object>
 		if (var == null) {
-			var = [:]
+			var = new LinkedHashMap<String, Object>()
 			maskVariables.put(name, (var as Map<String, Object>))
 			isCompile = false
 		}
@@ -374,19 +374,20 @@ class Path implements Cloneable, GetlRepository {
 	 * </ul>
 	 * @param params path parameters
 	 */
-	void compile(Map params = [:]) {
-		if (params == null) params = [:]
+	void compile(Map params = new HashMap()) {
+		if (params == null)
+			params = new HashMap()
 		methodParams.validation("compile", params)
 		maskStr = (params.mask as String)?:mask
 		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
 		def sysVar = BoolUtils.IsValue(params.sysVar)
-		def varAttr = [:] as Map<String, Map<String, Object>>
+		def varAttr = new LinkedHashMap<String, Map<String, Object>>()
 		varAttr.putAll(maskVariables)
 		if (params.vars != null)
 			MapUtils.MergeMap(varAttr, params.vars as Map<String, Map<String, Object>>)
 		varAttr.each { name, varParams ->
 			if (varParams == null) {
-				varParams = [:] as Map<String, Object>
+				varParams = new LinkedHashMap<String, Object>()
 				varAttr.put(name, varParams)
 			}
 
@@ -423,7 +424,7 @@ class Path implements Cloneable, GetlRepository {
 		numLocalPath = -1
 		varDateFormatter.clear()
 
-		def compVars = ([:] as Map<String, Map<String, Object>>)
+		def compVars = (new LinkedHashMap<String, Map<String, Object>>())
 		def rMask = FileUtils.FileMaskToMathExpression(maskStr)
 
 		String[] d = rMask.split("/")
@@ -431,7 +432,7 @@ class Path implements Cloneable, GetlRepository {
 
 		def listFoundVars = [] as List<String>
 		for (Integer i = 0; i < d.length; i++) {
-			Map p = [:]
+			Map p = new LinkedHashMap()
 			p.vars = []
 			StringBuilder b = new StringBuilder()
 
@@ -445,7 +446,7 @@ class Path implements Cloneable, GetlRepository {
 					b.append(d[i].substring(f, s))
 
 					String vn = d[i].substring(s + 1, e).toLowerCase()
-					def vt = varAttr.get(vn)?:([:] as Map<String, Object>)
+					def vt = varAttr.get(vn)?:(new LinkedHashMap<String, Object>())
 
 					if (vt.type == null)
 						vt.type = Field.stringFieldType
@@ -540,8 +541,8 @@ class Path implements Cloneable, GetlRepository {
 		generateMaskPattern()
 
 		if (sysVar) {
-			compVars.put("#file_date", [:])
-			compVars.put("#file_size", [:])
+			compVars.put("#file_date", new LinkedHashMap())
+			compVars.put("#file_size", new LinkedHashMap())
 		}
 
 		varAttr.findAll { name, value -> value.calc != null }.each { name, values ->
@@ -644,14 +645,14 @@ class Path implements Cloneable, GetlRepository {
 			if (f[i].isDirectory()) {
 				List<Map> n = getFiles(path + "/" + f[i].getName())
 				for (Integer x = 0; x < n.size(); x++) {
-					def m = [:]
+					def m = new HashMap()
 					m.fileName = n[x].fileName
 					l << m
 				}
 			}
 			else
 				if (f[i].isFile()) {
-					def m = [:]
+					def m = new HashMap()
 					m.fileName = path +"/" + f[i].getName()
 					l << m
 				}
@@ -688,7 +689,7 @@ class Path implements Cloneable, GetlRepository {
 		if (fn == null) return null
 
 		if (extendVars == null)
-			extendVars = [:] as Map<String, Object>
+			extendVars = new LinkedHashMap<String, Object>()
 		else
 			extendVars = MapUtils.CopyOnly(extendVars, ['filename', 'filedate', 'filesize']) as Map<String, Object>
 
@@ -707,7 +708,7 @@ class Path implements Cloneable, GetlRepository {
 
 		if (!fn.matches(pattern)) return null
 
-		def res = ([:] as Map<String, Object>)
+		def res = (new LinkedHashMap<String, Object>())
 
 		Matcher mat
 		mat = fn =~ pattern
@@ -846,7 +847,7 @@ class Path implements Cloneable, GetlRepository {
 	String generateFileName(Map varValues, Boolean formatValue) {
 		if (!isCompile) compile()
 
-		def v = [:] as Map<String, Object>
+		def v = new HashMap<String, Object>()
 		if (formatValue) {
 			vars.each { key, value ->
 				def val = formatVariable(key, varValues.get(key))

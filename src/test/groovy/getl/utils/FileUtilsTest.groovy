@@ -443,4 +443,16 @@ println time() + 'finish' '''
         assertEquals('/home/test', FileUtils.PrepareDirPath('/home/test', true))
         assertEquals('/home/test', FileUtils.PrepareDirPath('/home/test/', true))
     }
+
+    @Test
+    void testAddToPath() {
+        assertEquals('/child', FileUtils.AddToPath(null, 'child'))
+        assertEquals('/child', FileUtils.AddToPath(null, '/child'))
+        assertEquals('/child', FileUtils.AddToPath('.', 'child'))
+        assertEquals('/child', FileUtils.AddToPath('.', '/child'))
+        assertEquals('/main/child', FileUtils.AddToPath('/main', 'child'))
+        assertEquals('/main/child', FileUtils.AddToPath('/main', '/child'))
+        assertEquals('/main/child', FileUtils.AddToPath('/main/', 'child'))
+        assertEquals('/main/child', FileUtils.AddToPath('/main/', '/child'))
+    }
 }

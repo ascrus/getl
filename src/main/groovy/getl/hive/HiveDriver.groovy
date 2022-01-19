@@ -248,7 +248,7 @@ class HiveDriver extends JDBCDriver {
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
-        def expression = ListUtils.NotNullValue([bulkParams.expression, [:]]) as Map<String, Object> /*TODO: refactoring */
+        def expression = ListUtils.NotNullValue([bulkParams.expression, new HashMap<String, Object>()]) as Map<String, Object> /*TODO: refactoring */
         expression.each { String fieldName, expr ->
             if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
         }
@@ -384,7 +384,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     static Map<String, Object> tableExtendedInfo(TableDataset table) {
-        Map<String, Object> res = [:]
+        Map<String, Object> res = new HashMap<String, Object>()
         def sql = 'SHOW TABLE EXTENDED'
         if (table.schemaName() != null) sql += " IN ${table.schemaName()}"
         sql += " LIKE '${table.tableName}'"
