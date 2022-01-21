@@ -599,7 +599,7 @@ class Executor implements GetlRepository {
 			setError(element, e)
 			def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
 			if (dumpErrors)
-				logger.dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
+				logger.dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([data: element])}")
 			if (logErrors) {
 				logger.exception(e, this.toString(), errObject)
 			}

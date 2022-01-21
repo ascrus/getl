@@ -273,34 +273,40 @@ class ConvertUtils {
 
 		def lexer = new Lexer(value, Lexer.javaScriptType)
 		def res = new HashMap<String, Object>()
-		lexer.toList().each { list ->
+		def nodes = lexer.toList()
+		nodes.each { list ->
 			if (list.isEmpty())
 				return
 
-			def i = list.findIndexOf { elem -> elem.type == Lexer.TokenType.SINGLE_WORD && (elem.value as String).indexOf(':') != -1 }
+			def i = list.findIndexOf { elem ->
+				return ((elem.type as Lexer.TokenType) in [Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION]) && (elem.value as String).indexOf(':') != -1
+			}
 			if (i == -1)
 				throw new ExceptionGETL('The name in the map structure is not specified!')
 
-			def findColon = (list[i].value as String)
+			def item = list[i]
+			def itemType = item.type as Lexer.TokenType
+			def findColon = (item.value as String)
 			if (i == 0 && findColon[0] == ':')
 				throw new ExceptionGETL('The name in the map structure is not specified!')
-			if (i == list.size() - 1 && findColon[findColon.length() - 1] == ':') {
-				def name = lexer.script.substring(list[0].first as Integer, (list[i].last as Integer) + 1)
+			if (itemType == Lexer.TokenType.SINGLE_WORD && i == list.size() - 1 && findColon[findColon.length() - 1] == ':') {
+				def name = lexer.script.substring(list[0].first as Integer, (item.last as Integer) + 1)
 				res.put(name.substring(0, name.lastIndexOf(':')), null)
 				return
 			}
 
-			def name = lexer.script.substring(list[0].first as Integer, (list[i].last as Integer) + 1)
+			def name = lexer.script.substring(list[0].first as Integer, (item.last as Integer) + 1)
 			def pos = name.lastIndexOf(':')
 			name = name.substring(0, pos).trim()
 			if (name.matches(SingleQuotedString) || name.matches(DoubleQuotedString))
 				name = name.substring(1, name.length() - 1)
 
 			String val = ''
-			def elemWithPos = list[i].value as String
+			def elemWithPos = /*(itemType == Lexer.TokenType.SINGLE_WORD)?item.value as String:*/
+					lexer.script.substring(item.first as Integer, (item.last as Integer) + 1)
 			if (elemWithPos[elemWithPos.length() - 1] != ':') {
 				pos = elemWithPos.lastIndexOf(':')
-				val = elemWithPos.substring(pos + 1)
+				val = elemWithPos.substring(pos + 1).trim()
 			}
 			if (i < list.size() - 1)
 				val += lexer.script.substring(list[i + 1].first as Integer, (list[list.size() - 1].last as Integer) + 1).trim()

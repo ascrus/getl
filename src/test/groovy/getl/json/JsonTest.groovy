@@ -143,12 +143,12 @@ class JsonTest extends GetlTest {
 
                 profile("Generate $countRowsInFile rows to Json file") {prof ->
                     etl.rowsTo(ds) {wrt ->
-                        def cl = GenerationUtils.GenerateRandomRow(ds, ['id', 'phones'])
+                        def cl = GenerationUtils.GenerateRandomRow(ds, [/*'id', */'phones'], [id: [identity: true]])
                         writeRow { add ->
                             def i = 0
                             (1..countRowsInFile).each {
                                 i++
-                                def row = [id: i] as Map<String, Object>
+                                def row = [:]/*[id: i]*/ as Map<String, Object>
                                 cl.call(row)
                                 row.phones = [phones: ['111-11-11', '222-22-22', '333-33-33']]
                                 add row

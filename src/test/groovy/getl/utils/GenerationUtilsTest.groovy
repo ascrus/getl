@@ -373,11 +373,12 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         d.field('open_date') { type = dateFieldType; isNull = false}
         d.field('insert_time') { type = datetimeFieldType; isNull = false}
 
-        def code = GenerationUtils.GenerateRandomRow(d, ['id'],
+        def code = GenerationUtils.GenerateRandomRow(d, /*['id']*/null,
                 [
                     _abs_: true,
                     _minValue_: -100,
                     _maxValue_: 100000,
+                    id: [identity: true],
                     name: [divLength: 2],
                     code: [list: ['1', '2', '3', '4', '5']],
                     open_date: [date: DateUtils.ParseDate('2019-12-01'), days: 30],
@@ -386,7 +387,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
                 ])
 
         (1..10).each {
-            Map row = [id: it]
+            Map row = [:]
             code.call(row)
 
             assertEquals(it, row.id)

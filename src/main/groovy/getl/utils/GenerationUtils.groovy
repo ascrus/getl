@@ -1025,7 +1025,7 @@ $body
 	
 	@CompileStatic
 	static double GenerateDouble () {
-        return random.nextDouble() + random.nextLong()
+        return random.nextDouble() + random.nextLong().toDouble()
 	}
 	
 	@CompileStatic
@@ -1212,10 +1212,11 @@ $body
 	 * @param dataset required for filling the dataset
 	 * @param excludeFields list of field names excluded from generation
 	 * @param rules additional rules for generating values
+	 * @param script generated script
 	 * @return code for generating a record with field values
 	 */
 	@CompileStatic
-	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = new HashMap()) {
+	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = new HashMap(), StringBuilder script = null) {
 		if (excludeFields == null) excludeFields = [] as List<String>
 		excludeFields = (excludeFields as List<String>)*.toLowerCase()
 		if (rules == null)
@@ -1229,12 +1230,13 @@ $body
 		def secondsAll = rules.get('_seconds_') as Integer
 
 		def sb = new StringBuilder()
-		sb << '{ Map row ->\n'
-		sb << '  generateRow(row)\n'
-		sb << '}\n'
+		sb << 'import groovy.transform.Field\n'
+		sb << 'import getl.utils.*\n'
+		sb << '{LIST_ELEMENTS}\n'
 		sb << '@groovy.transform.CompileStatic\n'
-		sb << 'static void generateRow(final Map row) {\n'
+		sb << 'void generateRow(Map row, Long current_row) {\n'
 		def count = 0
+		def listElements = [] as List<String>
 
 		dataset.field.each { Field f ->
 			def fieldName = f.name.toLowerCase()
@@ -1259,25 +1261,37 @@ $body
 			def list = rule.list as List<String>
 			def divLength = ListUtils.NotNullValue(rule.divLength, divLengthAll) as Integer
 			def abs = BoolUtils.IsValue(rule.abs, absAll)
+			def isIdentity = BoolUtils.IsValue(rule.identity)
 
 			String func
 			switch (f.type) {
 				case Field.integerFieldType: case Field.bigintFieldType:
-					def absFunc = (abs)?'.abs()':''
-					def generate = (minValue != null && maxValue != null)?
-							"getl.utils.GenerationUtils.GenerateInt($minValue, $maxValue)":
-							"getl.utils.GenerationUtils.GenerateInt()$absFunc"
-					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Integer)"
+					if (!isIdentity) {
+						def absFunc = (abs) ? '.abs()' : ''
+						if (minValue != null && maxValue == null) {
+							maxValue = Integer.MAX_VALUE
+						}
+						if (maxValue != null && minValue == null) {
+							minValue = (abs)?0:Integer.MIN_VALUE
+						}
+
+						def generate = (minValue != null && maxValue != null) ?
+								"GenerationUtils.GenerateInt($minValue, $maxValue)" :
+								"GenerationUtils.GenerateInt()$absFunc"
+						if (isNull)
+							func = "(GenerationUtils.GenerateBoolean())?$generate:(null as Integer)"
+						else
+							func = generate
+					}
 					else
-						func = generate
+						func = 'current_row'
 
 					break
 
 				case Field.booleanFieldType:
-					def generate = "getl.utils.GenerationUtils.GenerateBoolean()"
+					def generate = "GenerationUtils.GenerateBoolean()"
 					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Boolean)"
+						func = "(GenerationUtils.GenerateBoolean())?$generate:(null as Boolean)"
 					else
 						func = generate
 
@@ -1286,17 +1300,17 @@ $body
 				case Field.dateFieldType:
 					String generate
 					if (date != null && days != null) {
-						generate = "getl.utils.GenerationUtils.GenerateDate(new Date(${date.time}), $days)"
+						generate = "GenerationUtils.GenerateDate(new Date(${date.time}), $days)"
 					}
 					else {
 					 	if (days != null)
-							generate = "getl.utils.GenerationUtils.GenerateDate($days)"
+							generate = "GenerationUtils.GenerateDate($days)"
 						else
-							generate = "getl.utils.GenerationUtils.GenerateDate()"
+							generate = "GenerationUtils.GenerateDate()"
 					}
 
 					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Date)"
+						func = "(GenerationUtils.GenerateBoolean())?$generate:(null as Date)"
 					else
 						func = generate
 
@@ -1305,17 +1319,17 @@ $body
 				case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
 					String generate
 					if (date != null && seconds != null) {
-						generate = "getl.utils.GenerationUtils.GenerateDateTime(new Date(${date.time}), $seconds)"
+						generate = "GenerationUtils.GenerateDateTime(new Date(${date.time}), $seconds)"
 					}
 					else {
 						if (seconds != null)
-							generate = "getl.utils.GenerationUtils.GenerateDateTime($seconds)"
+							generate = "GenerationUtils.GenerateDateTime($seconds)"
 						else
-							generate = "getl.utils.GenerationUtils.GenerateDateTime()"
+							generate = "GenerationUtils.GenerateDateTime()"
 					}
 
 					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Date)"
+						func = "(GenerationUtils.GenerateBoolean())?$generate:(null as Date)"
 					else
 						func = generate
 
@@ -1323,9 +1337,9 @@ $body
 
 				case Field.doubleFieldType:
 					def absFunc = (abs)?'.abs()':''
-					def generate = "getl.utils.GenerationUtils.GenerateDouble()$absFunc"
+					def generate = "GenerationUtils.GenerateDouble()$absFunc"
 					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Double)"
+						func = "(GenerationUtils.GenerateBoolean())?$generate:(null as Double)"
 					else
 						func = generate
 
@@ -1336,16 +1350,16 @@ $body
 					String generate
 					if (length != null) {
 						if (precision != null)
-							generate = "getl.utils.GenerationUtils.GenerateNumeric($length, $precision)$absFunc"
+							generate = "GenerationUtils.GenerateNumeric($length, $precision)$absFunc"
 						else
-							generate = "getl.utils.GenerationUtils.GenerateNumeric($length)$absFunc"
+							generate = "GenerationUtils.GenerateNumeric($length)$absFunc"
 					}
 					else {
-						generate = "getl.utils.GenerationUtils.GenerateNumeric()$absFunc"
+						generate = "GenerationUtils.GenerateNumeric()$absFunc"
 					}
 
 					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as BigDecimal)"
+						func = "(GenerationUtils.GenerateBoolean())?$generate:(null as BigDecimal)"
 					else
 						func = generate
 
@@ -1357,14 +1371,14 @@ $body
 
 					String generate
 					if (list != null) {
-						sb << "  final def ${fieldName}_list = [${ListUtils.QuoteList(list, '\'').join(',')}]\n"
-						generate = "${fieldName}_list[getl.utils.GenerationUtils.GenerateInt(0, ${list.size() - 1})]"
+						listElements.add("@Field List<String> _list_${fieldName} = [${ListUtils.QuoteList(list, '\'').join(',')}]".toString())
+						generate = "this._list_${fieldName}[GenerationUtils.GenerateInt(0, ${list.size() - 1})]"
 					}
 					else
-						generate = "getl.utils.GenerationUtils.GenerateString(${length?:255})"
+						generate = "GenerationUtils.GenerateString(${length?:255})"
 
 					if (isNull)
-						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as String)"
+						func = "(GenerationUtils.GenerateBoolean())?$generate:(null as String)"
 					else
 						func = generate
 
@@ -1377,11 +1391,22 @@ $body
 		}
 		if (count == 0)
 			throw new ExceptionGETL('No fields were found for generation!')
+		sb << '}\n'
+
+		sb << 'def count_rows = 0L\n'
+		sb << 'return { Map row ->\n'
+		sb << '  count_rows++\n'
+		sb << '  generateRow(row, count_rows)\n'
 		sb << '}'
 
-//		println sb.toString()
+		def str = sb.replaceAll('[{]LIST_ELEMENTS[}]', listElements.join('\n'))
 
-		return EvalGroovyClosure(value: sb.toString(), owner: dataset.dslCreator)
+		//println str
+
+		if (script != null)
+			script.append(str)
+
+		return EvalGroovyClosure(value: str, owner: dataset.dslCreator)
 	}
 	
 	/**
@@ -1640,7 +1665,7 @@ sb << """
 	 */
 	@CompileStatic
 	@NamedVariant
-	static def EvalGroovyScript(String value, Map vars = null,
+	static Object EvalGroovyScript(String value, Map vars = null,
 								Boolean convertReturn = false, ClassLoader classLoader = null, Getl owner = null) {
 		if (value == null)
 			return null

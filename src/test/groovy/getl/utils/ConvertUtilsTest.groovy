@@ -63,6 +63,10 @@ class ConvertUtilsTest extends GetlTest {
         assertEquals(3.12, l[1])
         assert l[2] instanceof String
         assertEquals('4', l[2])
+
+        l = ConvertUtils.String2List("['ONE', 'TWO', 'THREE']")
+        assertEquals(3, l.size())
+        assertEquals(['ONE', 'TWO', 'THREE'], l)
     }
 
     @Test
@@ -72,6 +76,18 @@ class ConvertUtilsTest extends GetlTest {
 
         l = ConvertUtils.String2Map('\'a a\': \'aa\', "b":" b b ", \' c \' : " c c ", "d:d, e:e": " d d : e , e "')
         assertEquals(['a a': 'aa', b: ' b b ', ' c ': ' c c ', 'd:d, e:e': ' d d : e , e '], l)
+
+        l = ConvertUtils.String2Map("list: [ONE, TWO, THREE]")
+        assertEquals([list: '[ONE, TWO, THREE]'], l)
+
+        l = ConvertUtils.String2Map("'list' :[ONE, TWO, THREE] , a : 1")
+        assertEquals([list: '[ONE, TWO, THREE]', a: 1], l)
+
+        l = ConvertUtils.String2Map('a : 1, "list" : [ONE, TWO, THREE]')
+        assertEquals([a: 1, list: '[ONE, TWO, THREE]'], l)
+
+        l = ConvertUtils.String2Map("a: 'a', list: ['ONE', 'TWO', 'THREE'], b: 'b'")
+        assertEquals([a: 'a', list: "['ONE', 'TWO', 'THREE']", b: 'b'], l)
     }
 
     @Test
