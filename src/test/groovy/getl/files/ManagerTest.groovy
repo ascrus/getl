@@ -223,9 +223,9 @@ abstract class ManagerTest extends GetlTest {
             recursive = true
             directoryLimit = 2
         }
-        assertEquals(4, listTable.countRow())
-        assertEquals(4, manager.countFileList)
-        assertEquals(40, manager.sizeFileList)
+        assertEquals(6, listTable.countRow())
+        assertEquals(6, manager.countFileList)
+        assertEquals(60, manager.sizeFileList)
 
         shouldFail {
             manager.buildListFiles {

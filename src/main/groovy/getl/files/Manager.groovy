@@ -992,9 +992,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 					}
 					file.clear()
 				} else if (file.type == TypeFile.DIRECTORY && recursive) {
-					countDirs++
-					if (limit != null && countDirs > limit) break
-
 					def b = true
 					if (requiredAnalyze) {
 						b = false
@@ -1022,11 +1019,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 						if (threadCount == null || fileLevel != threadLevel) {
 							man.changeDirectory((String) (file.filename))
 							processList(man, dest, path, maskFile, maskPath, recursive, fileLevel + 1, requiredAnalyze,
-										limit, threadLevel, threadCount, code)
+										null, threadLevel, threadCount, code)
 							man.changeDirectory('..')
 						} else {
 							threadDirs << (String) (file.filename)
 						}
+
+						countDirs++
+						if (limit != null && countDirs >= limit)
+							break
 					}
 				}
 			}
