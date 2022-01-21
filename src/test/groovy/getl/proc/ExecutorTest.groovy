@@ -5,6 +5,7 @@ import getl.test.GetlTest
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.SynchronizeObject
 import org.junit.Test
 
 import java.util.logging.Level
@@ -170,6 +171,31 @@ class ExecutorTest extends GetlTest {
 //                println countProcessed
                 assertTrue(countProcessed < 40000)
             }
+        }
+    }
+
+    @Test
+    void testNested() {
+        Getl.Dsl {
+            def so = new SynchronizeObject()
+            thread {
+                useList((1..5))
+                setCountProc 3
+                run {
+                    profile("Thread $it") {
+                        thread {
+                            useList(1..10)
+                            setCountProc 5
+                            def sc = new SynchronizeObject()
+                            run { sc.addCount(1) }
+                            assertEquals(10, sc.count)
+                            so.addCount(sc.count)
+                            countRow = sc.count
+                        }
+                    }
+                }
+            }
+            assertEquals(50, so.count)
         }
     }
 }
