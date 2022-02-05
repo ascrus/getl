@@ -751,4 +751,25 @@ return $className"""
 
         return res
     }
+
+    /** List of scripts */
+    Map<String, WorkflowScriptSpec> listScripts() {
+        return BuildListScripts(usedSteps)
+    }
+
+    /** Build list of scripts */
+    static private Map<String, WorkflowScriptSpec> BuildListScripts(List<WorkflowSpec> nodes) {
+        def res = new LinkedHashMap<String, WorkflowScriptSpec>()
+        nodes.each { step ->
+            step.scripts.each { name, script ->
+                res.put(name, new WorkflowScriptSpec(step, true, script))
+            }
+            res.putAll(BuildListScripts(step.nested))
+        }
+
+        return res
+    }
+
+    @Override
+    String toString() { super.toString() + ': ' + _result.toString() }
 }

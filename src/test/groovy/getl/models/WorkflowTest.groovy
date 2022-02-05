@@ -72,6 +72,8 @@ class WorkflowTest extends GetlDslTest {
                         }
                     }
                 }
+                assertEquals(['Root1', 'Root2', 'SCRIPT 1', 'Later1', 'Later2', 'SCRIPT 2', 'Child1'], listScripts().keySet().toList())
+
                 assertEquals(5, execute([ext_var1: 'test']))
                 //results.each { name, result -> println "$name: $result" }
 

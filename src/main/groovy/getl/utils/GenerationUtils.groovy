@@ -12,6 +12,8 @@ import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
 import org.codehaus.groovy.control.CompilerConfiguration
 
+import java.util.regex.Pattern
+
 /**
  * Generation code library functions class 
  * @author Alexsey Konstantinov
@@ -2188,5 +2190,82 @@ else
 		}
 
 		return res
+	}
+
+	/**
+	 * <p>Generate code for calculating receiver fields based on source fields and variables according to the specified mapping</p>
+	 * <p>To create virtual fields in the source, precede the field name with an asterisk. A virtual field can only refer to an expression.
+	 * Specify expressions as ${expression}.</p><br>
+	 * <i>Example:</i><br>
+	 * <pre>
+[dest_field1: 'source_field1',
+ '*virtual_field': '${source.source_field1}',
+ dest_field2: '${source.virtual_field}']
+	 * </pre>
+	 * @param map field mapping (destination field: source field or expression)
+	 * @param owner getl instance
+	 * @return closure code
+	 */
+	static Closure GenerateCalculateMapClosure(Map<String, String> map, Getl owner = null) {
+		if (map == null)
+			return null
+
+		if (map.isEmpty())
+			throw new ExceptionGETL("Empty map not supported!")
+
+		def sb = new StringBuilder()
+		sb.append('import getl.utils.*\n')
+		sb.append('void process(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {\n')
+
+		//noinspection RegExpRedundantEscape
+		def p = Pattern.compile('^\\$\\{(.+)\\}$')
+		def removeKeys = [] as List<String>
+		def virtValues = [] as List<String>
+		def destValues = [] as List<String>
+		map.each { destName, sourceName ->
+			def isVirtual = (destName.matches('^[*].+'))
+			def matcher = p.matcher(sourceName)
+
+			def destValue = (matcher.find())?matcher.group(1):null
+			if (!isVirtual) {
+				if (destValue == null)
+					return
+			}
+			else if (destValue == null)
+				throw new ExceptionGETL("It is required to set an expression for the virtual field \"$destName\"!")
+
+			removeKeys.add(destName)
+			if (isVirtual)
+				virtValues.add("source.put('${StringUtils.EscapeJavaWithoutUTF(destName.substring(1))}', $destValue)")
+			else
+				destValues.add("dest.put('${StringUtils.EscapeJavaWithoutUTF(destName)}', $destValue)")
+		}
+
+		if (removeKeys.isEmpty())
+			return null
+
+		virtValues.each {
+			sb.append('  ')
+			sb.append(it)
+			sb.append('\n')
+		}
+
+		destValues.each {
+			sb.append('  ')
+			sb.append(it)
+			sb.append('\n')
+		}
+
+		sb.append('}\n')
+		sb.append('def cl = { Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars ->\n')
+		sb.append('  process(source, dest, vars?:new HashMap<String, Object>())\n')
+		sb.append('}\n')
+		sb.append('return cl\n')
+
+		MapUtils.RemoveKeys(map, removeKeys)
+
+//		println sb.toString()
+
+		return GenerationUtils.EvalGroovyClosure(value: sb.toString(), owner: owner)
 	}
 }

@@ -397,4 +397,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     T objectByName(String name) {
         return usedObjects.find { obj -> obj.objectNameInModel() == name }
     }
+
+    @Override
+    String toString() { "Model \"${dslNameObject?:'unnamed'}\"" }
 }

@@ -237,7 +237,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 }
 
                 try {
-                    if (spec.copyFromVertica(externalConnection, onlyForEmpty, useExportCopy)) res++
+                    if (spec.copyFromVertica(externalConnection, onlyForEmpty, useExportCopy))
+                        res++
                 }
                 catch (Exception e) {
                     dslCreator.logError("Error copying to reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
@@ -302,6 +303,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * Fill tables with data from reference tables
      * @param include process only specified table masks
      * @param exclude exclude specified table masks
+     * @param usePartitions using partition functions
      * @return count of tables filled
      */
     Integer fill(List<String> include = null, List<String> exclude = null, Boolean usePartitions = true) {
@@ -422,5 +424,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     }
 
     @Override
-    String toString() { "Referencing ${usedObjects.size()} tables from \"$referenceConnectionName\" connection in \"$referenceSchemaName\" schemata" }
+    String toString() {
+        super.toString() + "(referencing ${usedObjects.size()} tables from \"$referenceConnectionName\" connection in \"$referenceSchemaName\" schemata)"
+    }
 }
