@@ -12,6 +12,8 @@ import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem
 import getl.utils.Logs
@@ -376,7 +378,8 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    void removeDir(String dirName, Boolean recursive) {
+    void removeDir(String dirName, Boolean recursive,
+                   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null) {
         validConnect()
         validWrite()
 
@@ -387,6 +390,9 @@ class HDFSManager extends Manager implements UserLogins {
             if (writeErrorsToLog) logger.severe("Can not remove dir \"${fullName(_currentPath, dirName)}\"")
             throw e
         }
+
+        if (onDelete != null)
+            onDelete.call(dirName)
     }
 
     @Override

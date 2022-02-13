@@ -12,6 +12,7 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.MapUtils
 import getl.utils.Path
+import getl.utils.StringUtils
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -212,12 +213,12 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 renamePath.compile()
         }
 
-        def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
+        def vars = sourcePath.vars.keySet().toList()*.toLowerCase() + ['filepath', 'filename', 'filesize', 'filedate']
 
         if (!segmented.isEmpty()) {
             segmented.each { col ->
                 if (!((col as String).toLowerCase() in vars))
-                    throw new ExceptionFileListProcessing("Field \"$col\" specified for segmenting was not found!")
+                    throw new ExceptionFileListProcessing("Field \"$col\" specified for segmenting was not found, allowed: $vars")
             }
         }
 
@@ -231,8 +232,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     protected void infoProcess() {
         super.infoProcess()
 
-        destinations.each { man ->
-            logger.info("Files will be copied to \"$man\"")
+        for (int i = 0; i < destinations.size(); i++) {
+            logger.fine("Files will be copied to \"${destinations[i]}\" [$i]")
         }
 
         logger.fine("  destination mask path: ${tmpDestPath.maskStr}")
@@ -370,13 +371,15 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (cacheTable != null)
             saveCacheStory()
 
-        Operation(destinations, numberAttempts, timeAttempts) { man ->
+        Operation(destinations, numberAttempts, timeAttempts, dslCreator) { man ->
             try {
                 man.changeDirectoryToRoot()
                 man.changeLocalDirectoryToRoot()
             }
             catch (Exception ignored) { }
         }
+
+        logger.info("${StringUtils.WithGroupSeparator(countFiles)} files copied")
     }
 
     /**
@@ -388,8 +391,6 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
      */
     @SuppressWarnings('SpellCheckingInspection')
     protected processSegment(Integer segment, Manager src, List<Manager> dst) {
-        logger.finest("$segment: processing $dst")
-
         def isRemoveFile = removeFiles
         def files = tmpProcessFiles.cloneDatasetConnection() as TableDataset
         files.readOpts {
@@ -400,6 +401,15 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 it.order = ['_SEGMENTED_', '_OUTPATH_']
         }
 
+        def totalFiles = files.countRow()
+        if (totalFiles == 0) {
+            files.currentJDBCConnection.connected = false
+            return
+        }
+
+        def percentFiles = (totalFiles / 100)
+        logger.finest("[Thread ${segment + 1}]: start processing $dst (${StringUtils.WithGroupSeparator(totalFiles)} files)...")
+
         def beforeCopy = (onBeforeCopyFile != null)?(onBeforeCopyFile.clone() as Closure):null
         def afterCopy = (onAfterCopyFile != null)?(onAfterCopyFile.clone() as Closure):null
 
@@ -407,12 +417,14 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         def oPath = ''
 
         def fileSize = 0L
+        def copiedFiles = 0L
+        def copiedPercent = 0
 
         try {
             files.eachRow { infile ->
                 sayFileInfo(infile)
 
-                def ptf = profile("[$segment]: copy file \"${infile.get('filepath')}/${infile.get('filename')}\"", 'byte')
+                def ptf = profile("[Thread ${segment + 1}]: copy file \"${infile.get('filepath')}/${infile.get('filename')}\"", 'byte')
                 def infilename = infile.get('filename') as String
 
                 def outpath = infile.get('_outpath_') as String
@@ -445,12 +457,12 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 if (beforeCopy != null)
                     beforeCopy.call(infile, outfile)
 
-                Operation([src], numberAttempts, timeAttempts) { man ->
+                Operation([src], numberAttempts, timeAttempts, dslCreator) { man ->
                     man.download(infilename, outfilename)
                 }
 
                 try {
-                    Operation(dst, numberAttempts, timeAttempts) { man ->
+                    Operation(dst, numberAttempts, timeAttempts, dslCreator) { man ->
                         man.upload(outfilename)
                     }
                 }
@@ -464,13 +476,19 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 storyWrite(infile + [fileloaded: new Date()])
 
                 if (isRemoveFile) {
-                    Operation([src], numberAttempts, timeAttempts) { man ->
+                    Operation([src], numberAttempts, timeAttempts, dslCreator) { man ->
                         man.removeFile(infilename)
                     }
                 }
 
                 def infilesize = infile.get('filesize') as Long
                 fileSize += infilesize
+                copiedFiles++
+                def curPercent = ((copiedFiles / percentFiles).toInteger()).intdiv(10) * 10
+                if (curPercent > copiedPercent) {
+                    copiedPercent = curPercent
+                    logger.fine("[Thread ${segment + 1}]: copied $copiedPercent% (${StringUtils.WithGroupSeparator(copiedFiles)} files)")
+                }
 
                 ptf.finish(infilesize)
             }
@@ -478,7 +496,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         finally {
             files.currentJDBCConnection.connected = false
 
-            Operation([src], numberAttempts, timeAttempts) { man ->
+            Operation([src], numberAttempts, timeAttempts, dslCreator) { man ->
                 try {
                     man.changeLocalDirectoryToRoot()
                     man.removeLocalDirs('.')
@@ -488,6 +506,6 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         }
 
         counter.addCount(files.readRows)
-        logger.info("[$segment]: copied ${files.readRows} files (${FileUtils.SizeBytes(fileSize)})")
+        logger.info("[Thread ${segment + 1}]: complete copied ${files.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
 }

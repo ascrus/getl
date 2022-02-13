@@ -1,5 +1,6 @@
 package getl.files.sub
 
+import getl.utils.SynchronizeObject
 import groovy.transform.Synchronized
 
 /**
@@ -26,6 +27,9 @@ abstract class ManagerListProcessing {
 
 		return res
 	}
+
+	/** Counter directories */
+	public SynchronizeObject counterDirectories = new SynchronizeObject()
 	
 	/**
 	 * Init class for build thread

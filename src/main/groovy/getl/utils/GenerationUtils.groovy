@@ -2199,34 +2199,46 @@ else
 	 * <i>Example:</i><br>
 	 * <pre>
 [dest_field1: 'source_field1',
- '*virtual_field': '${source.source_field1}',
- dest_field2: '${source.virtual_field}']
+  '*virtual_field_level1': '${source.source_field1}',
+  '**virtual_field_level2': '${source.virtual_field_level1}',
+  dest_field2: '${source.virtual_field_level2}']
 	 * </pre>
 	 * @param map field mapping (destination field: source field or expression)
 	 * @param owner getl instance
 	 * @return closure code
 	 */
-	static Closure GenerateCalculateMapClosure(Map<String, String> map, Getl owner = null) {
+	static Closure GenerateCalculateMapClosure(Map<String, String> map, Getl owner = null, StringBuilder sb = null) {
 		if (map == null)
 			return null
 
 		if (map.isEmpty())
 			throw new ExceptionGETL("Empty map not supported!")
 
-		def sb = new StringBuilder()
+		if (sb == null)
+			sb = new StringBuilder()
 		sb.append('import getl.utils.*\n')
+		sb.append('import groovy.xml.XmlParser\n')
+		sb.append('import groovy.json.JsonSlurper\n')
+		sb.append('import groovy.yaml.YamlSlurper\n')
 		sb.append('void process(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {\n')
 
 		//noinspection RegExpRedundantEscape
-		def p = Pattern.compile('^\\$\\{(.+)\\}$')
+		def p1 = Pattern.compile('^\\$\\{(.+)\\}$')
+		def p2 = Pattern.compile('^([*]+)(.+)')
+
 		def removeKeys = [] as List<String>
-		def virtValues = [] as List<String>
+		def clearKeys = [] as List<String>
+		def virtualValues = [:] as Map<Integer, List<String>>
 		def destValues = [] as List<String>
 		map.each { destName, sourceName ->
-			def isVirtual = (destName.matches('^[*].+'))
-			def matcher = p.matcher(sourceName)
+			def m1 = p1.matcher(sourceName)
+			def destValue = (m1.find())?m1.group(1):null
 
-			def destValue = (matcher.find())?matcher.group(1):null
+			def m2 = p2.matcher(destName)
+			def isVirtual = m2.find()
+			def virtualLevel = (isVirtual)?m2.group(1).length():null
+			def virtualName = (isVirtual)?m2.group(2):null
+
 			if (!isVirtual) {
 				if (destValue == null)
 					return
@@ -2234,20 +2246,30 @@ else
 			else if (destValue == null)
 				throw new ExceptionGETL("It is required to set an expression for the virtual field \"$destName\"!")
 
-			removeKeys.add(destName)
-			if (isVirtual)
-				virtValues.add("source.put('${StringUtils.EscapeJavaWithoutUTF(destName.substring(1))}', $destValue)")
-			else
-				destValues.add("dest.put('${StringUtils.EscapeJavaWithoutUTF(destName)}', $destValue)")
+			if (isVirtual) {
+				def vm = virtualValues.get(virtualLevel)
+				if (vm == null) {
+					vm = [] as List<String>
+					virtualValues.put(virtualLevel, vm)
+				}
+				vm.add("source.put('${StringUtils.EscapeJavaWithoutUTF(virtualName.toLowerCase())}', $destValue)")
+				removeKeys.add(destName)
+			}
+			else {
+				destValues.add("dest.put('${StringUtils.EscapeJavaWithoutUTF(destName).toLowerCase()}', $destValue)")
+				clearKeys.add(destName)
+			}
 		}
 
-		if (removeKeys.isEmpty())
+		if (removeKeys.isEmpty() && clearKeys.isEmpty())
 			return null
 
-		virtValues.each {
-			sb.append('  ')
-			sb.append(it)
-			sb.append('\n')
+		virtualValues.sort().each {level, list ->
+			list.each {
+				sb.append('  ')
+				sb.append(it)
+				sb.append('\n')
+			}
 		}
 
 		destValues.each {
@@ -2263,6 +2285,7 @@ else
 		sb.append('return cl\n')
 
 		MapUtils.RemoveKeys(map, removeKeys)
+		clearKeys.each { map.put(it, null) }
 
 //		println sb.toString()
 

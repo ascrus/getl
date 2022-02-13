@@ -44,7 +44,7 @@ class FileCleaner extends FileListProcessing {
                     changeDir([source], curDir, false, numberAttempts, timeAttempts)
                 }
 
-                Operation([source], numberAttempts, timeAttempts) { man ->
+                Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
                     man.removeFile(file.filename as String)
                 }
 

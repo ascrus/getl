@@ -15,7 +15,7 @@ class WorkflowUserCode extends Getl {
     public Workflows currentModel
 
     /** Workflow startup parameters */
-    Map<String, Object> getArgs() { scriptExtendedVars as Map<String, Object> }
+    Map<String, Object> getArgs() { (currentModel.modelVars + scriptExtendedVars) as Map<String, Object> }
 
     /** Set variable value in workflow script */
     Map<String, Object> vars(String scriptName) {

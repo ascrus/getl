@@ -334,7 +334,7 @@ abstract class FileListProcessing implements GetlRepository {
      */
     void changeDir(List<Manager> managers, String path,
                    Boolean isCreateDir, Integer attempts, Integer time) {
-        Operation(managers, attempts, time) { man ->
+        Operation(managers, attempts, time, dslCreator) { man ->
             man.changeDirectoryToRoot()
             synchronized (createDirectoryLock) {
                 if (!man.existsDirectory(path)) {
@@ -467,9 +467,10 @@ abstract class FileListProcessing implements GetlRepository {
      * @param managers list of managers
      * @param attempts number of attempts
      * @param time time in seconds between attempts
+     * @param dslCreator Getl instance
      * @param cl operation code on specified manager
      */
-    void Operation(List<Manager> managers, Integer attempts, Integer time,
+    static void Operation(List<Manager> managers, Integer attempts, Integer time, Getl dslCreator,
                           @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl) {
         def code = { Manager man ->
             def retry = 1
@@ -693,10 +694,11 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Inform about start in the log */
     protected void infoProcess() {
-        logger.fine("Processing files from \"${source}\"")
+        logger.fine("*** Processing files from \"${source}\"")
 
         logger.fine("  for intermediate operations, \"$tmpPath\" directory will be used")
-        if (inMemoryMode) logger.fine("  operating mode \"in-memory\" is used")
+        if (inMemoryMode)
+            logger.fine("  operating mode \"in-memory\" is used")
         logger.fine("  source mask path: ${sourcePath.maskStr}")
         logger.fine("  source mask pattern: ${sourcePath.maskPath}")
 
@@ -782,10 +784,14 @@ abstract class FileListProcessing implements GetlRepository {
         }
     }
 
+    /** Do not display information about process parameters */
+    public Boolean quietMode = false
+
     /** Processing files */
     void process() {
         initProcess()
-        dslCreator.logConsistently { infoProcess() }
+        if (!quietMode)
+            dslCreator.logConsistently { infoProcess() }
 
         beforeProcessing()
         try {
@@ -851,7 +857,7 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
         finally {
-            Operation([source], numberAttempts, timeAttempts) { man ->
+            Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
                 if (man.connected)
                     man.changeDirectoryToRoot()
 
@@ -981,7 +987,7 @@ abstract class FileListProcessing implements GetlRepository {
     abstract protected void processFiles()
 
     protected void delEmptyFolders() {
-        Operation([source], numberAttempts, timeAttempts) { man ->
+        Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
             man.changeDirectoryToRoot()
         }
 
@@ -1012,7 +1018,7 @@ abstract class FileListProcessing implements GetlRepository {
         if (!deleteDirs.isEmpty())
             logger.info("In the source \"$source\" empty directories were removed: ${deleteDirs.sort()}")
 
-        Operation([source], numberAttempts, timeAttempts) { man ->
+        Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
             man.changeDirectoryToRoot()
         }
     }

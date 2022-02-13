@@ -9,6 +9,8 @@ import getl.utils.*
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * File manager 
@@ -237,18 +239,24 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	void removeDir (String dirName, Boolean recursive) {
+	void removeDir(String dirName, Boolean recursive,
+					@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null) {
 		validConnect()
 		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
-		if (!f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found")
+		if (!f.exists())
+			throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found")
         if (recursive) {
-            if (!f.deleteDir()) throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
+            if (!f.deleteDir())
+				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
         }
         else {
-            if (!f.delete()) throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
+            if (!f.delete())
+				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
         }
+		if (onDelete != null)
+			onDelete.call(f.path)
 	}
 	
 	@Override

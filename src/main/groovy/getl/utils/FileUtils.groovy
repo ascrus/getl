@@ -423,7 +423,7 @@ class FileUtils {
 	
 	/**
 	 * Delete dir
-	 * @param path
+	 * @param path path to directory
 	 * @return
 	 */
 	static Boolean DeleteDir(String path) {
@@ -827,9 +827,14 @@ class FileUtils {
 				throw new ExceptionGETL("Directory \"$dir\" not found!")
 		}
 
+		def cmdArgs = ParseArguments(command)
+
 		Process p
 		try {
-			p = Runtime.getRuntime().exec(command, null, new File(dir))
+			def pb = new ProcessBuilder(cmdArgs)
+			pb.directory(new File(dir))
+			p = pb.start()
+			//p = Runtime.getRuntime().exec(command, null, new File(dir))
 		}
 		catch (IOException e) {
 			err.append(e.message)

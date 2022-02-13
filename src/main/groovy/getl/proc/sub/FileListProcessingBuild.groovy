@@ -1,8 +1,8 @@
 package getl.proc.sub
 
 import getl.files.sub.ManagerListProcessing
-import getl.utils.Logs
 import getl.utils.Path
+import getl.utils.SynchronizeObject
 import groovy.transform.CompileStatic
 
 /**
@@ -59,8 +59,12 @@ class FileListProcessingBuild extends ManagerListProcessing {
             if (!(onFilterFiles.call(file))) return false
         }
 
-        if (isNewDir)
-            owner.logger.finest("Analysis directory \"$curPath\" ...")
+        if (isNewDir) {
+            owner.logger.finest("${this.owner.source}: analysis directory \"$curPath\" ...")
+            def curCount = counterDirectories.nextCount()
+            if (curCount.intdiv(100) == (curCount / 100))
+                owner.logger.fine("${this.owner.source}: $curCount directories analyzed")
+        }
 
         return true
     }

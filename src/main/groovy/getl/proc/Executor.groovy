@@ -802,7 +802,7 @@ class Executor implements GetlRepository {
 			code.call()
 		} 
 		catch (Throwable e) {
-			((owner?.logging?.manager != null)?owner.logging.manager:Logs.global).finest("Ignore error: ${e.message}")
+			((owner?.logging?.manager != null)?owner.logging.manager:Logs.global).finer("Ignore error: ${e.message}")
 			return false 
 		}
 		

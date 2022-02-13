@@ -138,7 +138,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      */
     void createReferenceTables(Boolean recreate = false, Boolean grantRolesToSchema = false) {
         checkModel()
-        dslCreator.logFine("*** Create reference tables for model \"$repositoryModelName\"")
+        dslCreator.logFinest("Create reference tables for model [$repositoryModelName] ...")
         new QueryDataset(dslCreator: dslCreator).tap {
             useConnection referenceConnection
             query = """SELECT Count(*) AS count FROM schemata WHERE schema_name ILIKE '{schema}'"""
@@ -214,7 +214,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                             List<String> include = null, List<String> exclude = null) {
         checkModel()
 
-        dslCreator.logFine("*** Copy Vertica external tables to reference model \"$repositoryModelName\"")
+        dslCreator.logFinest("Copy Vertica external tables to reference model [$repositoryModelName] ...")
 
         def includePath = Path.Masks2Paths(include)
         def excludePath = Path.Masks2Paths(exclude)
@@ -268,7 +268,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     Integer copyFromSourceTables(Boolean onlyForEmpty = true, List<String> include = null, List<String> exclude = null) {
         checkModel()
 
-        dslCreator.logFine("*** Copy source tables to reference model \"$repositoryModelName\"")
+        dslCreator.logFinest("Copy source tables to reference model [$repositoryModelName] ...")
 
         def includePath = Path.Masks2Paths(include)
         def excludePath = Path.Masks2Paths(exclude)
@@ -309,7 +309,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     Integer fill(List<String> include = null, List<String> exclude = null, Boolean usePartitions = true) {
         checkModel()
 
-        dslCreator.logFinest("+++ Start deploying tables for \"$repositoryModelName\" model ...")
+        dslCreator.logFinest("Start deploying tables for [$repositoryModelName] model ...")
 
         def includePath = Path.Masks2Paths(include)
         def excludePath = Path.Masks2Paths(exclude)
@@ -350,7 +350,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     void changeReferenceTables(List<String> include = null, List<String> exclude = null) {
         checkModel()
 
-        dslCreator.logFine("*** Change reference tables for \"$repositoryModelName\" model")
+        dslCreator.logFinest("Change reference tables for [$repositoryModelName] model ...")
 
         def includePath = Path.Masks2Paths(include)
         def excludePath = Path.Masks2Paths(exclude)
@@ -390,7 +390,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     Integer clear(List<String> include = null, List<String> exclude = null) {
         checkModel()
 
-        dslCreator.logFine("*** Start clearing tables for \"$repositoryModelName\" model")
+        dslCreator.logFinest("Start clearing tables for [$repositoryModelName] model ...")
 
         def includePath = Path.Masks2Paths(include)
         def excludePath = Path.Masks2Paths(exclude)

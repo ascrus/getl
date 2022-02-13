@@ -593,9 +593,10 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         def titleStr = StringUtils.EvalMacroString(title, [name: repositoryModelName, active: activeErrors, close: closeErrors])
 
         smtpServer.tap {
-            dslCreator.logFinest("+++ Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
+            dslCreator.logFinest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients $toAddress ...")
             def text = htmlNotification(rows)
             sendMail(null, titleStr, text, true)
+            dslCreator.logInfo("Send mail to $toAddress complete")
         }
 
         new Flow(dslCreator).writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['first_error_time','send_time']]) { updater ->

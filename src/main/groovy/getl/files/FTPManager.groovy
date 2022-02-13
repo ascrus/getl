@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -11,6 +12,8 @@ import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import it.sauronsoftware.ftp4j.*
 
 /**
@@ -425,7 +428,8 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	@Override
-	void removeDir(String dirName, Boolean recursive) {
+	void removeDir(String dirName, Boolean recursive,
+				   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null) {
 		validConnect()
 		validWrite()
 
@@ -433,15 +437,19 @@ class FTPManager extends Manager implements UserLogins {
 			if (recursive) {
                 def l = client.list()
                 def d = l.find { FTPFile f -> f.name == dirName && f.type == FTPFile.TYPE_DIRECTORY}
-                if (d == null) throw new ExceptionGETL("Cannot get attribute by directory \"$dirName\"")
-                doDeleteDirectory(d)
+                if (d == null)
+					throw new ExceptionGETL("Cannot get attribute by directory \"$dirName\"")
+                doDeleteDirectory(d, onDelete)
             }
             else {
                 client.deleteDirectory(dirName)
+				if (onDelete != null)
+					onDelete.call(dirName)
             }
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not remove directory \"$dirName\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
 	}
@@ -450,13 +458,14 @@ class FTPManager extends Manager implements UserLogins {
      * Recursive remove dir
      * @param objName
      */
-    private void doDeleteDirectory(FTPFile obj) {
+    private void doDeleteDirectory(FTPFile obj,
+								   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
         if (obj.type == FTPFile.TYPE_DIRECTORY) {
             client.changeDirectory(obj.name)
             try {
                 def fl = client.list()
                 fl.each { FTPFile f ->
-                    doDeleteDirectory(f)
+                    doDeleteDirectory(f, onDelete)
                 }
             }
             finally {
@@ -467,6 +476,8 @@ class FTPManager extends Manager implements UserLogins {
         else  {
             client.deleteFile(obj.name)
         }
+		if (onDelete != null)
+			onDelete.call(obj.name)
     }
 	
 	@Override

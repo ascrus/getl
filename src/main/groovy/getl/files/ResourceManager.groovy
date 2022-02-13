@@ -9,6 +9,8 @@ import getl.utils.Path
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import net.lingala.zip4j.ZipFile
 
 /**
@@ -438,7 +440,8 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    void removeDir(String dirName, Boolean recursive) {
+    void removeDir(String dirName, Boolean recursive,
+                   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null) {
         validWrite()
     }
 

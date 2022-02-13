@@ -78,37 +78,48 @@ class Getl extends Script {
     static private void Help() {
         Version.SayInfo(false)
         println """
-The syntax for running a specified Getl Dsl script (with @BaseScript directive):
-  java getl.lang.Getl runclass=<script class name> [<arguments>]
-or
-  java getl.lang.Getl workflow=<workflow model name>
+# The syntax for running a specified Getl Dsl script (with @BaseScript directive):
+* java getl.lang.Getl workflow=<workflow model name> [<base arguments>] [<workflow arguments>]
+* java getl.lang.Getl runclass=<script class name> [<base arguments>] [<run class arguments>]
 
-The syntax for running a script that inherits from the Getl class is:
-  java <main class name> [<arguments>]
-
-List of possible arguments:
-  initclass=<class name> 
-    class name of the initialization script that runs before the main script runs
-  runclass=<class name>
-    the name of the main class of the script
-  workflow=<model name>
-    the name of the workflow model to run
-  unittest=true|false
+# The syntax for running a script that inherits from the Getl class is:
+* java <main class name> [<arguments>] [<main class arguments>]
+  
+# List of possible base arguments:
+* unittest=true|false
     set the flag that unit tests are launched
-  environment=dev|test|prod 
+* environment=dev|test|prod 
     use the specified configuration environment (the default is "prod")
-  config.path=<directory>
-    path to load configuration files
-  config.filename=config1.groovy;config2.groovy
-    a semicolon separated list of configuration file names is allowed to indicate 
-    the full path or relative to the one specified in "config.path"
-  vars.name=<value>
+* vars.name=<value>
     set the value for the script field with the specified name, which is marked 
     with the "@Field" directive in the code
+
+# List of possible workflow arguments:
+* workflow=<model name>
+    the name of the workflow model to run (required parameter)
+* include_steps=<list of step names>
+    run only the specified steps
+* exclude_steps=<list of step names>
+    do not run the specified steps
+
+# List of possible run class arguments:
+* initclass=<class name> 
+    class name of the initialization script 
+    that runs before the main script runs (required parameter)
+* runclass=<class name>
+    the name of the main class of the script
+    
+# List of possible main class arguments:
+* config.path=<directory>
+    path to load configuration files
+* config.filename=config1.groovy;config2.groovy
+    a semicolon separated list of configuration file names is allowed to indicate 
+    the full path or relative to the one specified in "config.path"
       
 Examples:
-  java getl.lang.Getl runclass=com.comp.MainScript vars.message="Hello World!"
   java getl.lang.Getl workflow=test:workflow1
+  java getl.lang.Getl runclass=com.comp.MainScript vars.message="Hello World!"
+  java my.Class1 config.path=dir1 config.filename=config1.conf;config2.conf
 """
     }
 
@@ -199,15 +210,16 @@ Examples:
      * Launch Getl Dsl script<br><br>
      * <i>List of argument (use format name=value):</i><br>
      * <ul>
-     * <li>initclass - class name of the initialization script that runs before the main script runs
-     * <li>runclass - the name of the main class of the script
-     * <li>workflow - the name of the workflow model to run
-     * <li>unittest - set the flag that unit tests are launched
-     * <li>environment - use the specified configuration environment (the default is "prod")
-     * <li>config.path - path to load configuration files
-     * <li>config.filename - a comma separated list of configuration file names is allowed to indicate the full path or relative to the one specified in "config.path"
-     * <li>vars.name - set the value for the script field with the specified name, which is marked with the "@Field" directive in the code
-     * <li>
+     * <li>initclass: class name of the initialization script that runs before the main script runs</li>
+     * <li>runclass: the name of the main class of the script</li>
+     * <li>workflow: the name of the workflow model to run</li>
+     * <li>include_steps: run only the specified steps</li>
+     * <li>exclude_steps: do not run the specified steps</li>
+     * <li>unittest: set the flag that unit tests are launched</li>
+     * <li>environment: use the specified configuration environment (the default is "prod")</li>
+     * <li>config.path: path to load configuration files</li>
+     * <li>config.filename: a comma separated list of configuration file names is allowed to indicate the full path or relative to the one specified in "config.path"</li>
+     * <li>vars.name: set the value for the script field with the specified name, which is marked with the "@Field" directive in the code</li>
      * </ul>
      * @param args startup arguments
      * @param isApp run as application or module
@@ -228,7 +240,8 @@ Examples:
             static ParamMethodValidator allowArgs = {
                 def p = new ParamMethodValidator()
                 //noinspection SpellCheckingInspection
-                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'workflow', 'workflowfile',
+                p.register('main', ['config', 'environment', 'initclass', 'runclass',
+                                    'workflow', 'workflowfile', 'include_steps', 'exclude_steps',
                                     'unittest', 'vars', 'getlprop', 'loadproperties'])
                 p.register('main.config', ['path', 'filename'])
                 return p
@@ -239,6 +252,8 @@ Examples:
             private Class runClass
             private String workflowName
             private String workflowFileName
+            private List<String> workflow_include_steps
+            private List<String> workflow_exclude_steps
             private Boolean loadProperties
             private Getl eng
 
@@ -248,7 +263,7 @@ Examples:
                 StackTraceElement[] stack = Thread.currentThread().getStackTrace()
                 def obj = stack[stack.length - 1]
                 if (obj.getClassName() == 'getl.lang.Getl' && this.isMain) {
-                    dslCreator.logFinest("System exit ${exitCode?:0}")
+                    dslCreator.logFiner("System exit ${exitCode?:0}")
                     System.exit(exitCode?:0)
                 }
             }
@@ -258,8 +273,20 @@ Examples:
                 super.init()
                 allowArgs.validation('main', jobArgs)
                 className = jobArgs.runclass as String
+
                 workflowName = jobArgs.workflow as String
                 workflowFileName = jobArgs.workflowfile as String
+                if (jobArgs.include_steps != null) {
+                    if (workflowName == null)
+                        throw new ExceptionDSL("Parameter \"include_steps\" can only be used for workflow!")
+                    workflow_include_steps = ConvertUtils.String2List(jobArgs.include_steps as String)
+                }
+                if (jobArgs.exclude_steps != null) {
+                    if (workflowName == null)
+                        throw new ExceptionDSL("Parameter \"exclude_steps\" can only be used for workflow!")
+                    workflow_exclude_steps = ConvertUtils.String2List(jobArgs.exclude_steps as String)
+                }
+
                 loadProperties = BoolUtils.IsValue(jobArgs.loadproperties, true)
 
                 if (className == null && workflowName == null && workflowFileName == null)
@@ -339,10 +366,10 @@ Examples:
                         eng.repositoryStorageManager {
                             readObjectFromFile(repository(RepositoryWorkflows), workflowFileName, null, workflow)
                         }
-                        workflow.execute(eng.configuration.manager.vars)
+                        workflow.execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
                     }
                     else
-                        eng.models.workflow(workflowName).execute(eng.configuration.manager.vars)
+                        eng.models.workflow(workflowName).execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
@@ -735,9 +762,12 @@ Examples:
         Version.SayInfo(true, this)
 
         if (!IsCurrentProcessInThread() && getGetlSystemParameter('mainClass') == null &&
-                MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper', 'java.lang.Thread'])
+                (MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper'/*, 'java.lang.Thread'*/] ||
+                        LaunchedFromGroovyConsole))
             groovyStarter()
     }
+
+    static Boolean LaunchedFromGroovyConsole = false
 
     static String MainClassName() {
         def trace = Thread.currentThread().getStackTrace()

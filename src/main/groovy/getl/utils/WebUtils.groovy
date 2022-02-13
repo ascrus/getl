@@ -35,22 +35,31 @@ class WebUtils {
      * @return created connection to web service
      */
     @NamedVariant
-    static HttpURLConnection CreateConnection(String url, String service, Integer connectTimeout, Integer readTimeout,
-                                       String requestMethod, Map<String, Object> params, Map<String, Object> vars) {
+    static HttpURLConnection CreateConnection(String url, String service = null, Integer connectTimeout = null, Integer readTimeout = null,
+                                       String requestMethod = null, Map<String, Object> params = null, Map<String, Object> vars = null) {
         if (requestMethod == null)
             throw new ExceptionGETL('Required "requestMethod" parameter value!')
         if (!(requestMethod in [WEBREQUESTMETHODGET, WEBREQUESTMETHODPOST]))
             throw new ExceptionGETL("Unknown request method \"$requestMethod\"!")
 
-        if (service != null)
-            url += '/' + service
+        if (service != null) {
+            url += ((url[url.length() - 1] != '/')?'/':'') + service
+        }
+
+        def headers = [:] as Map<String, String>
 
         if (params != null && !params.isEmpty()) {
             def list = [] as List<String>
             def isVars = (vars != null && !vars.isEmpty())
             params.each { k, v ->
+                def isHeader = k.matches('(?i)^header[.].+')
+                if (isHeader)
+                    k = k.substring(7)
+
                 if (v == null || (v == '')) {
-                    list << k
+                    if (!isHeader)
+                        list.add(k)
+
                     return
                 }
 
@@ -67,7 +76,10 @@ class WebUtils {
                 else
                     val = v
 
-                list << (k + '=' + val)
+                if (!isHeader)
+                    list.add(k + '=' + val)
+                else
+                    headers.put(k, val)
             }
             url += '?' + list.join('&')
         }
@@ -78,6 +90,9 @@ class WebUtils {
         if (readTimeout != null)
             serv.readTimeout = readTimeout
         serv.requestMethod = requestMethod
+        headers.each { key, value ->
+            serv.setRequestProperty(key, value)
+        }
 
         return serv
     }

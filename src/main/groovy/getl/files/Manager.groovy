@@ -731,7 +731,8 @@ abstract class Manager implements Cloneable, GetlRepository {
      * @param dirName removed directory name
      * @param recursive required subdirectories remove
      */
-	abstract void removeDir(String dirName, Boolean recursive)
+	abstract void removeDir(String dirName, Boolean recursive,
+							@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null)
 
 	/** Cached current path */
 	protected String _currentPath
@@ -1034,11 +1035,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 			listFiles.clear()
 
 			if (threadCount != null && !threadDirs.isEmpty()) {
+				def counterDirectories = new SynchronizeObject()
 				new Executor(dslCreator: dslCreator).run(threadDirs, threadCount) { String dirName ->
 					ManagerListProcessing newCode = null
 					if (code != null) {
 						newCode = code.newProcessing()
 						newCode.init()
+						newCode.counterDirectories = counterDirectories
 					}
 					try {
 						Manager newMan = cloneManager([localDirectory: localDirectory], dslCreator)
@@ -1407,7 +1410,7 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 				newFiles.connection.commitTran()
 			
 			if (countDouble > 0) {
-				logger.fine("warning, found $countDouble double files name for build list files in filemanager!")
+				logger.warning("Warning, found $countDouble double files name for build list files in filemanager!")
 				def sqlDeleteDouble = """
 DELETE FROM ${newFiles.fullNameDataset()}
 WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
@@ -1872,10 +1875,13 @@ WHERE
 	 * @return
 	 */
 	protected String processLocalDirPath(String dir) {
-		if (dir == null) throw new ExceptionGETL("Required not null directory parameter")
+		if (dir == null)
+			throw new ExceptionGETL("Required not null directory parameter")
 		
-		if (dir == '.') return localDirFile.path
-		if (dir == '..') return localDirFile.parent
+		if (dir == '.')
+			return localDirFile.path
+		if (dir == '..')
+			return localDirFile.parent
 		
 		dir = dir.replace('\\', '/')
 		def lc = localDirectory?.replace('\\', '/')
@@ -1888,7 +1894,15 @@ WHERE
 			f = new File("${localDirFile.path}/${dir}")
 		}
 		
-		return f.canonicalPath
+		String res
+		try {
+			res = f.canonicalPath
+		}
+		catch (Exception e) {
+			logger.severe("Cannot convert local directory name \"${f.path}\" to canonical: ${e.message}")
+			throw e
+		}
+		return res
 	}
 
 	void resetLocalDir() {
@@ -2376,7 +2390,7 @@ WHERE
 	 */
 	void noop() {
 		if (sayNoop)
-			logger.fine("files.manager: NOOP")
+			logger.finest("files.manager: NOOP")
 	}
 
     /**
@@ -2442,15 +2456,16 @@ WHERE
 	 * @param man HDFS manager
 	 * @param maskDirs directory removal mask
 	 */
-	void removeDirs(String maskDirs) {
+	void removeDirs(String maskDirs,
+					@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null) {
 		validConnect()
 		validWrite()
 
 		def p = new Path(maskDirs)
 		list().each { file ->
 			if (file.type == directoryType && p.match(file.filename as String)) {
-				logger.fine("Remove directory \"${file.filename}\"")
-				removeDir(file.filename as String, true)
+				logger.finest("Remove directory \"${file.filename}\" ...")
+				removeDir(file.filename as String, true, onDelete)
 			}
 		}
 	}

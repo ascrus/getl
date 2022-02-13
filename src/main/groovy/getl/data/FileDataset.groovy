@@ -225,7 +225,12 @@ class FileDataset extends Dataset {
 	}
 
 	/** Return dataset file */
-	File datasetFile() { new File(fullFileName()) }
+	File datasetFile() {
+		def fn = fullFileName()
+		if (fn == null)
+			throw new ExceptionGETL("Required file name!")
+		return new File(fn)
+	}
 	
 	/** Valid existing file */
 	Boolean existsFile() { datasetFile().exists() }

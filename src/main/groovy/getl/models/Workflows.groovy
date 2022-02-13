@@ -299,18 +299,22 @@ class Workflows extends BaseModel<WorkflowSpec> {
      * @param scriptClassLoader class loader for running specified script (closure parameter is passed the name of the class)
      * @return number of steps successfully completed
      */
-    Integer execute(Map addVars = new HashMap(), URLClassLoader userClassLoader = null,
+    Integer execute(Map<String, Object> addVars = null, List<String> include_steps = null, List<String> exclude_steps = null,
+                    URLClassLoader userClassLoader = null,
                     @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                             Closure<URLClassLoader> scriptClassLoader = null) {
-        dslCreator.logFinest("+++ Execute workflow \"$dslNameObject\" model ...")
+        dslCreator.logFinest("Execute workflow [\"$dslNameObject\"] model ...")
+
+        addVars = addVars?:new HashMap<String, Object>()
         generateUserCode(userClassLoader, addVars)
         cleanResults()
 
-        addVars = addVars?:new HashMap()
+        def including = Path.Masks2Paths(include_steps, (modelVars + addVars) as Map<String, Map>)
+        def excluding = Path.Masks2Paths(exclude_steps, (modelVars + addVars) as Map<String, Map>)
 
         def res = 0
         usedSteps.each { node ->
-            res =+ stepExecute(node, addVars, scriptClassLoader)
+            res =+ stepExecute(node, addVars, including, excluding, scriptClassLoader)
         }
         dslCreator.logInfo("--- Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
 
@@ -408,7 +412,7 @@ return $className"""
         // println sb.toString()
         scriptUserCode = sb.toString()
         def classGenerated = GenerationUtils.EvalGroovyScript(scriptUserCode, null, false, classLoader, dslCreator) as Class<Getl>
-        generatedUserCode = dslCreator.callScript(classGenerated, [currentModel: this], modelVars + addVars).result as WorkflowUserCode
+        generatedUserCode = dslCreator.callScript(classGenerated, [currentModel: this], addVars).result as WorkflowUserCode
     }
 
     /** Build list of conditions code */
@@ -436,10 +440,16 @@ return $className"""
     }
 
     /** Run workflow step */
-    private Integer stepExecute(WorkflowSpec node, Map addVars,
+    private Integer stepExecute(WorkflowSpec node, Map addVars, List<Path> include_steps, List<Path> exclude_steps,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                         Closure<URLClassLoader> scriptClassLoader,
                                 String parentStep = null) {
+        if ((include_steps != null && !Path.MatchList(node.stepName, include_steps)) ||
+                (exclude_steps != null && Path.MatchList(node.stepName, exclude_steps))) {
+            dslCreator.logWarn("Step \"${node.stepName}\" is not included in the allowed step names and is skipped!")
+            return 0
+        }
+
         def res = 0
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
@@ -628,14 +638,14 @@ return $className"""
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, addVars?:new HashMap(), scriptClassLoader, stepLabel)
+                res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
             try {
                 if (errStep != null)
-                    stepExecute(errStep, addVars?:new HashMap(), scriptClassLoader, stepLabel)
+                    stepExecute(errStep, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
             }
             finally {
                 throw e

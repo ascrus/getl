@@ -190,12 +190,13 @@ ORDER BY threshold DESC, table_name;
 			rows.each { row ->
 				def table = new VerticaTable(connection: this, schemaName: row.table_schema, tableName: row.table_name)
 				if (filter == null || filter(table)) {
-					logger.fine("Purging table $table with threshold ${row.threshold} " +
+					logger.finest("Purging table $table with threshold ${row.threshold} " +
 							"(total ${WithGroupSeparator(row.total_row_count as Long)} rows, " +
-							"marked for deletion ${WithGroupSeparator(row.deleted_row_count as Long)} rows)")
+							"marked for deletion ${WithGroupSeparator(row.deleted_row_count as Long)} rows) ...")
 					try {
 						table.purgeTable()
 						res++
+						logger.info("Table $table purge complete")
 					}
 					catch (Exception e) {
 						logger.severe(e.message)

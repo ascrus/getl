@@ -163,7 +163,8 @@ class DateUtils {
 			result = LocalDate.parse(value.toString(), sdf)
 		}
 		catch (Exception  e) {
-			if (ignoreError) return null
+			if (ignoreError)
+				return null
 			throw e
 		}
 

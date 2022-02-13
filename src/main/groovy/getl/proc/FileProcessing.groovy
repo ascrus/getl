@@ -157,10 +157,10 @@ class FileProcessing extends FileListProcessing {
             throw new ExceptionFileListProcessing("Required to specify the file processing code in \"processFile\"!")
 
         if (!threadGroupColumns.isEmpty()) {
-            def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
+            def vars = sourcePath.vars.keySet().toList()*.toLowerCase() + ['filepath', 'filename', 'filesize', 'filedate']
             threadGroupColumns.each { col ->
                 if (!((col as String).toLowerCase() in vars))
-                    throw new ExceptionFileListProcessing("Column \"$col\" specified for list of grouping attributes for multi-threaded processing was not found!")
+                    throw new ExceptionFileListProcessing("Column \"$col\" specified for list of grouping attributes for multi-threaded processing was not found, allowed: $vars")
             }
         }
 
@@ -308,7 +308,7 @@ class FileProcessing extends FileListProcessing {
                 FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.canonicalPath, destFileName)
             }
 
-            Operation([man], numberAttempts, timeAttempts) { man ->
+            Operation([man], numberAttempts, timeAttempts, dslCreator) { man ->
                 man.upload(destFileName)
             }
         }
@@ -345,7 +345,7 @@ class FileProcessing extends FileListProcessing {
                 curPath = uploadPath
             }
 
-            Operation([man], numberAttempts, timeAttempts) { man ->
+            Operation([man], numberAttempts, timeAttempts, dslCreator) { man ->
                 man.upload(localFile.parent, localFile.name)
             }
         }
@@ -448,7 +448,7 @@ class FileProcessing extends FileListProcessing {
                 tmpProcessFiles.readOpts { where = "\"_HASH_\" = ${group.get('_hash_')}" }
                 def files = tmpProcessFiles.rows()
                 def filesSize = (files.sum { it.filesize }) as Long
-                logger.fine("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
+                logger.finest("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
                 initStoryWrite()
 
@@ -491,7 +491,7 @@ class FileProcessing extends FileListProcessing {
                                     sourceElement.curPath = filepath
                                 }
                                 if (!isDirectly && !isLocalManager) {
-                                    Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                    Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
                                         man.download(filename)
                                     }
                                 }
@@ -595,7 +595,7 @@ class FileProcessing extends FileListProcessing {
                                             if (fileDesc != null)
                                                 errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
                                             else {
-                                                Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                                Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
                                                     man.download(filename)
                                                 }
                                                 fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
@@ -618,7 +618,7 @@ class FileProcessing extends FileListProcessing {
                                             BoolUtils.IsValue(element.removeFile, procResult != element.skipResult) &&
                                             (procResult != element.errorResult || errorElement != null)) {
                                         if (delTable == null || procResult != element.completeResult) {
-                                            Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                            Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
                                                 man.removeFile(filename)
                                             }
                                         } else {
@@ -743,7 +743,7 @@ class FileProcessing extends FileListProcessing {
                         changeDir([source], filepath, false, numberAttempts, timeAttempts)
                         curPath = filepath
                     }
-                    Operation([source], numberAttempts, timeAttempts) { man ->
+                    Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
                         man.removeFile(file.filename as String)
                     }
                 }

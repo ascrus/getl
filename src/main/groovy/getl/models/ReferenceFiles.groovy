@@ -130,7 +130,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         def destPath = (modelFile as ReferenceFileSpec).destinationPath
         if (destPath != null && !destinationManager.existsDirectory(destPath)) {
             if (!BoolUtils.IsValue(createDestinationDirectories))
-                throw new ExceptionModel("Destination path \"$destPath\" not found!")
+                throw new ExceptionModel("Destination path \"$destPath\" not found from \"${modelFile.filePath}\" file " +
+                        "with \"$dslNameObject\" reference files model!")
             destinationManager.createDirs(destPath)
             destinationManager.changeDirectoryToRoot()
         }
@@ -152,7 +153,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         source.connect()
         dest.connect()
 
-        dslCreator.logFinest("+++ Start deploying files for \"$repositoryModelName\" model ...")
+        dslCreator.logFinest("Start deploying files for [$repositoryModelName] model ...")
 
         def isLocalUnpack = BoolUtils.IsValue(localUnpack) || !dest.allowCommand
         try {

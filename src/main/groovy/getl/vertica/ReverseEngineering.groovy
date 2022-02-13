@@ -614,12 +614,12 @@ Example:
 		if (sectionCreate.grants) grants_where = eval(sectionCreate.grants.toString())
 		Logs.Info("Reverse grants: $grants_where")
 
-		Logs.Fine("Prepared structures ...")
+		Logs.Finest("Prepared structures ...")
 		initFiles()
 
 		cVertica.executeCommand(command: sqlPrepare)
 
-		Logs.Fine("Read object model ...")
+		Logs.Finest("Read object model ...")
 		Long count
 
 		count = new Flow().copy(source: tPools, source_where: (pools_where && pools_where != 'false')?'1=1':'0=1',dest: hPools, inheritFields: true, createDest: true)

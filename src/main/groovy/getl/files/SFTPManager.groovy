@@ -12,6 +12,8 @@ import com.jcraft.jsch.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * SFTP file manager
@@ -450,17 +452,20 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	void removeDir(String dirName, Boolean recursive) {
+	void removeDir(String dirName, Boolean recursive,
+				   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete = null) {
 		validConnect()
 		validWrite()
 
         if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
 		try {
             if (recursive) {
-                doDeleteDirectory(dirName)
+                doDeleteDirectory(dirName, onDelete)
             }
             else {
                 channelFtp.rmdir(dirName)
+				if (onDelete != null)
+					onDelete.call(dirName)
             }
 		}
 		catch (Exception e) {
@@ -473,7 +478,8 @@ class SFTPManager extends Manager implements UserLogins {
      * Recursive remove dir
      * @param objName
      */
-    private void doDeleteDirectory(String objName) {
+    private void doDeleteDirectory(String objName,
+								   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
         if (objName in ['.', '..'])
 			return
 
@@ -482,7 +488,7 @@ class SFTPManager extends Manager implements UserLogins {
             try {
                 def entries = channelFtp.ls(".") as Vector<ChannelSftp.LsEntry>
                 for (ChannelSftp.LsEntry entry : entries) {
-                    doDeleteDirectory(entry.getFilename())
+                    doDeleteDirectory(entry.getFilename(), onDelete)
                 }
             }
             finally {
@@ -492,6 +498,9 @@ class SFTPManager extends Manager implements UserLogins {
         } else {
             channelFtp.rm(objName)
         }
+
+		if (onDelete != null)
+			onDelete.call(objName)
     }
 
 	@Override
