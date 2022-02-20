@@ -454,7 +454,7 @@ return $className"""
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
 
-        def runMethod = { String methodName, Boolean isConditional ->
+        def runMethod = { String methodType, String methodName, Boolean isConditional ->
             def resMethod = null
             try {
                 if (isConditional)
@@ -463,7 +463,7 @@ return $className"""
                     generatedUserCode."$methodName"()
             }
             catch (Exception e) {
-                dslCreator.logError("Condition code execution error for step \"$stepLabel\": ${e.message}")
+                dslCreator.logError("$methodType code execution error for step \"$stepLabel\": ${e.message}")
                 dslCreator.logging.dump(e, 'workflow', "${dslNameObject}.$stepLabel", scriptUserCode)
                 throw e
             }
@@ -473,7 +473,7 @@ return $className"""
 
         // Check condition for step
         if (node.condition != null) {
-            def conditionResult = runMethod(conditionName(node.stepName), true)
+            def conditionResult = runMethod('Condition', conditionName(node.stepName), true)
             if (!BoolUtils.IsValue(conditionResult)) {
                 dslCreator.logWarn("Conditions for \"$stepLabel\" step do not require its execute!")
                 return res
@@ -482,7 +482,7 @@ return $className"""
 
         // Calc initialization code for step
         if (node.initCode != null) {
-            runMethod(initCodeName(node.stepName), false)
+            runMethod('Initialization', initCodeName(node.stepName), false)
         }
 
         try {
@@ -634,7 +634,7 @@ return $className"""
 
             // Calc finalization code for step
             if (node.finalCode != null) {
-                runMethod(finalCodeName(node.stepName), false)
+                runMethod('Finalization', finalCodeName(node.stepName), false)
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->

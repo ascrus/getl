@@ -637,24 +637,40 @@ class CSVDriverTest extends GetlTest {
         Getl.Dsl(this) {
             csvTemp('test_append_threads', true) {
                 append = true
-                header = true
+                header = false
                 field('num') { type = integerFieldType }
+                field('date') { type = datetimeFieldType }
+                field('name')
+                field('value') { type = numericFieldType; length = 12; precision = 3 }
             }
 
-            thread {
-                useList ((1..5).toList())
-                countProc = 3
-                run { elem ->
-                    etl.rowsTo(csvTemp('test_append_threads')) {
-                        writeRow { add ->
-                            (1..1000).each {
-                                add num: counter.nextCount()
+            profile("Generate data to file", 'byte') {
+                thread {
+                    useList((1..100).toList())
+                    countProc = 100
+                    run { elem ->
+                        etl.rowsTo(csvTemp('test_append_threads')) {
+                            writeRow { add ->
+                                (1..1000).each {
+                                    def num = counter.nextCount()
+                                    add num: num, date: new Date(), name: "This $num line", value: num * 0.123
+                                }
                             }
                         }
                     }
                 }
+                countRow = csvTemp('test_append_threads').datasetFile().size()
             }
-            assertEquals(1000 * 5, csvTemp('test_append_threads').countRow())
+            assertEquals(1000 * 100, csvTemp('test_append_threads').readLinesCount())
+            csvTemp('test_append_threads').datasetFile().text.eachLine {
+                assertFalse("Invalid line: $it", it.matches('^(?!\\d+[|].+[|].+[|].+).*$'))
+            }
+            csvTemp('test_append_threads').eachRow { row ->
+                assertNotNull(row.num)
+                assertEquals("This ${row.num} line", row.name)
+                assertNotNull(row.date)
+                assertEquals(row.num * 0.123, row.value)
+            }
         }
     }
 

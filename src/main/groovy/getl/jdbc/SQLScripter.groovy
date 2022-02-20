@@ -254,7 +254,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			throw new ExceptionGETL("Script file \"$posParam\" not found and cannot be running!")
 
 		SQLScripter ns = new SQLScripter(connection: connection, logEcho: logEcho, debugMode: debugMode,
-				vars: vars, extVars: extVars)
+				vars: vars, extVars: extVars, dslCreator: dslCreator)
 		try {
 			ns.runFile(true, posParam)
 			vars.putAll(ns.vars)
@@ -377,7 +377,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		def rows = query.rows()
 
 		SQLScripter ns = new SQLScripter(connection: connection, script: bodyText, logEcho: logEcho, debugMode: debugMode,
-				vars: vars, extVars: extVars)
+				vars: vars, extVars: extVars, dslCreator: dslCreator)
 		for (row in rows) {
 			query.field.each { Field f ->
                 def fieldName = f.name.toLowerCase()
@@ -441,7 +441,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 
 		if (!rows.isEmpty()) {
 			SQLScripter ns = new SQLScripter(connection: connection, script: bodyText, logEcho: logEcho, debugMode: debugMode,
-					vars: vars, extVars: extVars)
+					vars: vars, extVars: extVars, dslCreator: dslCreator)
 			try {
 				ns.runSql(true)
 				vars.putAll(ns.vars)

@@ -58,7 +58,9 @@ class FileManagerTest extends ManagerTest {
                     connect()
                     new File(rootPath).deleteOnExit()
 
-                    new File(localDirectory + '/test.txt').tap { text = 'Test file' }
+                    new File(localDirectory + '/test.txt').tap {
+                        text = 'Test file'
+                    }
 
                     createDir '1'
                     changeDirectory '1'

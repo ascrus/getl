@@ -250,10 +250,11 @@ class FileUtils {
 	 * Copy file to another file
 	 * @param source source file
 	 * @param dest destination file
-	 * @param createPath create a directory if it is not
+	 * @param createPath create a directory if it is not exist
 	 */
 	static void CopyToFile(File source, File dest, Boolean createPath = false) {
-		if (!source.exists()) throw new ExceptionGETL("File \"$source\" not found")
+		if (!source.exists())
+			throw new ExceptionGETL("File \"$source\" not found")
 		
 		if (createPath) ValidPath(dest.parent)
 		if (dest.exists()) dest.delete()
@@ -265,10 +266,51 @@ class FileUtils {
 	 * Copy file to another file
 	 * @param sourceName source file path
 	 * @param destName the path to the destination file
-	 * @param createPath create a directory if it is not
+	 * @param createPath create a directory if it is not exist
 	 */
 	static void CopyToFile(String sourceName, String destName, Boolean createPath = false) {
 		CopyToFile(new File(TransformFilePath(sourceName)), new File(TransformFilePath(destName)), createPath)
+	}
+
+	/**
+	 * Append file to another file
+	 * @param source source file
+	 * @param dest destination file
+	 * @param createPath create a directory if it is not exist
+	 */
+	static void AppendToFile(File source, File dest, Boolean createPath = false) {
+		if (!source.exists())
+			throw new ExceptionGETL("File \"$source\" not found")
+
+		if (!dest.exists()) {
+			CopyToFile(source, dest, createPath)
+			return
+		}
+
+		if (createPath)
+			ValidPath(dest.parent)
+
+		def fos = new FileOutputStream(dest, true)
+		try (def fis = new FileInputStream(source)) {
+			byte[] buffer = new byte[1024]
+			int length
+			while ((length = fis.read(buffer)) > 0)
+				fos.write(buffer, 0, length)
+		}
+		finally {
+			fos.flush()
+			fos.close()
+		}
+	}
+
+	/**
+	 * Append file to another file
+	 * @param sourceName source file name
+	 * @param destName destination file name
+	 * @param createPath create a directory if it is not exist
+	 */
+	static void AppendToFile(String sourceName, String destName, Boolean createPath = false) {
+		AppendToFile(new File(TransformFilePath(sourceName)), new File(TransformFilePath(destName)), createPath)
 	}
 	
 	/**
@@ -436,9 +478,12 @@ class FileUtils {
 	 * @return
 	 */
 	static Boolean ExistsFile(String fileName, Boolean findDirectory = false) {
+		if (fileName == null)
+			throw new ExceptionGETL("Required file name!")
 		def file = new File(TransformFilePath(fileName))
 		def res = file.exists()
-		if (res && findDirectory && !file.isDirectory()) return false
+		if (res && findDirectory && !file.isDirectory())
+			return false
 		return res
 	}
 	
@@ -482,7 +527,7 @@ class FileUtils {
 		path = ConvertToUnixPath(path)
 		def l = path.split("/")
 		if (l.size() == 0) return null
-		l[l.size() - 1]
+		return l[l.size() - 1]
 	}
 	
 	/**
@@ -491,7 +536,7 @@ class FileUtils {
 	 * @return
 	 */
 	static String lastDirFromPath(File path) {
-		lastDirFromPath(path.path)
+		return lastDirFromPath(path.path)
 	}
 	
 	/**
@@ -501,7 +546,7 @@ class FileUtils {
 	 */
 	static String lastDirFromFile(String file) {
         if (file == null) return null
-		lastDirFromPath(new File(file).parent)
+		return lastDirFromPath(new File(file).parent)
 	}
 	
 	/**
@@ -510,7 +555,7 @@ class FileUtils {
 	 * @return
 	 */
 	static String lastDirFromFile(File file) {
-		lastDirFromPath(file.parent)
+		return lastDirFromPath(file.parent)
 	}
 	
 	/**
@@ -518,7 +563,7 @@ class FileUtils {
 	 * @return
 	 */
 	static String UniqueFileName() {
-		StringUtils.RandomStr().replace("-", "").toUpperCase()
+		return StringUtils.RandomStr().replace("-", "").toUpperCase()
 	}
 	
 	/**
@@ -527,7 +572,7 @@ class FileUtils {
 	 */
 	static String SystemTempDir() {
 		def f = new File(System.getProperty("java.io.tmpdir"))
-		ConvertToUnixPath(f.path)
+		return ConvertToUnixPath(f.path)
 	}
 	
 	/**
@@ -536,7 +581,7 @@ class FileUtils {
 	 */
 	static String UserHomeDir() {
 		def f = new File(System.getProperty("user.home"))
-		ConvertToUnixPath(f.path)
+		return ConvertToUnixPath(f.path)
 	}
 
 	/**
@@ -1334,7 +1379,7 @@ class FileUtils {
 	 * @return Transformed path
 	 */
 	static String TransformFilePath(String path, Boolean errorWhenUndefined = true) {
-		return StringUtils.EvalMacroString(path, Config.SystemProps(), errorWhenUndefined)
+		return StringUtils.EvalMacroString(path, ['#TEMPDIR': SystemTempDir()] + Config.SystemProps(), errorWhenUndefined)
 	}
 
 	/**

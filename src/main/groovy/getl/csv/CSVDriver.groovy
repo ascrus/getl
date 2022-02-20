@@ -993,7 +993,7 @@ class CSVDriver extends FileDriver {
 		if (!dataset.existsFile())
 			throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found!")
 
-		if (!(dataset.rowDelimiter in ['\n', '\r\n']))
+		if (!(dataset.rowDelimiter() in ['\n', '\r\n']))
 			throw new ExceptionGETL('Allow CSV file only standard row delimiter!')
 
 		LineNumberReader reader

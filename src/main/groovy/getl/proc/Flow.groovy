@@ -8,6 +8,7 @@ import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.proc.sub.FieldStatistic
 import getl.proc.sub.FlowCopyChild
+import getl.proc.sub.FlowProcessException
 import getl.transform.*
 import getl.utils.*
 import getl.tfs.*
@@ -669,7 +670,7 @@ class Flow {
 						try {
 							map_code.call(inRow, outRow)
 						}
-						catch (AssertionError e) {
+						catch (AssertionError | FlowProcessException e) {
 							if (!isSaveErrors) {
 								writer.isWriteError = true
 								throw e
@@ -677,7 +678,7 @@ class Flow {
 							isError = true
 							Map errorRow = new HashMap()
 							errorRow.putAll(outRow)
-							errorRow.error = StringUtils.ProcessAssertionError(e)
+							errorRow.error = (e instanceof AssertionError)?StringUtils.ProcessAssertionError(e as AssertionError):e.message
 							errorsDataset.write(errorRow)
 						}
 						catch (Exception e) {
@@ -1343,13 +1344,13 @@ class Flow {
 					code.call(row)
 					countRow++
 				}
-				catch (AssertionError e) {
+				catch (AssertionError | FlowProcessException e) {
 					if (!isSaveErrors) {
 						throw e
 					}
 					Map errorRow = new HashMap()
 					errorRow.putAll(row)
-					errorRow.error = StringUtils.ProcessAssertionError(e)
+					errorRow.error = (e instanceof AssertionError)?StringUtils.ProcessAssertionError(e as AssertionError):e.message
 					errorsDataset.write(errorRow)
 				}
 			}

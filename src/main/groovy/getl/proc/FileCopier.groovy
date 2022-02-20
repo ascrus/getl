@@ -224,6 +224,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
         destinations.each { man ->
             man.localDirectory = tmpPath
+            man.isTempLocalDirectory = source.isTempLocalDirectory
         }
         ConnectTo(destinations, numberAttempts, timeAttempts)
     }
@@ -335,9 +336,9 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                         abortOnError = true
 
                         run { Integer segment ->
-                            def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}"], dslCreator)
+                            def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}", isTempLocalDirectory: true], dslCreator)
                             FileUtils.ValidPath(src.localDirectory, true)
-                            def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory], dslCreator)
+                            def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory, isTempLocalDirectory: true], dslCreator)
                             ConnectTo([src, dst], na, ta)
 
                             try {

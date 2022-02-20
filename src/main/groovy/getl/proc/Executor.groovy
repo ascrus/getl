@@ -768,9 +768,17 @@ class Executor implements GetlRepository {
 			runThreads = false
 			throw e
 		}
+
+		if (isRunBackground()) {
+			addShutdownHook {
+				if (isRunBackground())
+					stopBackground()
+			}
+		}
 	}
 	
 	/** Finish background process */
+	@Synchronized
 	void stopBackground () {
 		if (!isRunBackground())
 			throw new ExceptionGETL("Not Background process running")

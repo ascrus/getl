@@ -887,6 +887,20 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void eachRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		eachRow(new HashMap(), code)
 	}
+
+	/**
+	 * Get a list of values of the specified field
+	 * @param fieldName field name
+	 * @param procParams read rows parameters
+	 */
+	List fieldValues(String fieldName, Map procParams = null) {
+		if (indexOfField(fieldName) == -1)
+			throw new ExceptionGETL("Field \"$fieldName\" not found in dataset \"$this\"!")
+
+		List res = []
+		eachRow(procParams) { row -> res.add(row.get(fieldName)) }
+		return res
+	}
 	
 	/**
 	 * Generation closure code from process rows

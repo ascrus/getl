@@ -117,8 +117,9 @@ class VerticaTable extends TableDataset {
 
     /**
      * Load specified csv files to Vertica table
-     * @param source File to load
-     * @param cl Load setup code
+     * @param source file to load
+     * @param cl bulk option settings
+     * @return bulk options
      */
     VerticaBulkLoadSpec bulkLoadCsv(CSVDataset source,
                                     @DelegatesTo(VerticaBulkLoadSpec)
@@ -129,7 +130,8 @@ class VerticaTable extends TableDataset {
 
     /**
      * Load specified csv files to Vertica table
-     * @param cl Load setup code
+     * @param cl bulk option settings
+     * @return bulk options
      */
     VerticaBulkLoadSpec bulkLoadCsv(@DelegatesTo(VerticaBulkLoadSpec)
                                     @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaBulkLoadSpec'])

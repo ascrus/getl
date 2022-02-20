@@ -55,6 +55,10 @@ class JDBCTest extends GetlTest {
                 assertEquals(1, field('id1').ordKey)
                 assertTrue(field('id2').isKey)
                 assertEquals(2, field('id2').ordKey)
+
+                assertEquals([1], fieldValues('id1'))
+
+                drop()
             }
         }
     }
@@ -105,6 +109,8 @@ class JDBCTest extends GetlTest {
                 truncate()
                 assertNull(lastValue())
             }
+
+            tab.drop()
         }
     }
 
@@ -189,13 +195,15 @@ class JDBCTest extends GetlTest {
                 exec 'SAVE_POINT group:hp2 FROM h2_value'
                 assertEquals(DateUtils.AddDate('dd', 1, s2.date), vars.h2_value)
             }
+
+            tab.drop()
         }
     }
 
     @Test
     void testSqlScripter() {
         Getl.Dsl(this) {
-            embeddedTable {
+            def tab = embeddedTable {
                 tableName = 'test_sqlscripter'
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') {length = 50; isNull = false }
@@ -286,7 +294,7 @@ DROP TABLE test_sqlscripter_result;
     void testSqlScripterVarCount() {
         Getl.Dsl {
             useEmbeddedConnection embeddedConnection()
-            embeddedTable('#count_vars', true) {
+            def tab = embeddedTable('#count_vars', true) {
                 schemaName = 'public'
                 tableName = 'count_vars_table'
                 field('startdate') { type = datetimeFieldType; isKey = true }
@@ -341,6 +349,8 @@ IF (${count_del_dates} <> 1) DO {
 '''
                 assertEquals(1, (vars.rows as List).size())
             }
+
+            tab.drop()
         }
     }
 

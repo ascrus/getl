@@ -6,7 +6,7 @@ import getl.driver.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
-import groovy.xml.XmlParser
+import getl.xml.sub.XmlParser
 
 /**
  * XML driver class
@@ -197,7 +197,7 @@ class XMLDriver extends WebServiceDriver {
 	 * Read XML data from file
 	 */
 	@CompileStatic
-	protected def readData (XMLDataset dataset, Map params) {
+	protected Object readData(XMLDataset dataset, Map params) {
 		def xml = new XmlParser()
 
 		dataset.features.each { String option, Boolean value ->

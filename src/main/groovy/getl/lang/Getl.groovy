@@ -874,7 +874,7 @@ Examples:
     Boolean getUnitTestMode() { BoolUtils.IsValue(_params.unitTestMode) }
     /** Work in unit test mode */
     @Synchronized
-    protected void setUnitTestMode(Boolean value) {
+    void setUnitTestMode(Boolean value) {
         _params.unitTestMode = value
     }
 

@@ -22,7 +22,7 @@ class ImpalaConnection extends JDBCConnection {
     @Override
     protected void registerParameters () {
         super.registerParameters()
-        methodParams.register('Super', ['hdfsHost', 'hdfsPort', 'hdfsLogin', 'hdfsDir'])
+        methodParams.register('Super', ['hdfsHost', 'hdfsPort', 'hdfsLogin', 'hdfsDir', 'dualTable'])
     }
 
     @Override

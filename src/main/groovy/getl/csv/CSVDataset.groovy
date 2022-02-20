@@ -10,6 +10,8 @@ import getl.data.FileDataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * CSV Dataset class
@@ -38,9 +40,9 @@ class CSVDataset extends FileDataset {
 	String quoteStr() { quoteStr?:currentCsvConnection?.quoteStr() }
 	
 	/** Field delimiter */
-	String getFieldDelimiter () { params.fieldDelimiter as String }
+	String getFieldDelimiter() { params.fieldDelimiter as String }
 	/** Field delimiter */
-	void setFieldDelimiter (String value) {
+	void setFieldDelimiter(String value) {
 		params.fieldDelimiter = value
 		resetPresetMode()
 	}
@@ -48,9 +50,9 @@ class CSVDataset extends FileDataset {
 	String fieldDelimiter() { fieldDelimiter?:currentCsvConnection?.fieldDelimiter() }
 	
 	/** Row delimiter */
-	String getRowDelimiter () { params.rowDelimiter as String }
+	String getRowDelimiter() { params.rowDelimiter as String }
 	/** Row delimiter */
-	void setRowDelimiter (String value) {
+	void setRowDelimiter(String value) {
 		params.rowDelimiter = value
 		resetPresetMode()
 	}
@@ -58,7 +60,7 @@ class CSVDataset extends FileDataset {
 	String rowDelimiter() { rowDelimiter?:currentCsvConnection?.rowDelimiter() }
 	
 	/** File has header of fields name */
-	Boolean getHeader () { params.header as Boolean }
+	Boolean getHeader() { params.header as Boolean }
 	/** File has header of fields name */
 	void setHeader (Boolean value) {
 		params.header = value
@@ -77,9 +79,9 @@ class CSVDataset extends FileDataset {
 	Boolean isFieldOrderByHeader() { BoolUtils.IsValue(fieldOrderByHeader, currentCsvConnection?.isFieldOrderByHeader()) }
 	
 	/** Required format values for output to file */
-	Boolean getFormatOutput () { params.formatOutput }
+	Boolean getFormatOutput() { params.formatOutput }
 	/** Required format values for output to file */
-	void setFormatOutput (Boolean value) { params.formatOutput = value }
+	void setFormatOutput(Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
 	//@JsonIgnore
 	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, currentCsvConnection?.isFormatOutput()) }
@@ -249,7 +251,9 @@ class CSVDataset extends FileDataset {
 	CSVReadSpec getReadOpts() { new CSVReadSpec(this, true, readDirective) }
 
 	/** Read file options */
-	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
+	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec)
+						 @ClosureParams(value = SimpleType, options = ['getl.csv.opts.CSVReadSpec'])
+								 Closure cl = null) {
 		def parent = readOpts
 		parent.runClosure(cl)
 
@@ -260,7 +264,9 @@ class CSVDataset extends FileDataset {
 	CSVWriteSpec getWriteOpts() { new CSVWriteSpec(this, true, writeDirective) }
 
 	/** Write file options */
-	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
+	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec)
+						   @ClosureParams(value = SimpleType, options = ['getl.csv.opts.CSVWriteSpec'])
+								   Closure cl = null) {
 		def parent = writeOpts
 		parent.runClosure(cl)
 

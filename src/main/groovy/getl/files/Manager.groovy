@@ -32,6 +32,14 @@ import groovy.transform.stc.SimpleType
 abstract class Manager implements Cloneable, GetlRepository {
 	Manager() {
 		registerParameters()
+
+		writeErrorsToLog = true
+		isWindowsFileSystem = false
+
+		tempDirFile = new File(TFS.systemPath + '/files.localdir')
+		tempDirFile.deleteOnExit()
+		resetLocalDir()
+
 		initParams()
 		validParams()
 		resetLocalDir()
@@ -43,7 +51,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles',
 				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
-				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode'])
+				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode', 'isTempLocalDirectory'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder', 'processModified',
 				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'filter', 'threadLevel', 'ignoreExistInStory',
@@ -56,7 +64,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 	private File tempDirFile
 
 	/** Local directory is temporary and need drop when disconnect */
-	private isTempLocalDirectory = true
+	private Boolean _isTempLocalDirectory
+	/** Local directory is temporary and need drop when disconnect */
+	Boolean getIsTempLocalDirectory() { _isTempLocalDirectory }
+	/** Local directory is temporary and need drop when disconnect */
+	void setIsTempLocalDirectory(Boolean value) {
+		_isTempLocalDirectory = value
+		if (value && localDirectory != null)
+			new File(localDirectory).deleteOnExit()
+	}
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
@@ -65,12 +81,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 		params.rootPath = '/'
 		params.attributes = new HashMap<String, Object>()
 		params.fileListSortOrder = [] as List<String>
-
-		writeErrorsToLog = true
-		isWindowsFileSystem = false
-
-		tempDirFile = new File(TFS.systemPath + '/files.localdir')
-		tempDirFile.deleteOnExit()
 	}
 
 	static Manager CreateManager(Map params) {
@@ -280,10 +290,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Local directory */
 	void setLocalDirectory(String value) {
 		localDirectorySet(value)
-		isTempLocalDirectory = false
+		_isTempLocalDirectory = false
 	}
 
 	private localDirectorySet(String value) {
+		dropLocalDirectory()
 		_localDirectory = value
 		localDirFile = new File(value)
 	}
@@ -464,7 +475,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 		doDisconnect()
 		sessionID = null
 		currentRootPath = null
-		if (isTempLocalDirectory)
+		//dropLocalDirectory()
+	}
+
+	/** Remove local directory */
+	private dropLocalDirectory() {
+		if (_isTempLocalDirectory && localDirectory != null && FileUtils.ExistsFile(localDirectory, true))
 			FileUtils.DeleteFolder(localDirectory, true)
 	}
 	
@@ -1906,9 +1922,9 @@ WHERE
 	}
 
 	void resetLocalDir() {
+		dropLocalDirectory()
 		localDirectorySet(tempDirFile.canonicalPath + '/' + this.getClass().simpleName + '_' + FileUtils.UniqueFileName())
-		new File(localDirectory).deleteOnExit()
-		isTempLocalDirectory = true
+		setIsTempLocalDirectory(true)
 		if (connected)
 			FileUtils.ValidPath(localDirectoryFile)
 	}

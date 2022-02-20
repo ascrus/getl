@@ -168,11 +168,13 @@ class FileProcessing extends FileListProcessing {
             if (processingDirectly)
                 throw new ExceptionGETL("Transferring files to archive storage is not supported when direct file processing is enabled!")
             storageProcessedFiles.localDirectory = tmpPath
+            storageProcessedFiles.isTempLocalDirectory = true
             ConnectTo([storageProcessedFiles], numberAttempts, timeAttempts)
         }
 
         if (storageErrorFiles != null) {
             storageErrorFiles.localDirectory = tmpPath
+            storageErrorFiles.isTempLocalDirectory = true
             ConnectTo([storageErrorFiles], numberAttempts, timeAttempts)
         }
 
@@ -382,7 +384,7 @@ class FileProcessing extends FileListProcessing {
         // Create pool of source manager
         def sourceList = [] as List<ListPoolElement>
         (1..countOfThreadProcessing).each {
-            def src = source.cloneManager([localDirectory: source.localDirectory], dslCreator)
+            def src = source.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
             src.story = null
             ConnectTo([src], numberAttempts, timeAttempts)
 
@@ -397,7 +399,7 @@ class FileProcessing extends FileListProcessing {
         def processedList = [] as List<ListPoolElement>
         if (storageProcessedFiles != null) {
             (1..countOfThreadProcessing).each {
-                def src = storageProcessedFiles.cloneManager([localDirectory: source.localDirectory], dslCreator)
+                def src = storageProcessedFiles.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
                 ConnectTo([src], numberAttempts, timeAttempts)
                 processedList << new ListPoolElement(src)
             }
@@ -407,7 +409,7 @@ class FileProcessing extends FileListProcessing {
         def errorList = [] as List<ListPoolElement>
         if (storageErrorFiles != null) {
             (1..countOfThreadProcessing).each {
-                def src = storageErrorFiles.cloneManager([localDirectory: source.localDirectory], dslCreator)
+                def src = storageErrorFiles.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
                 ConnectTo([src], numberAttempts, timeAttempts)
                 errorList << new ListPoolElement(src)
             }

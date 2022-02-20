@@ -45,7 +45,7 @@ class Path implements Cloneable, GetlRepository {
 	 */
 	Path(Map params) {
 		if (params == null)
-			throw new ExceptionGETL('Parameter "params" required!')
+			throw new ExceptionGETL('Parameter "params" required for filepath mask!')
 		registerMethod()
 		if (params?.vars != null) {
 			setMaskVariables(params.vars as Map)
@@ -72,7 +72,7 @@ class Path implements Cloneable, GetlRepository {
 	 */
 	Path(String description) {
 		if (description == null || description.length() == 0)
-			throw new ExceptionGETL('Parameter "params" required!')
+			throw new ExceptionGETL('Parameter "params" required for filepath mask!')
 		registerMethod()
 		def params = new HashMap<String, Object>()
 		def i = description.indexOf('?')
@@ -93,26 +93,26 @@ class Path implements Cloneable, GetlRepository {
 					return it.replace('\u0001', '|').replace('\u0002', ';')
 				}
 				if (opts.size() > 6)
-					throw new ExceptionGETL("Incorrect number of parameters for $varNum variable!")
+					throw new ExceptionGETL("Incorrect number of parameters from [$varNum] variable in filepath mask [${params.mask}]!")
 
 				def varName = opts[0].trim()
 				if (varName.length() == 0)
-					throw new ExceptionGETL("Required name for $varNum variable!")
+					throw new ExceptionGETL("Required name for [$varNum] variable in filepath mask [${params.mask}]!")
 
 				def varType = (opts.size() > 1 && opts[1].trim().length() > 0)?opts[1].trim().toUpperCase():null
 				def varFormat = (opts.size() > 2 && opts[2].trim().length() > 0)?opts[2].trim():null
 
 				def varLen = (opts.size() > 3 && opts[3].trim().length() > 0)?opts[3].trim():null
 				if (varLen != null && !varLen.integer)
-					throw new ExceptionGETL("Incorrect value \"$varLen\" of parameter \"length\" in variable \"$varName\"!")
+					throw new ExceptionGETL("Incorrect value \"$varLen\" of parameter \"length\" for variable [$varName] in filepath mask [${params.mask}]!")
 
 				def varMinLen = (opts.size() > 4 && opts[4].trim().length() > 0)?opts[4].trim():null
 				if (varMinLen != null && !varMinLen.integer)
-					throw new ExceptionGETL("Incorrect value \"$varMinLen\" of parameter \"min_length\" in variable \"$varName\"!")
+					throw new ExceptionGETL("Incorrect value \"$varMinLen\" of parameter \"min_length\" for variable [$varName] in filepath mask [${params.mask}]!")
 
 				def varMaxLen = (opts.size() > 5 && opts[5].trim().length() > 0)?opts[5].trim():null
 				if (varMaxLen != null && !varMaxLen.integer)
-					throw new ExceptionGETL("Incorrect value \"$varMaxLen\" of parameter \"max_length\" in variable \"$varName\"!")
+					throw new ExceptionGETL("Incorrect value \"$varMaxLen\" of parameter \"max_length\" for variable [$varName] in filepath mask [${params.mask}]!")
 
 				def varParams = new LinkedHashMap<String, Object>()
 				if (varType != null)
@@ -328,7 +328,7 @@ class Path implements Cloneable, GetlRepository {
 				 @DelegatesTo(PathVarsSpec) @ClosureParams(value = SimpleType, options = ['getl.utils.opts.PathsVarSpec'])
 					Closure cl = null) {
 		if (name == null || name == '')
-			throw new ExceptionGETL('Name required for variable!')
+			throw new ExceptionGETL("Name required for variable for filepath mask [$maskStr}]!")
 
 		def var = maskVariables.get(name) as Map<String, Object>
 		if (var == null) {
@@ -379,7 +379,8 @@ class Path implements Cloneable, GetlRepository {
 			params = new HashMap()
 		methodParams.validation("compile", params)
 		maskStr = (params.mask as String)?:mask
-		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
+		if (maskStr == null)
+			throw new ExceptionGETL("Required parameter \"mask\" in filepath mask!")
 		def sysVar = BoolUtils.IsValue(params.sysVar)
 		def varAttr = new LinkedHashMap<String, Map<String, Object>>()
 		varAttr.putAll(maskVariables)
@@ -393,7 +394,7 @@ class Path implements Cloneable, GetlRepository {
 
 			varParams.keySet().toList().each { opt ->
 				if (!(opt in ['type', 'format', 'len', 'lenMin', 'lenMax', 'calc', 'regular']))
-					throw new ExceptionGETL("Unknown attribute \"$opt\" in \"$name\" variable!")
+					throw new ExceptionGETL("Unknown attribute \"$opt\" for [$name] variable in filepath mask [$maskStr}]!")
 			}
 
 			if (varParams.containsKey('type')) {
@@ -403,13 +404,13 @@ class Path implements Cloneable, GetlRepository {
 			}
 
 			if (varParams.len != null && (!(varParams.len.toString()).integer))
-				throw new ExceptionGETL("Invalid value \"${varParams.len}\" for \"len\" attribute in \"$name\" variable!")
+				throw new ExceptionGETL("Invalid value \"${varParams.len}\" for \"len\" attribute for [$name] variable in filepath mask [$maskStr}]!")
 
 			if (varParams.lenMin != null && (!(varParams.lenMin.toString()).integer))
-				throw new ExceptionGETL("Invalid value \"${varParams.lenMin}\" for \"lenMin\" attribute in \"$name\" variable!")
+				throw new ExceptionGETL("Invalid value \"${varParams.lenMin}\" for \"lenMin\" attribute for [$name] variable in filepath mask [$maskStr}]!")
 
 			if (varParams.lenMax != null && (!(varParams.lenMax.toString()).integer))
-				throw new ExceptionGETL("Invalid value \"${varParams.lenMax}\" for \"lenMax\" attribute in \"$name\" variable!")
+				throw new ExceptionGETL("Invalid value \"${varParams.lenMax}\" for \"lenMax\" attribute for [$name] variable in filepath mask [$maskStr}]!")
 		}
 
 		elements.clear()
@@ -513,7 +514,7 @@ class Path implements Cloneable, GetlRepository {
 					}
 
 					if (vn in listFoundVars)
-						throw new ExceptionGETL("Duplicate variable \"${vn}\" in path mask \"$maskStr\"")
+						throw new ExceptionGETL("Duplicate variable [$vn] in filepath mask [$maskStr]")
 
 					(p.vars as List).add(vn)
 					listFoundVars << vn
@@ -547,7 +548,7 @@ class Path implements Cloneable, GetlRepository {
 
 		varAttr.findAll { name, value -> value.calc != null }.each { name, values ->
 			if (name.toLowerCase() in listFoundVars)
-				throw new ExceptionGETL("The calculated variable \"$name\" cannot be used in the mask!")
+				throw new ExceptionGETL("The calculated variable [$name] cannot be used in filepath mask [$maskStr]!")
 			compVars.put(name, values)
 		}
 
@@ -567,7 +568,7 @@ class Path implements Cloneable, GetlRepository {
 			if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
 				def format = value.format as String
 				if (format == null)
-					throw new ExceptionGETL("Format is required for variable \"$name\"!")
+					throw new ExceptionGETL("Format is required for variable [$name] in filepath mask [$maskStr}]!")
 
 				DateTimeFormatter df = null
 				switch (type) {
@@ -621,7 +622,7 @@ class Path implements Cloneable, GetlRepository {
 	/** Generation mask path pattern on elements */
 	Pattern generateMaskPattern (Integer countElements) {
 		if (countElements > elements.size())
-			throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements")
+			throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements in filepath mask [$maskStr}]")
 		StringBuilder b = new StringBuilder()
 		b.append("(?i)")
 		for (Integer i = 0; i < countElements; i++) {
@@ -729,20 +730,20 @@ class Path implements Cloneable, GetlRepository {
 
 				if (v != null && value.len != null && v.length() != value.len) {
 					if (!ignoreConvertError)
-						throw new ExceptionGETL("Invalid [${key}]: length value \"${v}\" <> ${value.len}!")
+						throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: length value \"${v}\" <> ${value.len}!")
 					v = null
 				}
 
                 //noinspection GroovyAssignabilityCheck
                 if (v != null && value.lenMin != null && v.length() < Integer.valueOf(value.lenMin)) {
 					if (!ignoreConvertError)
-						throw new ExceptionGETL("Invalid [${key}]: length value \"${v}\" < ${value.lenMin}!")
+						throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: length value \"${v}\" < ${value.lenMin}!")
 					v = null
 				}
                 //noinspection GroovyAssignabilityCheck
                 if (v != null && value.lenMax != null && v.length() > Integer.valueOf(value.lenMax)) {
 					if (!ignoreConvertError)
-						throw new ExceptionGETL("Invalid [${key}]: length value \"${v}\" > ${value.lenMax}!")
+						throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: length value \"${v}\" > ${value.lenMax}!")
 					v = null
 				}
 
@@ -756,7 +757,7 @@ class Path implements Cloneable, GetlRepository {
 								v = DateUtils.ParseSQLDate(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
+								throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date: ${e.message}!")
 							}
                             isError = (v == null)
 							break
@@ -765,7 +766,7 @@ class Path implements Cloneable, GetlRepository {
 								v = DateUtils.ParseSQLTimestamp(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
+								throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date: ${e.message}!")
 							}
 							isError = (v == null)
 							break
@@ -774,7 +775,7 @@ class Path implements Cloneable, GetlRepository {
 								v = DateUtils.ParseSQLTime(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
+								throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date: ${e.message}!")
 							}
 							isError = (v == null)
 							break
@@ -784,7 +785,7 @@ class Path implements Cloneable, GetlRepository {
 							}
 							catch (Exception e) {
 								if (!ignoreConvertError)
-									throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to integer: ${e.message}!")
+									throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to integer: ${e.message}!")
 								v = null
 							}
                             isError = (v == null)
@@ -795,7 +796,7 @@ class Path implements Cloneable, GetlRepository {
 							}
 							catch (Exception e) {
 								if (!ignoreConvertError)
-									throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to bigint: ${e.message}!")
+									throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to bigint: ${e.message}!")
 								v = null
 							}
                             isError = (v == null)
@@ -803,7 +804,7 @@ class Path implements Cloneable, GetlRepository {
 						case Field.stringFieldType:
 							break
 						default:
-							throw new ExceptionGETL("Unknown type ${value.type}!")
+							throw new ExceptionGETL("Unknown type ${value.type} in filepath mask [$maskStr]!")
 					}
 				}
                 if (isError) return
@@ -875,7 +876,7 @@ class Path implements Cloneable, GetlRepository {
 	 */
 	String formatVariable(String varName, def value) {
 		if (!vars.containsKey(varName))
-			throw new ExceptionGETL("Variable ${varName} not found!")
+			throw new ExceptionGETL("Variable ${varName} not found in filepath mask [$maskStr}]!")
 
 		def v = vars.get(varName) as Map<String, Object>
 		def varType = v.type
@@ -969,7 +970,7 @@ class Path implements Cloneable, GetlRepository {
 		def res = [] as List<Path>
 		masks.each {mask ->
 			if (mask == null)
-				throw new ExceptionGETL('It is not allowed to specify null as a list value!')
+				throw new ExceptionGETL('It is not allowed to specify null as a list value for function Masks2Path!')
 			res.add(new Path(mask: mask, vars: vars))
 		}
 		return res
@@ -984,12 +985,12 @@ class Path implements Cloneable, GetlRepository {
 	@CompileStatic
 	static Boolean MatchList(String value, List<Path> paths) {
 		if (paths == null)
-			throw new ExceptionGETL('Required paths parameter!')
+			throw new ExceptionGETL('Required paths parameter for function MatchList!')
 		if (value == null) return null
 		for (int i = 0; i < paths.size(); i++) {
 			def p = paths[i]
 			if (p == null)
-				throw new ExceptionGETL('It is not allowed to specify null as a list value!')
+				throw new ExceptionGETL('It is not allowed to specify null as a list value for function MatchList!')
 			if (p.match(value))
 				return true
 		}

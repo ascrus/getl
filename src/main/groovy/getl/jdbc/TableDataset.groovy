@@ -816,4 +816,36 @@ class TableDataset extends JDBCDataset {
 	 * Retrieve table options
 	 */
 	void retrieveOpts() { validTableName() }
+
+	@Override
+	List fieldValues(String fieldName, Map procParams) {
+		if (procParams == null)
+			procParams = [:] as Map<String, Object>
+		procParams.onlyFields = [fieldName]
+		super.fieldValues(fieldName, procParams)
+	}
+
+	/**
+	 * Load specified csv files to Vertica table
+	 * @param source file to load
+	 * @param cl bulk option settings
+	 * @return bulk options
+	 */
+	BulkLoadSpec bulkLoadCsv(CSVDataset source,
+							 @DelegatesTo(BulkLoadSpec)
+							 @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.BulkLoadSpec'])
+									 Closure cl) {
+		doBulkLoadCsv(source, cl)
+	}
+
+	/**
+	 * Load specified csv files to Vertica table
+	 * @param cl bulk option settings
+	 * @return bulk options
+	 */
+	BulkLoadSpec bulkLoadCsv(@DelegatesTo(BulkLoadSpec)
+							 @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.BulkLoadSpec'])
+									 Closure cl) {
+		doBulkLoadCsv(null, cl)
+	}
 }

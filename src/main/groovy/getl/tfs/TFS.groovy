@@ -106,7 +106,8 @@ class TFS extends CSVConnection {
 	 */
 	static TFSDataset dataset(TFS connection, String name, Boolean validExists = false) {
 		TFSDataset ds = new TFSDataset(connection: connection, fileName: name)
-		if (validExists && !ds.existsFile()) throw new ExceptionGETL("Temporary file \"${name}\" not exists")
+		if (validExists && !ds.existsFile())
+			throw new ExceptionGETL("Temporary file \"${name}\" not exists")
 		
 		return ds
 	}

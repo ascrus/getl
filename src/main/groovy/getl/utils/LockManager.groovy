@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -6,6 +7,9 @@ import getl.utils.sub.LockObject
 import groovy.transform.AutoClone
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
+
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 /**
  * Object lock manager
@@ -18,20 +22,13 @@ class LockManager {
     /**
      * Create new object lock manager
      * @param useCollector use lock collector
-     * @param lockLife lock life in seconds
+     * @param lockLife lock life in ms
      */
-    LockManager(Boolean useCollector = false, Integer lockLife = 100) {
-        this.useCollector = useCollector
-        this.lockLife = lockLife
-        if (useCollector) {
-            schedule = new Executor()
-            schedule.tap {
-                waitTime = 500
-                startBackground {
-                    garbage(this.lockLife)
-                }
-            }
-        }
+    LockManager(Boolean useCollector = null, Integer lockLife = null) {
+        if (lockLife != null)
+            setLockLife(lockLife)
+        if (useCollector != null)
+            setUseCollector(useCollector)
     }
 
     /** use lock collector */
@@ -39,6 +36,22 @@ class LockManager {
     /** use lock collector */
     @Synchronized
     Boolean getUseCollector() { useCollector }
+    @Synchronized
+    void setUseCollector(Boolean value) {
+        if (value == null)
+            throw new ExceptionGETL('Required value for "useCollector" property!')
+
+        if (useCollector == value)
+            return
+
+        if (useCollector && schedule.isRunBackground())
+            stopCollector()
+
+        useCollector = value
+
+        if (useCollector)
+            startCollector()
+    }
 
     /** lock life in ms */
     private Integer lockLife = 100
@@ -48,33 +61,49 @@ class LockManager {
     /** lock life in ms */
     @Synchronized
     void setLockLife(Integer value) {
+        if ((value?:0) <= 0)
+            throw new ExceptionGETL('Life time lock must be greater than zero!')
+
         lockLife = value
     }
 
     /** List of lock */
-    protected final Map<String, LockObject> locks = new HashMap<String, LockObject>()
+    protected final Map<String, LockObject> lockObjects = new ConcurrentHashMap<String, LockObject>()
 
     /** lock list is empty */
     @Synchronized
-    Boolean isEmpty() { locks.isEmpty() }
+    Boolean isEmpty() { lockObjects.isEmpty() }
 
     /** Collector schedule */
-    protected Executor schedule
+    private final Executor schedule = new Executor()
+
+    private void startCollector() {
+        schedule.tap {
+            waitTime = 500
+            startBackground {
+                garbage(this.lockLife)
+            }
+        }
+    }
+
+    private void stopCollector() {
+        schedule.stopBackground()
+    }
 
     /**
      * Clean locks objects
-     * @param seconds lock time in seconds
+     * @param ms lock time in ms
      */
-    @Synchronized('locks')
     void garbage(Integer ms = 100) {
         def lastDate = DateUtils.AddDate('SSS', -ms, new Date())
         def deletedElem = [] as List<String>
-        locks.each { name, obj ->
-            if (obj.countReader == 0 && obj.lastWorkTime != null && obj.lastWorkTime <= lastDate) {
-                deletedElem << name
+        synchronized (lockObjects) {
+            lockObjects.each { name, obj ->
+                if (obj.counter.count == 0 && obj.counter.date != null && obj.counter.date <= lastDate)
+                    deletedElem.add(name)
             }
+            deletedElem.each { name -> lockObjects.remove(name) }
         }
-        deletedElem.each { name -> locks.remove(name) }
     }
 
     /**
@@ -83,32 +112,60 @@ class LockManager {
      * @param cl processing code
      */
     void lockObject(String name, Closure cl) {
+        lockObject(name, null, cl)
+    }
+
+    /**
+     * Lock from multi-threaded access and perform operations on it
+     * @param name source name
+     * @param lockTimeout lock timeout in ms
+     * @param cl processing code
+     */
+    void lockObject(String name, Integer lockTimeout, Closure cl) {
+        if (name == null)
+            throw new ExceptionGETL('Object name not specified!')
+        if (lockTimeout != null && lockTimeout <= 0)
+            throw new ExceptionGETL('Lock timeout must be greater than zero!')
         if (cl == null)
             throw new ExceptionGETL('Processing code not specified!')
 
-        LockObject lock
-        synchronized (locks) {
-            lock = locks.get(name)
-            if (lock == null) {
-                lock = new LockObject()
-                locks.put(name, lock)
+        LockObject lockObject
+        synchronized (lockObjects) {
+            lockObject = lockObjects.get(name)
+            if (lockObject == null) {
+                lockObject = new LockObject()
+                lockObjects.put(name, lockObject)
             }
         }
 
-        synchronized (lock) {
-            lock.countReader++
-            try {
-                cl.call(name)
+
+        lockObject.counter.nextCount()
+        try {
+            if (lockTimeout != null) {
+                if (!lockObject.lock.tryLock(lockTimeout, TimeUnit.MILLISECONDS))
+                    throw new ExceptionGETL("Lock object \"$name\" wait timeout!")
             }
-            finally {
-                lock.countReader--
-            }
+            else
+                lockObject.lock.lock()
+
+            cl.call(name)
+        }
+        finally {
+            lockObject.lock.unlock()
+            lockObject.counter.prevCount()
         }
 
         if (!useCollector) {
-            synchronized (locks) {
-                if (lock.countReader == 0)
-                    locks.remove(name)
+            synchronized (lockObjects) {
+                if (lockObject.counter.count == 0)
+                    lockObjects.remove(name)
+            }
+        }
+        else {
+            synchronized (lockObjects) {
+                def curDate = new Date()
+                if (lockObject.counter.date == null || lockObject.counter.date < curDate)
+                    lockObject.counter.date = curDate
             }
         }
     }

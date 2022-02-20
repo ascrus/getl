@@ -563,7 +563,7 @@ class VerticaDriver extends JDBCDriver {
 		if (csvFile.quoteStr().length() > 1)
 			throw new ExceptionGETL('The quote must have only one character for bulk load!')
 
-		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter != '\r\n')
+		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter() != '\r\n')
 			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
 
 		if (!csvFile.escaped()) {

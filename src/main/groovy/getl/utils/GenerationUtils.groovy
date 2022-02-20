@@ -2217,7 +2217,7 @@ else
 		if (sb == null)
 			sb = new StringBuilder()
 		sb.append('import getl.utils.*\n')
-		sb.append('import groovy.xml.XmlParser\n')
+		sb.append('import getl.xml.sub.XmlParser\n')
 		sb.append('import groovy.json.JsonSlurper\n')
 		sb.append('import groovy.yaml.YamlSlurper\n')
 		sb.append('void process(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {\n')

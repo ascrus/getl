@@ -618,6 +618,7 @@ abstract class FileListProcessing implements GetlRepository {
             throw new ExceptionFileListProcessing('Source file manager required!')
 
         source.localDirectory = tmpPath
+        source.isTempLocalDirectory = true
         ConnectTo([source], numberAttempts, timeAttempts)
 
         if (sourcePath == null)

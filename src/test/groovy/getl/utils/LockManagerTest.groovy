@@ -1,12 +1,13 @@
 package getl.utils
 
 import getl.lang.Getl
+import getl.test.GetlTest
 import getl.tfs.TFS
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class LockManagerTest extends getl.test.GetlTest {
+class LockManagerTest extends GetlTest {
     @Test
     void testScheduleLocks() {
         Getl.Dsl(this) {

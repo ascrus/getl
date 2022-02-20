@@ -1,6 +1,10 @@
 package getl.utils.sub
 
+import getl.utils.SynchronizeObject
 import groovy.transform.CompileStatic
+
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * Attributes for locking a object
@@ -9,18 +13,11 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class LockObject {
-    /** last reading time */
-    private Date lastWorkTime
-    /** last reading time */
-    Date getLastWorkTime() { lastWorkTime }
+    /** Count reader */
+    public final SynchronizeObject counter = new SynchronizeObject()
 
-    /** Count reader */
-    private Long countReader = 0
-    /** Count reader */
-    Long getCountReader() { countReader }
-    /** Count reader */
-    void setCountReader(Long value) {
-        countReader = value
-        lastWorkTime = new Date()
-    }
+    /** Lock */
+    private Lock lock = new ReentrantLock()
+    /** Lock */
+    Lock getLock() { lock }
 }

@@ -4,6 +4,7 @@ import getl.data.sub.FileWriteOpts
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
+import java.util.concurrent.locks.Lock
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
@@ -310,7 +311,9 @@ class FileDriver extends Driver {
 
 		if (BoolUtils.IsValue(params.availableAfterWrite) && (portion?:0) > 1) {
 			def opt = dataset.writtenFiles[portion - 2]
-			fixTempFile(dataset, opt)
+			fileLocking.lockObject(dataset.fullFileName()) {
+				fixTempFile(dataset, opt)
+			}
 		}
 
 		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
@@ -344,10 +347,8 @@ class FileDriver extends Driver {
 			file.deleteOnExit()
 			if (isAppend)
 				new File(orig_fn).deleteOnExit()
-			if (dataset.autoSchema) {
-				File s = new File(dataset.fullFileSchemaName())
-				if (s.exists()) s.deleteOnExit()
-			}
+			if (dataset.isAutoSchema())
+				new File(dataset.fullFileSchemaName()).deleteOnExit()
 		}
 
 		if (isGzFile) {
@@ -371,6 +372,9 @@ class FileDriver extends Driver {
 	 */
 	protected void processWriteFile(String fileName, File fileTemp) {  }
 
+	/** Lock file manager for synchronyze write temporary files to persistent file in multi-threads */
+	static private final LockManager fileLocking = new LockManager()
+
 	/**
 	 * Fixing temporary files to persistent file or deleting
 	 * @param dataset
@@ -378,23 +382,26 @@ class FileDriver extends Driver {
 	 */
 	@CompileStatic
 	void fixTempFiles(FileDataset dataset) {
-		def deleteOnEmpty = dataset.writtenFiles[0].deleteOnEmpty
-		try {
-			dataset.writtenFiles.each { opt ->
-				fixTempFile(dataset, opt)
+		fileLocking.lockObject(dataset.fullFileName()) {
+			def deleteOnEmpty = dataset.writtenFiles[0].deleteOnEmpty
+			try {
+				dataset.writtenFiles.each { opt ->
+					fixTempFile(dataset, opt)
+				}
 			}
-		}
-		catch (Exception e) {
-			removeTempFiles(dataset)
-			throw e
-		}
+			catch (Exception e) {
+				removeTempFiles(dataset)
+				throw e
+			}
 
-		if (deleteOnEmpty)
-			dataset.writtenFiles.removeAll { opt -> opt.countRows == 0 }
+			if (deleteOnEmpty)
+				dataset.writtenFiles.removeAll { opt -> opt.countRows == 0 }
 
-		if (deleteOnEmpty && dataset.isAutoSchema() && dataset.writeRows == 0) {
-			def s = new File(dataset.fullFileSchemaName())
-			if (s.exists()) s.delete()
+			if (deleteOnEmpty && dataset.isAutoSchema() && dataset.writeRows == 0) {
+				def s = new File(dataset.fullFileSchemaName())
+				if (s.exists())
+					s.delete()
+			}
 		}
 	}
 	
@@ -407,51 +414,53 @@ class FileDriver extends Driver {
 	void fixTempFile(FileDataset dataset, FileWriteOpts opt) {
 		if (opt.readyFile) return
 
-		def f = new File(opt.fileName as String)
-		def t = new File(opt.tempFileName as String)
+		def dsFile = new File(opt.fileName as String)
+		def tempFile = new File(opt.tempFileName as String)
 
 		if (opt.fileName != opt.tempFileName) {
 			if (!opt.append) {
-				def isExistsFile = f.exists()
-				if (isExistsFile && !f.delete())
+				def isExistsFile = dsFile.exists()
+				if (isExistsFile && !dsFile.delete())
 					throw new ExceptionGETL("Failed to remove file \"${opt.fileName}\"!")
 
 				if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
-					if (!t.delete())
+					if (!tempFile.delete())
 						connection.logger.severe("Failed to remove file \"${opt.tempFileName}\"!")
-				} else if (!t.renameTo(f)) {
+				} else if (!tempFile.renameTo(dsFile)) {
 					throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
 				}
 			}
 			else {
-				FileUtils.LockFile(f) {
-					def isExistsFile = f.exists()
+				FileUtils.LockFile(dsFile) {
+					def isExistsFile = dsFile.exists()
 
 					def isHeader = fileHeader(dataset)
 
 					if (!isExistsFile && !isHeader) {
-						if (!t.renameTo(f))
+						if (!tempFile.renameTo(dsFile))
 							throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
 					} else {
 						if (!isExistsFile)
-							saveHeaderToFile(dataset, f)
+							saveHeaderToFile(dataset, dsFile)
 
-						def tempData = t.newInputStream()
+						/*def tempData = t.newInputStream()
 						try {
 							f.append(tempData)
+
 						}
 						finally {
 							tempData.close()
-						}
+						}*/
+						FileUtils.AppendToFile(tempFile, dsFile)
 
-						if (!t.delete())
+						if (!tempFile.delete())
 							connection.logger.severe("Failed to remove file \"${opt.tempFileName}\"!")
 					}
 				}
 			}
 		}
 		else if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
-			if (!f.delete())
+			if (!dsFile.delete())
 				connection.logger.severe("Failed to remove file \"${opt.fileName}\"!")
 		}
 
