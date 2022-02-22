@@ -76,7 +76,7 @@ class Getl extends Script {
     }
 
     static private void Help() {
-        Version.SayInfo(false)
+        Version.instance.sayInfo(false)
         println """
 # The syntax for running a specified Getl Dsl script (with @BaseScript directive):
 * java getl.lang.Getl workflow=<workflow model name> [<base arguments>] [<workflow arguments>]
@@ -759,7 +759,7 @@ Examples:
         _params.models = _models
         _params.fileman = _fileman
 
-        Version.SayInfo(true, this)
+        Version.instance.sayInfo(true, this)
 
         if (!IsCurrentProcessInThread() && getGetlSystemParameter('mainClass') == null &&
                 (MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper'/*, 'java.lang.Thread'*/] ||

@@ -11,16 +11,33 @@ import getl.utils.StringUtils
  * Version manager
  * @author Aleksey Konstantinov
  */
-class Version {
-	// Init class
-	static private Boolean init = {
+class Version implements VersionInfo {
+	Version() {
 		readConfig()
-		return true
-	}.call()
+	}
+
+	/** Instance version manager */
+	public static final Version instance = new Version()
+
+	/** GETL version */
+	private String version
+	String getVersion() { version }
+
+	/** GETL version as numeric */
+	private BigDecimal versionNum
+	BigDecimal getVersionNum() { versionNum }
+
+	/** Compatibility GETL version */
+	private BigDecimal versionNumCompatibility
+	BigDecimal getVersionNumCompatibility() { versionNumCompatibility }
+
+	/** Years development */
+	private String years
+	String getYears() { years }
 
 	// Read resource file config
 	@SuppressWarnings("GroovyAssignabilityCheck")
-	static private void readConfig() {
+	private void readConfig() {
 		def conf = ConfigSlurper.LoadConfigFile(file: FileUtils.FileFromResources('/getl.conf'))
 		def getlSection = (conf.getl as Map)
 		if (getlSection == null)
@@ -42,36 +59,24 @@ class Version {
 		versionNum = new BigDecimal(s)
 	}
 
-	/** GETL version */
-	static public String version
-	
-	/** GETL version as numeric */
-	static public BigDecimal versionNum
-
-	/** Compatibility GETL version */
-	static public BigDecimal versionNumCompatibility = 4.0300
-	
 	/**
 	 * Valid compatibility version
 	 * @param ver - required version
 	 * @return result of valid
 	 */
-	static Boolean IsCompatibility (def ver) {
+	Boolean IsCompatibility (def ver) {
 		ver >= versionNumCompatibility && ver <= versionNum 
 	}
-	
-	/** Years development */
-	static public String years
 
-	static private Boolean sayInfo = false
+	private Boolean sayInfo = false
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	static void SayInfo(Boolean isJob = true, Getl getl = null) {
+	void sayInfo(Boolean isJob = true, Getl getl = null) {
 		if (sayInfo)
 			return
 
 		sayInfo = true
-		def str = "Getl framework, version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years}, All rights to the product belong to company EasyData Ltd Russia under license \"GNU General Public License 3.0\""
+		def str = "Getl framework, version ${getl.deploy.Version.instance.version} created by ${getl.deploy.Version.instance.years}, All rights to the product belong to company EasyData Ltd Russia under license \"GNU General Public License 3.0\""
 		if (getl != null) {
 			getl.logFine('### ' + str)
 			getl.logInfo('### Job start')

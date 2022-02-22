@@ -7,11 +7,11 @@ import org.junit.Test
 class VersionTest extends getl.test.GetlTest {
     @Test
     void initTest() {
-        assertNotNull(Version.version)
-        assertNotNull(Version.versionNum)
-        assertNotNull(Version.years)
-        assertTrue(Version.IsCompatibility(4.0300))
-        assertFalse(Version.IsCompatibility(4.0205))
-        Version.SayInfo(true)
+        assertNotNull(Version.instance.version)
+        assertNotNull(Version.instance.versionNum)
+        assertNotNull(Version.instance.years)
+        assertTrue(Version.instance.IsCompatibility(4.0300))
+        assertFalse(Version.instance.IsCompatibility(4.0205))
+        Version.instance.sayInfo(true)
     }
 }

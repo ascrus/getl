@@ -90,7 +90,7 @@ abstract class Job {
 		DateUtils.init()
 		//if (dslCreator == null)
 		Logs.Init()
-		getl.deploy.Version.SayInfo()
+		getl.deploy.Version.instance.sayInfo()
 		prepareRun()
 		def isError = false
         Throwable err
