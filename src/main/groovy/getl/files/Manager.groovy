@@ -49,11 +49,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	protected void registerParameters() {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
-				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles',
+				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles', 'useDateSizeInBuildList',
 				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
 				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode', 'isTempLocalDirectory'])
 		methodParams.register('buildList',
-				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder', 'processModified',
+				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder', 'processModified', 'useDateSizeInBuildList',
 				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'filter', 'threadLevel', 'ignoreExistInStory',
 				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory', 'buildListThread'])
 		methodParams.register('downloadFiles',
@@ -288,6 +288,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@JsonIgnore
 	String getLocalDirectory() { _localDirectory }
 	/** Local directory */
+	@JsonIgnore
 	void setLocalDirectory(String value) {
 		localDirectorySet(value)
 		_isTempLocalDirectory = false
@@ -305,8 +306,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void setNoopTime(Integer value) { params.noopTime = value }
 	
 	/** Count thread for build list files */
+	@JsonIgnore
 	Integer getBuildListThread() { params.buildListThread as Integer }
 	/** Count thread for build list files */
+	@JsonIgnore
 	void setBuildListThread(Integer value) {
 		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero!")
 		params.buildListThread = value
@@ -547,6 +550,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	abstract String getCurrentPath()
 	
 	/** Set new absolute current path */
+	@JsonIgnore
 	abstract void setCurrentPath(String path)
 	
 	/**
@@ -845,8 +849,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** History table name */
+	@JsonIgnore
 	String getStoryName() { params.storyName as String }
 	/** History table name */
+	@JsonIgnore
 	void setStoryName(String value) { useStoryName(value) }
 	/** Use table name for storing history download files */
 	void useStoryName(String value) {
@@ -861,8 +867,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Directory level for which to enable parallelization */
+	@JsonIgnore
 	Integer getThreadLevel() { params.threadLevel as Integer }
 	/** Directory level for which to enable parallelization */
+	@JsonIgnore
 	void setThreadLevel(Integer value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('threadLevel value must be greater than zero')
@@ -870,8 +878,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Limit the number of processed directories */
+	@JsonIgnore
 	Integer getLimitDirs() { params.limitDirs as Integer }
 	/** Limit the number of processed directories */
+	@JsonIgnore
 	void setLimitDirs(Integer value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('limitDirs value must be greater than zero!')
@@ -880,8 +890,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Limit the number of files */
+	@JsonIgnore
 	Integer getLimitCountFiles() { params.limitCountFiles as Integer }
 	/** Limit the number of files */
+	@JsonIgnore
 	void setLimitCountFiles(Integer value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('limitCountFiles value must be greater than zero!')
@@ -890,8 +902,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Limit the size of files */
+	@JsonIgnore
 	Long getLimitSizeFiles() { params.limitSizeFiles as Long }
 	/** Limit the size of files */
+	@JsonIgnore
 	void setLimitSizeFiles(Long value) {
 		if (value != null && value <= 0)
 			throw new ExceptionGETL('limitSizeFiles value must be greater than zero!')
@@ -909,23 +923,38 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Directory recursive processing */
+	@JsonIgnore
 	Boolean getRecursive() { BoolUtils.IsValue(params.recursive) }
 	/** Directory recursive processing */
+	@JsonIgnore
 	void setRecursive(Boolean value) { params.recursive = value }
 
 	/** Do not process files that are in history */
+	@JsonIgnore
 	Boolean getIgnoreExistInStory() { BoolUtils.IsValue(params.ignoreExistInStory, true) }
 	/** Do not process files that are in history */
+	@JsonIgnore
 	void setIgnoreExistInStory(Boolean value) { params.ignoreExistInStory = value }
 
+	/** Check file size and time in history when build list files */
+	@JsonIgnore
+	Boolean getUseDateSizeInBuildList() { BoolUtils.IsValue(params.useDateSizeInBuildList, false) }
+	/** Check file size and time in history when build list files */
+	@JsonIgnore
+	void setUseDateSizeInBuildList(Boolean value) { params.useDateSizeInBuildList = value }
+
 	/** Store relative file path in history table */
+	@JsonIgnore
 	Boolean getTakePathInStory() { BoolUtils.IsValue(params.takePathInStory, true) }
 	/** Store relative file path in history table */
+	@JsonIgnore
 	void setTakePathInStory(Boolean value) { params.takePathInStory = value }
 
 	/** Create a history table if it does not exist */
+	@JsonIgnore
 	Boolean getCreateStory() { BoolUtils.IsValue(params.createStory) }
 	/** Create a history table if it does not exist */
+	@JsonIgnore
 	void setCreateStory(Boolean value) { params.createStory = value }
 
 	/** Description of manager */
@@ -1134,9 +1163,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param prepareField field processing code
 	 */
 	@Synchronized('_synchCreate')
-	static Boolean createStoryTable(TableDataset storyTable, Path path = null,
+	static Boolean createStoryTable(TableDataset storyTable, Path path = null, Boolean useDateSizeInBuildList = false,
 							 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
-		PrepareStoryTable(storyTable, path, prepareField)
+		PrepareStoryTable(storyTable, path, useDateSizeInBuildList, prepareField)
 		if (!storyTable.exists) {
 			storyTable.create()
 			return true
@@ -1151,11 +1180,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param prepareField
 	 * @return
 	 */
-	static List<Field> StoryFieldsFromPath(Path path = null,
+	static List<Field> StoryFieldsFromPath(Path path = null, Boolean useDateSizeInBuildList = false,
 										   @ClosureParams(value = SimpleType, options = ['getl.data.Field'])
 												   Closure prepareField = null) {
 		def res = [] as List<Field>
-		res.addAll(StoryFields)
+		res.addAll(StoryFields(useDateSizeInBuildList))
 
 		if (path != null) {
 			if (!path.isCompile)
@@ -1164,7 +1193,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			path.vars.each { key, attr ->
 				def varName = key.toUpperCase()
 				//noinspection SpellCheckingInspection
-				if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+				if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY', 'ID'])
 					throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
 				def ft = (attr.type as Field.Type)?:Field.Type.STRING
@@ -1185,9 +1214,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param path path mask
 	 * @param prepareField field processing code
 	 */
-	static void PrepareStoryTable(TableDataset storyTable, Path path = null,
+	static void PrepareStoryTable(TableDataset storyTable, Path path = null, Boolean useDateSizeInBuildList = false,
 								  @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
-		storyTable.field = StoryFieldsFromPath(path, prepareField)
+		storyTable.field = StoryFieldsFromPath(path, useDateSizeInBuildList, prepareField)
 	}
 	
 	/**
@@ -1214,6 +1243,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def onlyFromStory = BoolUtils.IsValue(lParams.onlyFromStory)
 		def processModified = BoolUtils.IsValue(lParams.processModified)
 		def ignoreStory = BoolUtils.IsValue(lParams.ignoreStory)
+		def useDateSizeInBuildList = BoolUtils.IsValue(lParams.useDateSizeInBuildList, this.useDateSizeInBuildList)
 
 		def whereFilter = lParams.filter as String
 		
@@ -1260,15 +1290,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (storyTable != null)
 			storyTable = storyTable.cloneDatasetConnection() as TableDataset
 		if (createStory && storyTable != null) {
-			createStoryTable(storyTable, path)
+			createStoryTable(storyTable, path, useDateSizeInBuildList)
 			storyTable.connection.connected = false
 		}
 
 		// Init result file list table
-		fileList = new TableDataset(connection: (fileListConnection?:new TDS()),
+		fileList = new TableDataset(connection: (fileListConnection?:new TDS(connectDatabase: TDS.storageDatabaseName)),
 									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
 		fileList.field = [Field.New('FILEID') { type = integerFieldType; isNull = false }]
-		AddFieldFileListToDS(fileList)
+		AddFieldFileListToDS(fileList, useDateSizeInBuildList)
 		if (extendFields != null)
 			fileList.addFields(extendFields)
 		if (sqlHistoryFile != null)
@@ -1278,7 +1308,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			def varName = key.toUpperCase()
 			//noinspection SpellCheckingInspection
 			if (varName in ['FILEID', 'FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME',
-							'FILEINSTORY'])
+							'FILEINSTORY', 'ID'])
 				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
 			def ft = (attr.type as Field.Type)?:Field.Type.STRING
@@ -1462,34 +1492,42 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				validFiles.field = newFiles.getFields(['LOCALFILENAME', 'FILEDATE', 'FILESIZE'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
 				validFiles.clearKeys()
-				validFiles.fieldByName('LOCALFILENAME').isKey = true
-				if (takePathInStory)
-					validFiles.fieldByName('FILEPATH').isKey = true
+				validFiles.fieldByName('LOCALFILENAME').tap {
+					isKey = true
+					ordKey = 2
+				}
+				if (takePathInStory) {
+					validFiles.fieldByName('FILEPATH').tap {
+						isKey = true
+						ordKey = 1
+					}
+				}
+				if (useDateSizeInBuildList || processModified) {
+					validFiles.fieldByName('FILEDATE').tap {
+						isKey = true
+						ordKey = 3
+					}
+					validFiles.fieldByName('FILESIZE').tap {
+						isKey = true
+						ordKey = 4
+					}
+				}
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
 				try {
 					new Flow(dslCreator).copy(source: newFiles, dest: validFiles, dest_batchSize: 500L)
 
-					/*					def sqlFoundNew = """
-SELECT ID
-FROM ${validFiles.fullNameDataset()} f
-WHERE
-	${(!onlyFromStory)?'NOT ':''}EXISTS(
-		SELECT *
-		FROM ${storyTable.fullNameDataset()} h
-		WHERE h.FILENAME = f.LOCALFILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
-	)
-"""*/
-
 					def sqlFoundNew = '''SELECT ID, (h.FILENAME IS NOT NULL) AS is_exists
 FROM {table} f
-	LEFT JOIN {story} h ON h.FILENAME = f.LOCALFILENAME {AND %full_path%}  
+	LEFT JOIN {story} h ON h.FILENAME = f.LOCALFILENAME{ AND %full_path%}{ AND %checkDateSize%}  
 WHERE {exists}'''
 					QueryDataset getNewFiles = new QueryDataset(connection: storyTable.connection, query: sqlFoundNew)
 					getNewFiles.queryParams.table = validFiles.fullNameDataset()
 					getNewFiles.queryParams.story = storyTable.fullNameDataset()
 					if (takePathInStory)
 						getNewFiles.queryParams.full_path = 'h.FILEPATH = f.FILEPATH'
+					if (useDateSizeInBuildList && !processModified)
+						getNewFiles.queryParams.full_path = 'h.FILEDATE = f.FILEDATE AND h.FILESIZE = f.FILESIZE'
 
 					if (!onlyFromStory) {
 						if (!processModified)
@@ -1832,30 +1870,32 @@ WHERE
 	}
 
 	/** List of system field from story table */
-	static public final List<Field> StoryFields = [
-			new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1),
-			new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2),
-			new Field(name: "FILEDATE", type: "DATETIME", isNull: false),
-			new Field(name: "FILESIZE", type: "BIGINT", isNull: false),
-			new Field(name: "FILELOADED", type: "DATETIME", isNull: false)
-	]
+	static List<Field> StoryFields(Boolean useDateSizeInBuildList = false) {
+		[
+				new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1),
+				new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2),
+				new Field(name: "FILEDATE", type: "DATETIME", isNull: false, isKey: useDateSizeInBuildList, ordKey: (useDateSizeInBuildList)?3:null),
+				new Field(name: "FILESIZE", type: "BIGINT", isNull: false, isKey: useDateSizeInBuildList, ordKey: (useDateSizeInBuildList)?4:null),
+				new Field(name: "FILELOADED", type: "DATETIME", isNull: false)
+		]
+	}
 
 	/**
 	 * Adding system fields to dataset for history table operations
 	 */
-	static void AddFieldsToDS(Dataset dataset) {
-		dataset.field = StoryFields
+	static void AddFieldsToDS(Dataset dataset, Boolean useDateSizeInBuildList = false) {
+		dataset.field = StoryFields(useDateSizeInBuildList)
 	}
 	
 	/**
 	 * Add the fields of file and local attributes to dataset
 	 * @param dataset
 	 */
-	static void AddFieldFileListToDS(Dataset dataset) {
+	static void AddFieldFileListToDS(Dataset dataset, Boolean useDateSizeInBuildList = false) {
 		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1)
 		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2)
-		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
-		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
+		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false, isKey: useDateSizeInBuildList, ordKey: (useDateSizeInBuildList)?3:null)
+		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false, isKey: useDateSizeInBuildList, ordKey: (useDateSizeInBuildList)?4:null)
 		dataset.field << new Field(name: "FILETYPE", length: 20, isNull: false)
 		dataset.field << new Field(name: "LOCALFILENAME", length: 250, isNull: false)
 		dataset.field << new Field(name: "FILEINSTORY", type: "BOOLEAN", isNull: false, defaultValue: false)
@@ -2465,6 +2505,7 @@ WHERE
 	static public final String unixOS = 'unix'
 
 	/** host OS (null - unknown, win - Windows, unix - unix compatibility */
+	@JsonIgnore
 	abstract String getHostOS()
 
 	/**
