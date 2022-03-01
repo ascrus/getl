@@ -2,6 +2,7 @@ package getl.jdbc
 
 import getl.jdbc.opts.SequenceCreateSpec
 import getl.jdbc.sub.BulkLoadMapping
+import getl.jdbc.sub.JDBCProcessException
 import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
 import groovy.transform.CompileStatic
@@ -1807,7 +1808,12 @@ class JDBCDriver extends Driver {
 						return
 
 					def outRow = new HashMap<String, Object>()
-					copyToMap(con, row, outRow)
+					try {
+						copyToMap.call(con, row, outRow)
+					}
+					catch (Exception e) {
+						throw new JDBCProcessException(e)
+					}
 					
 					if (filter != null && !filter(outRow))
 						return
@@ -1827,7 +1833,12 @@ class JDBCDriver extends Driver {
 						return
 
 					def outRow = new HashMap<String, Object>()
-					copyToMap(con, row, outRow)
+					try {
+						copyToMap.call(con, row, outRow)
+					}
+					catch (Exception e) {
+						throw new JDBCProcessException(e)
+					}
 					
 					if (filter != null && !filter(outRow))
 						return
@@ -1841,18 +1852,18 @@ class JDBCDriver extends Driver {
 				}
 			}
 		}
+		catch (JDBCProcessException e) {
+			connection.logger.severe("Error processing row from dataset \"${dataset.objectName}\": ${e.error.message}")
+			if (rowCopy != null)
+				connection.logger.dump(e.error, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+
+			throw e.error
+		}
 		catch (SQLException e) {
 			connection.logger.dump(e, getClass().name + ".sql", dataset.objectName, sql)
-			if (rowCopy != null)
-				connection.logger.dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
-		catch (Exception e) {
-			if (rowCopy != null)
-				connection.logger.dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
-			throw e
-		}
-		
+
 		if (fetchSize != null) {
 			sqlConnect.withStatement { Statement stmt ->
 				stmt.fetchSize = origFetchSize

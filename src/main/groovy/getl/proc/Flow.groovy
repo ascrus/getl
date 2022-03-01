@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -57,7 +58,7 @@ class Flow {
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone', 'onFilter', 'onBulkLoad',
 				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
-				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics'])
+				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics', 'processVars', 'saveExprErrors'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
@@ -73,11 +74,14 @@ class Flow {
 
 	/** Parameters validator */
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
-	
+
+	/** Name in config from section "flows" */
 	private String config
 	/** Name in config from section "flows" */
+	@JsonIgnore
 	String getConfig () { config }
 	/** Name in config from section "flows" */
+	@JsonIgnore
 	void setConfig (String value) {
 		config = value
 		if (config != null) {
@@ -89,7 +93,7 @@ class Flow {
 			}
 		}
 	}
-	
+
 	/**
 	 * Call init configuration
 	 */
@@ -113,8 +117,10 @@ class Flow {
 	private final Map<String, Object> params = new HashMap<String, Object>()
 
 	/** Flow parameters */
+	@JsonIgnore
 	Map<String, Object> getParams() { params }
 	/** Flow parameters */
+	@JsonIgnore
 	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
@@ -124,14 +130,17 @@ class Flow {
 	/** Dataset of error rows */
 	private TFSDataset errorsDataset
 	/** Dataset of error rows */
+	@JsonIgnore
 	TFSDataset getErrorsDataset() { errorsDataset }
 
 	private Long countRow = 0
 	/** Last number of rows processed */
+	@JsonIgnore
 	Long getCountRow() { countRow }
 
 	private final Map<String, FieldStatistic> statistics = new HashMap<String, FieldStatistic>()
 	/** Processed fields statistics */
+	@JsonIgnore
 	Map<String, FieldStatistic> getStatistics() { statistics }
 
 	/** Formalize column mapping */
@@ -173,7 +182,14 @@ class Flow {
 	/** Transformation fields script */
 	private String scriptMap
 	/** Transformation fields script */
+	@JsonIgnore
 	String getScriptMap() { scriptMap }
+
+	/** Calculation expression script */
+	private String scriptExpr
+	/** Calculation expression script */
+	@JsonIgnore
+	String getScriptExpr() { scriptExpr }
 
 	/** Cache code repository */
 	static private final ConcurrentHashMap<String, Map<String, Object>> cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()
@@ -459,7 +475,19 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 
-		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):(new HashMap<String, String>())
+		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
+
+		Map<String, String> map = CloneUtils.CloneMap(params.map as Map) as Map<String, String>
+		Closure calcCode = null
+		scriptExpr = null
+		if (map != null && !map.isEmpty()) {
+			def calcMapScriptCode = new StringBuilder()
+			calcCode = GenerationUtils.GenerateCalculateMapClosure(map, dslCreator, calcMapScriptCode)
+			if (calcCode != null)
+				scriptExpr = calcMapScriptCode.toString()
+		}
+		else
+			map = new HashMap<String, String>()
 		List<String> requiredStatistics = (params.statistics != null)?(params.statistics as List<String>)*.toLowerCase():([] as List<String>)
 
 		Map<String, Object> sourceParams
@@ -473,7 +501,8 @@ class Flow {
 		Closure prepareSource = sourceParams.prepare as Closure
 
 		def clear = BoolUtils.IsValue(params.clear, false)
-		def isSaveErrors = BoolUtils.IsValue(params.saveErrors, false)
+		def saveErrors = BoolUtils.IsValue(params.saveErrors, false)
+		def saveExprErrors = BoolUtils.IsValue(params.saveExprErrors, false)
 		
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
@@ -494,7 +523,7 @@ class Flow {
 		def convertEmptyToNull = BoolUtils.IsValue(params.convertEmptyToNull)
 		def copyOnlyWithValue = BoolUtils.IsValue(params.copyOnlyWithValue)
 
-		if (isSaveErrors)
+		if (saveErrors || saveExprErrors)
 			errorsDataset = TFS.dataset()
 
 		Dataset writer
@@ -616,7 +645,7 @@ class Flow {
 				if (!writeSynch)  childWriter.openWrite(datasetParams) else childWriter.openWriteSynch(datasetParams)
 			}
 			
-			if (isSaveErrors) {
+			if (saveErrors || saveExprErrors) {
 				errorsDataset.field = writer.field
 				errorsDataset.resetFieldToDefault()
 				if (autoMap) {
@@ -624,7 +653,7 @@ class Flow {
 						generateResult.destFields.find { String n -> n.toLowerCase() == f.name.toLowerCase() } == null
 					}
 				}
-				errorsDataset.field << new Field(name: "error")
+				errorsDataset.field.add(new Field(name: "error"))
 				errorsDataset.openWrite()
 			}
 			
@@ -645,6 +674,7 @@ class Flow {
 		}
 
 		try {
+			def isExprError = false
 			try {
 				source.eachRow(sourceParams) { inRow ->
 					if (filterCode != null) {
@@ -666,12 +696,30 @@ class Flow {
 						}
 					}
 
-					if (map_code != null) {
+					if (calcCode != null) {
+						try {
+							calcCode.call(inRow, outRow, processVars)
+						}
+						catch (Exception e) {
+							if (!saveExprErrors) {
+								writer.isWriteError = true
+								throw e
+							}
+							isError = true
+							isExprError = true
+							Map errorRow = new HashMap()
+							errorRow.putAll(outRow)
+							errorRow.error = e.message
+							errorsDataset.write(errorRow)
+						}
+					}
+
+					if (map_code != null && !isError) {
 						try {
 							map_code.call(inRow, outRow)
 						}
 						catch (AssertionError | FlowProcessException e) {
-							if (!isSaveErrors) {
+							if (!saveErrors) {
 								writer.isWriteError = true
 								throw e
 							}
@@ -686,7 +734,8 @@ class Flow {
 							logger.severe("Flow error out row [${destDescription}]:\n${outRow}")
 							throw e
 						}
-					} 
+					}
+
 					if (!isError) {
 						if (!writeSynch)
 							writer.write(outRow)
@@ -723,22 +772,41 @@ class Flow {
 					def childWriter = child.writer
 					childWriter.doneWrite()
 				}
-				if (isSaveErrors) errorsDataset.doneWrite()
+				if (saveErrors || saveExprErrors)
+					errorsDataset.doneWrite()
 			}
 			catch (Exception e) {
 				writer.isWriteError = true
+
+				if (isExprError) {
+					if (scriptExpr != null)
+						logger.dump(e, 'Flow', 'Copy.Expressions', scriptExpr)
+				}
+				else if (scriptMap != null && !(e instanceof AssertionError) && !(e instanceof FlowProcessException))
+					logger.dump(e, 'Flow', 'Copy', scriptMap)
+
 				throw e
 			}
 			finally {
-				if (!writeSynch) writer.closeWrite() else writer.closeWriteSynch()
+				if (!writeSynch)
+					writer.closeWrite()
+				else
+					writer.closeWriteSynch()
+
 				childs.each { String name, FlowCopyChild child ->
 					def childWriter = child.writer
-					if (!writeSynch) childWriter.closeWrite() else childWriter.closeWriteSynch()
+					if (!writeSynch)
+						childWriter.closeWrite()
+					else
+						childWriter.closeWriteSynch()
 				}
-				if (isSaveErrors) errorsDataset.closeWrite()
-				
+				if (saveErrors || saveExprErrors)
+					errorsDataset.closeWrite()
 			}
-			
+
+			if (isExprError && scriptExpr != null)
+				logger.dump(null, 'Flow', 'Copy.Expressions', scriptExpr)
+
 			if (isBulkLoad) {
 				if (bulkLoadCode != null)
 					bulkLoadCode.call(bulkParams)
@@ -795,6 +863,7 @@ class Flow {
 						dataset.connection.rollbackTran()
 					}
 			}
+
 			throw e
 		}
 		finally {
@@ -996,6 +1065,7 @@ class Flow {
 				Executor.RunIgnoreErrors(dslCreator) {
 					dest.connection.rollbackTran()
 				}
+
 			throw e
 		}
 		finally {
@@ -1329,7 +1399,7 @@ class Flow {
 			if (isSaveErrors) {
 				errorsDataset.field = source.field
 				errorsDataset.resetFieldToDefault()
-				errorsDataset.field << new Field(name: "error")
+				errorsDataset.field << new Field(name: 'error')
 				errorsDataset.openWrite(new HashMap())
 			}
 

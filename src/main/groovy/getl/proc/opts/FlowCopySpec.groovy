@@ -27,6 +27,8 @@ class FlowCopySpec extends FlowBaseSpec {
             params._childs = new HashMap<String, FlowCopyChildSpec>()
         if (params.map == null)
             params.map = new HashMap<String, String>()
+        if (params.processVars == null)
+            params.processVars = new HashMap<String, Object>()
     }
 
     /** Source dataset */
@@ -121,10 +123,15 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Clearing destination dataset before copy */
     void setClear(Boolean value) { saveParamValue('clear', value) }
 
-    /** Save assert errors to temporary dataset "errorsDataset" */
+    /** Save row processing errors to temporary dataset "errorsDataset" */
     Boolean getSaveErrors() { params.saveErrors as Boolean }
-    /** Save assert errors to temporary dataset "errorsDataset" */
+    /** Save row processing errors to temporary dataset "errorsDataset" */
     void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
+
+    /** Save expression errors to temporary dataset "errorsDataset" */
+    Boolean getSaveExprErrors() { params.saveExprErrors as Boolean }
+    /** Save expression errors to temporary dataset "errorsDataset" */
+    void setSaveExprErrors(Boolean value) { saveParamValue('saveExprErrors', value) }
 
     /** List of fields destination that do not need to use */
     List<String> getExcludeFields() { params.excludeFields as List<String> }
@@ -223,6 +230,16 @@ class FlowCopySpec extends FlowBaseSpec {
     Boolean getCopyOnlyMatching() { params.copyOnlyMatching as Boolean }
     /** Write to the destination dataset only the fields present in the source dataset (default false) */
     void setCopyOnlyMatching(Boolean value) { params.copyOnlyMatching = value }
+
+    /** Expression processing variables */
+    Map<String, Object> getProcessVars() { params.processVars as Map<String, Object> }
+    /** Expression processing variables */
+    void setProcessVars(Map<String, Object> value) {
+        processVars.clear()
+        if (value != null && !value.isEmpty())
+            processVars.putAll(value)
+    }
+
 
     /** Name in cache for reusing code without generating */
     String getCacheName() { params.cacheName as String }

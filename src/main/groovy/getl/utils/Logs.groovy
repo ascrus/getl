@@ -796,7 +796,7 @@ class Logs {
 	 * @param data additional error data
 	 */
 	@Synchronized('lockLog')
-	void dump(Throwable error, String typeObject, String nameObject, def data) {
+	void dump(Throwable error, String typeObject, String nameObject, Object data) {
 		if (fileNameHandler == null) {
 			severe("Can not save dump, required logFileName!")
 			println data.toString()
@@ -804,8 +804,7 @@ class Logs {
 		}
 		
 		def fn = dumpFile()
-		
-		config("Saving dump information to file $fn from error ${error?.message} ...")
+		config("Saving dump information to file $fn (error: ${error?.message}) ...")
 		FileUtils.ValidFilePath(fn)
 
 		File df = new File(fn)
@@ -828,7 +827,7 @@ class Logs {
 			w.println "\n\n\n"
 		}
 		catch (Throwable e) {
-			severe("Can not write error to dump file \"${fn}\", error: ${e.message}")
+			severe("Can not write error to dump file \"${fn}\" (error: ${e.message})")
 		}
 		finally {
 			if (w != null)

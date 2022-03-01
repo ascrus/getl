@@ -912,7 +912,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Reset all fields parameters to default
 	 */
-	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true, Boolean clearDefaultValue = false) {
+	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true, Boolean clearDefaultValue = true) {
 		getField().each { Field f ->
 			if (clearNotNull)
 				f.isNull = true

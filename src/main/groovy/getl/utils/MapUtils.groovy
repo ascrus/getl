@@ -112,6 +112,11 @@ class MapUtils {
 
 		return RemoveKeys(map, keys)
 	}
+
+	/** Delete all keys whose values contain null */
+	static Map RemoveNullValues(Map map) {
+		return RemoveKeys(map) { key, value -> value == null }
+	}
 	
 	/**
 	 * Get only level naming map values 

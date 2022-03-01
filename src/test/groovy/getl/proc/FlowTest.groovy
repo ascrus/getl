@@ -3,6 +3,7 @@ package getl.proc
 import getl.lang.Getl
 import getl.test.GetlDslTest
 import getl.tfs.TDSTable
+import getl.utils.DateUtils
 import org.junit.Test
 
 class FlowTest extends GetlDslTest {
@@ -184,6 +185,90 @@ class FlowTest extends GetlDslTest {
             shouldFail { etl.deleteRow(tab, [id: 1]) }
 
             tab.drop(ifExists: true)
+        }
+    }
+
+    @Test
+    void testMap() {
+        Getl.Dsl {
+            def tab = embeddedTable {
+                //useConnection embeddedConnection()
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('dt') { type = datetimeFieldType; defaultValue = 'Now()' }
+                field('value') { type = numericFieldType; length = 12; precision = 2 }
+
+                create()
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        (1..10).each {
+                            add id: it, name: "Test $it", dt: DateUtils.Now(), value: it * 1000.0 + (it / 100.0)
+                        }
+                    }
+                }
+                assertEquals(10, countRow())
+            }
+
+            def file = csvTemp {
+                //useConnection csvTempConnection()
+                field('_id') { type = integerFieldType; isKey = true }
+                field('_name') { isNull = false }
+                field('_dt') { type = datetimeFieldType; isNull = false }
+                field('_value') { type = numericFieldType; length = 12; precision = 2; isNull = false }
+
+                readOpts.isValid = true
+            }
+
+            etl.copyRows(tab, file) {
+                map = [_id: 'id', _name: 'name', _dt: 'dt', _value: 'value']
+            }
+            assertEquals(10, file.countRow())
+            def i = 0
+            file.eachRow { row ->
+                i++
+                assertEquals(i, row._id)
+                assertEquals("Test $i", row._name)
+                assertNotNull(row._dt)
+                assertNotNull(row._value)
+            }
+
+            file.drop()
+            etl.copyRows(tab, file) {
+                map = [_id: 'id', _name: 'name']
+                copyRow { s, d ->
+                    d._dt = s.dt
+                    d._value = s.value
+                }
+            }
+            i = 0
+            file.eachRow { row ->
+                i++
+                assertEquals(i, row._id)
+                assertEquals("Test $i", row._name)
+                assertNotNull(row._dt)
+                assertNotNull(row._value)
+            }
+
+            file.drop()
+            etl.copyRows(tab, file) {
+                map = [_id: 'id', '*new_name': '${source.name.toUpperCase()}', _name: '${source.new_name}', '*new_value': '${source.value * 100}']
+                copyRow { s, d ->
+                    d._dt = s.dt
+                    d._value = s.new_value
+                }
+            }
+            i = 0
+            file.eachRow { row ->
+                i++
+                assertEquals(i, row._id)
+                assertEquals("TEST $i", row._name)
+                assertNotNull(row._dt)
+                assertNotNull(row._value)
+                assertEquals(row._id * 100000.00 + row._id, row._value)
+            }
+
+            file.drop()
         }
     }
 }
