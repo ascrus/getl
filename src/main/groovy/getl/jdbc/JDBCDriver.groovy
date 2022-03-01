@@ -459,11 +459,13 @@ class JDBCDriver extends Driver {
 		if (url == null) return null
 
 		if (url.indexOf('{host}') != -1) {
-            if (con.connectHost == null) throw new ExceptionGETL('Need set property "connectHost"')
+            if (con.connectHost == null)
+				throw new ExceptionGETL('Need set property "connectHost"')
             url = url.replace("{host}", con.currentConnectHost())
         }
         if (url.indexOf('{database}') != -1) {
-            if (con.connectDatabase == null) throw new ExceptionGETL('Need set property "connectDatabase"')
+            if (con.connectDatabase == null)
+				throw new ExceptionGETL('Need set property "connectDatabase"')
             url = url.replace("{database}", con.currentConnectDatabase())
         }
 

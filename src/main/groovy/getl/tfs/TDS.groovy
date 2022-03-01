@@ -1,6 +1,7 @@
 package getl.tfs
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
@@ -16,62 +17,38 @@ import org.h2.tools.DeleteDbFiles
  */
 @InheritConstructors
 class TDS extends H2Connection {
-	@Override
-	protected void initParams() {
-		super.initParams()
-		
-		if (connectURL == null && params.inMemory == null)
-			params.inMemory = true
-
-		synchronized (lock) {
-			if (connectURL == null && connectDatabase == null) {
-				def dbn = 'getl_' + StringUtils.RandomStr().replace('-', '')
-				if (inMemory) {
-					connectDatabase = dbn
-				} else {
-					tempPath = TFS.storage.currentPath()
-					connectDatabase = "$tempPath/$dbn"
-					new File(connectDatabase + '.mv.db').deleteOnExit()
-					new File(connectDatabase + '.trace.db').deleteOnExit()
-				}
-			} else if (connectDatabase != null) {
-				tempPath = FileUtils.PathFromFile(connectDatabase)
-				new File(connectDatabase + '.mv.db').deleteOnExit()
-				new File(connectDatabase + '.trace.db').deleteOnExit()
-			}
-
-			if (sqlHistoryFile == null && storage?.sqlHistoryFile != null)
-				sqlHistoryFile = storage.sqlHistoryFile
-		}
-
-		if (login == null && password == null) {
-			login = "easyloader"
-			password = "easydata"
-		}
-		if (connectProperty.PAGE_SIZE == null) {
-			connectProperty.PAGE_SIZE = 8192
-		}
-		/*if (connectProperty.LOG == null) {
-			connectProperty.LOG = 0
-		}
-		if (connectProperty.UNDO_LOG == null) {
-			connectProperty.UNDO_LOG = 0
-		}*/
-		if (params.config == null)
-			config = "getl_tds"
-
-		if (params.extensionForSqlScripts == null)
-			extensionForSqlScripts = true
-	}
-
 	/** Global temporary database connection object */
 	static public final TDS storage
 	/** Global locker object */
 	static private final Object lock
+	/** Global temporary database name */
+	static public final String storageDatabaseName = '_GETL_EMBEDDED'
 
 	static {
 		lock = new Object()
-		storage = new TDS(new HashMap())
+		storage = new TDS(connectDatabase: storageDatabaseName)
+	}
+
+	@Override
+	protected Class<Driver> driverClass() { TDSDriver }
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.inMemory = true
+		//connectDatabase = 'getl_' + StringUtils.RandomStr().replace('-', '')
+		connectDatabase = storageDatabaseName
+		login = "easyloader"
+		password = "easydata"
+		connectProperty.PAGE_SIZE = 8192
+		config = "getl_tds"
+		extensionForSqlScripts = true
+	}
+
+	protected void doInitConnection () {
+		super.doInitConnection()
+		if (sqlHistoryFile == null && storage?.sqlHistoryFile != null)
+			sqlHistoryFile = storage.sqlHistoryFile
 	}
 
     /** Temp path of database file */
@@ -107,7 +84,7 @@ class TDS extends H2Connection {
 	/** Generate new table from temporary data stage */
 	static TDSTable dataset () {
 		def res = new TDSTable()
-		res.connection = new TDS()
+		res.connection = new TDS(connectDatabase: storageDatabaseName)
 		return res
 	}
 

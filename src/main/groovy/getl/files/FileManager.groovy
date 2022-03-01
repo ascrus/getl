@@ -172,6 +172,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
+	@JsonIgnore
 	void setCurrentPath (String path) {
 		validConnect()
 		

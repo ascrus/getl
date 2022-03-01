@@ -431,7 +431,7 @@ class TableDataset extends JDBCDataset {
 		def storyDataset  = parent.storyDataset
 		if (storyDataset == null && !remoteLoad) {
 			storyDataset = TDS.dataset()
-			storyDataset.field = Manager.StoryFields
+			storyDataset.field = Manager.StoryFields(false)
 			storyDataset.create()
 		}
 

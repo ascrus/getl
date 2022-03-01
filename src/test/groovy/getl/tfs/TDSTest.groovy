@@ -34,6 +34,9 @@ class TDSTest extends GetlTest {
         def dbFileName = "${con.connectDatabase}.mv.db"
         assertTrue(new File(dbFileName).exists())
         con.connected = false
-        assertFalse(new File(dbFileName).exists())
+
+        addShutdownHook {
+            assertFalse(new File(dbFileName).exists())
+        }
     }
 }

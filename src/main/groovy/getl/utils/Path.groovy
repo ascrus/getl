@@ -1018,8 +1018,8 @@ class Path implements Cloneable, GetlRepository {
 	 * @return the table was created in the database
 	 */
 	@SuppressWarnings('unused')
-	Boolean createStoryTable(TableDataset table) {
-		FileManager.createStoryTable(table, this)
+	Boolean createStoryTable(TableDataset table, Boolean useDateSizeInBuildList = false) {
+		FileManager.createStoryTable(table, this, useDateSizeInBuildList)
 	}
 
 	/**
@@ -1027,7 +1027,7 @@ class Path implements Cloneable, GetlRepository {
 	 * @param storyTable table for preparing
 	 */
 	@SuppressWarnings('unused')
-	void prepareStoryTable(TableDataset table) {
-		FileManager.PrepareStoryTable(table, this)
+	void prepareStoryTable(TableDataset table, Boolean useDateSizeInBuildList = false) {
+		FileManager.PrepareStoryTable(table, this, useDateSizeInBuildList)
 	}
 }

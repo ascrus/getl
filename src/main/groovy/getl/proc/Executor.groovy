@@ -376,6 +376,11 @@ class Executor implements GetlRepository {
 			}
 			threadPool.shutdown()
 
+			addShutdownHook {
+				if (threadPool != null && !threadPool.isShutdown())
+					threadPool.shutdownNow()
+			}
+
 			while (!threadPool.terminated) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
@@ -538,6 +543,11 @@ class Executor implements GetlRepository {
 			}
 			threadPool.shutdown()
 
+			addShutdownHook {
+				if (threadPool != null && !threadPool.isShutdown())
+					threadPool.shutdownNow()
+			}
+
 			while (!threadPool.terminated) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
@@ -690,6 +700,11 @@ class Executor implements GetlRepository {
 				num++
 			}
 			threadPool.shutdown()
+
+			addShutdownHook {
+				if (threadPool != null && !threadPool.isShutdown())
+					threadPool.shutdownNow()
+			}
 
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {

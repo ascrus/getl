@@ -33,7 +33,7 @@ class LangSpec extends BaseSpec {
         if (params.countThreadsLoadRepository == null)
             saveParamValue('countThreadsLoadRepository', 16)
         if (params.defaultEmbeddedConnection == null)
-            params.defaultEmbeddedConnection = new TDS(dslCreator: dslCreator)
+            params.defaultEmbeddedConnection = new TDS(dslCreator: dslCreator, connectDatabase: TDS.storageDatabaseName)
     }
 
     /** Getl owner */

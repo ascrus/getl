@@ -96,7 +96,7 @@ LIMIT 1'''
     private doBulkLoadFiles(VerticaTable verTable, TFSDataset csv, Boolean useStory) {
         Getl.Dsl { main ->
             def story = embeddedTable {
-                field = Manager.StoryFields
+                field = Manager.StoryFields()
                 create()
             }
 

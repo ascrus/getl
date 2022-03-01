@@ -26,7 +26,7 @@ class H2DriverTest extends JDBCDriverProto {
     protected JDBCConnection newCon() {
 		if (FileUtils.ExistsFile(configName))
             Config.LoadConfig(fileName: configName)
-		def res = new TDS()
+		def res = new TDS(connectDatabase: TDS.storageDatabaseName)
         needCatalog = res.connectDatabase.toUpperCase()
         return res
     }

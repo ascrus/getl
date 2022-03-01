@@ -21,11 +21,11 @@ class Connection implements Cloneable, GetlRepository {
 	Connection(Map parameters = null) {
 		registerParameters()
 
-		initParams()
-		validParams()
-
 		if (parameters == null)
 			parameters = new HashMap()
+
+		initParams()
+		validParams()
 
 		Class<Driver> connectionDriverClass = driverClass()
 		Class<Driver> driverClass = (parameters.driver as Class<Driver>)?:connectionDriverClass

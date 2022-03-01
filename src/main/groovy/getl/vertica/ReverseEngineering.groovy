@@ -63,7 +63,7 @@ class ReverseEngineering extends Job {
 	private def tSQLFunctions = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_sql_functions')
 	private def tGrants = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_grants')
 
-	private def cCache = new TDS()
+	private def cCache = new TDS(connectDatabase: TDS.storageDatabaseName)
 	private def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 1024, isKey: true)])
 	private def hPools = new TableDataset(connection: cCache, tableName: 'pools')
 	private def hRoles = new TableDataset(connection: cCache, tableName: 'roles')

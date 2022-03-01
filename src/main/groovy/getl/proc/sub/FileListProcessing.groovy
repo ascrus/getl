@@ -64,6 +64,11 @@ abstract class FileListProcessing implements GetlRepository {
     /** Processing previously downloaded but modified files */
     void setProcessModified(Boolean value) { params.processModified = value }
 
+    /** Use time and file size when analyzing history */
+    Boolean getCheckDateSizeFile() { BoolUtils.IsValue(params.checkDateSizeFile) }
+    /** Use time and file size when analyzing history */
+    void setCheckDateSizeFile(Boolean value) { params.checkDateSizeFile = value }
+
     /** Ignore file processing history */
     Boolean getIgnoreStory() { BoolUtils.IsValue(params.ignoreStory) }
     /** Ignore file processing history */
@@ -559,7 +564,7 @@ abstract class FileListProcessing implements GetlRepository {
         source.buildList([path: sourcePath, recursive: true, onlyFromStory: onlyFromStory, fileListSortOrder: order,
                           ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes,
                           limitDirs: limitDirs, limitCountFiles: limitCountFiles, limitSizeFiles: limitSizeFiles,
-                          filter: whereFiles, processModified: processModified],
+                          filter: whereFiles, processModified: processModified, useDateSizeInBuildList: checkDateSizeFile],
                 createBuildList())
         pt.finish(source.countFileList)
 
@@ -626,7 +631,7 @@ abstract class FileListProcessing implements GetlRepository {
         if (!sourcePath.isCompile) sourcePath.compile()
 
         if (inMemoryMode) {
-            tmpConnection = new TDS(autoCommit: true)
+            tmpConnection = new TDS(autoCommit: true, connectDatabase: TDS.storageDatabaseName)
         }
         else {
             def h2TempFileName = "$tempPath/${FileUtils.UniqueFileName()}"
@@ -726,6 +731,8 @@ abstract class FileListProcessing implements GetlRepository {
                 logger.fine("  only files that are present in the processing history will be processed")
             if (processModified)
                 logger.fine("  previously processed modified files are added")
+            if (checkDateSizeFile)
+                logger.fine("  when determining previously downloaded files, the size and time of the file are analyzed")
         }
     }
 

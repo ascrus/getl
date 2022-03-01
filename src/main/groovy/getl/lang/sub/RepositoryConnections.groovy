@@ -4,6 +4,7 @@ package getl.lang.sub
 import getl.csv.CSVConnection
 import getl.data.Connection
 import getl.db2.DB2Connection
+import getl.dbf.DBFConnection
 import getl.excel.ExcelConnection
 import getl.firebird.FirebirdConnection
 import getl.h2.H2Connection
@@ -36,6 +37,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String CSVCONNECTION = CSVConnection.name
     static public final String CSVTEMPCONNECTION = TFS.name
     static public final String DB2CONNECTION = DB2Connection.name
+    static public final String DBFCONNECTION = DBFConnection.name
     static public final String EXCELCONNECTION = ExcelConnection.name
     static public final String FIREBIRDCONNECTION = FirebirdConnection.name
     static public final String H2CONNECTION = H2Connection.name
@@ -58,7 +60,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed connection classes */
     static public final List<String> LISTCONNECTIONS = [
-        CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
+        CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, DBFCONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
         MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
         VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION
@@ -73,7 +75,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed other connection classes */
     static public final List<String> LISTFILECONNECTIONS = [
-        CSVCONNECTION, CSVTEMPCONNECTION, EXCELCONNECTION, JSONCONNECTION, XMLCONNECTION, YAMLCONNECTION
+        CSVCONNECTION, CSVTEMPCONNECTION, DBFCONNECTION, EXCELCONNECTION, JSONCONNECTION, XMLCONNECTION, YAMLCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */

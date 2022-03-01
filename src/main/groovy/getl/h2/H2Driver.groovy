@@ -71,10 +71,11 @@ class H2Driver extends JDBCDriver {
 		def con = connection as H2Connection
 		def url
 		if (con.inMemory) {
-			url = (con.connectHost != null) ? "jdbc:h2:tcp://{host}/mem:{database}" : "jdbc:h2:mem:{database}"
-			if (con.connectDatabase == null) url = url.replace('{database}', 'memory_database')
+			url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}"
+			if (con.connectDatabase == null)
+				url = url.replace('{database}', 'memory_database')
 		} else {
-			url = (con.connectHost != null) ? "jdbc:h2:tcp://{host}/{database}" : "jdbc:h2://{database}"
+			url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
 		}
 
 		return url

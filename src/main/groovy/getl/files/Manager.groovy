@@ -66,8 +66,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Local directory is temporary and need drop when disconnect */
 	private Boolean _isTempLocalDirectory
 	/** Local directory is temporary and need drop when disconnect */
+	@JsonIgnore
 	Boolean getIsTempLocalDirectory() { _isTempLocalDirectory }
 	/** Local directory is temporary and need drop when disconnect */
+	@JsonIgnore
 	void setIsTempLocalDirectory(Boolean value) {
 		_isTempLocalDirectory = value
 		if (value && localDirectory != null)
@@ -914,6 +916,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Sort order of the file list */
+	@JsonIgnore
 	List<String> getFileListSortOrder() { params.fileListSortOrder as List<String> }
 	/** Sort order of the file list */
 	void setFileListSortOrder(List<String> value) {
@@ -1489,10 +1492,10 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 						tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
 						type: JDBCDataset.Type.LOCAL_TEMPORARY)
 				//noinspection SpellCheckingInspection
-				validFiles.field = newFiles.getFields(['LOCALFILENAME', 'FILEDATE', 'FILESIZE'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+				validFiles.field = newFiles.getFields(['FILENAME', 'FILEDATE', 'FILESIZE'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
 				validFiles.clearKeys()
-				validFiles.fieldByName('LOCALFILENAME').tap {
+				validFiles.fieldByName('FILENAME').tap {
 					isKey = true
 					ordKey = 2
 				}
@@ -1515,11 +1518,11 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
 				try {
-					new Flow(dslCreator).copy(source: newFiles, dest: validFiles, dest_batchSize: 500L)
+					new Flow(dslCreator).copy(source: newFiles, dest: validFiles, dest_batchSize: 1000L)
 
 					def sqlFoundNew = '''SELECT ID, (h.FILENAME IS NOT NULL) AS is_exists
 FROM {table} f
-	LEFT JOIN {story} h ON h.FILENAME = f.LOCALFILENAME{ AND %full_path%}{ AND %checkDateSize%}  
+	LEFT JOIN {story} h ON h.FILENAME = f.FILENAME{ AND %full_path%}{ AND %checkDateSize%}  
 WHERE {exists}'''
 					QueryDataset getNewFiles = new QueryDataset(connection: storyTable.connection, query: sqlFoundNew)
 					getNewFiles.queryParams.table = validFiles.fullNameDataset()

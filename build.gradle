@@ -69,6 +69,8 @@ dependencies {
 	implementation 'com.github.pjfanning:excel-streaming-reader:3.2.0'
 	//implementation 'com.github.pjfanning:poi-shared-strings:2.2.0'
 
+	implementation 'com.github.albfernandez:javadbf:1.13.2'
+
 	implementation 'org.apache.kafka:kafka-clients:3.0.0'
 
 	implementation 'com.force.api:force-partner-api:53.1.0'
@@ -82,7 +84,7 @@ dependencies {
 }
 
 test {
-	jvmArgs '-Xmx4g' //, '-XX:+CMSClassUnloadingEnabled', '-XX:+UseParallelGC', '-XX:MaxPermSize=1g'
+	jvmArgs '-Xmx4g'
 
 	(System.properties as Map<String, String>).each { String k, String v ->
 		if (k.matches('getl[-]vars[.].+'))

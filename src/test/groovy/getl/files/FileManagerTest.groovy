@@ -191,7 +191,65 @@ class FileManagerTest extends ManagerTest {
                 assertEquals(9, history.rows(where: 'NUM = 1')[0].filesize)
                 assertEquals(14, history.rows(where: 'NUM = 2')[0].filesize)
 
-                //history.eachRow { println it }
+                // Check file datetime and size
+                history.drop()
+                history.field.clear()
+                files('#source') {
+                    useDateSizeInBuildList = true
+                    createStory = true
+                }
+
+                res = fileman.copier(files('#source'), files('#dest')) {
+                    sourcePath = findPath
+                    destinationPath = filePath('.')
+                    checkDateSizeFile = true
+                    //debugMode = true
+                }
+                history.retrieveFields()
+                assertTrue(history.fieldByName('FILEDATE').isKey)
+                assertTrue(history.fieldByName('FILESIZE').isKey)
+                assertEquals(5, res.countFiles)
+                assertEquals(5, history.countRow())
+
+                res = fileman.copier(files('#source'), files('#dest')) {
+                    sourcePath = findPath
+                    destinationPath = filePath('.')
+                    checkDateSizeFile = true
+                    //debugMode = true
+                }
+                assertEquals(0, res.countFiles)
+                assertEquals(5, history.countRow())
+
+                // Check new and modified
+                srcMan.tap {
+                    connect()
+
+                    changeDirectory '1'
+                    new File(currentPath + '/test.txt').tap {
+                        append(' test')
+                    }
+                    changeDirectoryUp()
+                }
+                res = fileman.copier(files('#source'), files('#dest')) {
+                    sourcePath = findPath
+                    destinationPath = filePath('.')
+                    checkDateSizeFile = true
+                    //debugMode = true
+                }
+                assertEquals(1, res.countFiles)
+                assertEquals(6, history.countRow())
+
+                res = fileman.copier(files('#source'), files('#dest')) {
+                    sourcePath = findPath
+                    destinationPath = filePath('.')
+                    checkDateSizeFile = true
+                    //debugMode = true
+                }
+                assertEquals(0, res.countFiles)
+                assertEquals(6, history.countRow())
+
+
+//                history.eachRow { println it }
             }
             finally {
                 FileUtils.DeleteFolder(srcPath, true)

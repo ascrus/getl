@@ -245,7 +245,7 @@ class Field implements Serializable, Cloneable {
 	
 	/** Build map from field */
 	Map toMap() {
-		def n = new HashMap()
+		def n = new LinkedHashMap()
 		n.name = name
 		n.type = type.toString()
 		if (typeName != null) n.typeName = typeName
@@ -341,36 +341,9 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Attribute to string
 	 */
+	@Override
 	String toString() {
-		def s = new HashMap()
-		s.name = name
-		s.type = type
-		s.typeName = typeName
-		s.columnClassName = columnClassName
-		s.isNull = isNull
-		s.length = length
-		s.precision = precision
-		s.isKey = isKey
-		s.ordKey = ordKey
-		s.isPartition = isPartition
-		s.ordPartition = ordPartition
-		s.isAutoincrement = isAutoincrement
-		s.isReadOnly = isReadOnly
-		s.arrayType = arrayType
-		s.defaultValue = defaultValue
-		s.compute = compute
-		s.checkValue = checkValue
-		s.minValue = minValue
-		s.maxValue = maxValue
-		s.format = format
-		s.alias = alias
-		s.trim = trim
-		s.decimalSeparator = decimalSeparator
-		s.description = description
-		s.extended = extended
-		s.getMethod = getMethod
-		
-		return MapUtils.ToJson(s)
+		return MapUtils.RemoveKeys(toMap()) { key, value -> return value == null }
 	}
 	
 	/**

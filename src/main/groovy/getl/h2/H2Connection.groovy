@@ -23,8 +23,7 @@ class H2Connection extends JDBCConnection {
 	protected void initParams() {
 		super.initParams()
 
-		if (connectProperty.LOCK_TIMEOUT == null)
-			connectProperty.LOCK_TIMEOUT = 10000
+		connectProperty.LOCK_TIMEOUT = 10000
 		connectProperty.CASE_INSENSITIVE_IDENTIFIERS = true
 		/* TODO: Now work! */
 		connectProperty.ALIAS_COLUMN_NAME = true

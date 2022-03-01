@@ -5,6 +5,8 @@ import getl.config.*
 import getl.csv.*
 import getl.data.*
 import getl.db2.*
+import getl.dbf.DBFConnection
+import getl.dbf.DBFDataset
 import getl.deploy.Version
 import getl.driver.Driver
 import getl.excel.*
@@ -860,6 +862,9 @@ Examples:
 
     /** Clean Getl instance */
     static void CleanGetl(Boolean softClean = false) {
+        if (_getl != null)
+            _getl.repositoryStorageManager.clearRepositories()
+
         if (softClean && _getl != null) {
             _getl = _getl.getClass().getDeclaredConstructor().newInstance()
             _getl._getlInstance = true
@@ -3941,7 +3946,7 @@ Examples:
                 throw new ExceptionDSL("Required field from dataset $sourceDataset")
         }
 
-        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE) ?: options.defaultEmbeddedConnection)
+        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE)?:options.defaultEmbeddedConnection)
         parent.field = sourceDataset.field
         parent.resetFieldsTypeName()
 
@@ -4128,6 +4133,106 @@ Examples:
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
         csvWithDataset(null, sourceDataset, cl)
+    }
+
+    /** DBF connection */
+    DBFConnection dbfConnection(String name, Boolean registration,
+                                @DelegatesTo(DBFConnection)
+                                @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFConnection']) Closure cl = null) {
+        def parent = registerConnection(RepositoryConnections.DBFCONNECTION, name, registration) as DBFConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** DBF connection */
+    DBFConnection dbfConnection(String name,
+                                @DelegatesTo(DBFConnection)
+                                @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFConnection']) Closure cl = null) {
+        dbfConnection(name, false, cl)
+    }
+
+    /** DBF connection */
+    DBFConnection dbfConnection(@DelegatesTo(DBFConnection)
+                                @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFConnection']) Closure cl) {
+        dbfConnection(null, false, cl)
+    }
+
+    /** DBF default connection */
+    DBFConnection dbfConnection() {
+        defaultFileConnection(RepositoryDatasets.DBFDATASET) as DBFConnection
+    }
+
+    /** Use default DBF connection for new datasets */
+    DBFConnection useDbfConnection(DBFConnection connection) {
+        useFileConnection(RepositoryDatasets.DBFDATASET, connection) as DBFConnection
+    }
+
+    /** DBF file */
+    DBFDataset dbf(String name, Boolean registration,
+                   @DelegatesTo(DBFDataset)
+                   @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFDataset']) Closure cl = null) {
+        def parent = registerDataset(null, RepositoryDatasets.DBFDATASET, name, registration,
+                defaultFileConnection(RepositoryDatasets.DBFDATASET), DBFConnection, cl) as DBFDataset
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** DBF file */
+    DBFDataset dbf(String name,
+                   @DelegatesTo(DBFDataset)
+                   @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFDataset']) Closure cl = null) {
+        dbf(name, false, cl)
+    }
+
+    /** DBF file */
+    DBFDataset dbf(@DelegatesTo(DBFDataset)
+                   @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFDataset']) Closure cl) {
+        dbf(null, false, cl)
+    }
+
+    /**
+     * Create and register DBF file on the specified dataset
+     * @param name repository name
+     * @param sourceDataset source dataset
+     * @param cl initialization code
+     * @return created dataset
+     */
+    DBFDataset dbfWithDataset(String name, Dataset sourceDataset,
+                              @DelegatesTo(DBFDataset)
+                              @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFDataset']) Closure cl = null) {
+        if (sourceDataset == null)
+            throw new ExceptionDSL("Dataset cannot be null!")
+
+        def parent = registerDataset(null, RepositoryDatasets.DBFDATASET, name, true,
+                defaultFileConnection(RepositoryDatasets.DBFDATASET), DBFConnection, cl) as DBFDataset
+
+        if (sourceDataset.field.isEmpty()) {
+            if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+                throw new ExceptionDSL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+
+            sourceDataset.retrieveFields()
+            if (sourceDataset.field.isEmpty())
+                throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
+        }
+        parent.field = sourceDataset.field
+        parent.resetFieldsTypeName()
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /**
+     * Create DBF file on the specified dataset
+     * @param sourceDataset source dataset
+     * @param cl initialization code
+     * @return created dataset
+     */
+    DBFDataset dbfWithDataset(Dataset sourceDataset,
+                              @DelegatesTo(DBFDataset)
+                              @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFDataset']) Closure cl = null) {
+        dbfWithDataset(null, sourceDataset, cl)
     }
 
     /** Excel connection */

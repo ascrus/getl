@@ -266,6 +266,35 @@ class FileDriver extends Driver {
 	}
 	
 	/**
+	 * Get input stream to file
+	 * @param dataset
+	 * @param params
+	 * @param portion
+	 * @return
+	 */
+	@CompileStatic
+	protected InputStream getFileInputStream(FileDataset dataset, Map params, Integer portion = null) {
+		def wp = getDatasetParams(dataset, params, portion)
+		
+		def fn = wp.fn as String
+		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
+		def isAppend = BoolUtils.IsValue(wp.isAppend)
+
+		if (isAppend && isGzFile)
+			throw new ExceptionGETL("The append operation is not allowed for gzip file \"$fn\"!")
+		
+		InputStream res
+		if (isGzFile) {
+			res = new GZIPInputStream(new FileInputStream(fn))
+		}
+		else {
+			res = new FileInputStream(fn)
+		}
+		
+		return res
+	}
+
+	/**
 	 * Get reader file
 	 * @param dataset
 	 * @param params
@@ -275,27 +304,8 @@ class FileDriver extends Driver {
 	@CompileStatic
 	protected Reader getFileReader(FileDataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
-		
-		def fn = wp.fn as String
-		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
-		def isAppend = BoolUtils.IsValue(wp.isAppend)
 		def codePage = wp.codePage as String
-
-		if (isAppend && isGzFile)
-			throw new ExceptionGETL("The append operation is not allowed for gzip file \"$fn\"!")
-		
-		def reader
-		InputStream input
-		if (isGzFile) {
-			input = new GZIPInputStream(new FileInputStream(fn))
-		}
-		else {
-			input = new FileInputStream(fn)
-		}
-		
-		reader = new BufferedReader(new InputStreamReader(input, codePage), dataset.bufferSize())
-		
-		return reader
+		return new BufferedReader(new InputStreamReader(getFileInputStream(dataset, params, portion), codePage), dataset.bufferSize())
 	}
 	
 	/**

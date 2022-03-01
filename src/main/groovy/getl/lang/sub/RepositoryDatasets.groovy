@@ -5,6 +5,7 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.data.StructureFileDataset
 import getl.db2.DB2Table
+import getl.dbf.DBFDataset
 import getl.excel.ExcelDataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
@@ -48,6 +49,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String CSVDATASET = CSVDataset.name
     static public final String CSVTEMPDATASET = TFSDataset.name
     static public final String DB2TABLE = DB2Table.name
+    static public final String DBFDATASET = DBFDataset.name
     static public final String EXCELDATASET = ExcelDataset.name
     static public final String FIREBIRDTABLE = FirebirdTable.name
     static public final String H2TABLE = H2Table.name
@@ -73,7 +75,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed dataset classes */
     static public final List<String> LISTDATASETS = [
-        CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
+        CSVDATASET, CSVTEMPDATASET, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
         SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET
     ]
@@ -86,7 +88,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed file dataset classes */
     static public List<String> LISTFILES = [
-        CSVDATASET, CSVTEMPDATASET, EXCELDATASET, JSONDATASET, XMLDATASET, YAMLDATASET
+        CSVDATASET, CSVTEMPDATASET, DBFDATASET, EXCELDATASET, JSONDATASET, XMLDATASET, YAMLDATASET
     ]
 
     /** List of allowed other dataset classes */

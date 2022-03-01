@@ -565,7 +565,7 @@ class CSVDriver extends FileDriver {
 		def skipRows = (params.skipRows as Long)?:0L
 		def limit = (params.limit as Long)?:0L
 
-		def filter = params.filter as Closure
+		def filter = params.filter as Closure<Boolean>
 
 		//noinspection UnnecessaryQualifiedReference
 		CSVDriver.ReadParams p = readParamDataset(cds, params)
@@ -666,7 +666,9 @@ class CSVDriver extends FileDriver {
 				try {
 					cur++
 					line++
-					if (limit > 0 && cur > limit) break
+					if (limit > 0 && cur > limit)
+						break
+
 					row = reader.read(header, cp)
 				}
 				catch (SuperCsvCellProcessorException e) {

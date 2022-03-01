@@ -80,16 +80,6 @@ class GetlDslTest extends GetlTest {
         }
     }
 
-    /*@BeforeClass
-    static void InitDslTestClass() {
-        Getl.CleanGetl()
-    }
-
-    @AfterClass
-    static void DoneDslTestClass() {
-        Getl.CleanGetl()
-    }*/
-
     /** Status init script */
     private Boolean initWasRun = false
 

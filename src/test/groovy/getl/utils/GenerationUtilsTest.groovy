@@ -253,7 +253,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
     @Test
     void testGenerateRowCopyWithMap() {
         def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/]
-        def c = new TDS().tap { connected = true }
+        def c = new TDS(connectDatabase: TDS.storageDatabaseName).tap { connected = true }
         def l = [] as List<Field>
         def r = [:] as Map<String, Object>
         t.each {
@@ -286,7 +286,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testGenerateRowCopyWithJDBC() {
-		def c = new TDS()
+		def c = new TDS(connectDatabase: TDS.storageDatabaseName)
 
 		def t = new TableDataset(connection: c, tableName: 'testRowCopy')
 		t.field << new Field(name: 'id', type: 'INTEGER', isKey: true)

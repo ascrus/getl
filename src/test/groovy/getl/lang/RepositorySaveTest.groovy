@@ -15,7 +15,7 @@ import groovy.transform.Field
 //noinspection GroovyUnusedAssignment
 @BaseScript RepositorySave main
 
-@Field TDS con = new TDS().with {
+@Field TDS con = new TDS(connectDatabase: TDS.storageDatabaseName).with {
     connectDatabase = 'repositorysave_test'
     login = 'dba'
     password = '12345'
