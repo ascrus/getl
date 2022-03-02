@@ -418,6 +418,7 @@ $body
 		else if (type == Field.datetimeFieldType)
 			df = 'yyyy-MM-dd HH:mm:ss'
 		else if (type == Field.timestamp_with_timezoneFieldType)
+		//noinspection SpellCheckingInspection
 			df = 'yyyy-MM-dd\'T\'HH:mm:ss ZZ'
 		else
 			throw new ExceptionGETL("Can not return date format from \"${type}\" type")
@@ -2231,8 +2232,11 @@ else
 		def virtualValues = [:] as Map<Integer, List<String>>
 		def destValues = [] as List<String>
 		map.each { destName, sourceName ->
-			def m1 = p1.matcher(sourceName)
-			def destValue = (m1.find())?m1.group(1):null
+			String destValue = null
+			if (sourceName != null && sourceName.length() > 0) {
+				def m1 = p1.matcher(sourceName)
+				destValue = (m1.find()) ? m1.group(1) : null
+			}
 
 			def m2 = p2.matcher(destName)
 			def isVirtual = m2.find()

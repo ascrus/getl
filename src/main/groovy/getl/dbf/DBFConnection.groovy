@@ -1,5 +1,7 @@
+//file:noinspection unused
 package getl.dbf
 
+import getl.data.Dataset
 import getl.data.FileConnection
 import getl.driver.Driver
 import groovy.transform.InheritConstructors
@@ -25,4 +27,7 @@ class DBFConnection extends FileConnection {
 
     @Override
     String codePage() { codePage?:'cp866' }
+
+    @Override
+    protected Class<Dataset> getDatasetClass() { DBFDataset }
 }
