@@ -612,7 +612,7 @@ class RepositoryStorageManager {
 
                 countProc = this.dslCreator.options.countThreadsLoadRepository
                 abortOnError = true
-                dumpErrors = true
+                dumpErrors = false
                 runSplit { elem ->
                     def fileAttr = elem.item as Map<String, Object>
 

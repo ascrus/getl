@@ -199,7 +199,7 @@ class StringUtils {
 		def l = s.length()
 		if (l <= len)
 			return s
-		return (l < 5 || len < 5)?s.substring(0, len):(s.substring(0, len - 4) + ' ...')
+		return (l < 5 || len < 5)?s.substring(0, len):(s.substring(0, len - 4) + ' ... and more')
 	}
 
 	/**
@@ -216,9 +216,32 @@ class StringUtils {
 
 		def l = s.trim().substring(0, len)
 		def m = l =~ /.+([ ]|[-]|[,]|[.]|[\/]|[\\])/
-		if (m.size() == 0) return l
+		if (m.size() == 0)
+			return l
 
 		return ((m[0] as List)[0] as String).trim()
+	}
+
+	/**
+	 * Trim string to specified count lines
+	 * @param s original string
+	 * @param count maximum line
+	 * @return string of given length
+	 */
+	static String CurStrByLines(String s, Integer count) {
+		if (s == null)
+			return null
+
+		if (count < 1)
+			throw new IllegalArgumentException('Count must great zero!')
+
+		def l = s.split('\n').toList()
+		if (l.size() > count) {
+			l = l.subList(0, count)
+			l[l.size() - 1] = l[l.size() - 1] + ' ... and more'
+		}
+
+		return l.join('\n')
 	}
 	
 	/**

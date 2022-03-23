@@ -57,9 +57,9 @@ class Executor implements GetlRepository {
 	@Synchronized
 	void setAbortOnError(Boolean value) { abortOnError = value }
 	
-	/** Write thread errors to log (default true) */
-	private Boolean logErrors = true
-	/** Write thread errors to log (default true) */
+	/** Write thread errors to log (default false) */
+	private Boolean logErrors = false
+	/** Write thread errors to log (default false) */
 	@Synchronized
 	Boolean getLogErrors() { logErrors }
 	/** Write thread errors to log (default true) */
@@ -401,10 +401,11 @@ class Executor implements GetlRepository {
 				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
+					def errorText = StringUtils.CutStr(StringUtils.CurStrByLines(e.message, 1), 50)
 					if (debugElementOnError) {
-						objects << "[${num}] ${e.message}: ${obj.toString()}"
+						objects.add("[${num}] $errorText: ${obj.toString()}")
 					} else {
-						objects << "[${num}] ${e.message}"
+						objects.add("[${num}] $errorText")
 					}
 				}
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
@@ -568,10 +569,11 @@ class Executor implements GetlRepository {
 				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
+					def errorText = StringUtils.CutStr(StringUtils.CurStrByLines(e.message, 1), 50)
 					if (debugElementOnError) {
-						objects << "[${num}] ${e.message}: ${obj.toString()}"
+						objects << "[${num}] $errorText: ${obj.toString()}"
 					} else {
-						objects << "[${num}] ${e.message}"
+						objects << "[${num}] $errorText"
 					}
 				}
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
@@ -726,10 +728,11 @@ class Executor implements GetlRepository {
 				num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
+					def errorText = StringUtils.CutStr(StringUtils.CurStrByLines(e.message, 1), 50)
 					if (debugElementOnError) {
-						objects << "[${num}] ${e.message}: ${obj.toString()}"
+						objects << "[${num}] $errorText: ${obj.toString()}"
 					} else {
-						objects << "[${num}] ${e.message}"
+						objects << "[${num}] $errorText"
 					}
 				}
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")

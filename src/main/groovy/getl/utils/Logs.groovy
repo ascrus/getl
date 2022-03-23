@@ -802,9 +802,11 @@ class Logs {
 			println data.toString()
 			return
 		}
-		
+
+		def errorText = StringUtils.CurStrByLines(error?.message, 3)
+
 		def fn = dumpFile()
-		config("Saving dump information to file $fn (error: ${error?.message}) ...")
+		config("Saving dump information to file $fn, error: $errorText")
 		FileUtils.ValidFilePath(fn)
 
 		File df = new File(fn)
@@ -827,7 +829,7 @@ class Logs {
 			w.println "\n\n\n"
 		}
 		catch (Throwable e) {
-			severe("Can not write error to dump file \"${fn}\" (error: ${e.message})")
+			severe("Can not write error to dump file \"${fn}\", error: $errorText")
 		}
 		finally {
 			if (w != null)

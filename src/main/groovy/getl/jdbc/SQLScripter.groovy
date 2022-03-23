@@ -311,19 +311,13 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	
 	/** Do select command */
 	private void doSelect(SQLParser parser) {
-		try {
-			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
-			QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
-			def rows = ds.rows()
+		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
+		def rows = ds.rows()
 
-			def scriptLabel = detectScriptVariable(parser)
-			if (scriptLabel != null)
-				vars.put(scriptLabel, rows)
-		}
-		catch (Exception e) {
-			logger.dump(e, 'SQLScripter.SELECT', dslNameObject, "Error execution script:\n${parser.lexer.script}\n")
-			throw e
-		}
+		def scriptLabel = detectScriptVariable(parser)
+		if (scriptLabel != null)
+			vars.put(scriptLabel, rows)
 	}
 
 	private Pattern setOperatorPattern = Pattern.compile('(?i)\\s*[@]?SET\\s+(.*)')

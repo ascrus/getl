@@ -519,8 +519,8 @@ return $className"""
                     useList node.scripts.keySet().toList()
                     setCountProc node.countThreads?:1
                     abortOnError = true
-                    dumpErrors = true
-                    debugElementOnError = true
+                    dumpErrors = false
+                    debugElementOnError = false
                     def runScript = { String scriptName ->
                         exec.counter.nextCount()
 
