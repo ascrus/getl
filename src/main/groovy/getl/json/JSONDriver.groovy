@@ -115,7 +115,7 @@ class JSONDriver extends WebServiceDriver {
 			cl.call(dataset, initAttr, code, data, limit)
 		}
 		catch (Exception e) {
-			connection.logger.severe("Json file $dataset processing error: ${e.message}")
+			connection.logger.severe("Json file $dataset processing error", e)
 			connection.logger.dump(e, 'json', dataset.toString(), "// Generation script:\n$script")
 			throw e
 		}

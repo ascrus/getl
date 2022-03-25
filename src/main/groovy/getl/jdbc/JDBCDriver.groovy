@@ -494,24 +494,15 @@ class JDBCDriver extends Driver {
 	@Synchronized
 	Sql newSql(Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
-        Sql sql
-		try {
-            def javaDriver = driverClass.getDeclaredConstructor().newInstance() as java.sql.Driver
-            def prop = new Properties()
-            if (login != null) prop.user = login
-            if (password != null) prop.password = password
-            def javaCon = javaDriver.connect(url, prop)
-			if (javaCon == null) {
-				throw new ExceptionGETL("Can not create driver \"$drvName\" for \"$url\" URL")
-			}
-            sql = new Sql(javaCon)
+		def javaDriver = driverClass.getDeclaredConstructor().newInstance() as java.sql.Driver
+		def prop = new Properties()
+		if (login != null) prop.user = login
+		if (password != null) prop.password = password
+		def javaCon = javaDriver.connect(url, prop)
+		if (javaCon == null) {
+			throw new ExceptionGETL("Can not create driver \"$drvName\" for \"$url\" URL")
 		}
-		catch (SQLException e) {
-			connection.logger.severe("Unable connect to \"$url\" with \"$drvName\" driver")
-			throw e
-		}
-
-        return sql
+		return new Sql(javaCon)
 	}
 
 	/** Default transaction isolation on connect */
@@ -572,22 +563,11 @@ class JDBCDriver extends Driver {
 					throw new ExceptionGETL("Required \"connectURL\" for connect to server")
 				url = url + conParams
 
-				try {
-					sql = newSql(jdbcClass, url, login, password, drvName, loginTimeout)
-					notConnected = false
-				}
-				catch (Exception e) {
-					if (server != null) {
-						con.logger.warning("Unable to connect to server \"$url\" with login \"$login\": ${e.message}")
-					}
-					else {
-						con.logger.severe("Unable to connect to server \"$url\" with login \"$login\": ${e.message}")
-						throw e
-					}
-				}
+				sql = newSql(jdbcClass, url, login, password, drvName, loginTimeout)
+				notConnected = false
 			}
 			con.sysParams."currentConnectURL" = url
-			if (server != null)
+			if (server != null) /* TODO: Removing balancer server */
 				con.sysParams."balancerServer" = server
 
 			sql.getConnection().setAutoCommit(con.autoCommit())
@@ -1194,7 +1174,7 @@ class JDBCDriver extends Driver {
 				defFields << s
 			}
 			catch (Exception e) {
-				connection.logger.severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\": ${e.message}")
+				connection.logger.severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\"", e)
 				throw e
 			}
 		}
@@ -1467,7 +1447,7 @@ class JDBCDriver extends Driver {
 
         def ds = dataset as TableDataset
 
-		def r = prepareTableNameForSQL(ds.params.tableName as String)
+		def r = prepareTableNameForSQL(ds.params.tableName as String)?:'unnamed'
 		def dbName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareTableNameForSQL(ds.dbName()):null
 		def schemaName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareTableNameForSQL(ds.schemaName()):null
 		if (schemaName != null)
@@ -1618,7 +1598,7 @@ class JDBCDriver extends Driver {
 			}
 			
 			if (fields.isEmpty())
-				throw new ExceptionGETL("Required fields by dataset $table")
+				throw new ExceptionGETL("Required fields by dataset $table!")
 			
 			def selectFields = fields.join(",")
 
@@ -1628,7 +1608,8 @@ class JDBCDriver extends Driver {
 					where = StringUtils.EvalMacroString(where, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
 				}
 				catch (Exception e) {
-					throw new ExceptionGETL("Error compiling \"where\" statement for table \"$dataset\": ${e.message}")
+					dataset.logger.severe("Error compiling \"where\" statement for table \"$dataset\"", e)
+					throw e
 				}
 			}
 
@@ -1663,7 +1644,8 @@ class JDBCDriver extends Driver {
 			res = StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
 		}
 		catch (Exception e) {
-			throw new ExceptionGETL("Error compiling SQL script for dataset \"$dataset\": ${e.message}")
+			dataset.logger.severe("Error compiling SQL script for dataset \"$dataset\"", e)
+			throw e
 		}
 
 		return res
@@ -1853,7 +1835,7 @@ class JDBCDriver extends Driver {
 			}
 		}
 		catch (JDBCProcessException e) {
-			connection.logger.severe("Error processing row from dataset \"${dataset.objectName}\": ${e.error.message}")
+			connection.logger.severe("Error processing row from dataset \"${dataset.objectName}\"", e)
 			if (rowCopy != null)
 				connection.logger.dump(e.error, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 
@@ -1987,7 +1969,8 @@ $sql
 			warn = warn.nextWarning
 		}
 		if (!(con.sysParams.warnings as List).isEmpty()) {
-			if (BoolUtils.IsValue(con.outputServerWarningToLog)) con.logger.warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
+			if (BoolUtils.IsValue(con.outputServerWarningToLog))
+				con.logger.warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 			con.sysParams.remove('warnings')
 		}
@@ -2625,7 +2608,7 @@ $sql
 		def sql = sqlExpressionValue('sequenceNext', [value: sequenceName])
 		saveToHistory(sql)
 		def r = sqlConnect.firstRow(sql)
-		return r.id
+		return r.id as Long
 	}
 
 	/**

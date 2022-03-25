@@ -417,8 +417,14 @@ class Connection implements Cloneable, GetlRepository {
 		methodParams.validation("retrieveObjects", params,
 				[driver.methodParams.params("retrieveObjects")])
 		
-		tryConnect() 
-		driver.retrieveObjects(params, filter) 
+		tryConnect()
+		try {
+			driver.retrieveObjects(params, filter)
+		}
+		catch (Exception e) {
+			logger.severe("Error read objects list from server \"$objectName\"", e)
+			throw e
+		}
 	}
 	
 	/** Is connected to source */
@@ -468,11 +474,13 @@ class Connection implements Cloneable, GetlRepository {
 			catch (Exception e) {
 				doErrorConnect()
 				attempt++
-				if (attempt >= countAttempts)
+				if (attempt >= countAttempts) {
+					logger.severe("Error connecting to server \"$objectName\"", e)
 					throw e
+				}
 
 				sleep(timeoutAttempts)
-				logger.warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
+				logger.warning("Error connecting to server \"$objectName\", attempt number $attempt", e)
 			}
 		}
 		doDoneConnect()
@@ -490,6 +498,7 @@ class Connection implements Cloneable, GetlRepository {
 			driver.disconnect()
 		}
 		catch (Exception e) {
+			logger.severe("Error disconnecting from server \"$objectName\"", e)
 			doErrorDisconnect()
 			throw e
 		}
@@ -547,7 +556,13 @@ class Connection implements Cloneable, GetlRepository {
 		}
 
 		tryConnect()
-		driver.startTran(useSqlOperator)
+		try {
+			driver.startTran(useSqlOperator)
+		}
+		catch (Exception e) {
+			logger.severe("Error start transaction on server \"$objectName\"", e)
+			throw e
+		}
 		tranCount++
 	}
 
@@ -574,6 +589,10 @@ class Connection implements Cloneable, GetlRepository {
 		try {
 			driver.commitTran(useSqlOperator)
 		}
+		catch (Exception e) {
+			logger.severe("Error commit transaction on server \"$objectName\"", e)
+			throw e
+		}
 		finally {
 			tranCount--
 		}
@@ -597,6 +616,10 @@ class Connection implements Cloneable, GetlRepository {
 
 		try {
 			driver.rollbackTran(useSqlOperator)
+		}
+		catch (Exception e) {
+			logger.severe("Error rollback transaction on server \"$objectName\"", e)
+			throw e
 		}
 		finally {
 			tranCount--

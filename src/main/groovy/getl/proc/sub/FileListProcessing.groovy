@@ -376,7 +376,7 @@ abstract class FileListProcessing implements GetlRepository {
             man.changeLocalDirectory(path)
         }
         catch (Exception e) {
-            logger.severe("Error changing current local directory to \"$path\" for \"$man\", error text: ${e.message}!")
+            logger.severe("Error changing current local directory to \"$path\" for \"$man\"", e)
             throw e
         }
     }
@@ -399,10 +399,10 @@ abstract class FileListProcessing implements GetlRepository {
                 }
                 catch (Exception e) {
                     if (retry > attempts || man.connected) {
-                        logger.severe("Unable to connect to \"$man\", error: ${e.message}")
+                        logger.severe("Unable to connect to \"$man\"", e)
                         throw e
                     }
-                    dslCreator.logWarn("Unable to connect to \"$man\", attemp $retry of $attempts, error: ${e.message}")
+                    dslCreator.logWarn("Unable to connect to \"$man\", attemp $retry of $attempts", e)
                     sleep(time * 1000)
 
                     retry++
@@ -442,7 +442,7 @@ abstract class FileListProcessing implements GetlRepository {
                     man.disconnect()
                 }
                 catch (Exception e) {
-                    logger.severe("Unable to disconnect from \"$man\", error: ${e.message}")
+                    logger.severe("Unable to disconnect from \"$man\"", e)
                     err.nextCount()
                 }
             }
@@ -491,7 +491,7 @@ abstract class FileListProcessing implements GetlRepository {
                     if (retry > attempts)
                         throw e
 
-                    dslCreator.logWarn("Cannot do operation for \"$man\", attemp $retry of $attempts, error: ${e.message}")
+                    dslCreator.logWarn("Cannot do operation for \"$man\", attemp $retry of $attempts", e)
                     sleep(time * 1000)
                     retry++
 
@@ -521,7 +521,7 @@ abstract class FileListProcessing implements GetlRepository {
                                 if (retry > attempts)
                                     throw e
 
-                                dslCreator.logWarn("Cannot connection to \"$man\", attemp $retry of $attempts, error: ${e.message}")
+                                dslCreator.logWarn("Cannot connection to \"$man\", attemp $retry of $attempts", e)
                                 sleep(time * 1000)
                                 retry++
                             }

@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.PathFilter
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kafka.common.protocol.types.Field
 
 import java.security.PrivilegedExceptionAction
 
@@ -119,18 +120,12 @@ class HDFSManager extends Manager implements UserLogins {
         private final HDFSManager man
 
         @Override
-        Void run() throws Exception {
+        Void run() {
             Configuration conf = new Configuration()
             conf.set("fs.defaultFS", "hdfs://${man.server}:${man.port}")
             conf.set("hadoop.job.ugi", man.login)
 
-            try {
-                man.client = FileSystem.get(conf)
-            }
-            catch (Exception e) {
-                if (writeErrorsToLog) logger.severe("Can not connect to ${man.server}:${man.port}")
-                throw e
-            }
+            man.client = FileSystem.get(conf)
             man.homeDirectory = client.homeDirectory
             man.currentPath = man.currentRootPath
             if (man.rootPath != null && man.replication != null)
@@ -143,13 +138,10 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     @Synchronized
     protected void doConnect() {
-        if (connected)
-            throw new ExceptionGETL('Manager already connected!')
-
         if (server == null || port == null)
-            throw new ExceptionGETL("Required server host and port for connect")
+            throw new ExceptionGETL("Required server host and port for connect!")
         if (login == null)
-            throw new ExceptionGETL("Required login for connect")
+            throw new ExceptionGETL("Required login for connect!")
 
         writeScriptHistoryFile("Connect to hdfs $server:$port with login $login from session $sessionID")
 
@@ -160,9 +152,6 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     @Synchronized
     protected void doDisconnect() {
-        if (!connected)
-            throw new ExceptionGETL('Manager already disconnected!')
-
         try {
             if (client != null) client.close()
         }
@@ -186,18 +175,21 @@ class HDFSManager extends Manager implements UserLogins {
         if (path == _currentPath) return
 
         if (path == null || path == '/') {
-            if (writeErrorsToLog) logger.severe('Invalid path: \"$path\"')
-            throw new ExceptionGETL('Invalid null path')
+            if (writeErrorsToLog)
+                logger.severe("Invalid path: \"$path\" on source \"$this\"!")
+            throw new ExceptionGETL("Invalid path: \"$path\" on source \"$this\"!")
         }
         path = fullName(path, null)
         def p = new Path(path)
         if (!client.exists(p)) {
-            if (writeErrorsToLog) logger.severe("Path \"$path\" not found")
-            throw new ExceptionGETL("Path \"$path\" not found")
+            if (writeErrorsToLog)
+                logger.severe("Path \"$path\" not found on source \"$this\"!")
+            throw new ExceptionGETL("Path \"$path\" not found on source \"$this\"!")
         }
         if (!client.exists(p) || !client.getFileStatus(p).isDirectory()) {
-            if (writeErrorsToLog) logger.severe("Path \"$path\" non directory")
-            throw new ExceptionGETL("Path \"$path\" non directory")
+            if (writeErrorsToLog)
+                logger.severe("Path \"$path\" non directory on source \"$this\"!")
+            throw new ExceptionGETL("Path \"$path\" non directory on source \"$this\"!")
         }
         _currentPath = path
     }
@@ -246,7 +238,7 @@ class HDFSManager extends Manager implements UserLogins {
                 m.type = Manager.TypeFile.LINK
             }
             else {
-                throw new ExceptionGETL("Unnknown type object ${m.filename}")
+                throw new ExceptionGETL("Unnknown type object ${m.filename}!")
             }
 
             return m
@@ -274,7 +266,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    FileManagerList listDir(String maskFiles = null) {
+    protected FileManagerList doListDir(String maskFiles) {
         validConnect()
 
         HDFSList res = new HDFSList()
@@ -291,8 +283,9 @@ class HDFSManager extends Manager implements UserLogins {
         validConnect()
 
         if (_currentPath == currentRootPath) {
-            if (writeErrorsToLog) logger.severe("Can not change directory to up with root directory \"$currentRootPath\"")
-            throw new ExceptionGETL("Can not change directory to up with root directory \"$currentRootPath\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not change directory to up with root directory \"$currentRootPath\" on source \"$this\"!")
+            throw new ExceptionGETL("Can not change directory to up with root directory \"$currentRootPath\" on source \"$this\"!")
         }
 
         String[] l = _currentPath.split('/')
@@ -306,13 +299,14 @@ class HDFSManager extends Manager implements UserLogins {
             currentPath = c
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not change directory to up: ${e.message}")
+            if (writeErrorsToLog)
+                logger.severe("Can not change directory to up on source \"$this\"", e)
             throw e
         }
     }
 
     @Override
-    File download(String filePath, String localPath, String localFileName) {
+    protected File doDownload(String filePath, String localPath, String localFileName) {
         validConnect()
 
         File res
@@ -324,7 +318,8 @@ class HDFSManager extends Manager implements UserLogins {
             setLocalLastModified(res, getLastModified(filePath))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not download file \"${fullName(_currentPath, filePath)}\" to \"$fn\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not download file \"${fullName(_currentPath, filePath)}\" to \"$fn\" on source \"$this\"", e)
             throw e
         }
 
@@ -332,7 +327,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    void upload(String path, String fileName) {
+    protected void doUpload(String path, String fileName) {
         validConnect()
         validWrite()
 
@@ -344,7 +339,8 @@ class HDFSManager extends Manager implements UserLogins {
             setLastModified(fileName, f.lastModified())
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not upload file \"$fn\" to \"${fullName(_currentPath, fileName)}\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not upload file \"$fn\" to \"${fullName(_currentPath, fileName)}\" on source \"$this\"", e)
             throw e
         }
     }
@@ -358,7 +354,8 @@ class HDFSManager extends Manager implements UserLogins {
             client.delete(fullPath(_currentPath, fileName), false)
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not remove file \"${fullName(_currentPath, fileName)}\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not remove file \"${fullName(_currentPath, fileName)}\" on source \"$this\" on source \"$this\"", e)
             throw e
         }
     }
@@ -372,7 +369,8 @@ class HDFSManager extends Manager implements UserLogins {
             client.mkdirs(fullPath(_currentPath, dirName))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not create dir \"${fullName(_currentPath, dirName)}\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not create dir \"${fullName(_currentPath, dirName)}\" on source \"$this\"", e)
             throw e
         }
     }
@@ -387,7 +385,8 @@ class HDFSManager extends Manager implements UserLogins {
             client.delete(fullPath(_currentPath, dirName), recursive)
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not remove dir \"${fullName(_currentPath, dirName)}\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not remove dir \"${fullName(_currentPath, dirName)}\" on source \"$this\"", e)
             throw e
         }
 
@@ -406,7 +405,8 @@ class HDFSManager extends Manager implements UserLogins {
             client.rename(fullPath(_currentPath, fileName), new Path(path))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) logger.severe("Can not rename file \"${fullName(_currentPath, fileName)}\" to \"$path\"")
+            if (writeErrorsToLog)
+                logger.severe("Can not rename file \"${fullName(_currentPath, fileName)}\" to \"$path\" on source \"$this\"", e)
             throw e
         }
     }

@@ -8,6 +8,7 @@ import getl.driver.WebServiceDriver
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
 import getl.utils.ListUtils
+import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.yaml.YamlSlurper
@@ -80,7 +81,7 @@ class YAMLDriver extends WebServiceDriver {
             cl.call(dataset, code, data, limit)
         }
         catch (Exception e) {
-            connection.logger.severe("Yaml file $dataset processing error: ${e.message}")
+            connection.logger.severe("Yaml file $dataset processing error", e)
             connection.logger.dump(e, 'yaml', dataset.toString(), "// Generation script:\n$script")
             throw e
         }

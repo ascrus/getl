@@ -676,7 +676,7 @@ class CSVDriver extends FileDriver {
 						throw e
 
 					def c = e.csvContext
-					def ex = new ExceptionGETL("Line $line column ${c.columnNumber} [${header[c.columnNumber - 1]}]: ${e.message}")
+					def ex = new ExceptionGETL("Line $line column ${c.columnNumber} [${header[c.columnNumber - 1]}]", e)
 
 					if (!processError(ex, line))
 						throw e

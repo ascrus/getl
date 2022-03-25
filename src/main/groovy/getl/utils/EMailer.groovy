@@ -254,7 +254,7 @@ class EMailer implements GetlRepository {
 			Transport.send(msg)
 		}
 		catch (javax.mail.MessagingException e) {
-			logger.severe("emailer: failed send message for param $mprops")
+			logger.severe("Failed send message for param $mprops", e)
 			throw e
 		}
 	}

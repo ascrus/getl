@@ -199,6 +199,7 @@ ORDER BY threshold DESC, table_name;
 						logger.info("Table $table purge complete")
 					}
 					catch (Exception e) {
+						// Print error to log
 						logger.severe(e.message)
 					}
 				}
@@ -338,7 +339,8 @@ ORDER BY name
 							res++
 						}
 						catch (Exception e) {
-							logger.severe("Found error for $t: ${e.message}")
+							// Print error to log
+							logger.severe("Found error for $t", e)
 						}
 					}
 				} else if ((row.tuning_parameter?:'' == '' || !((row.tuning_parameter as String).toLowerCase() in tempTables))) {
@@ -350,7 +352,8 @@ ORDER BY name
 						res++
 					}
 					catch (Exception e) {
-						logger.severe("${row.tuning_description}: ${e.message}")
+						// Print error to log
+						logger.severe(row.tuning_description as String, e)
 					}
 				}
 			}

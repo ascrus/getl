@@ -116,7 +116,8 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
             res = StringUtils.EvalMacroString(val.toString(), variables() + (extVars?:new HashMap()))
         }
         catch (Exception e) {
-            throw new ExceptionDSL("Error parsing the value of the \"$name\" attribute from \"${objectNameInModel()}\" node: ${e.message}")
+            ownerModel.dslCreator.logError("Error parsing the value of the \"$name\" attribute from \"${objectNameInModel()}\" node", e)
+            throw e
         }
 
         return res
@@ -178,8 +179,8 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
             res = DateUtils.ParseSQLTimestamp((format?:'yyyy-MM-dd HH:mm:ss'), value, false)
         }
         catch (Exception e) {
-            throw new ExceptionDSL("Error converting the value \"$value\" of the attribute \"$name\" into a " +
-                    "timestamp from \"${objectNameInModel()}\" node: ${e.message}!")
+            ownerModel.dslCreator.logError("Error converting the value \"$value\" of the attribute \"$name\" into a timestamp from \"${objectNameInModel()}\" node", e)
+            throw e
         }
 
         return res

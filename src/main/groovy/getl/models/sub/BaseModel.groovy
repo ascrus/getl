@@ -169,7 +169,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             res = StringUtils.EvalMacroString(val.toString(), modelVariables() + (extVars?:new HashMap()))
         }
         catch (Exception e) {
-            throw new ExceptionDSL("Error parsing the value of the \"$name\" model attribute: ${e.message}")
+            dslCreator.logError("Error parsing the value of the \"$name\" model attribute", e)
+            throw e
         }
 
         return res
@@ -229,7 +230,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             res = DateUtils.ParseSQLTimestamp((format?:'yyyy-MM-dd HH:mm:ss'), value, false)
         }
         catch (Exception e) {
-            throw new ExceptionDSL("Error converting the value \"$value\" of the model attribute \"$name\" into a timestamp: ${e.message}!")
+            dslCreator.logError("Error converting the value \"$value\" of the model attribute \"$name\" into a timestamp", e)
+            throw e
         }
 
         return res

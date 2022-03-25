@@ -58,7 +58,7 @@ SELECT x.table_name, total_row_count, deleted_row_count, 'SELECT PURGE_TABLE('''
 				Logs.Info("${pt.name} complete")
 			}
 			catch (Exception e) {
-				Logs.Severe("Detected error by purge ${row.table_name}: ${e.message}")
+				Logs.Severe("Detected error by purge ${row.table_name}", e)
 			}
 		}
 	}

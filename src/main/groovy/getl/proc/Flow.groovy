@@ -690,7 +690,7 @@ class Flow {
 							auto_map_code.call(inRow, outRow)
 						}
 						catch (Exception e) {
-							logger.severe("Column auto mapping error: ${e.message}")
+							logger.severe("Column auto mapping error", e)
 							logger.dump(e, 'flow', cacheName?:'none', 'Column mapping:\n' + scriptMap)
 							throw e
 						}
@@ -849,7 +849,7 @@ class Flow {
 			}
 		}
 		catch (Exception e) {
-			logger.severe("Error copying rows from \"${sourceDescription}\" to \"${destDescription}\": ${e.message}")
+			logger.severe("Error copying rows from \"${sourceDescription}\" to \"${destDescription}\"", e)
 
 			if (autoTran && dest.connection.isTran())
 				Executor.RunIgnoreErrors(dslCreator) {
@@ -1060,7 +1060,7 @@ class Flow {
 		catch (Exception e) {
 			isError = true
 			writer.isWriteError = true
-			logger.severe("Error writing rows to \"${writer.objectName}\": ${e.message}")
+			logger.severe("Error writing rows to \"${writer.objectName}\"", e)
 			if (autoTran && !isBulkLoad && dest.connection.isTran())
 				Executor.RunIgnoreErrors(dslCreator) {
 					dest.connection.rollbackTran()
@@ -1092,7 +1092,7 @@ class Flow {
 				dest.bulkLoadFile(bulkParams)
 			}
 			catch (Exception e) {
-				logger.severe("Error loading CSV file \"${bulkDS.fullFileName()}\" to \"${writer.objectName}\": ${e.message}")
+				logger.severe("Error loading CSV file \"${bulkDS.fullFileName()}\" to \"${writer.objectName}\"", e)
 				
 				if (autoTran && dest.connection.isTran())
 					Executor.RunIgnoreErrors(dslCreator) {
@@ -1288,7 +1288,7 @@ class Flow {
 					d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
 			}
 			catch (Exception e) {
-				logger.severe("Error writing rows to \"${d.objectName}\": ${e.message}")
+				logger.severe("Error writing rows to \"${d.objectName}\"", e)
 				closeDestinations(true)
 				rollbackTrans(["ALL", "COPY"])
 				throw e
@@ -1302,7 +1302,7 @@ class Flow {
 			writer.each { String n, Dataset d ->
 				d.isWriteError = true
 			}
-			logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\": ${e.message}")
+			logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1314,7 +1314,7 @@ class Flow {
 			}
 		}
 		catch (Exception e) {
-			logger.severe("Error saving buffer to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\": ${e.message}")
+			logger.severe("Error saving buffer to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1324,7 +1324,7 @@ class Flow {
 			closeDestinations(false)
 		}
 		catch (Exception e) {
-			logger.severe("Close error \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\": ${e.message}")
+			logger.severe("Close error \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1338,7 +1338,7 @@ class Flow {
 				ds.bulkLoadFile(bp)
 			}
 			catch (Exception e) {
-				logger.severe("Error loading CSV file \"${bp.source}\" to \"${ds.objectName}\": ${e.message}")
+				logger.severe("Error loading CSV file \"${bp.source}\" to \"${ds.objectName}\"", e)
 				rollbackTrans(["ALL", "COPY", "BULK"])
 				throw e
 			}

@@ -141,7 +141,7 @@ class ConfigFiles extends ConfigManager {
                     data = LoadConfigFile(file: ff, codePage: cp, owner: dslCreator)
                 }
                 catch (Exception e) {
-                    logger.severe("Invalid parsing file \"${ff.canonicalPath}\", error: ${e.message}")
+                    logger.severe("Invalid parsing file \"${ff.canonicalPath}\"", e)
                     throw e
                 }
                 mergeConfig(data)
@@ -171,7 +171,7 @@ class ConfigFiles extends ConfigManager {
             data = json.parse(reader)
 		}
         catch (Exception e) {
-            logger.severe("Invalid parsing file \"${file.canonicalPath}\", error: ${e.message}")
+            logger.severe("Invalid parsing file \"${file.canonicalPath}\"", e)
             throw e
         }
         finally {
@@ -219,7 +219,7 @@ class ConfigFiles extends ConfigManager {
             b.call(data)
         }
         catch (Exception e) {
-            logger.severe("Error parse content to file \"${file.canonicalPath}\", error: ${e.message}")
+            logger.severe("Error parse content to file \"${file.canonicalPath}\"", e)
             throw e
         }
 
@@ -228,7 +228,7 @@ class ConfigFiles extends ConfigManager {
             writer.println(b.toPrettyString())
         }
         catch (Exception e) {
-            logger.severe("Error save configuration to file \"${file.canonicalPath}\", error: ${e.message}")
+            logger.severe("Error save configuration to file \"${file.canonicalPath}\"", e)
 
             writer.close()
             if (file.exists())

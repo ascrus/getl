@@ -139,6 +139,9 @@ class Path implements Cloneable, GetlRepository {
 		compile(params)
 	}
 
+	/** Logger */
+	private getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+
 	/** Parameters validator */
 	private ParamMethodValidator methodParams = new ParamMethodValidator()
 
@@ -757,7 +760,8 @@ class Path implements Cloneable, GetlRepository {
 								v = DateUtils.ParseSQLDate(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date: ${e.message}!")
+								logger.severe("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date", e)
+								throw e
 							}
                             isError = (v == null)
 							break
@@ -766,7 +770,8 @@ class Path implements Cloneable, GetlRepository {
 								v = DateUtils.ParseSQLTimestamp(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date: ${e.message}!")
+								logger.severe("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date", e)
+								throw e
 							}
 							isError = (v == null)
 							break
@@ -775,7 +780,8 @@ class Path implements Cloneable, GetlRepository {
 								v = DateUtils.ParseSQLTime(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date: ${e.message}!")
+								logger.severe("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to date", e)
+								throw e
 							}
 							isError = (v == null)
 							break
@@ -784,8 +790,10 @@ class Path implements Cloneable, GetlRepository {
 								v = Integer.valueOf(v)
 							}
 							catch (Exception e) {
-								if (!ignoreConvertError)
-									throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to integer: ${e.message}!")
+								if (!ignoreConvertError) {
+									logger.severe("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to integer", e)
+									throw e
+								}
 								v = null
 							}
                             isError = (v == null)
@@ -795,8 +803,10 @@ class Path implements Cloneable, GetlRepository {
 								v = Long.valueOf(v)
 							}
 							catch (Exception e) {
-								if (!ignoreConvertError)
-									throw new ExceptionGETL("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to bigint: ${e.message}!")
+								if (!ignoreConvertError) {
+									logger.severe("Invalid [${key}] in filepath mask [$maskStr]: can not parse value \"${v}\" to bigint", e)
+									throw e
+								}
 								v = null
 							}
                             isError = (v == null)

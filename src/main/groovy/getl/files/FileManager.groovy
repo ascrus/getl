@@ -38,14 +38,14 @@ class FileManager extends Manager {
 	}
 	
 	/** Code page on command console */
-	String getCodePage () { params.codePage?:"utf-8" }
+	String getCodePage() { params.codePage?:"utf-8" }
 	/** Code page on command console */
-	void setCodePage (String value) { params.codePage = value }
+	void setCodePage(String value) { params.codePage = value }
 	
 	/** Create root path if not exists */
-	Boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
+	Boolean getCreateRootPath() { BoolUtils.IsValue(params.createRootPath, false) }
 	/** Create root path if not exists */
-	void setCreateRootPath (Boolean value) { params.createRootPath = value }
+	void setCreateRootPath(Boolean value) { params.createRootPath = value }
 	
 	@Override
 	@JsonIgnore
@@ -58,7 +58,7 @@ class FileManager extends Manager {
 		if (rootPath == null)
 			return false
 
-		new File(currentRootPath).exists()
+		return new File(currentRootPath).exists()
 	}
 
 	@Override
@@ -67,12 +67,10 @@ class FileManager extends Manager {
 
 	@Override
 	@Synchronized
-	protected void doConnect () {
-		if (connected)
-			throw new ExceptionGETL('Manager already connected!')
-
+	protected void doConnect() {
 		File rp = new File(currentRootPath)
-		if (!rp.exists() && createRootPath) rp.mkdirs()
+		if (!rp.exists() && createRootPath)
+			rp.mkdirs()
 
 		currentDirectory = rp
 		connected = true
@@ -82,9 +80,6 @@ class FileManager extends Manager {
 	@Override
 	@Synchronized
 	protected void doDisconnect () {
-		if (!connected)
-			throw new ExceptionGETL('Manager already disconnected!')
-
 		currentDirectory = null
 		_currentPath = null
 		connected = false
@@ -137,7 +132,7 @@ class FileManager extends Manager {
 
 	@CompileStatic
 	@Override
-	FileManagerList listDir(String mask = null) {
+	protected FileManagerList doListDir(String mask) {
 		validConnect()
 		
 		Closure filter
@@ -162,42 +157,56 @@ class FileManager extends Manager {
 	
 	@Override
 	@JsonIgnore
-	String getCurrentPath () {
+	String getCurrentPath() {
 		validConnect()
 
-		if (currentDirectory == null)
-			throw new ExceptionGETL("Current directory is not setting!")
+		if (currentDirectory == null) {
+			if (writeErrorsToLog)
+				logger.severe("Current directory is not setting from source \"$this\"!")
+			throw new ExceptionGETL("Current directory is not setting from source \"$this\"!")
+		}
 
 		return currentDirectory.path.replace("\\", "/")
 	}
 	
 	@Override
 	@JsonIgnore
-	void setCurrentPath (String path) {
+	void setCurrentPath(String path) {
 		validConnect()
 		
 		File f = new File(path)
-		if (!f.exists())
-			throw new ExceptionGETL("Directory \"${path}\" not found in \"$currentPath\" path!")
+		if (!f.exists()) {
+			if (writeErrorsToLog)
+				logger.severe("Directory \"${path}\" not found in \"$currentPath\" path on source \"$this\"!")
+			throw new ExceptionGETL("Directory \"${path}\" not found in \"$currentPath\" path on source \"$this\"!")
+		}
 
 		currentDirectory = f
 		_currentPath = currentDirectory.path.replace("\\", "/")
 	}
 	
 	@Override
-	void changeDirectoryUp () {
+	void changeDirectoryUp() {
 		validConnect()
 		currentPath = currentDirectory.parent
 	}
 	
 	@Override
-	File download (String filePath, String localPath, String localFileName) {
+	protected File doDownload(String filePath, String localPath, String localFileName) {
 		validConnect()
 		
 		def f = fileFromLocalDir("${_currentPath}/${filePath}")
 		
 		def fn = localPath + '/' + localFileName
-		FileUtils.CopyToFile(f.canonicalPath, fn, false)
+		try {
+			FileUtils.CopyToFile(f.canonicalPath, fn, false)
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error download file \"${f.canonicalPath}\" on source \"$this\"", e)
+
+			throw e
+		}
 
         def fDest = new File(fn)
         setLocalLastModified(fDest, f.lastModified())
@@ -206,14 +215,22 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	void upload (String path, String fileName) {
+	protected void doUpload(String path, String fileName) {
 		validConnect()
 		validWrite()
 		
 		def fn = ((path != null)?path + "/":"") + fileName
 
 		def dest = "${currentDirectory.canonicalPath}/${fileName}"
-		FileUtils.CopyToFile(fn, dest, false)
+		try {
+			FileUtils.CopyToFile(fn, dest, false)
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error upload file \"$fn\" on source \"$this\"", e)
+
+			throw e
+		}
 
 		def fSource = fileFromLocalDir(fn)
 		def fDest = new File(dest)
@@ -226,7 +243,11 @@ class FileManager extends Manager {
 		validWrite()
 		
 		def f = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
-		if (!f.delete()) throw new ExceptionGETL("Can not remove file ${f.canonicalPath}")
+		if (!f.delete()) {
+			if (writeErrorsToLog)
+				logger.severe("Can not remove file ${f.canonicalPath} on source \"$this\"!")
+			throw new ExceptionGETL("Can not remove file ${f.canonicalPath} on source \"$this\"!")
+		}
 	}
 	
 	@Override
@@ -235,8 +256,16 @@ class FileManager extends Manager {
 		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
-		if (f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" already exists")
-		if (!f.mkdirs()) throw new ExceptionGETL("Can not create directory \"${f.canonicalPath}\"")
+		if (f.exists()) {
+			if (writeErrorsToLog)
+				logger.severe("Directory \"${f.canonicalPath}\" already exists on source $this!")
+			throw new ExceptionGETL("Directory \"${f.canonicalPath}\" already exists on source $this!")
+		}
+		if (!f.mkdirs()) {
+			if (writeErrorsToLog)
+				logger.severe("Can not create directory \"${f.canonicalPath}\" on source $this!")
+			throw new ExceptionGETL("Can not create directory \"${f.canonicalPath}\" on source $this!")
+		}
 	}
 	
 	@Override
@@ -246,15 +275,24 @@ class FileManager extends Manager {
 		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
-		if (!f.exists())
-			throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found")
+		if (!f.exists()) {
+			if (writeErrorsToLog)
+				logger.severe("Directory \"${f.canonicalPath}\" not found on source \"$this\"!")
+			throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found on source \"$this\"!")
+		}
         if (recursive) {
-            if (!f.deleteDir())
-				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
+            if (!f.deleteDir()) {
+				if (writeErrorsToLog)
+					logger.severe("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
+				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
+			}
         }
         else {
-            if (!f.delete())
-				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
+            if (!f.delete()) {
+				if (writeErrorsToLog)
+					logger.severe("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
+				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
+			}
         }
 		if (onDelete != null)
 			onDelete.call(f.path)
@@ -271,7 +309,11 @@ class FileManager extends Manager {
 		def destFile = new File((destPath.indexOf('/') != -1)?"$currentRootPath/$destPath":
 				"${currentDirectory.canonicalPath}/$destPath")
 
-		if (!sourceFile.renameTo(destFile)) throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\"")
+		if (!sourceFile.renameTo(destFile)) {
+			if (writeErrorsToLog)
+				logger.severe("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"!")
+			throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"!")
+		}
 	}
 	
 	@Override

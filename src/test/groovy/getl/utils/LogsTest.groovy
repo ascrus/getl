@@ -69,4 +69,42 @@ class LogsTest extends GetlTest {
         Logs.Info('    lead message')
         Logs.Info('        lead message')
     }
+
+    @Test
+    void testThrows() {
+        Getl.Dsl {
+            embeddedConnection('#con', true)
+            embeddedTable('#table', true) {
+                tableName = null
+                shouldFail { create() }
+
+                tableName = 'table1'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+
+                create()
+            }
+
+            thread {
+                shouldFail {
+                    runMany(2) { num ->
+                        embeddedTable('#table') {
+                            shouldFail { rows(where: 'value > 0') }
+                            etl.rowsTo {
+                                writeRow { add -> add id: num, name: "test $num"}
+                            }
+                            shouldFail {
+                                etl.rowsTo {
+                                    writeRow { add -> add id: num, name: "test $num"}
+                                }
+                            }
+                            deleteRows('value > 0')
+                        }
+                    }
+                }
+            }
+
+            embeddedTable('#table').drop()
+        }
+    }
 }

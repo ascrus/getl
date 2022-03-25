@@ -152,7 +152,16 @@ class TableDataset extends JDBCDataset {
 			procParams = new HashMap()
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
 
-		return currentJDBCConnection.currentJDBCDriver.unionDataset(this, procParams)
+		Long res
+		try {
+			res = currentJDBCConnection.currentJDBCDriver.unionDataset(this, procParams)
+		}
+		catch (Exception e) {
+			logger.severe("Error union dataset to table \"$objectName\"", e)
+			throw e
+		}
+
+		return res
 	}
 
 	/**
@@ -162,10 +171,12 @@ class TableDataset extends JDBCDataset {
 	 */
 	Map findKey(Map procParams) {
 		def keys = getFieldKeys()
-		if (keys.isEmpty()) throw new ExceptionGETL("Required key fields")
+		if (keys.isEmpty())
+			throw new ExceptionGETL("Required key fields")
 		procParams = procParams?:new HashMap()
 		def r = rows(procParams + [onlyFields: keys, limit: 1])
-		if (r.isEmpty()) return null
+		if (r.isEmpty())
+			return null
 
 		return r[0]
 	}
@@ -176,12 +187,18 @@ class TableDataset extends JDBCDataset {
 		validTableName()
 
 		Long res = 0
-		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
-			currentJDBCConnection.transaction {
+		try {
+			if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
+				currentJDBCConnection.transaction {
+					res = currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
+				}
+			else
 				res = currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
-			}
-		else
-			res = currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
+		}
+		catch (Exception e) {
+			logger.severe("Error read count rows from table \"$objectName\"", e)
+			throw e
+		}
 		return res
 	}
 
@@ -205,7 +222,16 @@ class TableDataset extends JDBCDataset {
 		methodParams.validation('deleteRows', procParams,
 				[connection.driver.methodParams.params('deleteRows')])
 
-		return currentJDBCConnection.currentJDBCDriver.deleteRows(this, procParams)
+		Long res
+		try {
+			res = currentJDBCConnection.currentJDBCDriver.deleteRows(this, procParams)
+		}
+		catch (Exception e) {
+			logger.severe("Error delete rows from table \"$objectName\"", e)
+			throw e
+		}
+
+		return res
 	}
 
 	/** Full table name in database */
@@ -568,7 +594,7 @@ class TableDataset extends JDBCDataset {
 					countRow = updateRows
 				}
 				catch (Exception e) {
-					logger.severe("${fullTableName}: cannot load files from \"$files\", error: ${e.message}")
+					logger.severe("${fullTableName}: cannot load files from \"$files\"", e)
 					if (abortOnError)
 						throw e
 				}
@@ -604,10 +630,9 @@ class TableDataset extends JDBCDataset {
 							tCount = updateRows
 						}
 						catch (Exception e) {
+							logger.severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tSize)})", e)
 							if (abortOnError)
 								throw e
-
-							logger.severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
 						}
 
 						if (afterLoad != null)
@@ -663,7 +688,7 @@ class TableDataset extends JDBCDataset {
 						tCount = updateRows
 					}
 					catch (Exception e) {
-						logger.severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
+						logger.severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tSize)})", e)
 						procFiles.eachRow(order: orderProcess) { file ->
 							def fileName = path + ((file.filepath != '.') ? "${File.separator}${file.filepath}" : '') + File.separator + file.filename
 							logger.severe("${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize as Long)})")
@@ -783,12 +808,18 @@ class TableDataset extends JDBCDataset {
 	 */
 	Long copyTo(TableDataset dest, Map<String, String> map = new HashMap<String, String>()) {
 		Long res = 0
-		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
-			currentJDBCConnection.transaction {
+		try {
+			if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
+				currentJDBCConnection.transaction {
+					res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+				}
+			else
 				res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
-			}
-		else
-			res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+		}
+		catch (Exception e) {
+			logger.severe("Error copy rows from table \"$objectName\" to \"$dest\"", e)
+			throw e
+		}
 
 		return res
 	}

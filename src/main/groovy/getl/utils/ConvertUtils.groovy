@@ -193,7 +193,7 @@ class ConvertUtils {
 				res = Eval.me('[' + val + ']')
 			}
 			catch (Exception e) {
-				throw new ExceptionGETL("Can't convert text \"$value\" to list: ${e.message}")
+				throw new ExceptionGETL(StringUtils.FormatException("Can't convert text \"$value\" to list", e))
 			}
 		}
 

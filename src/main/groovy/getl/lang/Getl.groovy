@@ -302,7 +302,8 @@ Examples:
                         runClass = Class.forName(className)
                     }
                     catch (Throwable e) {
-                        throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
+                        Logs.Severe("Class \"$className\" not found", e)
+                        throw e
                     }
 
                     if (!Getl.isAssignableFrom(runClass))
@@ -343,7 +344,8 @@ Examples:
                         initClasses << (initClass as Class<Script>)
                     }
                     catch (Throwable e) {
-                        throw new ExceptionDSL("Class \"$initClassName\" not found, error: ${e.message}!")
+                        Logs.Severe("Class \"$initClassName\" not found", e)
+                        throw e
                     }
                 }
 
@@ -359,6 +361,7 @@ Examples:
                 else
                     eng.logInfo("### Start workflow \"$workflowName\"")
 
+                def isJobError = false
                 try {
                     if (className != null)
                         eng.runGroovyInstance(eng, true, eng.configuration.manager.vars)
@@ -373,26 +376,43 @@ Examples:
                     else
                         eng.models.workflow(workflowName).execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
                 }
-                catch (ExceptionDSL e) {
-                    if (e.typeCode == ExceptionDSL.STOP_APP) {
+                catch (AbortDsl e) {
+                    if (e.typeCode == AbortDsl.STOP_APP) {
                         if (e.message != null)
-                            eng.logInfo(e.message)
+                            eng.logWarn(e.message)
                         if (e.exitCode != null)
                             exitCode = e.exitCode
                     }
                     else {
+                        isJobError = true
                         throw e
                     }
+                }
+                catch (Throwable e) {
+                    isJobError = true
+                    throw e
                 }
                 finally {
                     eng.repositoryStorageManager.clearRepositories()
 
-                    if (className != null)
-                        eng.logInfo("### Finish script ${eng.getClass().name}")
-                    else if (workflowName != null)
-                        eng.logInfo("### Finish workflow $workflowName")
-                    else
-                        eng.logInfo("### Finish workflow file \"$workflowFileName\"")
+                    if (className != null) {
+                        if (!isJobError)
+                            eng.logInfo("### Job ${eng.getClass().name} completed successfully.")
+                        else
+                            eng.logError("### Job ${eng.getClass().name} completed with errors!")
+                    }
+                    else if (workflowName != null) {
+                        if (!isJobError)
+                            eng.logInfo("### Workflow $workflowName completed successfully.")
+                        else
+                            eng.logError("### Workflow $workflowName completed with errors!")
+                    }
+                    else {
+                        if (!isJobError)
+                            eng.logInfo("### Workflow file \"$workflowFileName\" completed successfully.")
+                        else
+                            eng.logError("### Workflow file \"$workflowFileName\" completed with errors!")
+                    }
                 }
             }
         }
@@ -466,6 +486,9 @@ Examples:
 
                     if (en.printConfigMessage != null)
                         logging.logPrintConfigMessage = BoolUtils.IsValue(en.printConfigMessage)
+
+                    if (en.printErrorToConsole != null)
+                        logging.printErrorToConsole = BoolUtils.IsValue(en.printErrorToConsole)
 
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
@@ -548,7 +571,8 @@ Examples:
                             logFine("Initialization class \"$ic\" is used")
                         }
                         catch (Throwable e) {
-                            throw new ExceptionDSL("Class \"$ic\" not found, error: ${e.message}!")
+                            logError("Class \"$ic\" not found", e)
+                            throw e
                         }
                     }
 
@@ -647,27 +671,27 @@ Examples:
     /** Quit DSL Application */
     void appRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
-            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0, message)
+            throw new AbortDsl(AbortDsl.STOP_APP, exitCode?:0, message)
         else
-            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0)
+            throw new AbortDsl(AbortDsl.STOP_APP, exitCode?:0)
     }
 
     /** Quit DSL Application */
     void appRunSTOP(Integer exitCode) {
-        throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0)
+        throw new AbortDsl(AbortDsl.STOP_APP, exitCode?:0)
     }
 
     /** Stop code execution of the current class */
     void classRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
-            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0, message)
+            throw new AbortDsl(AbortDsl.STOP_CLASS, exitCode?:0, message)
         else
-            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0)
+            throw new AbortDsl(AbortDsl.STOP_CLASS, exitCode?:0)
     }
 
     /** Stop code execution of the current class */
     void classRunSTOP(Integer exitCode) {
-        throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0)
+        throw new AbortDsl(AbortDsl.STOP_CLASS, exitCode?:0)
     }
 
     /** Abort execution with the specified error */
@@ -2323,8 +2347,8 @@ Examples:
                     if (script instanceof RepositorySave)
                         (script as RepositorySave)._processRepositorySave()
                 }
-                catch (ExceptionDSL e) {
-                    if (e.typeCode == ExceptionDSL.STOP_CLASS) {
+                catch (AbortDsl e) {
+                    if (e.typeCode == AbortDsl.STOP_CLASS) {
                         if (e.message != null)
                             logInfo(e.message)
                         if (e.exitCode != null)
@@ -2346,7 +2370,7 @@ Examples:
                         }
                     }
                     catch (Exception err) {
-                        logging.manager.severe("An error occurred while processing the error for script \"${script.getClass().name}\": ${err.message}")
+                        logging.manager.severe("An error occurred while processing the error for script \"${script.getClass().name}\"", err)
                     }
                     finally {
                         throw e
@@ -2804,7 +2828,8 @@ Examples:
                     configuration.manager.vars.put(key as String, value)
             }
             catch (Exception e) {
-                throw new ExceptionDSL("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\", error: ${e.message}")
+                logError("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\"", e)
+                throw e
             }
         }
     }
@@ -2859,10 +2884,10 @@ Examples:
     void logInfo(def msg) { logging.manager.info(msg.toString()) }
 
     /** Write message as level the WARNING to log */
-    void logWarn(def msg) { logging.manager.warning(msg.toString()) }
+    void logWarn(def msg, Throwable e = null) { logging.manager.warning(msg.toString(), e) }
 
     /** Write message as level the SEVERE to log */
-    void logError(def msg) { logging.manager.severe(msg.toString()) }
+    void logError(def msg, Throwable e = null) { logging.manager.severe(msg.toString(), e) }
 
     /** Write message as level the FINE to log */
     void logFine(def msg) { logging.manager.fine(msg.toString()) }

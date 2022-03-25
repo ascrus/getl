@@ -149,7 +149,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                             [queryParams: [schema: referenceSchemaName]])
                 }
                 catch (Exception e) {
-                    dslCreator.logError("Error creating reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\": ${e.message}")
+                    dslCreator.logError("Error creating reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\"", e)
                     throw e
                 }
                 dslCreator.logInfo("$repositoryModelName: to store the reference data created scheme \"$referenceSchemaName\"")
@@ -165,7 +165,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                                     [queryParams: [schema: referenceSchemaName, roles: roles]])
                         }
                         catch (Exception e) {
-                            dslCreator.logError("Error granting reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\": ${e.message}")
+                            dslCreator.logError("Error granting reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\"", e)
                             throw e
                         }
                         dslCreator.logInfo("$repositoryModelName: reference schema \"$referenceSchemaName\" granted to roles: $roles")
@@ -180,7 +180,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 spec.createReferenceTable(recreate)
             }
             catch (Exception e) {
-                dslCreator.logError("Error creating reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                dslCreator.logError("Error creating reference table \"$name\" in model \"$repositoryModelName\"", e)
                 throw e
             }
         }
@@ -195,7 +195,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             referenceConnection.executeCommand("DROP SCHEMA IF EXISTS \"${referenceSchemaName}\" CASCADE")
         }
         catch (Exception e) {
-            dslCreator.logError("Error droping reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\": ${e.message}")
+            dslCreator.logError("Error droping reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\"", e)
             throw e
         }
         dslCreator.logInfo("$repositoryModelName: reference schema \"${referenceSchemaName}\" dropped")
@@ -241,7 +241,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                         res++
                 }
                 catch (Exception e) {
-                    dslCreator.logError("Error copying to reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                    dslCreator.logError("Error copying to reference table \"$name\" in model \"$repositoryModelName\"", e)
                     throw e
                 }
             }
@@ -289,7 +289,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 if (spec.copyFromDataset(onlyForEmpty)) res++
             }
             catch (Exception e) {
-                dslCreator.logError("Error copying to reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                dslCreator.logError("Error copying to reference table \"$name\" in model \"$repositoryModelName\"", e)
                 throw e
             }
         }
@@ -331,7 +331,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                     res++
             }
             catch (Exception e) {
-                dslCreator.logError("Error filling reference data to table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                dslCreator.logError("Error filling reference data to table \"$name\" in model \"$repositoryModelName\"", e)
                 throw e
             }
         }
@@ -375,7 +375,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 spec.copyFromDataset(false)
             }
             catch (Exception e) {
-                dslCreator.logError("Error change reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                dslCreator.logError("Error change reference table \"$name\" in model \"$repositoryModelName\"", e)
                 throw e
             }
         }
@@ -411,7 +411,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 spec.workTable.truncate(truncate: true)
             }
             catch (Exception e) {
-                dslCreator.logError("Error clearing table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                dslCreator.logError("Error clearing table \"$name\" in model \"$repositoryModelName\"", e)
                 throw e
             }
             dslCreator.logInfo("${repositoryModelName}.[${name}]: table cleared")

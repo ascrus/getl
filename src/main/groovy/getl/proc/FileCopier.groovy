@@ -364,7 +364,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                     rollbackStoryWrite()
             }
             catch (Exception err) {
-                logger.severe("Failed to save file history: ${err.message}")
+                logger.severe("Failed to save file history", err)
             }
             throw e
         }

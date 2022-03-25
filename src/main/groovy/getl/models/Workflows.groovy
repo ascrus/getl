@@ -314,7 +314,13 @@ class Workflows extends BaseModel<WorkflowSpec> {
 
         def res = 0
         usedSteps.each { node ->
-            res =+ stepExecute(node, addVars, including, excluding, scriptClassLoader)
+            try {
+                res = +stepExecute(node, addVars, including, excluding, scriptClassLoader)
+            }
+            catch (Throwable e) {
+                dslCreator.logError("Error execution step \"${node.stepName}\"!")
+                throw e
+            }
         }
         dslCreator.logInfo("--- Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
 
@@ -462,8 +468,8 @@ return $className"""
                 else
                     generatedUserCode."$methodName"()
             }
-            catch (Exception e) {
-                dslCreator.logError("$methodType code execution error for step \"$stepLabel\": ${e.message}")
+            catch (Throwable e) {
+                dslCreator.logError("$methodType code execution error for step \"$stepLabel\"", e)
                 dslCreator.logging.dump(e, 'workflow', "${dslNameObject}.$stepLabel", scriptUserCode)
                 throw e
             }
@@ -610,7 +616,14 @@ return $className"""
                             }
                         }
 
-                        def scriptResult = dslCreator.callScript(runClass, execVars, addVars)
+                        Map<String, Object> scriptResult
+                        try {
+                            scriptResult = dslCreator.callScript(runClass, execVars, addVars)
+                        }
+                        catch (Throwable e) {
+                            dslCreator.logError("Error execution class \"${runClass.name}\"", e)
+                            throw e
+                        }
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {
                             synchronized (_result) {
                                 _result.put(scriptName.toUpperCase(), scriptResult.result as Map)
@@ -638,18 +651,28 @@ return $className"""
             }
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
-                res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                try {
+                    res += stepExecute(subNode, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                }
+                catch (Throwable e) {
+                    dslCreator.logError("Error execution step \"${subNode.stepName}\"!")
+                    throw e
+                }
             }
         }
         catch (Exception e) {
             def errStep = node.nested.find { it.operation == errorOperation }
-            try {
-                if (errStep != null)
-                    stepExecute(errStep, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+            if (errStep != null) {
+                try {
+                    stepExecute(errStep, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                }
+                catch (Throwable err) {
+                    dslCreator.logError("Error execution step \"${errStep.stepName}\"!", err)
+                    throw err
+                }
             }
-            finally {
-                throw e
-            }
+
+            throw e
         }
 
         return res
@@ -673,7 +696,7 @@ return $className"""
                 res = Class.forName(className) as Class<Getl>
         }
         catch (Throwable e) {
-            dslCreator.logError("Can not using class \"$className in step \"$stepName\": ${e.message}")
+            dslCreator.logError("Can not using class \"$className in step \"$stepName\"", e)
             throw e
         }
 

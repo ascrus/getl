@@ -179,7 +179,7 @@ class ExcelDriver extends FileDriver {
                         updater.put(fieldName.toLowerCase(), fieldValue)
                     }
                     catch (Exception e) {
-                        connection.logger.severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset: ${e.message}")
+                        connection.logger.severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset", e)
                         try {
                             def m = new HashMap<String, Object>()
                             row.cellMap.each { column, value ->
@@ -187,8 +187,8 @@ class ExcelDriver extends FileDriver {
                             }
                             connection.logger.dump(e, 'excel', dataset.fullFileName(), "Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in row:\n${MapUtils.ToJson(m)}")
                         }
-                        catch (Exception i) {
-                            connection.logger.severe("Failed to get column values for error Excel line ${row.rowNum + 1}: ${i.message}")
+                        catch (Exception es) {
+                            connection.logger.severe("Failed to get column values for error Excel line ${row.rowNum + 1}", es)
                         }
                         finally {
                             throw e
@@ -209,7 +209,7 @@ class ExcelDriver extends FileDriver {
                 workbook.close()
             }
             catch (Exception e) {
-                connection.logger.severe("Can not close workbook $dataset, error: ${e.message}")
+                connection.logger.severe("Can not close workbook $dataset", e)
                 throw e
             }
         }

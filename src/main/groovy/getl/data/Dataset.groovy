@@ -549,7 +549,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		validConnection()
 
 		def f = connection.driver.fields(this)
-		prepareFields(f)
+		try {
+			prepareFields(f)
+		}
+		catch (Exception e) {
+			logger.severe("Error reading fields from dataset \"$objectName\"", e)
+			throw e
+		}
 		return f
 	}
 	
@@ -626,7 +632,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
 			throw new ExceptionGETL("Driver not supported retrieve fields")
 
-		def sourceFields = connection.driver.fields(this)
+		List<Field> sourceFields
+		try {
+			sourceFields = connection.driver.fields(this)
+		}
+		catch (Exception e) {
+			logger.severe("Error reading fields from dataset \"$objectName\"", e)
+			throw e
+		}
 		manualSchema = true
 		updateFields(updateFieldType, sourceFields, prepare)
 
@@ -712,8 +725,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def dirs = directives('create')?:new HashMap<String, Object>()
 		procParams = dirs + procParams
-		
-		connection.driver.createDataset(this, procParams)
+
+		try {
+			connection.driver.createDataset(this, procParams)
+		}
+		catch (Exception e) {
+			logger.severe("Error creating dataset \"$objectName\"", e)
+			throw e
+		}
 	}
 	
 	/**
@@ -730,8 +749,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def dirs = directives('drop')?:new HashMap<String, Object>()
 		procParams = dirs + procParams
-		
-		connection.driver.dropDataset(this, procParams)
+
+		try {
+			connection.driver.dropDataset(this, procParams)
+		}
+		catch (Exception e) {
+			logger.severe("Error dropping dataset \"$objectName\"", e)
+			throw e
+		}
 	}
 
 	/**
@@ -744,7 +769,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			procParams = new HashMap()
 		methodParams.validation("truncate", procParams, [connection.driver.methodParams.params("clearDataset")])
 
-		connection.driver.clearDataset(this, procParams)
+		try {
+			connection.driver.clearDataset(this, procParams)
+		}
+		catch (Exception e) {
+			logger.severe("Error truncate dataset \"$objectName\"", e)
+			throw e
+		}
 	}
 	
 	/**
@@ -838,6 +869,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			connection.driver.bulkLoadFile(source, this, p, prepareFields)
 		}
 		catch (Exception e) {
+			logger.severe("Error bulk load files to dataset \"$this\"", e)
 			if (autoTran)
 				connection.rollbackTran()
 			throw e
@@ -1104,7 +1136,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				errorsDataset.write(errorRow)
 			}
 			catch (Exception we) {
-				logger.severe("Failed to save error row for dataset \"$objectName\": ${we.message}")
+				logger.severe("Failed to save error row for dataset \"$objectName\"", we)
 				throw we
 			}
 			
@@ -1133,9 +1165,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		try {
 			readRows = connection.driver.eachRow(this, p, prepareFields, code)
 		}
+		catch (Exception e) {
+			logger.severe("Error reading dataset \"$objectName\"", e)
+			throw e
+		}
 		finally {
 			status = Status.AVAILABLE
-			if (saveErrors) closeErrorsDataset()
+			if (saveErrors)
+				closeErrorsDataset()
 		}
 	}
 
@@ -1195,7 +1232,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		writeRows = 0
 		updateRows = 0
 		isWriteError = false
-		connection.driver.openWrite(this, p, prepareFields)
+		try {
+			connection.driver.openWrite(this, p, prepareFields)
+		}
+		catch (Exception e) {
+			logger.severe("Error opening dataset \"$objectName\" for writing", e)
+			throw e
+		}
 		status = Status.WRITE
 	}
 
@@ -1216,7 +1259,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 		catch (Exception e) {
 			isWriteError = true
-			logger.severe("Failed to save row for dataset \"$objectName\": ${e.message}")
+			logger.severe("Failed to save row to dataset \"$objectName\"", e)
 			throw e
 		}
 	}
@@ -1235,7 +1278,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 		catch (Exception e) {
 			isWriteError = true
-			logger.severe("Failed to save row list for dataset \"$objectName\": ${e.message}")
+			logger.severe("Failed to save row list for dataset \"$objectName\"", e)
 			throw e
 		}
 	}
@@ -1273,6 +1316,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (status != Status.WRITE) return
 		try {
 			connection.driver.closeWrite(this)
+		}
+		catch (Exception e) {
+			logger.severe("Error closing dataset \"$objectName\" from writing", e)
+			throw e
 		}
 		finally {
 			status = Status.AVAILABLE
@@ -1435,7 +1482,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			l = b.parse(reader)
 		}
 		catch (Exception e) {
-			logger.severe("Error reading schema file for dataset \"$objectName\", error: ${e.message}")
+			logger.severe("Error reading schema file for dataset \"$objectName\"", e)
 			throw e
 		}
 		finally {
@@ -1461,7 +1508,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw e
 		}
 		catch (Exception e) {
-			logger.severe("Error reading schema file for dataset \"${objectName}\", error: ${e.message}")
+			logger.severe("Error reading schema file for dataset \"${objectName}\"", e)
 			throw e
 		}
 		manualSchema = true
@@ -1558,7 +1605,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw e
 		}
 		catch (Exception e) {
-			logger.severe("Error reading schema file for dataset \"${objectName}\" from file \"$fn\", error: ${e.message}")
+			logger.severe("Error reading schema file for dataset \"${objectName}\" from file \"$fn\"", e)
 			throw e
 		}
 	}
@@ -1749,7 +1796,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def hash = script.hashCode()
 		if ((_cacheReadHash?:0) != hash) {
 			res = GenerationUtils.EvalGroovyClosure(value: script, owner: dslCreator, vars: null as Map,
-					convertReturn: false, classLoader: null)
+					convertReturn: false, classLoader: null as ClassLoader)
 			_cacheReadCode = res
 			_cacheReadHash = hash
 		}

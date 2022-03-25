@@ -652,7 +652,7 @@ class FileProcessing extends FileListProcessing {
                             rollbackStoryWrite()
                     }
                     catch (Exception err) {
-                        logger.severe("Failed to save file history: ${err.message}")
+                        logger.severe("Failed to save file history", err)
                     }
 
                     if (isCachedMode && onRollbackCachedData != null) {
@@ -660,7 +660,7 @@ class FileProcessing extends FileListProcessing {
                             onRollbackCachedData.call(groupFields)
                         }
                         catch (Exception err) {
-                            logger.severe("Failed to rollback cache data: ${err.message}")
+                            logger.severe("Failed to rollback cache data", err)
                         }
                     }
 

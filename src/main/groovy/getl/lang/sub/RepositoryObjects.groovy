@@ -7,6 +7,7 @@ import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
 import getl.utils.BoolUtils
 import getl.utils.Path
+import getl.utils.StringUtils
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -356,7 +357,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                             obj = repositoryStorageManager.loadObject(repClass, repName) as T
                         }
                         catch (ExceptionDSL e) {
-                            throw new ExceptionDSL("\"$name\" is not registered for $typeObject: ${e.message}")
+                            dslCreator.logError("\"$name\" is not registered for $typeObject", e)
+                            throw e
                         }
                     }
 

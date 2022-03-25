@@ -35,10 +35,15 @@ class LogSpec extends BaseSpec {
     @JsonIgnore
     Logs.LogFormatter getLogFormatter() { manager.formatter }
 
-    /** Print configuration message */
+    /** Print configuration message (default false) */
     Boolean getLogPrintConfigMessage() { manager.printConfigMessage }
-    /** Print configuration message */
+    /** Print configuration message (default false) */
     void setLogPrintConfigMessage(Boolean value) { manager.printConfigMessage = value }
+
+    /** Display error messages to console (default false) */
+    Boolean getPrintErrorToConsole() { manager.printErrorToConsole }
+    /** Display error messages to console (default false) */
+    void setPrintErrorToConsole(Boolean value) { manager.printErrorToConsole = value }
 
     /** Current file name handler */
     @JsonIgnore

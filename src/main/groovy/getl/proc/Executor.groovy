@@ -401,7 +401,7 @@ class Executor implements GetlRepository {
 				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
-					def errorText = StringUtils.CutStr(StringUtils.CurStrByLines(e.message, 1), 50)
+					def errorText = "  {${e.getClass().name}} " +  StringUtils.CurStrByLines(e.message, 1, 150)
 					if (debugElementOnError) {
 						objects.add("[${num}] $errorText: ${obj.toString()}")
 					} else {
@@ -569,7 +569,7 @@ class Executor implements GetlRepository {
 				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
-					def errorText = StringUtils.CutStr(StringUtils.CurStrByLines(e.message, 1), 50)
+					def errorText = "  {${e.getClass().name}} " + StringUtils.CurStrByLines(e.message, 1, 150)
 					if (debugElementOnError) {
 						objects << "[${num}] $errorText: ${obj.toString()}"
 					} else {
@@ -728,7 +728,7 @@ class Executor implements GetlRepository {
 				num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
-					def errorText = StringUtils.CutStr(StringUtils.CurStrByLines(e.message, 1), 50)
+					def errorText = "  {${e.getClass().name}} " + StringUtils.CurStrByLines(e.message, 1, 150)
 					if (debugElementOnError) {
 						objects << "[${num}] $errorText: ${obj.toString()}"
 					} else {
@@ -828,7 +828,7 @@ class Executor implements GetlRepository {
 			code.call()
 		} 
 		catch (Throwable e) {
-			((owner?.logging?.manager != null)?owner.logging.manager:Logs.global).finer("Ignore error: ${e.message}")
+			((owner?.logging?.manager != null)?owner.logging.manager:Logs.global).finer(StringUtils.FormatException("Ignore error", e))
 			return false 
 		}
 		

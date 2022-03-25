@@ -65,12 +65,19 @@ class Logs {
 	@JsonIgnore
 	LogFormatter getFormatter() { formatter }
 
-	/** Display configuration messages (default true) */
-	private Boolean printConfigMessage = true
-	/** Display configuration messages */
+	/** Display configuration messages (default false) */
+	private Boolean printConfigMessage = false
+	/** Display configuration messages (default false) */
 	Boolean getPrintConfigMessage() { printConfigMessage }
-	/** Display configuration messages */
+	/** Display configuration messages (default false) */
 	void setPrintConfigMessage(Boolean value) { printConfigMessage = value }
+
+	/** Display error messages to console (default false) */
+	private Boolean printErrorToConsole = false
+	/** Display error messages to console (default false) */
+	Boolean getPrintErrorToConsole() { printErrorToConsole }
+	/** Display error messages to console (default false) */
+	void setPrintErrorToConsole(Boolean value) { printErrorToConsole = value }
 
 	/** File handler object */
 	private FileHandler file
@@ -457,27 +464,25 @@ class Logs {
 	 * @param level log level value
 	 * @param message text message
 	 */
-	/*static void ToOut(Level level, String message) {
+	static void ToOut(Level level, String message) {
 		global.toOut(level, message)
-	}*/
-	
+	}
+
 	/**
 	 * Println log message to console
 	 * @param level log level value
 	 * @param message text message
 	 */
-	/*void toOut(Level level, String message) {
+	void toOut(Level level, String message) {
 		if (level == Level.OFF || message == null)
 			return
 
-		def lr = new LogRecord(level,
-				FormatMessage(message.replace('\r', '').replace('\n', ' ')
-						.replace('\t', ' ')))
+		def lr = new LogRecord(level, message)
 		def str = formatter.format(lr)
 		synchronized (lockOut) {
 			System.out.print(str)
 		}
-	}*/
+	}
 
 	/**
 	 * Log message with level FINE
@@ -571,20 +576,20 @@ class Logs {
 	 * Log message with level WARNING
 	 * @param message text message
 	 */
-	static void Warning(String message) {
-		global.warning(message)
+	static void Warning(String message, Throwable e = null) {
+		global.warning(message, e)
 	}
 
 	/**
 	 * Log message with level WARNING
 	 * @param message text message
 	 */
-	void warning(String message) {
+	void warning(String message, Throwable e = null) {
 		if (message == null)
 			return
 
 		synchronized (lockOut) {
-			logger.warning(message)
+			logger.warning(StringUtils.FormatException(message, e))
 			event(Level.WARNING, message)
 		}
 	}
@@ -617,19 +622,25 @@ class Logs {
 	/**
 	 * Log message with level SEVERE
 	 * @param message text message
+	 * @param e exception
 	 */
-	static void Severe(String message) {
-		global.severe(message)
+	static void Severe(String message, Throwable e = null) {
+		global.severe(message, e)
 	}
 
 	/**
 	 * Log message with level SEVERE
 	 * @param message text message
+	 * @param e exception
 	 */
-	void severe(String message) {
+	void severe(String message, Throwable e = null) {
 		synchronized (lockOut) {
-			logger.severe(message)
-			event(Level.SEVERE, message)
+			def txt = StringUtils.FormatException(message, e)
+			if (printErrorToConsole)
+				toOut(Level.SEVERE, txt)
+
+			logger.severe(txt)
+			event(Level.SEVERE, txt)
 		}
 	}
 
@@ -803,10 +814,10 @@ class Logs {
 			return
 		}
 
-		def errorText = StringUtils.CurStrByLines(error?.message, 3)
+		def errorText = StringUtils.CurStrByLines(error?.message, 1, 150)
 
 		def fn = dumpFile()
-		config("Saving dump information to file $fn, error: $errorText")
+		fine("Saving dump information to file $fn, error: $errorText")
 		FileUtils.ValidFilePath(fn)
 
 		File df = new File(fn)
@@ -829,7 +840,7 @@ class Logs {
 			w.println "\n\n\n"
 		}
 		catch (Throwable e) {
-			severe("Can not write error to dump file \"${fn}\", error: $errorText")
+			severe("Can not write error to dump file \"${fn}\" with error $errorText", e)
 		}
 		finally {
 			if (w != null)

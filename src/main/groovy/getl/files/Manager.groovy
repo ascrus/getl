@@ -313,7 +313,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Count thread for build list files */
 	@JsonIgnore
 	void setBuildListThread(Integer value) {
-		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero!")
+		if (value != null && value <= 0)
+			throw new ExceptionGETL("buildListThread been must great zero!")
 		params.buildListThread = value
 	}
 	
@@ -412,7 +413,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				Config.FindSection("files.${config}")
 
 		if (cp.isEmpty())
-			throw new ExceptionGETL("Config section \"files.${config}\" not found")
+			throw new ExceptionGETL("Config section \"files.${config}\" not found!")
 
 		onLoadConfig(cp)
 		validParams()
@@ -457,6 +458,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/** Connect to server */
 	void connect() {
+		if (connected)
+			throw new ExceptionGETL('Manager \"$this\" already connected!')
+
 		FileUtils.ValidPath(localDirectoryFile)
 		currentRootPathSet()
 		validRootPath()
@@ -466,6 +470,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 			doConnect()
 		}
 		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error connecting to source \"$this\"", e)
 			sessionID = null
 			throw e
 		}
@@ -476,8 +482,18 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Disconnect from server */
 	void disconnect() {
+		if (!connected)
+			throw new ExceptionGETL('Manager \"$this\" already disconnected!')
+
 		writeScriptHistoryFile("Disconnect from session $sessionID")
-		doDisconnect()
+		try {
+			doDisconnect()
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error disconnected from source \"$this\"", e)
+			throw e
+		}
 		sessionID = null
 		currentRootPath = null
 		//dropLocalDirectory()
@@ -502,7 +518,27 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param maskFiles mask files
 	 * @return list of files
 	 */
-	abstract FileManagerList listDir(String maskFiles = null)
+	FileManagerList listDir(String maskFiles = null) {
+		FileManagerList res
+		try {
+			res = doListDir(maskFiles)
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error read directory on source \"$this\"", e)
+			throw e
+		}
+
+		return res
+	}
+
+	/**
+	 * Return list files of current directory from server<br>
+	 * Parameters node list: fileName, fileSize, fileDate
+	 * @param maskFiles mask files
+	 * @return list of files
+	 */
+	abstract protected FileManagerList doListDir(String maskFiles)
 
 	/** Process list files of current directory from server */
 	@CompileStatic
@@ -510,7 +546,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void list(String maskFiles,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
 		if (processCode == null)
-			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
+			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager!")
 
 		validConnect()
 
@@ -564,7 +600,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		validConnect()
 
 		if (dir == null || dir == '')
-			throw new ExceptionGETL("Null dir not allowed for cd operation")
+			throw new ExceptionGETL("Null dir not allowed for cd operation on source \"$this\"!")
 		if (dir == '.') return
 		if (dir == '..') {
 			changeDirectoryUp()
@@ -588,7 +624,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 				currentPath = dir
 			}
 			catch (Exception e) {
-				logger.severe("Can not change directory to \"$dir\"")
+				if (writeErrorsToLog)
+					logger.severe("Can not change directory to \"$dir\" on source \"$this\"", e)
 				throw e
 			}
 		}
@@ -597,7 +634,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 				currentPath = "$_currentPath/$dir"
 			}
 			catch (Exception e) {
-				logger.severe("Can not change directory to \"$_currentPath/$dir\"")
+				if (writeErrorsToLog)
+					logger.severe("Can not change directory to \"$_currentPath/$dir\" on source \"$this\"", e)
 				throw e
 			}
 		}
@@ -620,7 +658,18 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param localFileName saved file name in local directory
 	 * @return downloaded file
 	 */
-	abstract File download(String filePath, String localPath, String localFileName)
+	File download(String filePath, String localPath, String localFileName) {
+		return doDownload(filePath, localPath, localFileName)
+	}
+
+	/**
+	 * Download file from specified path by server
+	 * @param filePath downloaded file name
+	 * @param localPath path to file on server
+	 * @param localFileName saved file name in local directory
+	 * @return downloaded file
+	 */
+	abstract protected File doDownload(String filePath, String localPath, String localFileName)
 	
 	/**
 	 * Download file from current directory by server
@@ -655,7 +704,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					localDir = localPath
 					localFileName = FileUtils.FileName(localFilePath, true)
 				} else
-					throw new ExceptionGETL("Local path \"$localPath\" not found!")
+					throw new ExceptionGETL("Local path \"$localPath\" not found on source \"$this\"!")
 			}
 		}
 
@@ -668,7 +717,16 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param localFilePath local file path
 	 * @param localFileName local file name
 	 */
-	abstract void upload(String localFilePath, String localFileName)
+	void upload(String localFilePath, String localFileName) {
+		doUpload(localFilePath, localFileName)
+	}
+
+	/**
+	 * Upload file to specified path by server
+	 * @param localFilePath local file path
+	 * @param localFileName local file name
+	 */
+	abstract protected void doUpload(String localFilePath, String localFileName)
 	
 	/**
 	 * Upload file for current directory to source
@@ -770,7 +828,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	protected void validRootPath() {
 		if (currentRootPath == null || currentRootPath.length() == 0)
-			throw new ExceptionGETL('No root path specified!')
+			throw new ExceptionGETL('No root path specified for source \"$this\"!')
 	}
 	
 	/** Return current directory with relative path */
@@ -780,7 +838,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		def cur = _currentPath
 		if (cur == null)
-			throw new ExceptionGETL("Current path not set")
+			throw new ExceptionGETL("Current path not set for source \"$this\"!")
 
 		cur = cur.replace("\\", "/")
 
@@ -875,7 +933,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@JsonIgnore
 	void setThreadLevel(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('threadLevel value must be greater than zero')
+			throw new ExceptionGETL('threadLevel value must be greater than zero!')
 		params.threadLevel = value
 	}
 
@@ -1101,7 +1159,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 							}
 							catch (Exception e) {
 								countConnect--
-								if (countConnect == 0) throw e
+								if (countConnect == 0)
+									throw e
 							}
 						}
 
@@ -1611,6 +1670,11 @@ FROM (
 			countFileList = countFiles
 			sizeFileList = sizeFiles
 		}
+		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error build list of files on source \"$this\"", e)
+			throw e
+		}
 		finally {
 			if (noopService != null)
 				noopService.stopBackground()
@@ -1709,7 +1773,7 @@ FROM (
 		
 		if (useStory) {
 			if (ds == null)
-				throw new ExceptionGETL("For use store db required set \"ds\" property")
+				throw new ExceptionGETL("For use store db required set \"ds\" property!")
 			if (ds.field.isEmpty())
 				ds.retrieveFields()
 
@@ -1765,7 +1829,6 @@ WHERE
 					download(file.filename as String, lPath, tempName)
 				}
 				catch (Exception e) {
-					logger.severe("Can not download file ${file.filepath}/${file.filename}")
 					new File("${lPath}/${tempName}").delete()
 					if (!ignoreError) {
 						throw e
@@ -1802,7 +1865,8 @@ WHERE
 						removeFile(file.filename as String)
 					}
 					catch (Exception e) {
-						if (!ignoreError) throw e
+						if (!ignoreError)
+							throw e
 						logger.warning(e)
 					}
 				}
@@ -1923,7 +1987,8 @@ WHERE
 	 */
 	static File fileFromLocalDir(String path) {
 		def f = new File(path)
-		if (!f.exists() || !f.file) throw new ExceptionGETL("File \"${path}\" not found")
+		if (!f.exists() || !f.file)
+			throw new ExceptionGETL("File \"${path}\" not found on source \"$this\"!")
 		
 		return f
 	}
@@ -1935,7 +2000,7 @@ WHERE
 	 */
 	protected String processLocalDirPath(String dir) {
 		if (dir == null)
-			throw new ExceptionGETL("Required not null directory parameter")
+			throw new ExceptionGETL("Required not null directory parameter!")
 		
 		if (dir == '.')
 			return localDirFile.path
@@ -1958,7 +2023,8 @@ WHERE
 			res = f.canonicalPath
 		}
 		catch (Exception e) {
-			logger.severe("Cannot convert local directory name \"${f.path}\" to canonical: ${e.message}")
+			if (writeErrorsToLog)
+				logger.severe("Cannot convert local directory name \"${f.path}\" to canonical on source \"$this\"", e)
 			throw e
 		}
 		return res
@@ -1980,7 +2046,7 @@ WHERE
 	void createLocalDir(String dir, Boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).mkdirs() && throwError)
-			throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
+			throw new ExceptionGETL("Cannot create local directory \"${fn}\" on source \"$this\"!")
 	}
 
 	/**
@@ -1999,7 +2065,7 @@ WHERE
 	void removeLocalDir(String dir, Boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).delete() && throwError)
-			throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
+			throw new ExceptionGETL("Can not remove local directory \"${fn}\" on source \"$this\"!")
 	}
 	
 	/**
@@ -2037,7 +2103,7 @@ WHERE
 	void removeLocalFile(String fileName, Boolean valid = true) {
 		def fn = "${currentLocalDir()}/$fileName"
 		if (!new File(fn).delete() && valid)
-			throw new ExceptionGETL("Can not remove local file \"$fn\"")
+			throw new ExceptionGETL("Can not remove local file \"$fn\" on source \"$this\"!")
 	}
 
 	/**
@@ -2072,7 +2138,9 @@ WHERE
 	 */
 	protected File setCurrentLocalPath(String path) {
 		File f = new File(path)
-		if (!f.exists() || !f.directory) throw new ExceptionGETL("Local directory \"${path}\" not found")
+		if (!f.exists() || !f.directory)
+			throw new ExceptionGETL("Local directory \"${path}\" not found on source \"$this\"")
+
 		localDirFile = f
 	}
 	
@@ -2239,7 +2307,7 @@ WHERE
 		validWrite()
 
 		if (fileList == null)
-			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
+			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders!')
 		
 		def dirs = new HashMap<String, Map>()
 		QueryDataset paths = new QueryDataset(connection: fileList.connection,
@@ -2377,11 +2445,19 @@ WHERE
 		err.setLength(0)
 		
 		if (!allowCommand)
-			throw new ExceptionGETL("Run command is not allowed by server!")
+			throw new ExceptionGETL("Run command is not allowed by server \"$this\"!")
 		
 		writeScriptHistoryFile("Execute command from session $sessionID:\n$command")
-		
-		def res = doCommand(command, out, err)
+
+		Integer res
+		try {
+			res = doCommand(command, out, err)
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog)
+				logger.severe("Error running command on source \"$this\"", e)
+			throw e
+		}
 		writeScriptHistoryFile("Output command from session $sessionID:\n${out.toString()}")
 		if (err.length() > 0)
 			writeScriptHistoryFile("Detect error from session $sessionID:\n${err.toString()}")
@@ -2479,7 +2555,7 @@ WHERE
 	/** Verify that the connection is established */
 	protected void validConnect() {
 		if (!connected)
-			throw new ExceptionGETL("Requires a connection to the source \"${toString()}\"!")
+			throw new ExceptionGETL("Requires a connection to the source \"$this\"!")
 	}
 
 	/**
@@ -2552,6 +2628,6 @@ WHERE
 	/** Check write allowed */
 	protected void validWrite() {
 		if (!allowWrite())
-			throw new ExceptionGETL('Modification of files is not allowed!')
+			throw new ExceptionGETL("Modification of files is not allowed on source \"$this\"!")
 	}
 }

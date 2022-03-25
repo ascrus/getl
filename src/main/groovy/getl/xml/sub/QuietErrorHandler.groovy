@@ -1,6 +1,7 @@
 package getl.xml.sub
 
 import getl.utils.Logs
+import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.xml.sax.ErrorHandler
 import org.xml.sax.SAXException
@@ -21,18 +22,18 @@ class QuietErrorHandler implements ErrorHandler {
     @Override
     void warning(SAXParseException exception) throws SAXException {
         if (!quietMode && Logs.global != null)
-            Logs.Warning("Warning XMLParser: ${exception.message}")
+            Logs.Warning("Warning XMLParser", exception)
     }
 
     @Override
     void error(SAXParseException exception) throws SAXException {
         if (!quietMode && Logs.global != null)
-            Logs.Severe("Error XMLParser: ${exception.message}")
+            Logs.Severe("Error XMLParser", exception)
     }
 
     @Override
     void fatalError(SAXParseException exception) throws SAXException {
         if (!quietMode && Logs.global != null)
-            Logs.Severe("Fatal error XMLParser: ${exception.message}")
+            Logs.Severe("Fatal error XMLParser", exception)
     }
 }

@@ -199,7 +199,7 @@ class ConfigSlurper extends ConfigManager {
 			text = file.getText(codePage)
 		}
 		catch (Exception e) {
-			logger.severe("Error read configuration file \"${file.canonicalPath}\", error: ${e.message}!")
+			logger.severe("Error read configuration file \"${file.canonicalPath}\"", e)
 			throw e
 		}
 
@@ -223,7 +223,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 		}
 		catch (Exception e) {
-			logger.severe("Error parse configuration file \"${file.canonicalPath}\", error: ${e.message}!")
+			logger.severe("Error parse configuration file \"${file.canonicalPath}\"", e)
 			throw e
 		}
 
@@ -357,7 +357,7 @@ class ConfigSlurper extends ConfigManager {
 					file.setText(str.toString(), codePage?:'utf-8')
 			}
 			catch (Exception e) {
-				logger.severe("Error save configuration to file \"$file\", error: ${e.message}")
+				logger.severe("Error save configuration to file \"$file\"", e)
 				throw e
 			}
 		}
@@ -641,7 +641,7 @@ Example:
 			content = ConfigFiles.LoadConfigFile(file: sourceFile, codePage: codePage)
 		}
 		catch (Exception e) {
-			Logs.Severe("Invalid parsing file \"${sourceFile.canonicalPath}\", error: ${e.message}")
+			Logs.Severe("Invalid parsing file \"${sourceFile.canonicalPath}\"", e)
 			throw e
 		}
 		if (content.isEmpty()) {

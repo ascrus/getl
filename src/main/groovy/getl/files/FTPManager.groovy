@@ -158,13 +158,10 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	@Synchronized
 	protected void doConnect() {
-		if (connected)
-			throw new ExceptionGETL('Manager already connected!')
-
 		if (server == null || port == null)
-			throw new ExceptionGETL('Required server host and port for connect')
+			throw new ExceptionGETL('Required server host and port for connect!')
 		if (login == null)
-			throw new ExceptionGETL('Required login for connect')
+			throw new ExceptionGETL('Required login for connect!')
 
 		writeScriptHistoryFile("Connect to ftp $server:$port with login $login from session $sessionID")
 		
@@ -174,22 +171,10 @@ class FTPManager extends Manager implements UserLogins {
 			client.connector.closeTimeout = closeTimeout
 		if (readTimeout != null)
 			client.connector.readTimeout = readTimeout
-		try {
-			client.connect(server, port)
-		}
-		catch (Exception e) {
-			if (writeErrorsToLog) 
-				logger.severe("Can not connect to $server:$port")
-			throw e
-		}
-		try {
-			client.login(login, loginManager.currentDecryptPassword())
-		}
-		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Invalid login or password for $server:$port")
-			throw e
-		}
-        if (autoNoopTimeout != null) client.setAutoNoopTimeout(autoNoopTimeout * 1000)
+		client.connect(server, port)
+		client.login(login, loginManager.currentDecryptPassword())
+        if (autoNoopTimeout != null)
+			client.setAutoNoopTimeout(autoNoopTimeout * 1000)
 		client.setType(FTPClient.TYPE_BINARY)
 		client.setPassive(passive)
 
@@ -204,27 +189,19 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	@Synchronized
 	protected void doDisconnect() {
-		if (!connected)
-			throw new ExceptionGETL('Manager already disconnected!')
-
 		try {
 			if (client.connected) {
-				try {
-					def numRetry = 0
-					def sleepTime = ((client.autoNoopTimeout > 0) ? client.autoNoopTimeout : 100) as Integer
-					client.autoNoopTimeout = 0
+				def numRetry = 0
+				def sleepTime = ((client.autoNoopTimeout > 0) ? client.autoNoopTimeout : 100) as Integer
+				client.autoNoopTimeout = 0
 
-					client.disconnect(isHardDisconnect)
-					while (client.connected) {
-						numRetry++
-						sleep(sleepTime)
+				client.disconnect(isHardDisconnect)
+				while (client.connected) {
+					numRetry++
+					sleep(sleepTime)
 
-						if (numRetry > 4) throw new ExceptionGETL('Can not disconnect from server')
-					}
-				}
-				catch (Exception e) {
-					if (writeErrorsToLog) logger.severe("Can not disconnect from $server:$port")
-					throw e
+					if (numRetry > 4)
+						throw new ExceptionGETL('Can not disconnect from server!')
 				}
 			}
 		}
@@ -265,7 +242,7 @@ class FTPManager extends Manager implements UserLogins {
 					m.type = Manager.TypeFile.LINK
 					break
 				default:
-					throw new ExceptionGETL("Unnknown type object ${f.type}")
+					throw new ExceptionGETL("Unnknown type object ${f.type}!")
 			  }
 		  
 			m
@@ -280,18 +257,11 @@ class FTPManager extends Manager implements UserLogins {
 	
 	@CompileStatic
 	@Override
-	FileManagerList listDir(String mask = null) {
+	protected FileManagerList doListDir(String mask) {
 		validConnect()
 
-		FTPFile[] listFiles 
-		try {
-			listFiles = (mask != null)?client.list(mask):client.list()
-		}
-		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe('Can not read ftp list')
-			throw e
-		}
-		
+		FTPFile[] listFiles = (mask != null)?client.list(mask):client.list()
+
 		FTPList res = new FTPList()
 		res.listFiles = listFiles
 		
@@ -315,7 +285,8 @@ class FTPManager extends Manager implements UserLogins {
 			_currentPath = client.currentDirectory()
 		}
 		catch (Exception e) {
-			logger.severe("Invalid directory \"$path\"!")
+			if (writeErrorsToLog)
+				logger.severe("Invalid directory \"$path\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -329,13 +300,14 @@ class FTPManager extends Manager implements UserLogins {
 			_currentPath = currentPath
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe('Can not change directory to up')
+			if (writeErrorsToLog)
+				logger.severe("Can not change directory to up on source \"$this\"", e)
 			throw e
 		}
 	}
 	
 	@Override
-	File download(String filePath, String localPath, String localFileName) {
+	protected File doDownload(String filePath, String localPath, String localFileName) {
 		validConnect()
 
 		File res
@@ -347,7 +319,8 @@ class FTPManager extends Manager implements UserLogins {
 
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not download file \"$filePath\" to \"$fn\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not download file \"$filePath\" to \"$fn\" on source \"$this\"", e)
 			throw e
 		}
 
@@ -356,7 +329,7 @@ class FTPManager extends Manager implements UserLogins {
 
 	@SuppressWarnings('SpellCheckingInspection')
 	@Override
-	void upload(String path, String fileName) {
+	protected void doUpload(String path, String fileName) {
 		validConnect()
 		validWrite()
 
@@ -374,7 +347,8 @@ class FTPManager extends Manager implements UserLogins {
             }
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not upload file \"$fileName\" from \"$fn\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not upload file \"$fileName\" from \"$fn\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -388,7 +362,8 @@ class FTPManager extends Manager implements UserLogins {
 			client.deleteFile(fileName)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not remove file \"$fileName\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not remove file \"$fileName\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -419,7 +394,8 @@ class FTPManager extends Manager implements UserLogins {
 			}
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not create directory \"$cdDir\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not create directory \"$cdDir\" on source \"$this\"", e)
 			throw e
 		}
 		finally {
@@ -437,8 +413,11 @@ class FTPManager extends Manager implements UserLogins {
 			if (recursive) {
                 def l = client.list()
                 def d = l.find { FTPFile f -> f.name == dirName && f.type == FTPFile.TYPE_DIRECTORY}
-                if (d == null)
-					throw new ExceptionGETL("Cannot get attribute by directory \"$dirName\"")
+                if (d == null) {
+					if (writeErrorsToLog)
+						logger.severe("Cannot get attribute by directory \"$dirName\" on source \"$this\"!")
+					throw new ExceptionGETL("Cannot get attribute by directory \"$dirName\" on source \"$this\"!")
+				}
                 doDeleteDirectory(d, onDelete)
             }
             else {
@@ -449,7 +428,7 @@ class FTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not remove directory \"$dirName\"")
+				logger.severe("Can not remove directory \"$dirName\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -489,7 +468,8 @@ class FTPManager extends Manager implements UserLogins {
 			client.rename(fileName, path)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not rename file \"$fileName\" to \"$path\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -505,7 +485,11 @@ class FTPManager extends Manager implements UserLogins {
 		validConnect()
 
         def fl = client.list(fileName)
-        if (fl.length != 1) throw new ExceptionGETL('File $fileName not found!')
+        if (fl.length != 1) {
+			if (writeErrorsToLog)
+				logger.severe("File \"$fileName\" not found on source \"$this\"!")
+			throw new ExceptionGETL("File \"$fileName\" not found on source \"$this\"!")
+		}
         return fl[0].modifiedDate.time
     }
 

@@ -2,6 +2,7 @@ package getl.proc
 
 import getl.proc.sub.FileListProcessing
 import getl.utils.FileUtils
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -60,7 +61,7 @@ class FileCleaner extends FileListProcessing {
                     rollbackStoryWrite()
             }
             catch (Exception err) {
-                logger.severe("Failed to save file history: ${err.message}")
+                logger.severe("Failed to save file history", err)
             }
             throw e
         }

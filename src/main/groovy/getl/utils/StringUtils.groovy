@@ -190,31 +190,31 @@ class StringUtils {
 	/**
 	 * Trim string to specified length and add ellipsis
 	 * @param s original string
-	 * @param len required length
+	 * @param maxLength required length
 	 * @return string of given length
 	 */
-	static String CutStr(String s, Integer len) {
+	static String CutStr(String s, Integer maxLength) {
 		if (s == null)
 			return null
 		def l = s.length()
-		if (l <= len)
+		if (l <= maxLength)
 			return s
-		return (l < 5 || len < 5)?s.substring(0, len):(s.substring(0, len - 4) + ' ... and more')
+		return (l < 5 || maxLength < 5)?s.substring(0, maxLength):(s.substring(0, maxLength - 4) + ' ... and more')
 	}
 
 	/**
 	 * Trim string to specified length
 	 * @param s original string
-	 * @param len required length
+	 * @param maxLength required length
 	 * @return string of given length
 	 */
-	static String CutStrByWord(String s, Integer len) {
+	static String CutStrByWord(String s, Integer maxLength) {
 		if (s == null)
 			return null
-		if (s.length() <= len)
+		if (s.length() <= maxLength)
 			return s
 
-		def l = s.trim().substring(0, len)
+		def l = s.trim().substring(0, maxLength)
 		def m = l =~ /.+([ ]|[-]|[,]|[.]|[\/]|[\\])/
 		if (m.size() == 0)
 			return l
@@ -225,23 +225,42 @@ class StringUtils {
 	/**
 	 * Trim string to specified count lines
 	 * @param s original string
-	 * @param count maximum line
+	 * @param countLines maximum line
+	 * @param countChars maximum length
 	 * @return string of given length
 	 */
-	static String CurStrByLines(String s, Integer count) {
+	static String CurStrByLines(String s, Integer countLines, Integer maxLength = null) {
 		if (s == null)
 			return null
 
-		if (count < 1)
+		if (countLines < 1)
 			throw new IllegalArgumentException('Count must great zero!')
 
+		String res
+
 		def l = s.split('\n').toList()
-		if (l.size() > count) {
-			l = l.subList(0, count)
-			l[l.size() - 1] = l[l.size() - 1] + ' ... and more'
+		if (l.size() <= countLines)
+			res = (maxLength != null)?CutStr(s, maxLength):s
+		else {
+			l = l.subList(0, countLines)
+			res = l.join('\n')
+			if (maxLength != null)
+				res = CutStr(res, maxLength)
+			else
+				res += ' ... and more'
 		}
 
-		return l.join('\n')
+		return res
+	}
+
+	/**
+	 * Formatting text with exception
+	 * @param e exception
+	 * @param text original text
+	 * @return formatted text
+	 */
+	static String FormatException(String text, Throwable e) {
+		return text + ((e != null)?": {${e.getClass().name}} ${CurStrByLines(e.message, 5, 500)}":'')
 	}
 	
 	/**

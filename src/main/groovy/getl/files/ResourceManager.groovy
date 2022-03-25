@@ -103,7 +103,7 @@ class ResourceManager extends Manager {
     static ResourceCatalogElem ListDirFiles(String path) {
         def filePath = new File(path)
         if (!filePath.directory)
-            throw new ExceptionGETL("Directory \"$path\" not found!")
+            throw new ExceptionGETL("Directory \"$path\" not found on source \"$this\"!")
 
         def res = new ResourceCatalogElem()
         res.filename = '/'
@@ -222,7 +222,7 @@ class ResourceManager extends Manager {
             isZipFile = true
         }
         if (res == null)
-            throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources!")
+            throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources on source \"$this\"!")
 
         rootNode = (res.protocol == 'file' && !isZipFile)?ListDirFiles(res.file):ListDirJar(res.file)
         setCurrentDirectory(directoryFromPath(currentRootPath))
@@ -231,9 +231,6 @@ class ResourceManager extends Manager {
     @Override
     @Synchronized
     protected void doConnect() {
-        if (connected)
-            throw new ExceptionGETL('Manager already connected!')
-
         validResourcePath()
         buildCatalog()
 
@@ -243,9 +240,6 @@ class ResourceManager extends Manager {
     @Override
     @Synchronized
     protected void doDisconnect() {
-        if (!connected)
-            throw new ExceptionGETL('Manager already disconnected!')
-
         connected = false
         rootNode = null
     }
@@ -288,7 +282,7 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    FileManagerList listDir(String mask = null) {
+    protected FileManagerList doListDir(String mask) {
         validConnect()
 
         def dir = directoryFromPath(mask)
@@ -367,7 +361,7 @@ class ResourceManager extends Manager {
 
             def child = cd.files.find { it.filename == dir }
             if (child == null)
-                throw new ExceptionGETL("Path \"$path\" not found!")
+                throw new ExceptionGETL("Path \"$path\" not found on source \"$this\"!")
             else if (child.type == Manager.fileType)
                 break
 
@@ -380,7 +374,7 @@ class ResourceManager extends Manager {
     @Override
     void changeDirectoryUp() {
         if (currentDirectory == rootNode)
-            throw new ExceptionGETL('Unable to navigate above the root directory!')
+            throw new ExceptionGETL("Unable to navigate above the root directory on source \"$this\"!")
 
         setCurrentDirectory(currentDirectory.parent)
     }
@@ -392,14 +386,14 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    File download(String filePath, String localPath, String localFileName) {
+    protected File doDownload(String filePath, String localPath, String localFileName) {
         validConnect()
 
         def cd = directoryFromPath(FileUtils.RelativePathFromFile(filePath, true))
         def fileName = FileUtils.FileName(filePath)
         def file = cd.files.find { it.filename == fileName }
         if (file == null)
-            throw new ExceptionGETL("File \"$filePath\" not found!")
+            throw new ExceptionGETL("File \"$filePath\" not found on source \"$this\"!")
         String fp
         if (!isZipFile)
             fp = resourcePath + file.filepath
@@ -419,13 +413,13 @@ class ResourceManager extends Manager {
 
         def res= FileUtils.FileFromResources(fp, resourceDirectories, classLoader, destFile)
         if (res == null)
-            throw new ExceptionGETL("Resource file \"$fp\" not found!")
+            throw new ExceptionGETL("Resource file \"$fp\" not found on source \"$this\"!")
 
         return res
     }
 
     @Override
-    void upload(String path, String fileName) {
+    protected void doUpload(String path, String fileName) {
         validWrite()
     }
 
@@ -461,7 +455,7 @@ class ResourceManager extends Manager {
         ResourceCatalogElem cd = (path == '.')?currentDirectory:directoryFromPath(path)
         def file = cd.files.find { it.filename == name }
         if (file == null)
-            throw new ExceptionGETL("File \"$fileName\" not found!")
+            throw new ExceptionGETL("File \"$fileName\" not found on source \"$this\"!")
 
         return file.filedate as Long
     }

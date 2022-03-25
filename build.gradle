@@ -22,17 +22,17 @@ repositories {
 }
 
 dependencies {
-	api('org.codehaus.groovy:groovy-all:3.0.9') {
+	api('org.codehaus.groovy:groovy-all:3.0.10') {
 		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
 	}
-	api 'org.codehaus.groovy:groovy-dateutil:3.0.9'
-	api 'org.codehaus.groovy:groovy-yaml:3.0.9'
+	api 'org.codehaus.groovy:groovy-dateutil:3.0.10'
+	api 'org.codehaus.groovy:groovy-yaml:3.0.10'
 
-	api 'com.fasterxml.jackson.core:jackson-annotations:2.13.0'
+	api 'com.fasterxml.jackson.core:jackson-annotations:2.13.2'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'
-	addJars 'net.lingala.zip4j:zip4j:2.9.0'
+	addJars 'net.lingala.zip4j:zip4j:2.9.1'
 	//noinspection GradlePackageUpdate
 	addJars 'com.sun.mail:smtp:1.6.5'
 	//noinspection GradlePackageUpdate
@@ -41,12 +41,12 @@ dependencies {
 	addJars files('file:libs/ftp4j-1.7.2.jar')
 	compileOnly fileTree(dir: 'jdbc')
 
-	implementation 'org.apache.logging.log4j:log4j-api:2.17.0'
-	implementation 'org.apache.logging.log4j:log4j-core:2.17.0'
-	implementation 'org.slf4j:slf4j-api:1.7.32'
-	implementation 'org.slf4j:slf4j-log4j12:1.7.32'
+	implementation 'org.apache.logging.log4j:log4j-api:2.17.1'
+	implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
+	implementation 'org.slf4j:slf4j-api:1.7.36'
+	implementation 'org.slf4j:slf4j-log4j12:1.7.36'
 
-	implementation 'com.typesafe:config:1.4.1'
+	implementation 'com.typesafe:config:1.4.2'
 
 	//noinspection GradlePackageUpdate
 	/*implementation('org.apache.poi:poi-ooxml:4.1.2') {
@@ -54,11 +54,11 @@ dependencies {
 	}*/
 	//implementation 'org.apache.poi:ooxml-schemas:1.4'
 
-	implementation 'com.google.code.gson:gson:2.8.9'
+	implementation 'com.google.code.gson:gson:2.9.0'
 
 	implementation 'org.apache.poi:poi:5.1.0'
 	implementation 'org.apache.poi:poi-ooxml:5.1.0'
-	implementation 'org.apache.xmlbeans:xmlbeans:5.0.2'
+	implementation 'org.apache.xmlbeans:xmlbeans:5.0.3'
 
     implementation 'org.apache.hadoop:hadoop-auth:3.3.1'
     implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.1'

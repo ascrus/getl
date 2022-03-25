@@ -157,7 +157,7 @@ class SFTPManager extends Manager implements UserLogins {
 		if (identityFile != null) {
 			def f = new File(FileUtils.ResourceFileName(identityFile, dslCreator))
 			if (!f.exists())
-				throw new ExceptionGETL("RSA file \"$f\" not found!")
+				throw new ExceptionGETL("RSA file \"$f\" not found from source \"$this\"!")
 
 			if (passphrase == null) {
 				client.addIdentity(f.canonicalPath)
@@ -195,17 +195,8 @@ class SFTPManager extends Manager implements UserLogins {
 			}
 
 			writeScriptHistoryFile(h)
-			
-			try {
-				res.connect()
-			}
-			catch (Exception e) {
-				if (writeErrorsToLog)
-					logger.severe("Can not connect to $server:$port or invalid login/password")
+			res.connect()
 
-				throw e
-			}
-			
 			if (aliveInterval != null) res.setServerAliveInterval(aliveInterval * 1000)
 			if (aliveCountMax != null) res.setServerAliveCountMax(aliveCountMax)
 		}
@@ -227,13 +218,10 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	@Synchronized
 	protected void doConnect() {
-		if (connected)
-			throw new ExceptionGETL('Manager already connected!')
-
 		if (server == null || port == null)
-			throw new ExceptionGETL('Required server host and port for connect')
+			throw new ExceptionGETL("Required server host and port for connect on source \"$this\"!")
 		if (login == null || (loginManager.currentPassword() == null && identityFile == null))
-			throw new ExceptionGETL('Required login and password for connect')
+			throw new ExceptionGETL("Required login and password for connect on source \"$this\"!")
 		
 		clientSession = newSession()
 		try {
@@ -254,9 +242,6 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	@Synchronized
 	protected void doDisconnect() {
-		if (!connected)
-			throw new ExceptionGETL('Manager already disconnected!')
-
 		try {
 			if (clientSession != null && clientSession.connected) {
 				if (channelFtp != null && channelFtp.connected)
@@ -266,10 +251,6 @@ class SFTPManager extends Manager implements UserLogins {
 				channelFtp = null
 				clientSession == null
 			}
-		}
-		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not disconnect from $server:$port")
-			throw e
 		}
 		finally {
 			_currentPath = null
@@ -318,7 +299,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 	@CompileStatic
 	@Override
-	FileManagerList listDir(String maskFiles = null) {
+	protected FileManagerList doListDir(String maskFiles) {
 		validConnect()
 
 		if (maskFiles == null) maskFiles = "*"
@@ -345,7 +326,8 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.cd(path)
 		}
 		catch (Exception e) {
-			logger.severe("Invalid directory \"$path\"!")
+			if (writeErrorsToLog)
+				logger.severe("Invalid directory \"$path\" on source \"$this\"", e)
 			throw e
 		}
 		_currentPath = channelFtp.pwd()
@@ -359,7 +341,7 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	File download(String filePath, String localPath, String localFileName) {
+	protected File doDownload(String filePath, String localPath, String localFileName) {
 		validConnect()
 
 		def fn = ((localPath != null)?localPath + "/":"") + localFileName
@@ -369,7 +351,8 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.get(filePath, s)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not download file \"$filePath\" to \"$fn\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not download file \"$filePath\" to \"$fn\" on source \"$this\"", e)
 			throw e
 		}
 		finally {
@@ -382,7 +365,7 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	void upload(String path, String fileName) {
+	protected void doUpload(String path, String fileName) {
 		validConnect()
 		validWrite()
 
@@ -394,7 +377,8 @@ class SFTPManager extends Manager implements UserLogins {
             setLastModified(fileName, f.lastModified())
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not upload file \"$fileName\" from \"$fn\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not upload file \"$fileName\" from \"$fn\" on source \"$this\"", e)
 			throw e
 		}
 		finally {
@@ -412,7 +396,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not remove file \"$fileName\"")
+				logger.severe("Can not remove file \"$fileName\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -443,7 +427,8 @@ class SFTPManager extends Manager implements UserLogins {
 			}
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not create directory \"$cdDir\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not create directory \"$cdDir\" on source \"$this\"", e)
 			throw e
 		}
 		finally {
@@ -457,7 +442,11 @@ class SFTPManager extends Manager implements UserLogins {
 		validConnect()
 		validWrite()
 
-        if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
+        if (!channelFtp.stat(dirName).isDir()) {
+			if (writeErrorsToLog)
+				logger.severe("\"$dirName\" is not directory on source \"$this\"!")
+			throw new ExceptionGETL("\"$dirName\" is not directory on source \"$this\"!")
+		}
 		try {
             if (recursive) {
                 doDeleteDirectory(dirName, onDelete)
@@ -469,7 +458,8 @@ class SFTPManager extends Manager implements UserLogins {
             }
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not remove directory \"$dirName\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not remove directory \"$dirName\" on source \"$this\"", e)
 			throw e
 		}
 	}
@@ -512,7 +502,8 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.rename(fileName, path)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) logger.severe("Can not rename file \"$fileName\" to \"$path\"")
+			if (writeErrorsToLog)
+				logger.severe("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"", e)
 			throw e
 		}
 	}

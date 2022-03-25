@@ -382,7 +382,7 @@ class FileDriver extends Driver {
 	 */
 	protected void processWriteFile(String fileName, File fileTemp) {  }
 
-	/** Lock file manager for synchronyze write temporary files to persistent file in multi-threads */
+	/** Lock file manager for synchronize write temporary files to persistent file in multi-threads */
 	static private final LockManager fileLocking = new LockManager()
 
 	/**

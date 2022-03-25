@@ -83,7 +83,7 @@ ORDER BY name
 						Logs.Info("Rebuild statistics for $t complete")
 					}
 					catch (Exception e) {
-						Logs.Severe("Found error for $t: ${e.message}")
+						Logs.Severe("Found error for $t", e)
 					}
 				}
 			}
