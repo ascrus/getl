@@ -226,9 +226,9 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Copy only fields with values */
     void setCopyOnlyWithValue(Boolean value) { params.copyOnlyWithValue = value }
 
-    /** Write to the destination dataset only the fields present in the source dataset (default false) */
+    /** Write to the destination dataset only the fields present in the source dataset or mapping (default false) */
     Boolean getCopyOnlyMatching() { params.copyOnlyMatching as Boolean }
-    /** Write to the destination dataset only the fields present in the source dataset (default false) */
+    /** Write to the destination dataset only the fields present in the source dataset or mapping (default false) */
     void setCopyOnlyMatching(Boolean value) { params.copyOnlyMatching = value }
 
     /** Expression processing variables */

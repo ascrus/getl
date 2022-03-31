@@ -116,6 +116,20 @@ class FlowTest extends GetlDslTest {
 
             etl.copyRows(table1, table2) {
                 clear = true
+                autoMap = true
+                copyOnlyMatching = true
+                map.id = 'id'
+                map.name = 'name'
+                map."class" = 'class'
+                map.extends = null
+            }
+            assertEquals(100, table2.countRow())
+            extCheck = table2.select('SELECT Min(extends) AS min_ext, Max(extends) AS max_ext FROM {table}')
+            assertEquals(0, extCheck[0].min_ext)
+            assertEquals(0, extCheck[0].max_ext)
+
+            etl.copyRows(table1, table2) {
+                clear = true
                 copyOnlyMatching = true
                 bulkLoad = true
             }

@@ -1,6 +1,7 @@
 //file:noinspection unused
 package getl.utils
 
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
@@ -229,7 +230,7 @@ class StringUtils {
 	 * @param countChars maximum length
 	 * @return string of given length
 	 */
-	static String CurStrByLines(String s, Integer countLines, Integer maxLength = null) {
+	static String CutStrByLines(String s, Integer countLines, Integer maxLength = null) {
 		if (s == null)
 			return null
 
@@ -260,7 +261,10 @@ class StringUtils {
 	 * @return formatted text
 	 */
 	static String FormatException(String text, Throwable e) {
-		return text + ((e != null)?": {${e.getClass().name}} ${CurStrByLines(e.message, 5, 500)}":'')
+		String str = null
+		if (e != null)
+			str = (e instanceof ExceptionGETL || e instanceof ExceptionDSL)?e.message:CutStrByLines(e.message, 5, 1024)
+		return text + ((e != null)?": <${e.getClass().name}> $str":'')
 	}
 	
 	/**

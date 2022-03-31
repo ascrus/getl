@@ -229,14 +229,15 @@ class ConfigFiles extends ConfigManager {
         }
         catch (Exception e) {
             logger.severe("Error save configuration to file \"${file.canonicalPath}\"", e)
-
-            writer.close()
-            if (file.exists())
-                file.delete()
-            throw e
+            try {
+                writer.close()
+                if (file.exists())
+                    file.delete()
+            }
+            finally {
+                throw e
+            }
         }
-        finally {
-            writer.close()
-        }
+        writer.close()
 	}
 }

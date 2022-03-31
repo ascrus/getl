@@ -1694,7 +1694,7 @@ sb << """
 				res = (res as String).replace('\u0001', '\r')
 		}
 		catch (Exception e) {
-			logger.severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
+			logger.severe("Error parse [${StringUtils.CutStr(value, 1024)}]")
 			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
 			vars?.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
 			logger.dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())

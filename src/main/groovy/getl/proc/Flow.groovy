@@ -910,14 +910,20 @@ class Flow {
 					res.put(fn, fn)
 			}
 		}
-		map.each {k , v -> res.put(k.toLowerCase(), v) }
+		map.each {k , v ->
+			if (!copyOnlyMatching || v != null)
+				res.put(k.toLowerCase(), v)
+			else if (copyOnlyMatching && v == null && res.containsKey(k))
+				res.remove(k)
+		}
 
-		if (!copyOnlyMatching)
+		if (!copyOnlyMatching && autoMap) {
 			dest.field.each { f ->
 				def fn = f.name.toLowerCase()
 				if (!res.containsKey(fn) && !(fn in excludeFields))
 					res.put(fn, null)
 			}
+		}
 
 		return res
 	}

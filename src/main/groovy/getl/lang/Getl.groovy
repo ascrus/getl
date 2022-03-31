@@ -571,7 +571,7 @@ Examples:
                             logFine("Initialization class \"$ic\" is used")
                         }
                         catch (Throwable e) {
-                            logError("Class \"$ic\" not found", e)
+                            logError("Init class \"$ic\" not found!", e)
                             throw e
                         }
                     }
@@ -2323,6 +2323,11 @@ Examples:
                         }
                         _doCheckMethod(scriptGetl)
                     }
+                    catch (Throwable e) {
+                        logError("Script \"${script.getClass().name}\" initialization error", e)
+                        logging.manager.exception(e)
+                        throw e
+                    }
                     finally {
                         switchThreadToMain(false)
                     }
@@ -2357,7 +2362,9 @@ Examples:
                         throw e
                     }
                 }
-                catch (Exception e) {
+                catch (Throwable e) {
+                    logError("Script \"${script.getClass().name}\" execution error", e)
+                    logging.manager.exception(e)
                     try {
                         synchronized (_lockMainThread) {
                             switchThreadToMain(true)
@@ -2370,7 +2377,8 @@ Examples:
                         }
                     }
                     catch (Exception err) {
-                        logging.manager.severe("An error occurred while processing the error for script \"${script.getClass().name}\"", err)
+                        logError("An error occurred while processing the error for script \"${script.getClass().name}\"", err)
+                        logging.manager.exception(err)
                     }
                     finally {
                         throw e
@@ -2657,12 +2665,12 @@ Examples:
     }
 
     /** Error script method */
-    void error(Exception e) { }
+    void error(Throwable e) { }
 
     /**
      *  Call script error method before execute script
      */
-    protected void _doErrorMethod(Script script, Exception e) {
+    protected void _doErrorMethod(Script script, Throwable e) {
         if (script instanceof Getl)
             (script as Getl).error(e)
         else {
@@ -2881,25 +2889,25 @@ Examples:
     void logWrite(Level level, String message) { logging.manager.write(level, message) }
 
     /** Write message as level the INFO to log */
-    void logInfo(def msg) { logging.manager.info(msg.toString()) }
+    void logInfo(def msg) { logging.manager.info(msg?.toString()) }
 
     /** Write message as level the WARNING to log */
-    void logWarn(def msg, Throwable e = null) { logging.manager.warning(msg.toString(), e) }
+    void logWarn(def msg, Throwable e = null) { logging.manager.warning(msg?.toString(), e) }
 
     /** Write message as level the SEVERE to log */
-    void logError(def msg, Throwable e = null) { logging.manager.severe(msg.toString(), e) }
+    void logError(def msg, Throwable e = null) { logging.manager.severe(msg?.toString(), e) }
 
     /** Write message as level the FINE to log */
-    void logFine(def msg) { logging.manager.fine(msg.toString()) }
+    void logFine(def msg) { logging.manager.fine(msg?.toString()) }
 
     /** Write message as level the FINER to log */
-    void logFiner(def msg) { logging.manager.finer(msg.toString()) }
+    void logFiner(def msg) { logging.manager.finer(msg?.toString()) }
 
     /** Write message as level the FINEST to log */
-    void logFinest(def msg) { logging.manager.finest(msg.toString()) }
+    void logFinest(def msg) { logging.manager.finest(msg?.toString()) }
 
     /** Write message as level the CONFIG to log */
-    void logConfig(def msg) { logging.manager.config(msg.toString()) }
+    void logConfig(def msg) { logging.manager.config(msg?.toString()) }
 
     /** System temporary directory */
     static String getSystemTempPath() { TFS.systemPath }
@@ -5060,11 +5068,9 @@ Examples:
 
         def parent = new Executor(abortOnError: true, dslCreator: this)
         parent.disposeThreadResource(disposeConnections)
-        if (logging.logPrintStackTraceError) {
-            parent.dumpErrors = true
-            parent.logErrors = true
-            parent.debugElementOnError = true
-        }
+        parent.dumpErrors = logging.logPrintStackTraceError
+        parent.logErrors = logging.logPrintStackTraceError
+        parent.debugElementOnError = logging.logPrintStackTraceError
 
         if (_langOpts.processControlDataset != null && _langOpts.checkProcessForThreads) {
             def allowRun = {

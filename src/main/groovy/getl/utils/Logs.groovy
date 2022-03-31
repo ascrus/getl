@@ -160,10 +160,10 @@ class Logs {
 	/** Event on call write to log, has parameters String level, Date time, String message */
 	private final List<Closure> events = [] as List<Closure>
 
-	private Boolean printStackTraceError = false
-	/** Print stack trace for error */
+	private Boolean printStackTraceError = true
+	/** Print stack trace for error (default true) */
 	Boolean getPrintStackTraceError() { printStackTraceError }
-	/** Print stack trace for error */
+	/** Print stack trace for error (default true) */
 	void setPrintStackTraceError(Boolean value) { printStackTraceError = value }
 
 	private final Object lockLog = new Object()
@@ -653,19 +653,13 @@ class Logs {
 	}
 
 	/**
-	 * Log message with level SEVERE with clearing error tracing
+	 * Write error tracing to error output
 	 * @param error error exception
 	 */
 	void exception(Throwable error) {
-		//toOut(Level.SEVERE, error.message)
-		StackTraceUtils.sanitize(error)
-		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):''
-		def message = (error.message?:'') + t
-		synchronized (lockOut) {
-			logger.severe(message)
-			event(Level.SEVERE, error.message)
-			if (printStackTraceError)
-				error.printStackTrace()
+		if (printStackTraceError) {
+			StackTraceUtils.sanitize(error)
+			error.printStackTrace()
 		}
 	}
 
@@ -686,17 +680,8 @@ class Logs {
 	 * @param nameObject object name
 	 */
 	void exception(Throwable error, String typeObject, String nameObject) {
-		//toOut(Level.SEVERE, error.message)
-		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${error.message}"
-		StackTraceUtils.sanitize(error)
-		if (error.stackTrace.length > 0)
-			message += " => " + error.stackTrace.join('\n')
-		synchronized (lockOut) {
-			logger.severe(message)
-			event(Level.SEVERE, error.message)
-			if (printStackTraceError)
-				error.printStackTrace()
-		}
+		severe("<${typeObject} ${nameObject?:'unknown'}> error", error)
+		exception(error)
 	}
 
 	/**
@@ -814,7 +799,9 @@ class Logs {
 			return
 		}
 
-		def errorText = StringUtils.CurStrByLines(error?.message, 1, 150)
+		String errorText = 'unknown'
+		if (error != null)
+			errorText = (error instanceof ExceptionGETL)?error.message:StringUtils.CutStrByLines(error.message, 1, 1024)
 
 		def fn = dumpFile()
 		fine("Saving dump information to file $fn, error: $errorText")

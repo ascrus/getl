@@ -200,7 +200,7 @@ ORDER BY threshold DESC, table_name;
 					}
 					catch (Exception e) {
 						// Print error to log
-						logger.severe(e.message)
+						logger.severe("Error purge table $table", e)
 					}
 				}
 			}
@@ -353,7 +353,7 @@ ORDER BY name
 					}
 					catch (Exception e) {
 						// Print error to log
-						logger.severe(row.tuning_description as String, e)
+						logger.severe("Error run \"${row.tuning_description}\"", e)
 					}
 				}
 			}

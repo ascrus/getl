@@ -59,10 +59,10 @@ class Executor implements GetlRepository {
 	
 	/** Write thread errors to log (default false) */
 	private Boolean logErrors = false
-	/** Write thread errors to log (default false) */
+	/** Write thread errors to log (default true) */
 	@Synchronized
 	Boolean getLogErrors() { logErrors }
-	/** Write thread errors to log (default true) */
+	/** Write thread errors to log (default false) */
 	@Synchronized
 	void setLogErrors(Boolean value) { logErrors = value }
 
@@ -401,7 +401,7 @@ class Executor implements GetlRepository {
 				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
-					def errorText = "  {${e.getClass().name}} " +  StringUtils.CurStrByLines(e.message, 1, 150)
+					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
 						objects.add("[${num}] $errorText: ${obj.toString()}")
 					} else {
@@ -569,7 +569,7 @@ class Executor implements GetlRepository {
 				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
-					def errorText = "  {${e.getClass().name}} " + StringUtils.CurStrByLines(e.message, 1, 150)
+					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
 						objects << "[${num}] $errorText: ${obj.toString()}"
 					} else {
@@ -728,7 +728,7 @@ class Executor implements GetlRepository {
 				num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
-					def errorText = "  {${e.getClass().name}} " + StringUtils.CurStrByLines(e.message, 1, 150)
+					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
 						objects << "[${num}] $errorText: ${obj.toString()}"
 					} else {

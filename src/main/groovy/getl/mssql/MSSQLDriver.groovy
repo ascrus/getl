@@ -26,6 +26,9 @@ class MSSQLDriver extends JDBCDriver {
 		super.initParams()
 
 		defaultSchemaName = 'dbo'
+		connectionParamBegin = ";"
+		connectionParamJoin = ";"
+
 		fieldPrefix = '['
 		fieldEndPrefix = ']'
 		tablePrefix = '['
