@@ -23,7 +23,7 @@ different sources.
 IBM DB2, FireBird, H2 Database, Hadoop Hive, Cloudera Impala, MS SQLServer, MySql, IBM Netezza, NetSuite, Oracle, PostgreSql, Micro Focus Vertica.
 
 ## Supported file sources
-CSV, MS Excel, Json, XML, Yaml.
+CSV, MS Excel, Json, XML, Yaml, DBF.
 
 ## Supported cloud sources
 Kafka, SalesForce, WebServices.
