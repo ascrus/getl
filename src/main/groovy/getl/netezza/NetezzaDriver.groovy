@@ -3,6 +3,7 @@ package getl.netezza
 import getl.driver.Driver
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -59,12 +60,12 @@ class NetezzaDriver extends JDBCDriver {
     @Override
     void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
         super.sqlTableDirective(dataset, params, dir)
-        if (params.limit != null) {
+        if (params.limit != null && ConvertUtils.Object2Long(params.limit) > 0) {
             dir.afterOrderBy = ((dir.afterOrderBy != null) ? (dir.afterOrderBy + '\n') : '') + "LIMIT ${params.limit}"
             params.limit = null
         }
 
-        if (params.offs != null) {
+        if (params.offs != null && ConvertUtils.Object2Long(params.offs) > 0) {
             dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs}"
             params.offs = null
         }

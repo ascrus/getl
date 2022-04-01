@@ -32,9 +32,9 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.objectVars == null)
-            params.objectVars = new HashMap<String, Object>()
+            params.objectVars = new LinkedHashMap<String, Object>()
         if (params.attrs == null)
-            params.attrs = new HashMap<String, Object>()
+            params.attrs = new LinkedHashMap<String, Object>()
     }
 
     /** Owner model */
@@ -204,6 +204,16 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     @Synchronized('synchAttrs')
     Map<String, Object> subAttributes(String topName) {
         return ownerModel.modelSubAttributes(topName) + MapUtils.FindSubNodes(attrs, topName)
+    }
+
+    /**
+     * Return node sub attributes value
+     * @param topName attribute group name for which all subordinate attributes should be returned
+     * @return attribute value set
+     */
+    @Synchronized('synchAttrs')
+    Map<String, Object> subAttributesValues(String topName) {
+        return MapUtils.EvalMacroValues(subAttributes(topName), ownerModel.modelVars + objectVars, false)
     }
 
     /**

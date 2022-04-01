@@ -4,6 +4,7 @@ import getl.data.Field
 import getl.jdbc.JDBCDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.JDBCDriver
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import java.sql.Types
 
@@ -98,11 +99,11 @@ class MSSQLDriver extends JDBCDriver {
 		if (dl.withHint != null) {
 			dir.afteralias = "with (${dl.withHint})"
 		}
-		if (params.limit != null) {
+		if (params.limit != null && ConvertUtils.Object2Long(params.limit) > 0) {
 			dir.afterselect = ((dir.afterselect != null)?(dir.afterselect + '\n'):'') + "TOP ${params.limit}"
 			params.limit = null
 		}
-		if (params.offs != null) {
+		if (params.offs != null && ConvertUtils.Object2Long(params.offs) > 0) {
 			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs} ROWS"
 			params.offs = null
 		}

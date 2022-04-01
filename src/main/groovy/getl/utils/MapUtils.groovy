@@ -426,32 +426,26 @@ class MapUtils {
 	
 	/**
 	 * Evaluate string map value from variables
-	 * @param value
-	 * @param vars
-	 * @return
+	 * @param value source map
+	 * @param vars variables value
+	 * @param errorWhenUndefined throw an error if non-passed parameters are found in the string
+	 * @param formatValue value formatting code
+	 * @return generated map
 	 */
-	static Map EvalMacroValues(Map value, Map vars) {
-		if (value == null) return null
+	static Map EvalMacroValues(Map value, Map vars, Boolean errorWhenUndefined = true, Closure<String> formatValue = null) {
+		if (value == null)
+			return null
 		
-		def res = new HashMap()
+		def res = new LinkedHashMap()
 		value.each { k, v ->
-			if (v instanceof String || v instanceof GString) {
-				def val = v.toString().replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace('${', '\u0001{').replace('$', '\\$').replace('\u0001{', '${')
-
-				if (val.trim() != '"')
-					res.put(k, GenerationUtils.EvalGroovyScript(value: '"""' + val + '"""', vars: vars, convertReturn:  true))
-				else
-					res.put(k, val)
-			}
-			else if (v instanceof Map) {
-				res.put(k, EvalMacroValues(v as Map, vars))
-			}
-			else if (v instanceof List) {
-				res.put(k, ListUtils.EvalMacroValues(v as List, vars))
-			}
-			else {
+			if (v instanceof String || v instanceof GString)
+				res.put(k, StringUtils.EvalMacroString(v.toString(), vars, errorWhenUndefined, formatValue))
+			else if (v instanceof Map)
+				res.put(k, EvalMacroValues(v as Map, vars, errorWhenUndefined, formatValue))
+			else if (v instanceof List)
+				res.put(k, ListUtils.EvalMacroValues(v as List, vars, errorWhenUndefined, formatValue))
+			else
 				res.put(k, v)
-			}
 		}
 
 		return res

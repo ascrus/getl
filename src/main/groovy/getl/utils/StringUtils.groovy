@@ -77,7 +77,7 @@ class StringUtils {
 	/**
 	 * Set for string {variables}
 	 * @param value parsing string
-	 * @param vars variables
+	 * @param vars variables value
 	 * @param errorWhenUndefined throw an error if non-passed parameters are found in the string
 	 * @param formatValue value formatting code
 	 * @return converted string
@@ -139,7 +139,9 @@ class StringUtils {
 				continue
 			}
 
-			if (formatValue != null)
+			if (varValue == null)
+				varValue = ''
+			else if (formatValue != null)
 				varValue = formatValue.call(varValue)
 			else if (varValue instanceof java.sql.Date)
 				varValue = DateUtils.FormatDate('yyyy-MM-dd', varValue as Date)

@@ -566,9 +566,9 @@ class JDBCDriver extends Driver {
 				sql = newSql(jdbcClass, url, login, password, drvName, loginTimeout)
 				notConnected = false
 			}
-			con.sysParams."currentConnectURL" = url
+			con.sysParams.currentConnectURL = url
 			if (server != null) /* TODO: Removing balancer server */
-				con.sysParams."balancerServer" = server
+				con.sysParams.balancerServer = server
 
 			sql.getConnection().setAutoCommit(con.autoCommit())
 			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
@@ -1684,8 +1684,10 @@ class JDBCDriver extends Driver {
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (params == null)
 			params = new HashMap()
+		else
+			params = CloneUtils.CloneMap(params)
 
-		Integer fetchSize = (params.fetchSize as Integer)
+		Integer fetchSize = ConvertUtils.Object2Int(params.fetchSize)
 		Closure filter = (params.filter as Closure)
 		def metaFields = ([] as List<Field>)
 
@@ -1755,8 +1757,8 @@ class JDBCDriver extends Driver {
 			}
 			copyToMap = (rowCopy.code as Closure)
 		}
-		def offs = (params.offs != null)?((params.offs as Integer) + 1):0
-		def max = (params.limit != null)?(params.limit as Integer):0
+		int offs = (ConvertUtils.Object2Int(params.offs)?:1).intValue()
+		int max = (ConvertUtils.Object2Int(params.limit)?:0).intValue()
 		Map<String, Object> sp = (Map)(params.sqlParams as Map)
 		Map<String, Object> sqlParams
 		if (sp != null) {
@@ -2293,7 +2295,7 @@ $sql
 				break
 		}
 
-		def batchSize = (!isSupport(Support.BATCH)?1:((params.batchSize != null)?params.batchSize:500L))
+		def batchSize = (!isSupport(Support.BATCH)?1:((params.batchSize != null)?ConvertUtils.Object2Long(params.batchSize):500L))
 		if (params.onSaveBatch != null)
 			wp.onSaveBatch = params.onSaveBatch as Closure
 		
@@ -2647,7 +2649,7 @@ $sql
 		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
 		if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
 		
-		String condition = (procParams."condition" != null)?" AND ${procParams."condition"}":""
+		String condition = (procParams.condition != null)?" AND ${procParams.condition}":""
 		
 		def join = []
 		def keys = []

@@ -1309,7 +1309,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		def whereFilter = lParams.filter as String
 		
-		Integer limitDirs = (lParams.limitDirs as Integer)?:this.limitDirs
+		Integer limitDirs = ConvertUtils.Object2Int(lParams.limitDirs)?:this.limitDirs
 		if (limitDirs != null && limitDirs <= 0)
 			throw new ExceptionGETL('"limitDirs" value must be great zero!')
 
@@ -1317,11 +1317,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 		List<String> fileListSortOrder = (lParams.fileListSortOrder != null && !(lParams.fileListSortOrder as List<String>).isEmpty())?
 				lParams.fileListSortOrder as List<String>:this.fileListSortOrder
 
-		Integer limitCountFiles = (lParams.limitCountFiles as Integer)?:this.limitCountFiles
+		Integer limitCountFiles = ConvertUtils.Object2Int(lParams.limitCountFiles)?:this.limitCountFiles
 		if (limitCountFiles != null && limitCountFiles <= 0)
 			throw new ExceptionGETL('"limitCountFiles" value must be great zero!')
 
-		Long limitSizeFiles = (lParams.limitSizeFiles as Long)?:this.limitSizeFiles
+		Long limitSizeFiles = ConvertUtils.Object2Long(lParams.limitSizeFiles)?:this.limitSizeFiles
 		if (limitSizeFiles != null && limitSizeFiles <= 0)
 			throw new ExceptionGETL('"limitSizeFiles" value must be great zero!')
 

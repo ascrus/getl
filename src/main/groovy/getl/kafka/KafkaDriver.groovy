@@ -128,7 +128,7 @@ class KafkaDriver extends Driver {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, 'latest')
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.name)
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.name)
-        if (limit != null)
+        if (limit != null && limit > 0)
             props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, limit)
         else
             props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPoolRecords)
@@ -195,7 +195,7 @@ class KafkaDriver extends Driver {
                         }
                     }
 
-                    if (limit != null)
+                    if (limit != null && limit > 0)
                         break
                 }
                 writer.append(']')

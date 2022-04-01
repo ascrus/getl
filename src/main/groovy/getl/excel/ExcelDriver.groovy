@@ -137,7 +137,7 @@ class ExcelDriver extends FileDriver {
             if (sheet == null)
                 throw new ExceptionGETL("Specified workbook list not found in $dataset!")
 
-            def limit = ListUtils.NotNullValue([params.limit, dataset.limit]) as Integer
+            def limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.limit]) as Integer
 
             Iterator<Row> rows = sheet.rowIterator()
             if (offsetRows > 0) {

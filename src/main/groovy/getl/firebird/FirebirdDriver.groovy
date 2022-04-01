@@ -3,6 +3,7 @@ package getl.firebird
 import getl.driver.Driver
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -70,12 +71,12 @@ class FirebirdDriver extends JDBCDriver {
     void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
         super.sqlTableDirective(dataset, params, dir)
 
-        if (params.offs != null) {
+        if (params.offs != null && ConvertUtils.Object2Long(params.offs) > 0) {
             dir.afterOrderBy = ((dir.afterOrderBy != null) ? (dir.afterOrderBy + '\n') : '') + "OFFSET ${params.offs} ROWS"
             params.offs = null
         }
 
-        if (params.limit != null) {
+        if (params.limit != null && ConvertUtils.Object2Long(params.limit) > 0) {
             dir.afterOrderBy = ((dir.afterOrderBy != null) ? (dir.afterOrderBy + '\n') : '') + "FETCH FIRST ${params.limit} ROWS ONLY"
             params.limit = null
         }

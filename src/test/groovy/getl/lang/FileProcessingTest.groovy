@@ -66,8 +66,8 @@ class FileProcessingTest extends TestDsl {
                 field('count') { type = integerFieldType; isNull = false }
 
                 createOpts {
-                    index('idx_1') { columns = ['sale_date', 'id'] }
-                    index('idx_2') { columns = ['sale_date'] }
+                    index('idx_sales_1') { columns = ['sale_date', 'id'] }
+                    index('idx_sales_2') { columns = ['sale_date'] }
                 }
                 drop(ifExists: true)
                 create()

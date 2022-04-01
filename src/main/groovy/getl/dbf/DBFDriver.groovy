@@ -21,6 +21,7 @@ import getl.dbf.sub.ReadProcessor
 import getl.driver.Driver
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -187,7 +188,7 @@ class DBFDriver extends FileDriver {
             procs.add(proc)
         }
 
-        def limit = (params.limit as Long)?:0L
+        def limit = ConvertUtils.Object2Long(params.limit)?:0L
         def filter = params.filter as Closure<Boolean>
         def res = 0L
 

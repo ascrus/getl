@@ -66,10 +66,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         super.initSpec()
 
         if (params.modelVars == null)
-            params.modelVars = new HashMap<String, Object>()
+            params.modelVars = new LinkedHashMap<String, Object>()
 
         if (params.modelAttrs == null)
-            params.modelAttrs = new HashMap<String, Object>()
+            params.modelAttrs = new LinkedHashMap<String, Object>()
 
         if (params.usedObjects == null)
             params.usedObjects = new CopyOnWriteArrayList<>(new ArrayList<T>())

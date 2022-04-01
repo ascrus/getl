@@ -562,8 +562,8 @@ class CSVDriver extends FileDriver {
 		def formatTimestampWithTz = params.formatDate as String
 		def uniFormatDateTime = params.uniFormatDateTime as String
 
-		def skipRows = (params.skipRows as Long)?:0L
-		def limit = (params.limit as Long)?:0L
+		def skipRows = ConvertUtils.Object2Long(params.skipRows)?:0L
+		def limit = ConvertUtils.Object2Long(params.limit)?:0L
 
 		def filter = params.filter as Closure<Boolean>
 
@@ -798,7 +798,7 @@ class CSVDriver extends FileDriver {
 		def formatTimestampWithTz = params.formatDate as String
 		def uniFormatDateTime = params.uniFormatDateTime as String
 
-		if (params.batchSize != null) wp.batchSize = params.batchSize as Long
+		if (params.batchSize != null) wp.batchSize = ConvertUtils.Object2Long(params.batchSize)
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
 		if (params.onSplitFile != null) wp.onSplitFile = params.onSplitFile as Closure
 		
@@ -836,7 +836,7 @@ class CSVDriver extends FileDriver {
 			wp.escaped = !(wp.escapedColumns.isEmpty())
 		}
 
-		wp.splitSize = params.splitSize as Long
+		wp.splitSize = ConvertUtils.Object2Long(params.splitSize)
 		if (wp.splitSize != null || wp.onSplitFile != null) wp.portion = 1
 
         csv_ds.params.writeCharacters = null

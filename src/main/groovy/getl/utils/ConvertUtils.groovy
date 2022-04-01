@@ -19,7 +19,9 @@ class ConvertUtils {
 	 * @return
 	 */
 	static String Object2String(Object value) {
-		if (value == null) return null
+		if (value == null || value.toString().length() == 0)
+			return null
+
 		return String.valueOf(value)
 	}
 	
@@ -28,10 +30,12 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	static BigDecimal Object2BigDecimal(def value) {
-		if (value == null) return (BigDecimal)null
+	static BigDecimal Object2BigDecimal(Object value) {
+		if (value == null || value.toString().length() == 0)
+			return null
+
 		//noinspection GroovyAssignabilityCheck
-		return new BigDecimal(value.toString())
+		return new BigDecimal(value)
 	}
 	
 	/**
@@ -40,7 +44,9 @@ class ConvertUtils {
 	 * @return
 	 */
 	static Integer Object2Int(def value) {
-		if (value == null) return null
+		if (value == null || value.toString().length() == 0)
+			return null
+
 		//noinspection GroovyAssignabilityCheck
 		return Integer.valueOf(value)
 	}
@@ -51,7 +57,9 @@ class ConvertUtils {
 	 * @return
 	 */
 	static Long Object2Long(def value) {
-		if (value == null) return null
+		if (value == null || value.toString().length() == 0)
+			return null
+
 		//noinspection GroovyAssignabilityCheck
 		return Long.valueOf(value)
 	}
@@ -62,7 +70,9 @@ class ConvertUtils {
 	 * @return
 	 */
 	static Double Object2Double(def value) {
-		if (value == null) return null
+		if (value == null || value.toString().length() == 0)
+			return null
+
 		//noinspection GroovyAssignabilityCheck
 		return Double.valueOf(value)
 	}

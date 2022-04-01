@@ -233,13 +233,13 @@ abstract class ConfigManager {
 
         Map<String, Object> currentVars = vars
         if (data.vars != null)
-            MapUtils.MergeMap(currentVars, (Map<String, Object>)(data.vars))
+            MapUtils.MergeMap(currentVars, data.vars as Map<String, Object>)
         if (!(Job.jobArgs.vars as Map)?.isEmpty())
-            MapUtils.MergeMap(currentVars, (Map<String, Object>)(Job.jobArgs.vars))
+            MapUtils.MergeMap(currentVars, Job.jobArgs.vars as Map<String, Object>)
 
         if (evalVars && !currentVars.isEmpty() && !data.isEmpty()) {
             try {
-                data = MapUtils.EvalMacroValues(data, currentVars)
+                data = MapUtils.EvalMacroValues(data, currentVars, false)
             }
             catch (MissingPropertyException e) {
                 logger.severe("${e.message}, available variables: ${currentVars.keySet().toList()}")

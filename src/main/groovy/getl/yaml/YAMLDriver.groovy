@@ -6,6 +6,7 @@ import getl.data.FileDataset
 import getl.driver.Driver
 import getl.driver.WebServiceDriver
 import getl.exception.ExceptionGETL
+import getl.utils.ConvertUtils
 import getl.utils.GenerationUtils
 import getl.utils.ListUtils
 import getl.utils.StringUtils
@@ -121,7 +122,7 @@ class YAMLDriver extends WebServiceDriver {
             throw new ExceptionGETL("Required fields description with dataset!")
 
         def data = params.data
-        def limit = (params.limit as Long)?:0L
+        def limit = ConvertUtils.Object2Long(params.limit)?:0L
 
         if (data == null) {
             def fn = fullFileNameDataset(dataset)
