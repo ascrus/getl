@@ -536,6 +536,9 @@ class Flow {
 			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:new HashMap<String, Object>()) as Map<String, Object>
 		}
 
+		if (!inheritFields && dest.field.isEmpty())
+			dest.retrieveFields()
+
 		Map<String, Object> bulkParams = new HashMap<String, Object>()
 		TFSDataset bulkDS = null
 		if (isBulkLoad) {
@@ -546,8 +549,6 @@ class Flow {
 				bulkParams.autoCommit = false
 			destParams = new HashMap<String, Object>()
 
-			if (dest.field.isEmpty())
-				dest.retrieveFields()
 			bulkDS = PrepareBulkDSParams(dest, bulkEscaped, bulkAsGZIP)
 			writer = bulkDS
 			bulkParams.source = bulkDS

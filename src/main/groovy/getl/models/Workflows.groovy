@@ -309,8 +309,8 @@ class Workflows extends BaseModel<WorkflowSpec> {
         generateUserCode(userClassLoader, addVars)
         cleanResults()
 
-        def including = Path.Masks2Paths(include_steps, (modelVars + addVars) as Map<String, Map>)
-        def excluding = Path.Masks2Paths(exclude_steps, (modelVars + addVars) as Map<String, Map>)
+        def including = Path.Masks2Paths(include_steps)
+        def excluding = Path.Masks2Paths(exclude_steps)
 
         def res = 0
         usedSteps.each { node ->
@@ -318,7 +318,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                 res = +stepExecute(node, addVars, including, excluding, scriptClassLoader)
             }
             catch (Throwable e) {
-                dslCreator.logError("Error execution step \"${node.stepName}\"!")
+                dslCreator.logError("Error execution step \"${node.stepName}\"!", e)
                 throw e
             }
         }
@@ -450,14 +450,26 @@ return $className"""
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                         Closure<URLClassLoader> scriptClassLoader,
                                 String parentStep = null) {
+        def res = 0
+        def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
+
         if ((include_steps != null && !Path.MatchList(node.stepName, include_steps)) ||
                 (exclude_steps != null && Path.MatchList(node.stepName, exclude_steps))) {
             dslCreator.logWarn("Step \"${node.stepName}\" is not included in the allowed step names and is skipped!")
-            return 0
+
+            node.nested.findAll { it.operation != errorOperation }.each { subNode ->
+                try {
+                    res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                }
+                catch (Throwable e) {
+                    dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+                    throw e
+                }
+            }
+
+            return res
         }
 
-        def res = 0
-        def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
         dslCreator.logFinest("Start \"$stepLabel\" step ...")
 
         def runMethod = { String methodType, String methodName, Boolean isConditional ->
@@ -655,7 +667,7 @@ return $className"""
                     res += stepExecute(subNode, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
                 }
                 catch (Throwable e) {
-                    dslCreator.logError("Error execution step \"${subNode.stepName}\"!")
+                    dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
                     throw e
                 }
             }

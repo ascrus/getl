@@ -152,11 +152,13 @@ class Path implements Cloneable, GetlRepository {
 	/**
 	 * Change from process path Windows file separator to Unix separator
 	 */
+	@JsonIgnore
 	public Boolean changeSeparator = (File.separatorChar != '/'.charAt(0))
 
 	/**
 	 * Ignoring converting error and set null value
 	 */
+	@JsonIgnore
 	public Boolean ignoreConvertError = false
 
 	/** Mask path
@@ -175,55 +177,66 @@ class Path implements Cloneable, GetlRepository {
 	/** Original string mask */
 	private String maskStr
 	/** Original string mask */
+	@JsonIgnore
 	String getMaskStr() { maskStr }
 
 	/** Path elements */
 	private List<Map> elements = []
 	/** Path elements */
+	@JsonIgnore
 	List<Map> getElements() { elements }
 
 	/** SQL like elements */
 	private List<Map> likeElements = []
 	/** SQL like elements */
 	@SuppressWarnings('unused')
+	@JsonIgnore
 	List<Map> getLikeElements() { likeElements }
 
 	/** Count level for mask */
+	@JsonIgnore
 	Integer getCountLevel() { elements.size() }
 
 	/** Root path with mask */
 	private String rootPath
 	/** Root path with mask */
+	@JsonIgnore
 	String getRootPath() { this.rootPath }
 
 	/** Count elements in root path */
 	private Integer numLocalPath
 	/** Count elements in root path */
+	@JsonIgnore
 	Integer getNumLocalPath() { this.numLocalPath }
 
 	/** Expression file path with mask */
 	private String maskPath
 	/** Expression file path with mask */
+	@JsonIgnore
 	String getMaskPath() { this.maskPath }
 
 	/** Expression folder path with mask */
 	private String maskFolder
 	/** Expression folder path with mask */
+	@JsonIgnore
 	String getMaskFolder() { this.maskFolder }
 
 	/** Expression mask file */
 	private String maskFile
 	/** Expression mask file */
+	@JsonIgnore
 	String getMaskFile() { this.maskFile }
 
 	/** Expression folder path with mask for SQL like */
 	private String likeFolder
 	/** Expression folder path with mask for SQL like */
+	@JsonIgnore
 	String getLikeFolder() { this.likeFolder }
 
 	/** Expression mask file for SQL like */
 	private String likeFile
 	/** Expression mask file for SQL like */
+	@JsonIgnore
 	String getLikeFile() { this.likeFile }
 
 	/** Compiled variables */
@@ -242,6 +255,7 @@ class Path implements Cloneable, GetlRepository {
 	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
+	@JsonIgnore
 	Map<String, Map> getVars() { this.vars }
 
 	/**
@@ -257,7 +271,7 @@ class Path implements Cloneable, GetlRepository {
 	 * <li>Closure calc: calculated variable code</li>
 	 * </ul>
 	 */
-	private final Map<String, Map<String, Object>> maskVariables = (new LinkedHashMap<String, Map<String, Object>>())
+	private final Map<String, Map<String, Object>> maskVariables = new LinkedHashMap<String, Map<String, Object>>()
 
 	/**
 	 * Variable parameters for compiling mask
@@ -289,7 +303,8 @@ class Path implements Cloneable, GetlRepository {
 	 */
 	void setMaskVariables(Map<String, Map<String, Object>> value) {
 		maskVariables.clear()
-		if (value != null) maskVariables.putAll(value)
+		if (value != null)
+			maskVariables.putAll(value)
 	}
 
 	/** Date formatter for variables */
@@ -351,10 +366,12 @@ class Path implements Cloneable, GetlRepository {
 	/** Mask path pattern */
 	private Pattern maskPathPattern
 	/** Mask path pattern */
+	@JsonIgnore
 	Pattern getMaskPathPattern() { maskPathPattern }
 	/** Path already compiled */
 	private Boolean isCompile = false
 	/** Path already compiled */
+	@JsonIgnore
 	Boolean getIsCompile() { isCompile }
 
 	/**
@@ -665,9 +682,8 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Get all files with root path */
-	List<Map> getFiles() {
-		getFiles(rootPath)
-	}
+	@JsonIgnore
+	List<Map> getFiles() { getFiles(rootPath) }
 
 	/** Analyze file with mask and return value of variables */
 	Map analyzeFile(String fileName, Map<String, Object> extendVars = null) {
