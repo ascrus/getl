@@ -467,7 +467,12 @@ class ResourceManager extends Manager {
 
     @Override
     String getObjectName() {
-        return (rootPath != null)?"resource:/$rootPath":'resource'
+        String res
+        if (resourcePath != null)
+            res = "resource:/$resourcePath"
+        else
+            res = rootPath?:'resource'
+        return res
     }
 
     @Override

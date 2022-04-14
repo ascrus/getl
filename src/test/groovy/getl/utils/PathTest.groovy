@@ -107,14 +107,14 @@ class PathTest extends GetlTest {
 
     @Test
     void testCreateFromDescription() {
-        def desc = '/{dir}/{date}/{name}.{num}.{part}.csv?dir||/.+/;date|date|yyyyMMdd;name||\\|\\;|50;num|integer|||1|3;part|datetime|yyyy-MM-dd HH:mm:ss'
+        def desc = '/{dir}/{date}/{name}.{num}.{part}.csv?dir||/\\\\d{2}.+/;date|date|yyyyMMdd;name||\\|\\;|50;num|integer|||1|3;part|datetime|yyyy-MM-dd HH:mm:ss'
         def m = new Path(desc)
 
         def valid = {
             assertEquals('/{dir}/{date}/{name}.{num}.{part}.csv', m.mask)
             assertEquals(['date', 'dir', 'name', 'num', 'part'], m.vars.keySet().toList().sort())
 
-            assertEquals('.+', m.vars.dir.regular)
+            assertEquals('\\d{2}.+', m.vars.dir.regular)
 
             assertEquals('|;', m.vars.name.format)
             assertEquals(50, m.vars.name.len)

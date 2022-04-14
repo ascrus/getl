@@ -53,6 +53,8 @@ class Path implements Cloneable, GetlRepository {
 		compile(MapUtils.CleanMap(params, ['vars']))
 	}
 
+	static public final VarNamePattern = Pattern.compile('(?i)^[a-z0-9_-]+$')
+
 	/**
 	 * Create new path for description<br><br>
 	 * The parameter description specifies the mask and its list of variables.<br><br>
@@ -98,8 +100,11 @@ class Path implements Cloneable, GetlRepository {
 				def varName = opts[0].trim()
 				if (varName.length() == 0)
 					throw new ExceptionGETL("Required name for [$varNum] variable in filepath mask [${params.mask}]!")
+				if (!varName.matches(VarNamePattern))
+					throw new ExceptionGETL("Incorrent variable name [$varNum] in filepath mask [${params.mask}]!")
 
 				def varType = (opts.size() > 1 && opts[1].trim().length() > 0)?opts[1].trim().toUpperCase():null
+
 				def varFormat = (opts.size() > 2 && opts[2].trim().length() > 0)?opts[2].trim():null
 
 				def varLen = (opts.size() > 3 && opts[3].trim().length() > 0)?opts[3].trim():null
@@ -119,9 +124,9 @@ class Path implements Cloneable, GetlRepository {
 					varParams.put('type', varType)
 				if (varFormat != null) {
 					if (varFormat.matches('[/].+[/]'))
-						varParams.put('regular', varFormat.substring(1, varFormat.length() - 1))
+						varParams.put('regular', varFormat.substring(1, varFormat.length() - 1).replace('\\\\', '\\'))
 					else
-						varParams.put('format', varFormat)
+						varParams.put('format', varFormat.replace('\\\\', '\\'))
 				}
 				if (varLen != null)
 					varParams.put('len', varLen.toInteger())
@@ -957,9 +962,9 @@ class Path implements Cloneable, GetlRepository {
 				addElements((val.type != null && val.type != Field.stringFieldType)?(val.type as Field.Type).toString().toLowerCase():null)
 				String varFormat
 				if (val.regular != null)
-					varFormat = '/' + (val.regular as String) + '/'
+					varFormat = '/' + (val.regular as String).replace('\\', '\\\\') + '/'
 				else
-					varFormat = (val.format as String)
+					varFormat = (val.format as String)?.replace('\\', '\\\\')
 				addElements(varFormat?.replace('|', '\\|')?.replace(';', '\\;'))
 				addElements(val.len)
 				addElements(val.lenMin)

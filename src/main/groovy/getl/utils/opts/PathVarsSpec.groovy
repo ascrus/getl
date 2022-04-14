@@ -68,6 +68,15 @@ class PathVarsSpec extends BaseSpec {
      */
     void setFormat(String value) { saveParamValue('format', value) }
 
+    /**
+     * Regular expression of parsing variable value
+     */
+    String getRegular() { params.regular as String }
+    /**
+     * Regular expression of parsing variable value
+     */
+    void setRegular(String value) { saveParamValue('regular', value) }
+
     /** The length of variable value */
     Integer getLength() { params.len as Integer }
     /** The length of variable value */
