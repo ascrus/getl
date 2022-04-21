@@ -218,6 +218,7 @@ class FileProcessingTest extends TestDsl {
             procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, false)
     }
 
+    @SuppressWarnings('GrMethodMayBeStatic')
     void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, Boolean isDirectly, boolean firstRun) {
         Dsl() {
             logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"

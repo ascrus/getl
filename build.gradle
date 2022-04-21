@@ -35,8 +35,10 @@ dependencies {
 	addJars 'net.lingala.zip4j:zip4j:2.9.1'
 	//noinspection GradlePackageUpdate
 	addJars 'com.sun.mail:smtp:1.6.5'
-	//noinspection GradlePackageUpdate
 	addJars 'com.sun.mail:mailapi:1.6.5'
+	//addJars 'javax.activation:activation:1.1.1'
+	//addJars 'javax.mail:mail:1.4.7'
+	//noinspection GradlePackageUpdate
 	addJars 'com.jcraft:jsch:0.1.55'
 	addJars files('file:libs/ftp4j-1.7.2.jar')
 	compileOnly fileTree(dir: 'jdbc')

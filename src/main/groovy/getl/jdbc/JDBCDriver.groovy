@@ -457,7 +457,8 @@ class JDBCDriver extends Driver {
 		JDBCConnection con = jdbcConnection
 		
 		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
-		if (url == null) return null
+		if (url == null)
+			return null
 
 		if (url.indexOf('{host}') != -1) {
             if (con.connectHost == null)

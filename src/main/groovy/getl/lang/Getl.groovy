@@ -1695,7 +1695,7 @@ Examples:
     }
 
     /** Register dataset in repository */
-    protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
+    Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
                                       Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
         (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).register(this, connection,
                 datasetClassName, name, registration, defaultConnection, classConnection, cl)
@@ -1819,7 +1819,7 @@ Examples:
      * @param cl user code
      * @return history point manager object
      */
-    protected HistoryPointManager registerHistoryPoint(String name,  Boolean registration = false) {
+    HistoryPointManager registerHistoryPoint(String name,  Boolean registration = false) {
         (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).register(this,
                 RepositoryHistorypoints.HISTORYPOINTMANAGER, name, registration, true) as HistoryPointManager
     }
@@ -1942,7 +1942,7 @@ Examples:
      * @param cl user code
      * @return sequence object
      */
-    protected Sequence registerSequence(Connection connection, String name, Boolean registration = false,
+    Sequence registerSequence(Connection connection, String name, Boolean registration = false,
                                         Closure cl = null) {
         (_repositoryStorageManager.repository(RepositorySequences) as RepositorySequences).register(this, connection,
                 RepositorySequences.SEQUENCE, name, registration, defaultJdbcConnection(RepositoryDatasets.QUERYDATASET), JDBCConnection, cl)

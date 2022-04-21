@@ -21,7 +21,7 @@ abstract class ManagerListProcessing {
 	
 	/** Clone class for use in thread */
 	@Synchronized
-	ManagerListProcessing newProcessing () {
+	ManagerListProcessing newProcessing() {
 		ManagerListProcessing res = getClass().getDeclaredConstructor().newInstance() as ManagerListProcessing
 		res.params.putAll(params)
 
@@ -35,18 +35,18 @@ abstract class ManagerListProcessing {
 	 * Init class for build thread
 	 */
 	@Synchronized
-	void init () { }
+	void init() { }
 	
 	/**
 	 * Prepare file and return allow use
 	 * @param file
 	 * @return
 	 */
-	abstract Boolean prepare (Map file)
+	abstract Boolean prepare(Map file)
 	
 	/**
 	 * Done class after build thread
 	 */
 	@Synchronized
-	void done () { }
+	void done() { }
 }
