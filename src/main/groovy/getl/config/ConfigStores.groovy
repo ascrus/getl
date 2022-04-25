@@ -114,7 +114,7 @@ class ConfigStores extends ConfigManager {
 
         Map<String, Object> data = new HashMap<String, Object>()
 
-        if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
+        fileName = FileUtils.AddExtension(fileName, 'store')
         if (!FileUtils.ExistsFile(fileName))
             throw new ExceptionGETL("Can not find store file \"$fileName\"!")
 
@@ -157,7 +157,7 @@ class ConfigStores extends ConfigManager {
         def json = new JsonSlurper()
         data = MapUtils.Lazy2HashMap(json.parseText(text) as Map)
 
-        if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
+        fileName = FileUtils.AddExtension(fileName, 'store')
         FileUtils.ValidFilePath(fileName)
 
         def store = OpenStore(fileName, secretKey, false)

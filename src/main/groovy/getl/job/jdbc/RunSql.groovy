@@ -45,7 +45,7 @@ sql {scripter ->
     useConnection con
     con.transaction(true) {
         scripts.each { fileName ->
-            if (FileUtils.FileExtension(fileName) == '') fileName += '.sql'
+            fileName = FileUtils.AddExtension(fileName, 'sql')
             logFinest "Executing SQL script file \"$fileName\" ..."
             def fn = ((path != null)?(path + '/'):'') + fileName
             if (ext != null)

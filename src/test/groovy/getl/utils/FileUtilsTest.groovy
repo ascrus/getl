@@ -1,6 +1,7 @@
 package getl.utils
 
 import getl.lang.Getl
+import getl.test.GetlTest
 import getl.tfs.TFS
 import org.junit.Test
 
@@ -9,11 +10,17 @@ import java.sql.Timestamp
 /**
  * @author Alexsey Konstantinov
  */
-class FileUtilsTest extends getl.test.GetlTest {
+class FileUtilsTest extends GetlTest {
     @Test
     void testFileExtension() {
         assertEquals('txt', FileUtils.FileExtension('test.txt'))
         assertEquals('txt', FileUtils.FileExtension('/tmp/test.getl/test.txt'))
+        assertEquals('file.txt',  FileUtils.AddExtension('file.txt', 'txt'))
+        assertEquals('file.txt',  FileUtils.AddExtension('file', 'txt'))
+        assertEquals('/tmp/file.txt',  FileUtils.AddExtension('/tmp/file.txt', 'txt'))
+        assertEquals('/tmp/file.txt',  FileUtils.AddExtension('/tmp/file', 'txt'))
+        assertEquals('/tmp.txt/file.txt',  FileUtils.AddExtension('/tmp.txt/file.txt', 'txt'))
+        assertEquals('/tmp.txt/file.txt',  FileUtils.AddExtension('/tmp.txt/file', 'txt'))
     }
 
     @Test
@@ -454,5 +461,10 @@ println time() + 'finish' '''
         assertEquals('/main/child', FileUtils.AddToPath('/main', '/child'))
         assertEquals('/main/child', FileUtils.AddToPath('/main/', 'child'))
         assertEquals('/main/child', FileUtils.AddToPath('/main/', '/child'))
+    }
+
+    @Test
+    void testJarPath() {
+        assertTrue(new File(FileUtils.JarPath(Getl)).exists())
     }
 }

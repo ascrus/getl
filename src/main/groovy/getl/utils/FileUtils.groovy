@@ -116,6 +116,24 @@ class FileUtils {
 	}
 
 	/**
+	 * Adding extension to file name if not exists
+	 * @param file file name
+	 * @param defaultExtension added extension
+	 * @return file name with extension
+	 */
+	static String AddExtension(String file, String defaultExtension) {
+		if (file == null)
+			return null
+		if (defaultExtension == null)
+			throw new NullPointerException('Required extension!')
+
+		if (FileExtension(file) == '')
+			file += ('.' + defaultExtension)
+
+		return file
+	}
+
+	/**
 	 * Return extension of file name
 	 * @param fileName file name without path
 	 * @return extension
@@ -1456,5 +1474,17 @@ class FileUtils {
 		}
 
 		return ((path != null && path != '.')?path:'') + '/' + nestedPath
+	}
+
+	/**
+	 * Return the location of the jar file for the specified class
+	 * @param classInJar
+	 * @return path to jar file
+	 */
+	static String JarPath(Class classInJar) {
+		if (classInJar == null)
+			throw new NullPointerException("Required classInJar parameter!")
+
+		return PathFromFile(new File(classInJar.protectionDomain.codeSource.location.toURI()).getPath())
 	}
 }
