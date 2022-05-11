@@ -136,6 +136,20 @@ class CSVDataset extends FileDataset {
 	/** File settings preset */
 	String presetMode() { presetMode?:currentCsvConnection?.presetMode() }
 
+	/** Open bracket for array fields */
+	String getArrayOpeningBracket() { params.arrayOpeningBracket as String }
+	/** Open bracket for array fields */
+	void setArrayOpeningBracket(String value) { params.arrayOpeningBracket = value }
+	/** Open bracket for array fields */
+	String arrayOpeningBracket() { arrayOpeningBracket?:currentCsvConnection?.arrayOpeningBracket() }
+
+	/** Close bracket for array fields */
+	String getArrayClosingBracket() { params.arrayClosingBracket as String }
+	/** Close bracket for array fields */
+	void setArrayClosingBracket(String value) { params.arrayClosingBracket = value }
+	/** Close bracket for array fields */
+	String arrayClosingBracket() { arrayClosingBracket?:currentCsvConnection?.arrayClosingBracket() }
+
 	/** Reset preset mode to custom */
 	void resetPresetMode() {
 		params.presetMode = 'custom'

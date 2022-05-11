@@ -48,6 +48,7 @@ class Version implements VersionInfo {
 
 		version = jarSection.version as String
 		years = jarSection.year as String
+		versionNumCompatibility = new BigDecimal(jarSection.compatibility as String)
 
 		def m = version =~ /(\d+)[.](\d+)[.](.+)/
 		def v1 = m[0][1] as String

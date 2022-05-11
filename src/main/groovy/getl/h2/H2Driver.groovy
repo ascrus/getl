@@ -52,8 +52,8 @@ class H2Driver extends JDBCDriver {
 				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX,
 				 Support.UUID, Support.TIME, Support.DATE, Support.TIMESTAMP_WITH_TIMEZONE,
 				 Support.BOOLEAN, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
-				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.AUTO_INCREMENT
-				 /*,Driver.Support.ARRAY*/]
+				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.AUTO_INCREMENT/*,
+				 Support.ARRAY*/]
 		/* TODO: H2 ARRAY NOT FULL */
 	}
 
@@ -110,10 +110,8 @@ class H2Driver extends JDBCDriver {
 
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		if (params.compressed != null)
-			throw new ExceptionGETL("H2 bulk load dont support compression files")
-
-		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
+		def table = dest as TableDataset
+		params = bulkLoadFilePrepare(source, table, params, prepareCode)
 		def map = params.map as List<BulkLoadMapping>
 
 		StringBuilder sb = new StringBuilder()
@@ -130,7 +128,7 @@ class H2Driver extends JDBCDriver {
 			if (rule.destinationFieldName == null)
 				return
 
-			Field destField = dest.fieldByName(rule.destinationFieldName)
+			Field destField = table.fieldByName(rule.destinationFieldName)
 			if (!destField.isReadOnly && destField.compute == null) {
 				fieldList.add(fieldPrefix + rule.destinationFieldName.toUpperCase() + fieldPrefix)
 				if (rule.expression != null)
@@ -149,8 +147,7 @@ class H2Driver extends JDBCDriver {
 			fParams << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
 		def functionParams = fParams.join(" ")
 
-		sb <<
-"""INSERT INTO ${fullNameDataset(dest)} (
+		sb << """INSERT INTO ${fullNameDataset(table)} (
   $tableFields
 )
 SELECT 
@@ -160,13 +157,13 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParams}')
         def sql = sb.toString()
 		//println sb.toString()
 
-        dest.writeRows = 0
-		dest.updateRows = 0
+		table.writeRows = 0
+		table.updateRows = 0
 		def loadFile = source.fullFileName()
 		def count = executeCommand(sql.replace('{file_name}', FileUtils.ConvertToUnixPath(loadFile)), [isUpdate: true])
 		source.readRows = count
-		dest.writeRows = count
-		dest.updateRows = count
+		table.writeRows = count
+		table.updateRows = count
 	}
 	
 	@Override

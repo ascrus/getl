@@ -4,6 +4,8 @@ import getl.exception.ExceptionGETL
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 
+import java.lang.reflect.Array
+
 /**
  * List library functions class
  * @author Alexsey Konstantinov
@@ -317,5 +319,24 @@ class ListUtils {
 			else if (value instanceof String && value.length() == 0)
 				list.set(i, null)
 		}
+	}
+
+	/**
+	 * Convert list to array
+	 * @param source source list
+	 * @param componentType class of array type
+	 * @return copied array of specified type
+	 */
+	static Object[] List2Array(List source, Class componentType = Class<Object>) {
+		if (source == null)
+			return null
+		if (componentType == null)
+			throw new NullPointerException("Required componentType for array type!")
+
+		def res = Array.newInstance(componentType, source.size()) as Object[]
+		for (int i = 0; i < source.size(); i++)
+			res[i] = source[i]
+
+		return res
 	}
 }

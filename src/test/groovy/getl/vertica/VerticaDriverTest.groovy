@@ -46,13 +46,14 @@ class VerticaDriverTest extends JDBCDriverProto {
         (table as VerticaTable).tap {
             readOpts {label = 'test_getl'}
             writeOpts {direct = 'DIRECT'}
+            bulkLoadOpts { useEscapedInFlow = true }
         }
     }
 
     @Test
     void testLimit() {
         Getl.Dsl(this) {
-            useVerticaConnection registerConnectionObject(this.con, 'getl.test.vertica', true)
+            useVerticaConnection registerConnectionObject(this.con, 'getl.test.vertica', true) as VerticaConnection
             def table = verticaTable('getl.test.vertica.tables', true) {
                 schemaName = 'v_catalog'
                 tableName =  'tables'
@@ -622,5 +623,10 @@ LIMIT 1'''
                 }
             }
         }
+    }
+
+    @Override
+    protected prepareBulkTable(TableDataset table) {
+        table.bulkLoadDirective.useEscapedInFlow = false
     }
 }

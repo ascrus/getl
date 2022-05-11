@@ -16,7 +16,23 @@ class CSVParseArray extends  CellProcessorAdaptor{
         super()
     }
 
+    CSVParseArray(String openBracket, String closeBracket) {
+        super()
+
+        if (openBracket == null)
+            throw new NullPointerException('Required open bracket parameter!')
+        if (closeBracket == null)
+            throw new NullPointerException('Required close bracket parameter!')
+
+        if (openBracket != '[' || closeBracket != ']') {
+            this.openBracket = openBracket
+            this.closeBracket = closeBracket
+        }
+    }
+
     private final JsonSlurper json = new JsonSlurper()
+    private String openBracket = null
+    private String closeBracket = null
 
     @Override
     <T> T execute(final Object value, final CsvContext context) {
@@ -26,7 +42,21 @@ class CSVParseArray extends  CellProcessorAdaptor{
             throw new SuperCsvCellProcessorException(String, value, context, this)
         }
 
-        final def result = json.parse(new StringReader(value as String)) as List
+        def str = value as String
+        if (openBracket != null) {
+            if (str.length() < openBracket.length() + closeBracket.length())
+                throw new SuperCsvCellProcessorException('Invalid array field value!', context, this)
+
+            if (str.substring(0, openBracket.length()) != openBracket)
+                throw new SuperCsvCellProcessorException('Array field value does not start with an opening bracket!', context, this)
+
+            if (str.substring(str.length() - closeBracket.length()) != closeBracket)
+                throw new SuperCsvCellProcessorException('Array field value does not finish with an closing bracket!', context, this)
+
+            str = '[' + str.substring(openBracket.length(), str.length() - closeBracket.length()) + ']'
+        }
+
+        def result = json.parse(new StringReader(str)) as List
         return next.execute(result, context)
     }
 }

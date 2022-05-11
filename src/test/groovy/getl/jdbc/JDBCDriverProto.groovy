@@ -1,3 +1,4 @@
+//file:noinspection SpellCheckingInspection
 package getl.jdbc
 
 import getl.data.*
@@ -11,7 +12,6 @@ import groovy.transform.InheritConstructors
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
-
 import java.sql.Time
 import java.sql.Timestamp
 
@@ -84,10 +84,12 @@ abstract class JDBCDriverProto extends GetlTest {
         if (con != null && useClob) res << new Field(name: 'text', type: 'TEXT', length: 1024)
         if (con != null && useBlob) res << new Field(name: 'data', type: 'BLOB', length: 1024)
 		if (con != null && useUuid) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
-        if (con != null && useArray) res << new Field(name: 'list', type: 'ARRAY', isNull: false, arrayType: 'INT')
+        if (con != null && useArray) res << new Field(name: 'list', type: 'ARRAY', isNull: false, arrayType: useArrayType)
 
         return res
     }
+
+    protected String getUseArrayType() { 'INT' }
 
     @Override
     Boolean allowTests() {
@@ -173,7 +175,7 @@ abstract class JDBCDriverProto extends GetlTest {
         if (tempTable.currentJDBCConnection.currentJDBCDriver.supportLocalTemporaryRetrieveFields) {
             tempTable.field = null
             tempTable.retrieveFields()
-            assertEquals(fields*.name*.toLowerCase(), tempTable.field*.name*.toLowerCase())
+            assertEquals(fields.collect { it.name.toLowerCase() }, tempTable.field.collect { it.name.toLowerCase() })
         }
 
         tempTable.drop()
@@ -325,7 +327,7 @@ abstract class JDBCDriverProto extends GetlTest {
         def counter = 0
 		table.eachRow(order: ['id1']) { r ->
             counter++
-            Integer id1 = r.id1
+            def id1 = r.id1 as Integer
 			assertEquals(counter, id1)
 			assertNotNull(r.id2)
 			assertNotNull(r.name)
@@ -351,13 +353,13 @@ abstract class JDBCDriverProto extends GetlTest {
             rows.each { r ->
                 Map nr = [:]
                 nr.putAll(r)
-                nr.name = StringUtils.LeftStr(r.name, 40) + ' update'
-				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription", 200) + ' update')
+                nr.name = StringUtils.LeftStr(r.name as String, 40) + ' update'
+				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription" as String, 200) + ' update')
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date)
-				if (useTime) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
-                if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
+				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date as Date)
+				if (useTime) nr.time = Time.valueOf((r.time as Time).toLocalTime().plusSeconds(100))
+                if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz as Date)
 				if (useBoolean) nr.flag = GenerationUtils.GenerateBoolean()
 				if (useClob) nr.text = GenerationUtils.GenerateString(128)
 				if (useBlob) nr.data = GenerationUtils.GenerateString(128).bytes
@@ -398,13 +400,13 @@ abstract class JDBCDriverProto extends GetlTest {
             rows.each { r ->
                 Map nr = [:]
                 nr.putAll(r)
-                nr.name = StringUtils.LeftStr(r.name, 40) + ' merge'
-				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription", 200) + ' merge')
+                nr.name = StringUtils.LeftStr(r.name as String, 40) + ' merge'
+				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription" as String, 200) + ' merge')
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date)
-				if (useTime) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
-                if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
+				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date as Date)
+				if (useTime) nr.time = Time.valueOf((r.time as Time).toLocalTime().plusSeconds(100))
+                if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz as Date)
 				if (useBoolean) nr.flag = GenerationUtils.GenerateBoolean()
 				if (useClob) nr.text = GenerationUtils.GenerateString(1024)
 				if (useBlob) nr.data = GenerationUtils.GenerateString(512).bytes
@@ -579,19 +581,26 @@ abstract class JDBCDriverProto extends GetlTest {
         assertEquals(countRows, bulkTable.countRow())
     }
 
+    protected prepareBulkTable(TableDataset table) { }
+
     protected void copyWithBulkLoad() {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
         def bulkTable = new TableDataset(connection: con)
+        prepareBulkTable(bulkTable)
         bulkTable.tap {
             tableName = 'getl_test_copy_bulk'
             field('id') { type = integerFieldType }
             field('name') { type = stringFieldType; length = 50 }
             field('dt') { type = datetimeFieldType }
             field('num') { type = numericFieldType; length = 12; precision = 2 }
-            if (con.driver.isSupport(Driver.Support.BLOB))
+            if (useBlob)
                 field('bin') { type = blobFieldType; length = 50 }
-            create(ifNotExists: true)
+            if (useArray)
+                field('list') { type = arrayFieldType; arrayType = useArrayType }
+            if (exists)
+                drop()
+            create()
         }
         truncateTable(bulkTable)
 
@@ -602,8 +611,10 @@ abstract class JDBCDriverProto extends GetlTest {
             updater([:])
             (2..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
-                r.id1 = num
+                r.id = num
                 r.name = """'name'\t"$num"\ntest|/,;|\\"""
+                if (useArray)
+                    r.list = [num, num + 1, num + 2]
 
                 updater(r)
             }
@@ -613,7 +624,15 @@ abstract class JDBCDriverProto extends GetlTest {
         def countCopy = new Flow().copy(source: file, dest: bulkTable, bulkLoad: true)
         assertEquals(countRows, countCopy)
         assertEquals(countRows, bulkTable.countRow())
-        bulkTable.drop()
+        def num = 1
+        bulkTable.eachRow(order: ['id'], where: 'id IS NOT NULL') { r ->
+            num++
+            assertEquals(num, r.id)
+            assertEquals("""'name'\t"$num"\ntest|/,;|\\""", r.name)
+            if (useArray)
+                assertEquals([num, num + 1, num + 2], r.list)
+        }
+        //bulkTable.drop()
     }
 
     protected void runScript() {
@@ -765,8 +784,8 @@ IF ('{support_update}' = 'true') DO {
     protected void copyToTable() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return
 
-        def fp1 = con.currentJDBCDriver.fieldPrefix
-        def fp2 = con.currentJDBCDriver.fieldEndPrefix?:fp1
+        //def fp1 = con.currentJDBCDriver.fieldPrefix
+        //def fp2 = con.currentJDBCDriver.fieldEndPrefix?:fp1
         def table1 = table.cloneDataset() as TableDataset
         table1.readOpts {where = "${table1.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('id1', table1)} > 0" }
         def table2 = table.cloneDataset() as TableDataset
@@ -859,7 +878,7 @@ IF ('{support_update}' = 'true') DO {
         if (!con.currentJDBCDriver.isSupport(Driver.Support.VIEW))
             return
 
-        def view = new ViewDataset().tap {
+        new ViewDataset().tap {
             useConnection con
             schemaName = con.schemaName
             tableName = "v_${table.tableName}"
@@ -937,5 +956,68 @@ IF ('{support_update}' = 'true') DO {
                 assertEquals(date, row.dt)
             }
         }
+    }
+
+    @Test
+    void testBlobArraysAndLimit() {
+        def count = 10
+
+        def table = new TableDataset()
+        table.tap {
+            connection = this.con
+            tableName = 'getl_test_limit'
+            field('id') { type = integerFieldType; isKey = true }
+            field('name') { length = 50; isNull = false }
+            field('dt') { type = datetimeFieldType; isNull = false }
+            if (useBlob)
+                field('data') { type = blobFieldType }
+            if (useArray) {
+                field('list') { type = arrayFieldType; arrayType = useArrayType }
+                field('strings') { type = arrayFieldType; arrayType = 'varchar' }
+                field('dates') { type = arrayFieldType; arrayType = 'date' }
+            }
+            if (!exists)
+                create()
+            else
+                deleteRows()
+        }
+
+        def curDate = DateUtils.Date2SQLTimestamp(DateUtils.TruncTime('SECOND', new Date()))
+        def curDay = DateUtils.Date2SQLDate(DateUtils.ClearTime(curDate))
+        def dates = [curDay, DateUtils.AddDate('dd', 1, curDay), DateUtils.AddDate('dd', 2, curDay)]
+        new Flow().writeTo(dest: table) { add ->
+            (1..count).each {
+                add id: it, name: "test $it", dt: curDate, data: "test $it".bytes,
+                        list: [it, it + 1, it + 2], strings: [it.toString(), (it + 1).toString(), (it + 2).toString()],
+                        dates: dates
+            }
+        }
+
+        assertEquals(count, table.countRow())
+
+        def c = 0
+        table.readOpts.order = ['id']
+        table.eachRow {
+            c++
+            assertEquals(c, it.id)
+            assertEquals("test $c", it.name)
+            assertEquals(curDate, it.dt)
+
+            if (useBlob)
+                assertEquals("test $c", new String(it.data as byte[]))
+
+            if (useArray) {
+                assertEquals([c, c + 1, c + 2], it.list)
+                assertEquals([c.toString(), (c + 1).toString(), (c + 2).toString()], it.strings)
+                assertEquals(dates, it.dates)
+            }
+        }
+        assertEquals(c, count)
+
+        c = 0
+        table.eachRow(limit: 1) {
+            c++
+        }
+        assertEquals(1, c)
     }
 }

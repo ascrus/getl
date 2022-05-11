@@ -36,11 +36,13 @@ class CSVDriver extends FileDriver {
 		super.registerParameters()
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header',
 										  'isSplit', 'readAsText', 'escaped', 'processError', 'filter',
-										  'nullAsValue', 'fieldOrderByHeader', 'skipRows', 'limit'])
+										  'nullAsValue', 'fieldOrderByHeader', 'skipRows', 'limit',
+										  'arrayOpeningBracket', 'arrayClosingBracket'])
 		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize',
 											'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue',
 											'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime',
-											'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'onSplitFile'])
+											'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'onSplitFile',
+											'arrayOpeningBracket', 'arrayClosingBracket'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -327,9 +329,10 @@ class CSVDriver extends FileDriver {
 	}
 
 	static private CellProcessor type2cellProcessor(Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
-													   String locale, String decimalSeparator, String groupSeparator, String formatDate,
-													   String formatTime, String formatDateTime, String formatTimestampWithTz,
-													   String formatBoolean, Boolean isValid) {
+													String locale, String decimalSeparator, String groupSeparator, String formatDate,
+													String formatTime, String formatDateTime, String formatTimestampWithTz,
+													String formatBoolean, String arrayOpeningBracket, String arrayClosingBracket,
+													Boolean isValid) {
 		CellProcessor cp = null
 		if (field.type == null || (field.type in [Field.stringFieldType, Field.objectFieldType, Field.rowidFieldType, Field.uuidFieldType])) {
 			if (field.length != null && isValid)
@@ -433,9 +436,6 @@ class CSVDriver extends FileDriver {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
 
-			/*if (BoolUtils.IsValue(field.trim))
-				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())*/
-
 			if (isEscape)
 				if (!isWrite)
 					cp = (cp != null) ? new CSVParseEscapeString(cp as StringCellProcessor) : new CSVParseEscapeString()
@@ -444,10 +444,17 @@ class CSVDriver extends FileDriver {
 				cp = (cp != null) ? new CSVFmtClob(cp as StringCellProcessor) : new CSVFmtClob()
 		}
 		else if (field.type == Field.arrayFieldType) {
-			if (!isWrite)
-				cp = new CSVParseArray()
-			else
-				cp = new CSVFmtArray()
+			if (!isWrite) {
+				if (arrayOpeningBracket != null || arrayClosingBracket != null)
+					cp = new CSVParseArray(arrayOpeningBracket, arrayClosingBracket)
+				else
+					cp = new CSVParseArray()
+			} else {
+				if (arrayOpeningBracket != null || arrayClosingBracket != null)
+					cp = new CSVFmtArray(arrayOpeningBracket, arrayClosingBracket)
+				else
+					cp = new CSVFmtArray()
+			}
 		} else {
 			throw new ExceptionGETL("Type ${field.type} not supported")
 		}
@@ -494,6 +501,8 @@ class CSVDriver extends FileDriver {
 		def formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, uniFormatDateTime, dataset.formatDateTime()]) as String
 		def formatTimestampWithTz = ListUtils.NotNullValue([fParams.formatTimestampWithTz, uniFormatDateTime, dataset.formatTimestampWithTz()]) as String
 		def formatBoolean = ListUtils.NotNullValue([fParams.formatBoolean, dataset.formatBoolean()]) as String
+		def arrayOpeningBracket = ListUtils.NotNullValue([fParams.arrayOpeningBracket, dataset.arrayOpeningBracket()]) as String
+		def arrayClosingBracket = ListUtils.NotNullValue([fParams.arrayClosingBracket, dataset.arrayClosingBracket()]) as String
 		
 		if (fields == null)
 			fields = [] as List<String>
@@ -514,7 +523,8 @@ class CSVDriver extends FileDriver {
 					Field f = dataset.field[i]
 					
 					CellProcessor p = type2cellProcessor(f, isWrite, escaped, nullAsValue, locale, decimalSeparator, groupSeparator,
-															formatDate, formatTime, formatDateTime, formatTimestampWithTz, formatBoolean, isValid)
+							formatDate, formatTime, formatDateTime, formatTimestampWithTz, formatBoolean,
+							arrayOpeningBracket, arrayClosingBracket,  isValid)
 					cp << p
 				}
 			}
@@ -561,6 +571,8 @@ class CSVDriver extends FileDriver {
 		def formatDateTime = params.formatDateTime as String
 		def formatTimestampWithTz = params.formatDate as String
 		def uniFormatDateTime = params.uniFormatDateTime as String
+		def arrayOpeningBracket = params.arrayOpeningBracket as String
+		def arrayClosingBracket = params.arrayClosingBracket as String
 
 		def skipRows = ConvertUtils.Object2Long(params.skipRows)?:0L
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L
@@ -656,7 +668,8 @@ class CSVDriver extends FileDriver {
 			CellProcessor[] cp = fields2cellProcessor(dataset: dataset, fields: listFields, header: header,
 					isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped,
 					nullAsValue: p.nullAsValue, formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime,
-					formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime)
+					formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime,
+					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket)
 			
 			def cur = 0L
 			def line = 0L
@@ -676,7 +689,7 @@ class CSVDriver extends FileDriver {
 						throw e
 
 					def c = e.csvContext
-					def ex = new ExceptionGETL("Line $line column ${c.columnNumber} [${header[c.columnNumber - 1]}]", e)
+					def ex = new ExceptionGETL("Line $line column ${c.columnNumber} [${header[c.columnNumber - 1]}]: ${e.message}", e)
 
 					if (!processError(ex, line))
 						throw e
@@ -777,7 +790,7 @@ class CSVDriver extends FileDriver {
 	}
 
 	@Override
-	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def csv_ds = dataset as CSVDataset
 		if (csv_ds.fileName == null)
 			throw new ExceptionGETL('Dataset required fileName!')
@@ -797,6 +810,8 @@ class CSVDriver extends FileDriver {
 		def formatDateTime = params.formatDateTime as String
 		def formatTimestampWithTz = params.formatDate as String
 		def uniFormatDateTime = params.uniFormatDateTime as String
+		def arrayOpeningBracket = params.arrayOpeningBracket as String
+		def arrayClosingBracket = params.arrayClosingBracket as String
 
 		if (params.batchSize != null) wp.batchSize = ConvertUtils.Object2Long(params.batchSize)
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
@@ -816,7 +831,8 @@ class CSVDriver extends FileDriver {
 					dataset: csv_ds, fields: listFields, header: wp.header, isOptional: false,
 					isWrite: true, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue,
 					formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime,
-				    formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime)
+				    formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime,
+					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket)
 
 		wp.fieldDelimiterSize = p.fieldDelimiter.toString().length()
 		wp.rowDelimiterSize = (p.rowDelimiter as String).length()

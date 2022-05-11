@@ -78,7 +78,7 @@ class StringUtilsTest extends GetlTest {
     @Test
     void testCutStr() {
         assertEquals('123', StringUtils.CutStr('1234567', 3))
-        assertEquals('12 ...', StringUtils.CutStr('1234567', 6))
+        assertEquals('12 ... and more', StringUtils.CutStr('1234567', 6))
     }
 
     @Test

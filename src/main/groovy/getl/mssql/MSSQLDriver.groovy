@@ -75,6 +75,7 @@ class MSSQLDriver extends JDBCDriver {
 		res.BOOLEAN.name = 'bit'
 		res.BLOB.name = 'varbinary'
 		res.BLOB.useLength = JDBCDriver.sqlTypeUse.ALWAYS
+		res.BLOB.defaultLength = 8000
 		res.TEXT.name = 'text'
 		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.DATETIME.name = 'datetime'

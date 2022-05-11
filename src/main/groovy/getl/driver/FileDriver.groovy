@@ -273,7 +273,9 @@ class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	protected InputStream getFileInputStream(FileDataset dataset, Map params, Integer portion = null) {
+	InputStream getFileInputStream(FileDataset dataset, Map params = [:], Integer portion = null) {
+		if (params == null)
+			params = [:]
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn as String
@@ -302,7 +304,9 @@ class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	protected Reader getFileReader(FileDataset dataset, Map params, Integer portion = null) {
+	Reader getFileReader(FileDataset dataset, Map params = [:], Integer portion = null) {
+		if (params == null)
+			params = [:]
 		def wp = getDatasetParams(dataset, params, portion)
 		def codePage = wp.codePage as String
 		return new BufferedReader(new InputStreamReader(getFileInputStream(dataset, params, portion), codePage), dataset.bufferSize())
@@ -316,7 +320,9 @@ class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	protected Writer getFileWriter (FileDataset dataset, Map params, Integer portion = null) {
+	protected Writer getFileWriter(FileDataset dataset, Map params = [:], Integer portion = null) {
+		if (params == null)
+			params = [:]
 		def wp = getDatasetParams(dataset, params, portion)
 
 		if (BoolUtils.IsValue(params.availableAfterWrite) && (portion?:0) > 1) {

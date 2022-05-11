@@ -46,4 +46,13 @@ class ListUtilsTest extends GetlTest {
         assertEquals([1,2,3], ListUtils.ToList([1,2,3]))
         assertEquals(['1','2','3'], ListUtils.ToList('1, 2, 3'))
     }
+
+    @Test
+    void testList2Array() {
+        def l = [1,2,3,4,5]
+        def a = ListUtils.List2Array(l, Integer)
+        assertTrue(a.class.isArray())
+        assertEquals(l.toString(), a.toString())
+        assertEquals(l.toArray(new Integer[0]), a)
+    }
 }

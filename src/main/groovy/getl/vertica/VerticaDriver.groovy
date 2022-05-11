@@ -29,7 +29,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
-				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
+				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath', 'useEscapedInFlow',
 				 'location', 'formatDate', 'formatTime', 'formatDateTime', 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
@@ -72,8 +72,7 @@ class VerticaDriver extends JDBCDriver {
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.BOOLEAN,
                  Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
-				 Support.BULKLOADMANYFILES, Support.START_TRANSACTION
-				 /*,Driver.Support.ARRAY*/]
+				 Support.BULKLOADMANYFILES, Support.START_TRANSACTION/*, Support.ARRAY*/]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -473,6 +472,15 @@ class VerticaDriver extends JDBCDriver {
 	void prepareField (Field field) {
 		super.prepareField(field)
 
+		if (field.type == Field.Type.ARRAY) {
+			if (field.typeName?.length() > 0 && field.typeName[0] == '_') {
+				field.arrayType = field.typeName.substring(1)
+				field.typeName = field.arrayType + ' array'
+			}
+
+			return
+		}
+
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)TIMESTAMPTZ")) {
 				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
@@ -493,16 +501,6 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	String blobMethodWrite (String methodName) {
-		/*return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
-	if (value == null) { 
-		stat.setNull(paramNum, java.sql.Types.BINARY) 
-	}
-	else {
-		def stream = new ByteArrayInputStream(value)
-		stat.setBinaryStream(paramNum, stream, value.length)
-		stream.close()
-	}
-}"""*/
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) 
 		stat.setNull(paramNum, java.sql.Types.BINARY) 
@@ -548,7 +546,10 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.prepareCsvTempFile(source, csvFile)
-		csvFile.escaped = true //(csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
+		if (!(source instanceof TableDataset))
+			throw new ExceptionGETL("Need table type!")
+		def table = source as TableDataset
+		csvFile.escaped = BoolUtils.IsValue(table.bulkLoadDirective.useEscapedInFlow)
 	}
 
 	@Override
@@ -566,13 +567,13 @@ class VerticaDriver extends JDBCDriver {
 		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter() != '\r\n')
 			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
 
-		if (!csvFile.escaped()) {
+		/*if (!csvFile.escaped()) {
 			def blobFields = csvFile.field.findAll { it.type == Field.blobFieldType && source.fieldByName(it.name) != null }
 			if (blobFields != null && !blobFields.isEmpty()) {
 				def blobNames = blobFields*.name
 				throw new ExceptionGETL("When escaped is off, bulk loading with binary type fields is not allowed (fields: ${blobNames.join(', ')})!")
 			}
-		}
+		}*/
 	}
 
 	@Override
@@ -756,4 +757,21 @@ class VerticaDriver extends JDBCDriver {
 
 		return res
 	}
+
+	/*
+	@Override
+	Class sqlType2JavaClass(String sqlType) {
+		Class res = super.sqlType2JavaClass(sqlType)
+		if (res == null)
+			return res
+
+		switch (sqlType.toUpperCase()) {
+			case 'INT': case 'INTEGER': case 'SMALLINT': case 'MEDIUMINT': case 'TINYINT': case 'INT2': case 'INT4': case 'SIGNED':
+				res = Long
+				break
+		}
+
+		return res
+	}
+	 */
 }

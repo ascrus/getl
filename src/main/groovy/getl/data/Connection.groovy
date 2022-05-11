@@ -74,7 +74,7 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Register connection parameters with method validator
 	 */
-	protected void registerParameters () {
+	protected void registerParameters() {
 		methodParams.register('Super',
 				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
 				 'timeoutConnectionAttempts', 'attributes', 'description', 'logWriteToConsole'])
@@ -192,13 +192,13 @@ class Connection implements Cloneable, GetlRepository {
 	 * Store parameters to config file from section "connections"
 	 */
 	@JsonIgnore
-	String getConfig () { config }
+	String getConfig() { config }
 
 	/**
 	 * Configuration name
 	 * Store parameters to config file from section "connections"
 	 */
-	void setConfig (String value) {
+	void setConfig(String value) {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("connections.${this.config}")) {
@@ -211,7 +211,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 
 	/** Use specified configuration from section "connections" */
-	void useConfig (String configName) {
+	void useConfig(String configName) {
 		setConfig(configName)
 	}
 
@@ -230,7 +230,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * Init configuration load
 	 * @param configSection
 	 */
-	protected void onLoadConfig (Map configSection) {
+	protected void onLoadConfig(Map configSection) {
 		MapUtils.MergeMap(params as Map<String, Object>, configSection as Map<String, Object>)
 	}
 	
@@ -330,9 +330,9 @@ class Connection implements Cloneable, GetlRepository {
 
 	/** Auto load schema with meta file for connection datasets */
 	@JsonIgnore
-	Boolean getAutoSchema () { params.autoSchema as Boolean }
+	Boolean getAutoSchema() { params.autoSchema as Boolean }
 	/** Auto load schema with meta file for connection datasets */
-	void setAutoSchema (Boolean value) { params.autoSchema = value }
+	void setAutoSchema(Boolean value) { params.autoSchema = value }
 	/** Auto load schema with meta file for connection datasets */
 	@JsonIgnore
 	boolean isAutoSchema() { BoolUtils.IsValue(autoSchema) }
@@ -356,9 +356,9 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/** Print write rows to console */
-	Boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
+	Boolean getLogWriteToConsole() { BoolUtils.IsValue(params.logWriteToConsole, false) }
 	/** Print write rows to console */
-	void setLogWriteToConsole (Boolean value) { params.logWriteToConsole = value }
+	void setLogWriteToConsole(Boolean value) { params.logWriteToConsole = value }
 	
 	/** Dataset class for auto create by connection */
 	/*@JsonIgnore
@@ -378,27 +378,27 @@ class Connection implements Cloneable, GetlRepository {
 	Integer getTranCount() { tranCount }
 	
 	/** Init parameters connections (use for children) */
-	protected void doInitConnection () { }
+	protected void doInitConnection() { }
 	
 	/**
 	 * Return objects list of connection 
 	 * @return List of objects
 	 */
-	List<Object> retrieveObjects () { retrieveObjects(new HashMap(), null) }
+	List<Object> retrieveObjects() { retrieveObjects(new HashMap(), null) }
 	
 	/**
 	 * Return objects list of connection
 	 * @param params Reading parameters
 	 * @return List of objects
 	 */
-	List<Object> retrieveObjects (Map params) { retrieveObjects(params, null) }
+	List<Object> retrieveObjects(Map params) { retrieveObjects(params, null) }
 	
 	/**
 	 * Return objects list of connection
 	 * @param filter Filter closure
 	 * @return List of objects
 	 */
-	List<Object> retrieveObjects (@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+	List<Object> retrieveObjects(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 										  Closure<Boolean> filter) {
 		retrieveObjects(new HashMap(), filter)
 	}
@@ -429,10 +429,10 @@ class Connection implements Cloneable, GetlRepository {
 	
 	/** Is connected to source */
 	@JsonIgnore
-	Boolean getConnected () { driver.isConnected() }
+	Boolean getConnected() { driver.isConnected() }
 	
 	/** Set connected to source */
-	void setConnected (Boolean c) {
+	void setConnected(Boolean c) {
 		if (connected && c)
 			return
 		if (!connected && !c)
@@ -527,14 +527,14 @@ class Connection implements Cloneable, GetlRepository {
 	protected Class<Dataset> getDatasetClass() { Dataset }
 	
 	/** Validation  connected is true and connecting if has no */
-	void tryConnect () {
+	void tryConnect() {
 		if (driver.isSupport(Driver.Support.CONNECT) && !connected)
 			connect()
 	}
 	
 	/** Connection has current transaction */
 	@JsonIgnore
-	Boolean isTran () { (tranCount > 0) }
+	Boolean isTran() { (tranCount > 0) }
 
 	/** Connection supports transactions */
 	@JsonIgnore

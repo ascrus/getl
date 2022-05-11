@@ -27,7 +27,7 @@ class CSVConnection extends FileConnection {
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped',
 					'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
 					'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale',
-					'constraintsCheck', 'presetMode', 'formatOutput'])
+					'constraintsCheck', 'presetMode', 'formatOutput', 'arrayOpeningBracket', 'arrayClosingBracket'])
 	}
 
 	@Override
@@ -150,6 +150,20 @@ class CSVConnection extends FileConnection {
 	}
 	/** File settings preset */
 	String presetMode() { presetMode?:'custom' }
+
+	/** Open bracket for array fields */
+	String getArrayOpeningBracket() { params.arrayOpeningBracket as String }
+	/** Open bracket for array fields */
+	void setArrayOpeningBracket(String value) { params.arrayOpeningBracket = value }
+	/** Open bracket for array fields */
+	String arrayOpeningBracket() { arrayOpeningBracket?:'['}
+
+	/** Close bracket for array fields */
+	String getArrayClosingBracket() { params.arrayClosingBracket as String }
+	/** Close bracket for array fields */
+	void setArrayClosingBracket(String value) { params.arrayClosingBracket = value }
+	/** Close bracket for array fields */
+	String arrayClosingBracket() { arrayClosingBracket?:']' }
 
 	@Override
 	String formatTimestampWithTz() { super.formatTimestampWithTz?:DateUtils.defaultTimestampWithTzSmallMask }

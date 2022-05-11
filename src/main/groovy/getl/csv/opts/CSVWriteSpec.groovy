@@ -24,6 +24,11 @@ class CSVWriteSpec extends BaseSpec {
     /** Batch size packet */
     void setBatchSize(Long value) { saveParamValue('batchSize', value) }
 
+    /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
+    Long getSplitSize() { params.splitSize as Long }
+    /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
+    void setSplitSize(Long value) { saveParamValue('splitSize', value) }
+
     /**
      * Run after save batch records
      * <br>Closure parameters: Long numberOfBatch
@@ -42,11 +47,6 @@ class CSVWriteSpec extends BaseSpec {
     void saveBatch(@ClosureParams(value = SimpleType, options = ['long']) Closure value) {
         setOnSaveBatch(value)
     }
-
-    /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
-    Long getSplitSize() { params.splitSize as Long }
-    /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
-    void setSplitSize(Long value) { saveParamValue('splitSize', value) }
 
     /**
      * Checking row for need to write current and next rows to the new file

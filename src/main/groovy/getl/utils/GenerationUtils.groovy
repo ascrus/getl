@@ -11,7 +11,8 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
 import org.codehaus.groovy.control.CompilerConfiguration
-
+import java.sql.Time
+import java.sql.Timestamp
 import java.util.regex.Pattern
 
 /**
@@ -1720,7 +1721,7 @@ sb << """
 				break
 			case Field.textFieldType: case Field.blobFieldType:
 				type = Field.stringFieldType
-				if (field.length == null) len = 65535
+				if (field.length == null) len = 65000
 				break
 			case Field.bigintFieldType:
 				len = 38
@@ -1977,7 +1978,8 @@ sb << """
 
 			sb << "	def _getl_temp_var_$i = inRow.${getSourceMethod}('$fName')\n"
 			sb << "	if (_getl_temp_var_$i == null) outRow.put('$fName', null) else {\n"
-			if (f.getMethod != null) sb << "\t\t_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
+			if (f.getMethod != null)
+				sb << "\t\t_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
 
 			switch (f.type) {
 				case Field.timestamp_with_timezoneFieldType:
@@ -2127,15 +2129,36 @@ sb << """
 			case types.ARRAY:
 				if (!driver.isSupport(Driver.Support.ARRAY))
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"ARRAY\" type in field \"${field.name}\"!")
+				if (field.arrayType == null && field.arrayType.length() == 0)
+					throw new ExceptionGETL("${driver.class.simpleName} driver required array type for field \"${field.name}\"!")
+
+				def arrayType = driver.sqlType2JavaClass(field.arrayType) as Class
+				if (arrayType == null)
+					throw new ExceptionGETL("Type \"${field.arrayType}\" is not supported for arrays!")
+				def arrayTypeName = arrayType.name
+
+				String convertList = ''
+				if (arrayType == java.sql.Date || arrayType == Time || arrayType == Timestamp)
+					convertList = "\n    val_$paramNum = val_${paramNum}.collect { (it instanceof $arrayTypeName || it == null)?it:new $arrayTypeName((it as Date).time) }"
+				else if (arrayType == Integer || arrayType == Long || arrayType == Byte || arrayType == BigDecimal || arrayType == Float || arrayType == Double)
+					convertList = "\n    val_$paramNum = val_${paramNum}.collect { (it instanceof $arrayTypeName || it == null)?it:new $arrayTypeName(it.toString()) }"
+				else if (arrayType == Boolean)
+					convertList = "\n    val_$paramNum = val_${paramNum}.collect { (it instanceof $arrayTypeName || it == null)?it:getl.utils.BoolUtils.IsValue(it) }"
+				else if (arrayType == String)
+					convertList = "\n    val_$paramNum = val_${paramNum}.collect { (it instanceof $arrayTypeName || it == null)?it:it.toString() }"
+				else if (arrayType == UUID)
+					convertList = "\n    val_$paramNum = val_${paramNum}.collect { (it instanceof $arrayTypeName || it == null)?it:UUID.fromString(it.toString()) }"
 
 				res = """if ($value != null) {
-    def val_$paramNum = $value
-    def arr_$paramNum = (val_${paramNum}.class.isArray())?val_${paramNum}:(val_${paramNum} as List).toArray()
-	//_getl_stat.setArray($paramNum, _getl_con.createArrayOf('${field.arrayType?:'OBJECT'}', arr_$paramNum))
-	_getl_stat.setObject($paramNum, arr_$paramNum)
+  def val_$paramNum = $value
+  if (val_$paramNum instanceof List) {$convertList
+    val_$paramNum = (val_$paramNum as List).toArray(new ${arrayTypeName}[0])
+  } 
+  def arr_$paramNum = _getl_con.createArrayOf('${field.arrayType?:'OBJECT'}', val_${paramNum} as ${arrayTypeName}[])
+  _getl_stat.setArray($paramNum, arr_$paramNum)
 }
 else 
-	_getl_stat.setNull($paramNum, java.sql.Types.ARRAY)"""
+  _getl_stat.setNull($paramNum, java.sql.Types.ARRAY)"""
 				break
 			default:
 				if (field.type == Field.uuidFieldType) {

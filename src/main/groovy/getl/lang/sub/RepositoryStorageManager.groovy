@@ -599,66 +599,79 @@ class RepositoryStorageManager {
         def repFilePath = repositoryPath(repository, env)
         def isEnvConfig = repository.needEnvConfig()
 
-        def dirs = repositoryFiles(repository, env, maskParse?.groupName)
-        if (dirs == null) return 0
+        TableDataset dirs
+        Long countObjects = 0
+        dslCreator.profile("Analyzing \"$repositoryName\" repository structure from \"${storagePath()}\"", 'file') {
+            dirs = repositoryFiles(repository, env, maskParse?.groupName)
+            countObjects = dirs?.countRow()?:0
+            countRow = countObjects
+        }
+        if (dirs == null || countObjects == 0) {
+            if (dirs != null)
+                dirs.drop()
+
+            return 0
+        }
 
         def existsObject = repository.objects.keySet().toList()
+        dslCreator.profile("Loading ${Getl.Numeric2String(countObjects)} objects with \"$repositoryName\" repository from \"${storagePath()}\"", 'object') {
+            try {
+                new Executor(dslCreator: dslCreator).with {
+                    useList dirs.rows()
+                    if (list.isEmpty())
+                        return
 
-        try {
-            new Executor(dslCreator: dslCreator).with {
-                useList dirs.rows()
-                if (list.isEmpty())
-                    return
+                    countProc = this.dslCreator.options.countThreadsLoadRepository
+                    abortOnError = true
+                    dumpErrors = false
+                    runSplit { elem ->
+                        def fileAttr = elem.item as Map<String, Object>
 
-                countProc = this.dslCreator.options.countThreadsLoadRepository
-                abortOnError = true
-                dumpErrors = false
-                runSplit { elem ->
-                    def fileAttr = elem.item as Map<String, Object>
-
-                    def groupName = (fileAttr.filepath != '.') ? (fileAttr.filepath as String).replace('/', '.').toLowerCase() : null
-                    def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
-                    if (isEnvConfig && objectName.env != env)
-                        throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
-                    def name = new ParseObjectName(groupName, objectName.name as String, true).name
-                    if (maskPath == null || maskPath.match(name)) {
-                        def isExists = (name in existsObject)
-                        if (isExists) {
-                            if (ignoreExists) return
-                            throw new ExceptionDSL("Object \"$name\" from file \"${fileAttr.filepath}/${fileAttr.filename}\"" +
-                                    " is already registered in repository \"${repository.getClass().name}\"!")
-                        }
-
-                        String fileName
-                        if (isResourceStoragePath) {
-                            fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
-                                    ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, this.dslCreator)
-                        } else {
-                            fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
-                                    ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
-                        }
-                        def file = new File(fileName)
-                        try {
-                            def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
-                                    configVars: this.dslCreator.configVars, owner: dslCreator)
-                            GetlRepository obj
-                            obj = repository.importConfig(objParams, null)
-                            runWithLoadMode(true) {
-                                repository.registerObject(this.dslCreator, obj, name, true)
+                        def groupName = (fileAttr.filepath != '.') ? (fileAttr.filepath as String).replace('/', '.').toLowerCase() : null
+                        def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
+                        if (isEnvConfig && objectName.env != env)
+                            throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
+                        def name = new ParseObjectName(groupName, objectName.name as String, true).name
+                        if (maskPath == null || maskPath.match(name)) {
+                            def isExists = (name in existsObject)
+                            if (isExists) {
+                                if (ignoreExists) return
+                                throw new ExceptionDSL("Object \"$name\" from file \"${fileAttr.filepath}/${fileAttr.filename}\"" +
+                                        " is already registered in repository \"${repository.getClass().name}\"!")
                             }
-                        }
-                        finally {
-                            if (isResourceStoragePath)
-                                file.delete()
-                        }
 
-                        res++
+                            String fileName
+                            if (isResourceStoragePath) {
+                                fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
+                                        ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, this.dslCreator)
+                            } else {
+                                fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
+                                        ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
+                            }
+                            def file = new File(fileName)
+                            try {
+                                def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
+                                        configVars: this.dslCreator.configVars, owner: dslCreator)
+                                GetlRepository obj
+                                obj = repository.importConfig(objParams, null)
+                                runWithLoadMode(true) {
+                                    repository.registerObject(this.dslCreator, obj, name, true)
+                                }
+                            }
+                            finally {
+                                if (isResourceStoragePath)
+                                    file.delete()
+                            }
+
+                            res++
+                        }
                     }
                 }
             }
-        }
-        finally {
-            dirs.drop()
+            finally {
+                dirs.drop()
+            }
+            countRow = res
         }
 
         return res

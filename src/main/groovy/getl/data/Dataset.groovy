@@ -977,9 +977,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def fk = fieldListKeys
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		
-		def res = []
+		def res = [] as List<String>
 		fk.each { Field field ->
-			if (!(field.name.toLowerCase() in excludeFields)) res << field.name 
+			if (!(field.name.toLowerCase() in excludeFields))
+				res.add(field.name)
 		}
 		
 		return res
@@ -992,7 +993,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	List<Field> getFieldListKeys () {
 		def res = [] as List<Field>
 		field.each { Field field ->
-			if (field.isKey) res << field
+			if (field.isKey)
+				res.add(field)
 		}
 		
 		res.sort(true) { Field a, Field b -> (a.ordKey?:999999) <=> (b.ordKey?:999999) }
@@ -1007,7 +1009,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	List<Field> getFieldListPartitions () {
 		def res = [] as List<Field>
 		getField().each { Field field ->
-			if (field.isPartition) res << field
+			if (field.isPartition)
+				res.add(field)
 		}
 
 		res.sort(true) { a, b -> (a.ordPartition?:999999) <=> (b.ordPartition?:999999) }
@@ -1020,9 +1023,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	@JsonIgnore
 	List<String> getFieldNames () {
-		def res = []
-		getField().each { Field field -> res << field.name }
-		
+		def res = [] as List<String>
+		getField().each { Field field ->
+			res.add(field.name)
+		}
+
 		return res
 	}
 	
@@ -1030,13 +1035,15 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return list of fields by name fields
 	 */
 	List<Field> getFields (List<String> names) {
-		List<Field> res = []
+		def res = [] as List<Field>
 		names?.each { String fieldName ->
 			Field f = fieldByName(fieldName)
-			if (f == null) throw new ExceptionGETL("Field \"$fieldName\" not found")
-			res << f.copy()
+			if (f == null)
+				throw new ExceptionGETL("Field \"$fieldName\" not found")
+
+			res.add(f.copy())
 		}
-		
+
 		return res
 	}
 	

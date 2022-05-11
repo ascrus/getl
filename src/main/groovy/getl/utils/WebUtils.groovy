@@ -134,4 +134,20 @@ class WebUtils {
 
         return res
     }
+
+    /**
+     * Ping host
+     * @param host host name
+     * @param port port number
+     * @param timeout timeout in ms
+     * @return ping result
+     */
+    static Boolean PingHost(String host, int port, int timeout) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), timeout)
+            return true
+        } catch (IOException ignored) {
+            return false
+        }
+    }
 }

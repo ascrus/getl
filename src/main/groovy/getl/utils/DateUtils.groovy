@@ -464,21 +464,42 @@ class DateUtils {
 		return Timestamp.valueOf(res)
 	}
 
-	/** Convert type timestamp to date */
+	/** Convert sql timestamp to date */
 	static Date SQLDate2Date(Timestamp value) {
 		return value
 	}
+
+	/** Convert date to sql date */
+	static java.sql.Date Date2SQLDate(Date value) {
+		return new java.sql.Date(ClearTime(value).time)
+	}
+
+	/** Convert date to sql timestamp */
+	static Timestamp Date2SQLTimestamp(Date value) {
+		return new Timestamp(value.time)
+	}
+
+	/** Convert date to sql timestamp */
+	static Time Date2SQLTime(Date value) {
+		return new Time(value.time)
+	}
 	
-	/**
-	 * Current date and time
-	 */
+	/** Current date and time */
 	static Date Now() {
 		return new Date()
 	}
 
-	/**
-	 * Current date and time
-	 */
+	/** Current sql timestamp */
+	static Timestamp CurrentSQLTimestamp() {
+		return new Timestamp(new Date().time)
+	}
+
+	/** Current sql date */
+	static java.sql.Date CurrentSQLDate() {
+		return new java.sql.Date(ClearTime(new Date()).time)
+	}
+
+	/** Current date and time */
 	static Date getNow() {
 		return new Date()
 	}
@@ -558,7 +579,7 @@ class DateUtils {
 	 */
 	static Date TruncTime(String part, Date date) {
 		Integer partNum
-		if (part.toUpperCase() in ['HOUR', 'MINUTE', 'SECOND', 'MILLISECOND'])
+		if (part.toUpperCase() in ['HOUR', 'MINUTE', 'SECOND'])
 			part = part.toUpperCase()
 
 		switch (part) {

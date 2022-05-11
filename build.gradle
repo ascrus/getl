@@ -120,6 +120,7 @@ Generated: ${LocalDateTime.now().format('yyyy-MM-dd HH:mm')}
 getl {
   jar {
     version='$version'
+    compatibility='$getl_compatibility'
     year='2012-${LocalDateTime.now().year}'
   }
 }

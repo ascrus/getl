@@ -223,10 +223,10 @@ class JDBCTest extends GetlTest {
             sql(embeddedConnection()) {
                 vars.char = '-'
                 vars.null_var = null
-                exec'''SELECT *, '{Char}' AS test, {null_var} AS null_test FROM test_sqlscripter WHERE id = 1 /* ; */
+                exec'''SELECT *, '{Char}' AS test, '{null_var}' AS null_test FROM test_sqlscripter WHERE id = 1 /* ; */
 -- SELECT 1;
 UNION ALL -- SELECT 1;
-SELECT *, '${char}' AS test, ${null_var} AS null_test  -- Comment; 
+SELECT *, '${char}' AS test, '${null_var}' AS null_test  -- Comment; 
 FROM test_sqlscripter WHERE id = 2;
 '''
             }
@@ -307,8 +307,8 @@ DROP TABLE test_sqlscripter_result;
                 vars.date1 = null
                 vars.date2 = null
                 exec '''
-SET SELECT  case when '${date1}' = 'null' then date_trunc('day', sysdate -30) else '${date1}' end AS datefrom;
-SET SELECT  case when '${date2}'= 'null' then date_trunc('day', sysdate -1)  else '${date2}' end AS dateto;
+SET SELECT  case when '${date1}' = '' then date_trunc('day', sysdate -30) else '${date1}' end AS datefrom;
+SET SELECT  case when '${date2}'= '' then date_trunc('day', sysdate -1)  else '${date2}' end AS dateto;
 ECHO Date from ${datefrom} to ${dateto}
 
 /*

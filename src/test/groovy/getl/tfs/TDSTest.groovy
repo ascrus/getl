@@ -16,7 +16,7 @@ class TDSTest extends GetlTest {
         assertTrue(con.connected)
         assertTrue(con.inMemory)
         assertFalse(con.autoCommit())
-        assertTrue(con.connectDatabase.matches('getl[_].+'))
+        assertTrue(con.connectDatabase.matches('(?i)[_]getl[_].+'))
         /*assertEquals(0, con.connectProperty.LOG)
         assertEquals(0, con.connectProperty.UNDO_LOG)*/
 //        assertFalse(con.connectProperty.MVCC)

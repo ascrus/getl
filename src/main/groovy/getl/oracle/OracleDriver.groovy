@@ -86,7 +86,7 @@ end;'''
 	}
 	
 	@Override
-	String blobMethodWrite (String methodName) {
+	String blobMethodWrite(String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -96,16 +96,16 @@ end;'''
 		def stream = blob.getBinaryOutputStream()
 		stream.write(value)
 		stream.close()
-		stat.setBlob(paramNum, /*new javax.sql.rowset.serial.SerialBlob(blob)*/blob)
+		stat.setBlob(paramNum, blob)
 	}
 }"""
     }
 	
-	@Override
-	Boolean blobReadAsObject () { return false }
+	/*@Override
+	Boolean blobReadAsObject() { return false }*/
 	
 	@Override
-	String textMethodWrite (String methodName) {
+	String textMethodWrite(String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
@@ -113,25 +113,25 @@ end;'''
 	else {
 		def clob = con.createClob()
 		clob.setString(1, value)
-		stat.setClob(paramNum, /*new javax.sql.rowset.serial.SerialClob(clob)*/clob)
+		stat.setClob(paramNum, clob)
 	} 
 }"""
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	Map<String, Map<String, Object>> getSqlType () {
+	Map<String, Map<String, Object>> getSqlType() {
 		def res = super.getSqlType()
 		res.INTEGER.name = 'number(10)'
 		res.BIGINT.name = 'number(19)'
-		res.BLOB.name = 'raw'
+		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 
 		return res
 	}
 	
 	@Override
-	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
+	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		Map<String, Object> dl = ((dataset as TableDataset).readDirective?:new HashMap<String, Object>()) + (params as Map<String, Object>)
 		if (dl.scn != null) {
@@ -165,7 +165,7 @@ end;'''
 	@Override
 	void prepareField(Field field) {
 		super.prepareField(field)
-		
+
 		if (field.type == Field.numericFieldType) {
 			if (field.columnClassName == 'java.lang.Double') {
 				field.type = Field.doubleFieldType
@@ -186,7 +186,20 @@ end;'''
 				field.length = null
 				field.precision = null
 			}
+		}
 
+		if (field.type == Field.integerFieldType) {
+			field.getMethod = "({field} as Number).toInteger()"
+			return
+		}
+
+		if (field.type == Field.bigintFieldType) {
+			field.getMethod = "({field} as Number).toLong()"
+			return
+		}
+
+		if (field.type == Field.doubleFieldType) {
+			field.getMethod = "({field} as Number).toDouble()"
 			return
 		}
 		
@@ -260,7 +273,7 @@ end;'''
 	}
 	
 	@Override
-	String defaultConnectURL () {
+	String defaultConnectURL() {
 		return 'jdbc:oracle:thin:@{host}:{database}'
 	}
 
@@ -292,7 +305,7 @@ end;'''
 	}
 
     @Override
-	protected String buildConnectURL () {
+	protected String buildConnectURL() {
         JDBCConnection con = jdbcConnection
 
         def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()

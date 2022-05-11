@@ -9,6 +9,8 @@ import org.supercsv.util.CsvContext
 
 import getl.csv.CSVDriver.WriterParams
 
+import java.util.regex.Pattern
+
 /**
  * CSV file encoder class
  * @author Alexsey Konstantinov
@@ -16,7 +18,7 @@ import getl.csv.CSVDriver.WriterParams
  */
 @CompileStatic
 class CSVDefaultFileEncoder extends DefaultCsvEncoder {
-	CSVDefaultFileEncoder (WriterParams wp) {
+	CSVDefaultFileEncoder(WriterParams wp) {
 		super()
 
 		this.header = wp.isHeader
@@ -29,6 +31,9 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		this.fieldDelimiterSize = wp.fieldDelimiterSize
 		this.rowDelimiterSize = wp.rowDelimiterSize
 		this.countFields = wp.countFields
+
+		this.escapeKeys.put(this.quote, '\\' + this.quote)
+		this.escapePattern = StringUtils.SearchManyPattern(escapeKeys)
 	}
 
 	private Boolean header
@@ -43,13 +48,16 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 
 	public Long writeSize = 0L
 
+	private Map escapeKeys = ['\\': '\\\\', '\n': '\\n', '\r': '\\r', '\t': '\\t']
+	private Pattern escapePattern
+
 	@Override
     String encode(String value, final CsvContext context, final CsvPreference pref) {
 		if (context.lineNumber == 1 && header)
 			value = super.encode(value, context, pref)
 		else if (value != nullValue && (nullValue == null || value != nullValue)) {
 			if (this.isEscaped && context.columnNumber in this.escapedColumns) {
-				value = quote + StringUtils.EscapeJavaWithoutUTF(value) + quote
+				value = quote + StringUtils.ReplaceMany(value, escapeKeys, escapePattern) + quote
 			}
 			else {
 				value = super.encode(value, context, pref)

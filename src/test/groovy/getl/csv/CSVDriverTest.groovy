@@ -246,7 +246,7 @@ class CSVDriverTest extends GetlTest {
             errors.put(line.toString(), error.message)
             return true
         }
-        def correct_rows = bad_csv.rows (processError: regError, isValid: true)
+        def correct_rows = bad_csv.rows(processError: regError, isValid: true)
         assertEquals(1, correct_rows.size())
         assertTrue((errors.get('2') as String).indexOf('duplicate value') != -1)
         assertTrue((errors.get('3') as String).indexOf('null value encountered') != -1)
@@ -275,7 +275,7 @@ class CSVDriverTest extends GetlTest {
         def file = new File(ds.fullFileName())
         try {
             def text = '''id,name,value,text
-1,"123\\"456\\'789\\"",<NULL>,"123\\"456\\'789,\\nabc"
+1,"123\\"456'789\\"",<NULL>,"123\\"456'789,\\nabc"
 '''
             assertEquals(text, file.text)
             //        println '>>>\n' + file.text + '\n>>>'
@@ -1013,6 +1013,32 @@ class CSVDriverTest extends GetlTest {
                 assertEquals(1, row.id)
                 assertEquals('Name 1', row.name)
                 assertEquals(100.0, row.value)
+            }
+        }
+    }
+
+    @Test
+    void testArrayBracket() {
+        Getl.Dsl {
+            csvTemp {
+                header = true
+                fieldDelimiter = '|'
+                arrayOpeningBracket = '{'
+                arrayClosingBracket = '}'
+                field('list') { type = arrayFieldType }
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        add list: ['1', '2', '3', 4, 5]
+                    }
+                }
+
+                def str = 'list\n"{""1"",""2"",""3"",4,5}"\n'
+                assertEquals(str, datasetFile().text)
+
+                assertEquals(1, countRow())
+                def row = rows()[0]
+                assertEquals(['1', '2', '3', 4, 5], row.list)
             }
         }
     }

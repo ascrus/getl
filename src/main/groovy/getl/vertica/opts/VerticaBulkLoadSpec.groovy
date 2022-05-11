@@ -171,38 +171,33 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     void setLocation(String value) { saveParamValue('location', value) }
 
     /**
-     * Supplies a COPY load stream identifier. Using a stream name helps to quickly identify a particular load. The STREAM NAME value that you supply in the load statement appears in the STREAM_NAME column of the LOAD_STREAMS and LOAD_SOURCES system tables.
+     * Supplies a COPY load stream identifier. Using a stream name helps to quickly identify a particular load. The STREAM NAME value that you supply
+     * in the load statement appears in the STREAM_NAME column of the LOAD_STREAMS and LOAD_SOURCES system tables
      */
     String getStreamName() { params.streamName as String }
     /**
-     * Supplies a COPY load stream identifier. Using a stream name helps to quickly identify a particular load. The STREAM NAME value that you supply in the load statement appears in the STREAM_NAME column of the LOAD_STREAMS and LOAD_SOURCES system tables.
+     * Supplies a COPY load stream identifier. Using a stream name helps to quickly identify a particular load. The STREAM NAME value that you supply
+     * in the load statement appears in the STREAM_NAME column of the LOAD_STREAMS and LOAD_SOURCES system tables
      */
     void setStreamName(String value) { saveParamValue('streamName', value) }
 
-    /**
-     * Specifies the format for parsing date type columns in file.
-     */
+    /** Specifies the format for parsing date type columns in file */
     String getFormatDate() { params.formatDate as String }
-    /**
-     * Specifies the format for parsing date type columns in file.
-     */
+    /** Specifies the format for parsing date type columns in file */
     void setFormatDate(String value) { saveParamValue('formatDate', value) }
 
-    /**
-     * Specifies the format for parsing time type columns in file.
-     */
+    /** Specifies the format for parsing time type columns in file */
     String getFormatTime() { params.formatTime as String }
-    /**
-     * Specifies the format for parsing time type columns in file.
-     */
+    /** Specifies the format for parsing time type columns in file */
     void setFormatTime(String value) { saveParamValue('formatTime', value) }
 
-    /**
-     * Specifies the format for parsing datetime type columns in file.
-     */
+    /** Specifies the format for parsing datetime type columns in file */
     String getFormatDateTime() { params.formatDateTime as String }
-    /**
-     * Specifies the format for parsing datetime type columns in file.
-     */
+    /** Specifies the format for parsing datetime type columns in file */
     void setFormatDateTime(String value) { saveParamValue('formatDateTime', value) }
+
+    /** Use escape encoding for temporary files in Flow */
+    Boolean getUseEscapedInFlow() { params.useEscapedInFlow as Boolean }
+    /** Use escape encoding for temporary files in Flow */
+    void setUseEscapedInFlow(Boolean value) { saveParamValue('useEscapedInFlow', value) }
 }

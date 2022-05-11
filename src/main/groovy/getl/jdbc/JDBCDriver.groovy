@@ -20,7 +20,8 @@ import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
-
+import java.sql.Time
+import java.sql.Timestamp
 import java.sql.Types
 
 import static getl.driver.Driver.Operation.*
@@ -93,7 +94,7 @@ class JDBCDriver extends Driver {
 						   'IF', 'EXISTS', 'IN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'FOR', 'CURSOR',
 						   'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'WITH',
 						   'INSERT', 'UPDATE', 'SET', 'DELETE', 'MERGE'] as List<String>
-		sqlType.each { name, par ->
+		this.sqlType.each { name, par ->
 			def words = (par.name as String).toUpperCase().split('[ ]')
 			ruleQuotedWords.addAll(words)
 		}
@@ -375,8 +376,8 @@ class JDBCDriver extends Driver {
 			TIME: [name: 'time', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			DATETIME: [name: 'timestamp', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535, usePrecision: sqlTypeUse.NEVER],
-			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535, usePrecision: sqlTypeUse.NEVER],
+			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65000, usePrecision: sqlTypeUse.NEVER],
+			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65000, usePrecision: sqlTypeUse.NEVER],
 			UUID: [name: 'uuid', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			ARRAY: [name: 'array', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.NEVER],
 			OBJECT: [name: 'object', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER]
@@ -396,7 +397,7 @@ class JDBCDriver extends Driver {
 			throw new ExceptionGETL('Required field object')
 		
 		def type = field.type.toString()
-		def rule = sqlType.get(type)
+		def rule = this.sqlType.get(type)
 		if (rule == null)
 			throw new ExceptionGETL("Can not generate type ${field.type}")
 
@@ -1952,7 +1953,7 @@ $sql
 			}
 		}
 		catch (SQLException e) {
-			con.logger.dump(e, getClass().name + ".read", con.objectName, "statement:\n${command}")
+			con.logger.dump(e, getClass().name + ".exec", con.objectName, "statement:\n${command}")
 			throw e
 		}
 		
@@ -3145,5 +3146,64 @@ FROM {source} {after_from}'''
 		if (extParams == null)
 			extParams = new HashMap<String, Object>()
 		return StringUtils.EvalMacroString(expr, sqlExpressions + (extParams?:new HashMap<String, Object>()))
+	}
+
+	/**
+	 * Convert SQL type to Java class
+	 * @param sqlType SQL type name
+	 * @return Java class
+	 */
+	Class sqlType2JavaClass(String sqlType) {
+		if (sqlType == null)
+			return Object
+
+		Class res = null
+		switch (sqlType.toUpperCase()) {
+			case 'VARCHAR': case 'CHAR': case 'CHARACTER': case 'CHARACTER VARYING': case 'VARCHAR2':
+			case 'VARCHAR_CASESENSITIVE': case 'VARCHAR_IGNORECASE':
+			case 'NCHAR': case 'NVARCHAR': case 'NATIONAL CHARACTER': case 'NATIONAL CHAR': case 'NATIONAL CHAR VARYING': case 'NVARCHAR2':
+			case 'LONG VARCHAR': case 'LONG NVARCHAR': case 'CLOB': case 'NCLOB':
+			case 'TINYTEXT': case 'TEXT': case 'MEDUIMTEXT': case 'LONGTEXT': case 'NTEXT':
+				res = String
+				break
+			case 'INT': case 'INTEGER': case 'SMALLINT': case 'MEDIUMINT': case 'TINYINT': case 'INT2': case 'INT4': case 'SIGNED':
+				res = Integer
+				break
+			case 'BIGINT': case 'INT8':
+				res = Long
+				break
+			case 'FLOAT': case 'REAL': case 'FLOAT4':
+				res = Float
+				break
+			case 'DOUBLE': case 'DOUBLE PRECISION': case 'FLOAT8':
+				res = Double
+				break
+			case 'NUMERIC': case 'DECIMAL': case 'DEC': case 'DECFLOAT':
+				res = BigDecimal
+				break
+			case 'BOOLEAN': case 'BOOL': case 'BIT':
+				res = Boolean
+				break
+			case 'DATE':
+				res = java.sql.Date
+				break
+			case 'TIME':
+				res = Time
+				break
+			case 'DATETIME': case 'TIMESTAMP': case 'SMALLDATETIME': case 'TIMESTAMP WITH TIMEZONE':
+				res = Timestamp
+				break
+			case 'BYTEA': case 'BLOB': case 'BINARY': case 'VARBINARY': case 'BINARY VARYING': case 'LONGVARBINARY': case 'RAW':
+			case 'BINARY LARGE OBJECT': case 'TINYBLOB': case 'MEDIUMBLOB': case 'LONGBLOB': case 'IMAGE':
+				res = Byte
+				break
+			case 'UUID':
+				res = UUID
+				break
+			case 'OBJECT':
+				res = Object
+		}
+
+		return res
 	}
 }

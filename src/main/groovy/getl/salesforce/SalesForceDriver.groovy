@@ -215,7 +215,7 @@ class SalesForceDriver extends Driver {
 	@Override
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		String sfObjectName = dataset.params.sfObjectName
-		Integer limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.params.limit, 0])
+		def limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.params.limit, 0]) as Integer
         String where = (params.where)?:''
         Map<String, String> orderBy = ((params.orderBy)?:new HashMap<String, String>()) as Map<String, String>
 
@@ -306,7 +306,7 @@ class SalesForceDriver extends Driver {
         if (!isBulkConnected) initBulkConnection()
 
         String sfObjectName = dataset.params.sfObjectName
-        Integer limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.params.limit, 0])
+        def limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
         Map<String, String> orderBy = ((params.orderBy)?:new HashMap<String, String>()) as Map<String, String>
 
