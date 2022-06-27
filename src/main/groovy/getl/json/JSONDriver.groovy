@@ -105,8 +105,8 @@ class JSONDriver extends WebServiceDriver {
 
 		GenerationUtils.GenerateEachRow(dataset, 'data', 'struct', 'row', genScript.body, sb)
 		sb << '\n}'
-		/*println sb.toString()
-		assert 1 == 0*/
+		//println sb.toString()
+		//assert 1 == 0
 
 		def script = sb.toString()
 		Closure cl = dataset._cacheReadClosure(sb.toString())

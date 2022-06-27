@@ -171,6 +171,9 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return name of the object in the repository or null if not found
      */
     String find(T obj) {
+        if (obj == null)
+            throw new NullPointerException('Required object!')
+
         def repName = obj.dslNameObject
         if (repName == null)
             return null
@@ -196,6 +199,9 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return found object or null if not found
      */
     T find(String name, Boolean findInStorage = true) {
+        if (name == null)
+            throw new NullPointerException('Required name object!')
+
         T obj
         def repName = _dslCreator.repObjectName(name)
         //noinspection GroovySynchronizationOnNonFinalField
@@ -225,7 +231,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * Initialize registered object
      * @param obj object registered object
      */
-    protected void initRegisteredObject(T obj) { }
+    protected void initRegisteredObject(T obj) {
+        if (obj == null)
+            throw new NullPointerException('Required object!')
+    }
 
     /**
      * Register object in repository
@@ -236,7 +245,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true, Boolean encryptPasswords = true) {
         if (obj == null)
-            throw new ExceptionDSL("Object cannot be null for $typeObject!")
+            throw new NullPointerException('Required object!')
 
         def className = obj.getClass().name
         if (!(className in listClasses))
@@ -283,6 +292,9 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return new instance object
      */
     protected T cloneObject(T object) {
+        if (object == null)
+            throw new NullPointerException('Required object!')
+
         object.clone() as T
     }
 
@@ -420,7 +432,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     }
 
     /** Process object before unregister */
-    protected void processUnregisteringObject(T obj) { }
+    protected void processUnregisteringObject(T obj) {
+        if (obj == null)
+            throw new NullPointerException('Required object!')
+    }
 
     /**
      * Unregister objects by a given mask or a list of their classes
@@ -468,7 +483,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     void processObjects(String mask, List<String> classes, Boolean loadFromStorage,
                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
-            throw new ExceptionDSL('Process required closure code!')
+            throw new NullPointerException('Required closure code!')
 
         def list = list(mask, classes, loadFromStorage).sort(true) { it.toLowerCase() }
         list.each { name ->

@@ -176,7 +176,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
     @SuppressWarnings('SpellCheckingInspection')
     @Override
-    List<String> getUsedInternalVars() { ['_segmented_', '_outpath_'] }
+    List<String> getUsedInternalVars() { super.getUsedInternalVars() +  ['_segmented_', '_outpath_'] }
 
     /** Process destination path */
     private Path tmpDestPath

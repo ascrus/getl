@@ -229,6 +229,11 @@ $body
 		// List of field parsing code
 		def listGenVal = [] as List<String>
 
+		if (rootPath != null) {
+			sections.put(rootPath, new HashMap<String, Map>())
+			idxSections.add(rootPath)
+		}
+
 		// Fields processing
 		fields.each {destField ->
 			// Source field
@@ -252,37 +257,55 @@ $body
 			}
 
 			// Add using sections and setting
-			def fn = destField.alias?:destField.name
 			def isAlias = (destField.alias != null)
-			def sp = fn
-			if (/*!isAlias && */rootPath != null)
-				sp = rootPath + '.' + sp
-			def fnPath = sp.split('[.]')
-			def sect = sections
-			def lenPath = fnPath.length
-			String curSectName = null
-			for (int i = 0; i < lenPath - 1; i++) {
-				def name = fnPath[i]
-				if (curSectName == null)
-					curSectName = name
-				else
-					curSectName = curSectName + '.' + name
-				if (!sect.containsKey(name)) {
-					def newSect = new HashMap<String, Map>()
-					sect.put(name, newSect)
-					idxSections.add(curSectName)
-					sect = newSect
+			String path
+			String name
+			if (isAlias) {
+				def sp = destField.alias
+				String curSectName = null
+
+				def fnPath = sp.split('[.]').toList()
+				if (fnPath[0] == '#root') {
+					if (fnPath.size() == 1)
+						throw new ExceptionGETL("Invalid alias")
+					fnPath.remove(0)
 				}
-				else {
-					sect = sect.get(name)
+				else if (rootPath != null)
+					fnPath.add(0, rootPath)
+
+				def sect = sections
+				def lenPath = fnPath.size()
+
+				for (int i = 0; i < lenPath - 1; i++) {
+					def curName = fnPath[i]
+					if (curSectName == null)
+						curSectName = curName
+					else
+						curSectName = curSectName + '.' + curName
+
+					if (!sect.containsKey(curName)) {
+						def newSect = new HashMap<String, Map>()
+						sect.put(curName, newSect)
+						idxSections.add(curSectName)
+						sect = newSect
+					} else {
+						sect = sect.get(curName)
+					}
 				}
+
+				path = (lenPath > 1)?"_getl_sect_${idxSections.indexOf(curSectName)}?":structName
+				name = fnPath[lenPath - 1]
 			}
-			def path = (lenPath > 1)?"_getl_sect_${idxSections.indexOf(curSectName)}?":structName
-			def name = fnPath[lenPath - 1]
+			else {
+				path = (rootPath != null)?"_getl_sect_${idxSections.indexOf(rootPath)}?":structName
+				name = destField.name
+			}
+
 			if (prepareField != null)
 				name = prepareField.call(dataset, destField, name, isAlias)
 			else
 				name = StringUtils.ProcessObjectName(name, true, false)
+
 			def value = GenerateConvertValue(dest: destField, source: sourceField, format: format,
 					sourceMap: path, sourceValue: name, destMap: rowName, cloneObject:  false,
 					datetimeFormatterName: '_getl_df', saveOnlyWithValue: saveOnlyWithValue)

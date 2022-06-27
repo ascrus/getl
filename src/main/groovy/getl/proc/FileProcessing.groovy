@@ -11,10 +11,13 @@ import getl.files.Manager
 import getl.jdbc.JDBCConnection
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
+import getl.proc.sub.ExecutorRunCode
+import getl.proc.sub.ExecutorTimeoutException
 import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
 import getl.proc.sub.FileProcessingBuild
 import getl.proc.sub.FileProcessingElement
+import getl.proc.sub.FileProcessingTimeoutException
 import getl.tfs.TDSTable
 import getl.utils.BoolUtils
 import getl.utils.DateUtils
@@ -77,6 +80,26 @@ class FileProcessing extends FileListProcessing {
     Boolean getProcessingDirectly() { params.processingDirectly as Boolean }
     /** Processing source files directly without downloading to local files (default false for remote source and true for local source) */
     void setProcessingDirectly(Boolean value) { params.processingDirectly = value }
+
+    /** Maximum allowed file processing time in seconds */
+    Long getProcessingTimeout() { params.processingTimeout as Long }
+    /** Maximum allowed file processing time in seconds */
+    void setProcessingTimeout(Long value) {
+        if (value != null && value <= 0)
+            throw new ExceptionFileListProcessing("The value must be greater than zero!")
+
+        params.processingTimeout = value
+    }
+
+    /** File processing timeout as an error (default true) */
+    Boolean getProcessingTimeoutAsError() { params.processingTimeoutAsError as Boolean }
+    /** File processing timeout as an error (default true) */
+    void setProcessingTimeoutAsError(Boolean value) { params.processingTimeoutAsError = value }
+
+    /** Debugging mode for multi-threaded file processing */
+    Boolean getDebugMode() { params.debugMode as Boolean }
+    /** Debugging mode for multi-threaded file processing */
+    void setDebugMode(Boolean value) { params.debugMode = value }
 
     /** File processing code */
     Closure getOnProcessFile() { params.onProcessFile as Closure }
@@ -166,7 +189,7 @@ class FileProcessing extends FileListProcessing {
 
         if (storageProcessedFiles != null) {
             if (processingDirectly)
-                throw new ExceptionGETL("Transferring files to archive storage is not supported when direct file processing is enabled!")
+                throw new ExceptionFileListProcessing("Transferring files to archive storage is not supported when direct file processing is enabled!")
             storageProcessedFiles.localDirectory = tmpPath
             storageProcessedFiles.isTempLocalDirectory = true
             ConnectTo([storageProcessedFiles], numberAttempts, timeAttempts)
@@ -233,6 +256,13 @@ class FileProcessing extends FileListProcessing {
         def isLocalMan = source instanceof FileManager
         if (processingDirectly && !isLocalMan)
             logger.fine("  files will be processed in direct mode without uploading to local directory")
+
+        if (processingTimeout != null) {
+            def dur = DateUtils.ToDuration(processingTimeout)
+            logger.fine("  allowed file processing time: $dur")
+            if (BoolUtils.IsValue(processingTimeoutAsError, true))
+                logger.fine('  file processing timeout is recognized as an error')
+        }
     }
 
     @Override
@@ -306,13 +336,16 @@ class FileProcessing extends FileListProcessing {
 
             if (destFileName == null) destFileName = uploadFile.name
 
-            if (uploadFile.parentFile.canonicalPath != man.localDirectoryFile.canonicalPath) {
+            def isLocalFile = (uploadFile.parentFile.canonicalPath == man.localDirectoryFile.canonicalPath)
+            if (!isLocalFile)
                 FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.canonicalPath, destFileName)
-            }
 
             Operation([man], numberAttempts, timeAttempts, dslCreator) { man ->
                 man.upload(destFileName)
             }
+
+            if (!isLocalFile)
+                FileUtils.DeleteFile(man.localDirectoryFile.canonicalPath + '/' + destFileName)
         }
 
         /**
@@ -371,7 +404,38 @@ class FileProcessing extends FileListProcessing {
         if (res == null)
             throw new ExceptionFileListProcessing('Failed to get element in pool managers!')
 
+        res.curPath = null
+        res.man.changeDirectoryToRoot()
+        res.man.changeLocalDirectoryToRoot()
+
         return res
+    }
+
+    class DoProcessFile extends ExecutorRunCode {
+        DoProcessFile(FileProcessingElement element, Closure code) {
+            this.element = element
+            this.code = code
+        }
+
+        private FileProcessingElement element
+        private Closure code
+
+        @Override
+        void code() {
+            code.call(element)
+        }
+
+        @Override
+        void error(Throwable e) {
+            if (debugMode) {
+                String fileName = element.attr.filepath + '/' + element.attr.filename
+                logger.severe("Error processing file \"$fileName\": ${e.message}", e)
+                logger.exception(e)
+                logger.dump(e, 'File processing', fileName, element.attr)
+            }
+        }
+
+        String timeoutMessageError() { "Exceeding the allowed processing time of file \"${element.attr.filepath}/${element.attr.filename}\"!" }
     }
 
     @Override
@@ -392,7 +456,7 @@ class FileProcessing extends FileListProcessing {
             if (delFilesTable != null)
                 element.delTable = delFilesTable.cloneDatasetConnection() as TDSTable
 
-            sourceList << element
+            sourceList.add(element)
         }
 
         // Create pool of archive processed file manager
@@ -401,7 +465,7 @@ class FileProcessing extends FileListProcessing {
             (1..countOfThreadProcessing).each {
                 def src = storageProcessedFiles.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
                 ConnectTo([src], numberAttempts, timeAttempts)
-                processedList << new ListPoolElement(src)
+                processedList.add(new ListPoolElement(src))
             }
         }
 
@@ -411,7 +475,7 @@ class FileProcessing extends FileListProcessing {
             (1..countOfThreadProcessing).each {
                 def src = storageErrorFiles.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
                 ConnectTo([src], numberAttempts, timeAttempts)
-                errorList << new ListPoolElement(src)
+                errorList.add(new ListPoolElement(src))
             }
         }
 
@@ -432,7 +496,7 @@ class FileProcessing extends FileListProcessing {
             if (!this.order.isEmpty())
                 it.order.addAll(order.collect { '"' + it.toUpperCase() + '"' } as List<String>)
             else
-                it.order << 'FILENAME'
+                it.order.add('FILENAME')
         }
 
         try {
@@ -464,8 +528,9 @@ class FileProcessing extends FileListProcessing {
 
                 try {
                     // Thread processing files by group
-                    def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: false,
-                            logErrors: false, dslCreator: dslCreator)
+                    def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: BoolUtils.IsValue(debugMode),
+                            logErrors: BoolUtils.IsValue(debugMode), dslCreator: dslCreator)
+
                     exec.tap {
                         useList files
                         onStartingThread = this.onStartingThread
@@ -477,10 +542,10 @@ class FileProcessing extends FileListProcessing {
                             def errorElement = FreePoolElement(errorList)
                             def delFile = removeFiles
                             def delTable = sourceElement.delTable
-                            def isLocalManager = sourceElement.man instanceof FileManager
+                            def isLocalManager = (sourceElement.man instanceof FileManager && processingTimeout == null)
                             def isDirectly = BoolUtils.IsValue(processingDirectly, false)
 
-                            def file = threadItem.item as Map<String, Object>
+                            def file = MapUtils.Clone(threadItem.item as Map<String, Object>)
                             sayFileInfo(file)
 
                             try {
@@ -491,6 +556,11 @@ class FileProcessing extends FileListProcessing {
                                     changeDir([sourceElement.man], filepath, false, numberAttempts, timeAttempts)
                                     changeLocalDir(sourceElement.man, filepath, true)
                                     sourceElement.curPath = filepath
+
+                                    if (processedElement != null)
+                                        changeLocalDir(processedElement.man, filepath, true)
+                                    if (errorElement != null)
+                                        changeLocalDir(errorElement.man, filepath, true)
                                 }
                                 if (!isDirectly && !isLocalManager) {
                                     Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
@@ -510,30 +580,44 @@ class FileProcessing extends FileListProcessing {
                                         throw new ExceptionFileListProcessing("The downloaded file \"$fileDesc\" was not found!")
                                 }
 
-                                def element = new FileProcessingElement(sourceElement, processedElement,
+                                FileProcessingElement fileElement = new FileProcessingElement(sourceElement, processedElement,
                                         errorElement, file, fileDesc, threadItem.node)
                                 try {
                                     try {
-                                        onProcessFile.call(element)
+                                        try {
+                                            runCodeWithTimeout(processingTimeout, new DoProcessFile(fileElement, onProcessFile))
+                                        }
+                                        catch (ExecutorTimeoutException ignored) {
+                                            def msg = "Processing timeout"
+                                            def errorText = "Terminate processing of file \"${file.filepath}/${file.filename}\" due to timeout!"
+                                            if (BoolUtils.IsValue(processingTimeoutAsError, true))
+                                                fileElement.throwError(new FileProcessingTimeoutException(msg))
+                                            else {
+                                                logger.warning(errorText)
+                                                if (errorElement != null)
+                                                    fileElement.uploadTextToStorageError(msg)
+                                                fileElement.result = fileElement.skipResult
+                                            }
+                                        }
                                     }
                                     catch (AssertionError a) {
                                         def msg = StringUtils.LeftStr(a.message?.trim(), 4096)
                                         logger.severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
 
-                                        element.result = FileProcessingElement.errorResult
-                                        element.errorFileName = "${file.filename}.assert.txt"
-                                        element.errorText = """File: ${file.filepath}/${file.filename}
+                                        fileElement.result = FileProcessingElement.errorResult
+                                        fileElement.errorFileName = "${file.filename}.assert.txt"
+                                        fileElement.errorText = """File: ${file.filepath}/${file.filename}
         Date: ${DateUtils.FormatDateTime(new Date())}
         Exception: ${a.getClass().name}
         Message: $msg
         """
                                         StackTraceUtils.sanitize(a)
                                         if (a.stackTrace.length > 0) {
-                                            element.errorText += "Trace:\n" + a.stackTrace.join('\n')
+                                            fileElement.errorText += "Trace:\n" + a.stackTrace.join('\n')
                                         }
                                     }
                                     catch (ExceptionFileProcessing ignored) {
-                                        def msg = StringUtils.LeftStr(element.errorText, 4096)
+                                        def msg = StringUtils.LeftStr(fileElement.errorText, 4096)
                                         logger.severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
                                     }
                                     catch (ExceptionFileListProcessing e) {
@@ -557,21 +641,21 @@ class FileProcessing extends FileListProcessing {
                                         logger.exception(e, 'Getl', "${file.filepath}/${file.filename}")
                                         throw e
                                     }
-                                    catch (Exception e) {
+                                    catch (Throwable e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
                                         logger.severe("Exception ${e.getClass().name} in file \"${file.filepath}/${file.filename}\": $msg")
 
                                         if (handleExceptions) {
-                                            element.result = FileProcessingElement.errorResult
-                                            element.errorFileName = "${file.filename}.exception.txt"
-                                            element.errorText = """File: ${file.filepath}/${file.filename}
+                                            fileElement.result = FileProcessingElement.errorResult
+                                            fileElement.errorFileName = "${file.filename}.exception.txt"
+                                            fileElement.errorText = """File: ${file.filepath}/${file.filename}
         Date: ${DateUtils.FormatDateTime(new Date())}
         Exception: ${e.getClass().name}
         Message: $msg
         """
                                             StackTraceUtils.sanitize(e)
                                             if (e.stackTrace.length > 0) {
-                                                element.errorText += "Trace:\n" + e.stackTrace.join('\n')
+                                                fileElement.errorText += "Trace:\n" + e.stackTrace.join('\n')
                                             }
                                         } else {
                                             setError(onProcessFile, e)
@@ -580,32 +664,33 @@ class FileProcessing extends FileListProcessing {
                                         }
                                     }
 
-                                    def procResult = element.result
+                                    def procResult = fileElement.result
 
                                     if (procResult == null) {
-                                        throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
+                                        throw new ExceptionFileListProcessing("Closure does not indicate the result of processing " +
+                                                "file \"${file.filepath}/${file.filename}\" in property \"result\"!")
                                     } else if (procResult == FileProcessingElement.completeResult) {
-                                        storyWrite(element.storyValues + file + [fileloaded: new Date()])
+                                        storyWrite(fileElement.storyValues + file + [fileloaded: new Date()])
 
                                         if (processedElement != null && fileDesc != null)
-                                            processedElement.uploadLocalFile(fileDesc, element.savedFilePath)
+                                            processedElement.uploadLocalFile(fileDesc, fileElement.savedFilePath)
 
                                         this.counter.nextCount()
                                         counter.addCount(file.filesize as Long)
                                     } else if (procResult == FileProcessingElement.errorResult) {
                                         if (errorElement != null) {
                                             if (fileDesc != null)
-                                                errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
+                                                errorElement.uploadLocalFile(fileDesc, fileElement.savedFilePath)
                                             else {
                                                 Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
                                                     man.download(filename)
                                                 }
                                                 fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
-                                                errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
+                                                errorElement.uploadLocalFile(fileDesc, fileElement.savedFilePath)
                                             }
 
-                                            if (element.errorText != null)
-                                                element.uploadTextToStorageError()
+                                            if (fileElement.errorText != null)
+                                                fileElement.uploadTextToStorageError()
                                         }
 
                                         counterErrors.nextCount()
@@ -617,9 +702,9 @@ class FileProcessing extends FileListProcessing {
                                         fileDesc.delete()
 
                                     if (delFile &&
-                                            BoolUtils.IsValue(element.removeFile, procResult != element.skipResult) &&
-                                            (procResult != element.errorResult || errorElement != null)) {
-                                        if (delTable == null || procResult != element.completeResult) {
+                                            BoolUtils.IsValue(fileElement.removeFile, procResult != fileElement.skipResult) &&
+                                            (procResult != fileElement.errorResult || errorElement != null)) {
+                                        if (delTable == null || procResult != fileElement.completeResult) {
                                             Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
                                                 man.removeFile(filename)
                                             }
@@ -629,7 +714,7 @@ class FileProcessing extends FileListProcessing {
                                     }
                                 }
                                 finally {
-                                    element.free()
+                                    fileElement.free()
                                 }
                             }
                             finally {

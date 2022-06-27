@@ -1,3 +1,4 @@
+//file:noinspection GrMethodMayBeStatic
 package getl.lang
 
 import getl.h2.H2Connection
@@ -168,8 +169,8 @@ class FileProcessingTest extends TestDsl {
                 useList sqlQuery('SELECT DISTINCT sale_date FROM sales ORDER BY sale_date').rows()
                 countProc = countFileInDay
                 run { day ->
-                    def strday = DateUtils.FormatDate(day.sale_date as Date)
-                    def path = "${sourcePath}/$strday"
+                    def strDay = DateUtils.FormatDate(day.sale_date as Date)
+                    def path = "${sourcePath}/$strDay"
                     FileUtils.ValidPath(path, !debug)
 
                     def rows = h2Table('h2:sales') { sale ->
@@ -199,7 +200,8 @@ class FileProcessingTest extends TestDsl {
         }
     }
 
-    void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, Boolean isDirectly = null) {
+    void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing,
+              Boolean isDirectly = null, Long timeout = null) {
         generateData()
         Dsl() {
             h2Table('h2:story') {
@@ -213,15 +215,17 @@ class FileProcessingTest extends TestDsl {
             else
                 files('source').story = null
         }
-        procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, true)
+        procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, timeout,true)
         if (useStory)
-            procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, false)
+            procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, timeout,false)
     }
 
     @SuppressWarnings('GrMethodMayBeStatic')
-    void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, Boolean isDirectly, boolean firstRun) {
+    void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing,
+                      Boolean isDirectly, Long timeout, boolean firstRun) {
         Dsl() {
-            logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"
+            logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, " +
+                    "useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing, isDirectly=$isDirectly, timeout=$timeout"
 
             def res = fileman.processing(files('source')) {
                 useSourcePath {
@@ -236,6 +240,10 @@ class FileProcessingTest extends TestDsl {
                 removeFiles = delFiles
                 handleExceptions = true
                 processingDirectly = isDirectly
+                processingTimeout = timeout
+                processingTimeoutAsError = delSkip && archiveStorage
+                debugMode = debug
+
                 if (archiveStorage) {
                     storageProcessedFiles = files('archive')
                     storageErrorFiles = files('errors')
@@ -250,6 +258,8 @@ class FileProcessingTest extends TestDsl {
                     }
 
                 processFile { proc ->
+                    if (proc.attr.date == null)
+                        throw new Exception("Invalid attrs: ${proc.attr}")
                     logFine "Process file \"${proc.attr.filepath}/${proc.attr.filename}\" ..."
 
                     proc.savedFilePath = DateUtils.FormatDate('yyyyMMdd', proc.attr.date as Date)
@@ -261,7 +271,7 @@ class FileProcessingTest extends TestDsl {
                     }
 
                     if (proc.attr.num == 4)
-                        proc.throwError 'Number 4 is not like it!'
+                        proc.abortProcessing 'Number 4 is not like it!'
 
                     def count = h2Table('h2:sales')
                             .countRow('sale_date = ParseDateTime(\'{sale_date}\', \'yyyy-MM-dd\')', [sale_date: proc.attr.date])
@@ -273,8 +283,12 @@ class FileProcessingTest extends TestDsl {
 
                     if (cacheProcessing)
                         etl.copyRows(json('json:sales'), csvTemp('#cache')) { writeSynch = true }
-                    else
+                    else {
                         etl.copyRows(json('json:sales'), h2Table('h2:sales_json'))
+                    }
+
+                    if (timeout != null)
+                        pause(timeout * 10 * 5)
 
                     proc.result = proc.completeResult
                 }
@@ -290,45 +304,45 @@ class FileProcessingTest extends TestDsl {
                 }
             }
 
-            if (firstRun) {
-                assertEquals(countCompleteFiles, res.countFiles)
-            }
-            else {
-                assertEquals(0, res.countFiles)
-                if (!delSkip)
-                    assertEquals(countDays, res.countSkips)
+            if (timeout == null) {
+                if (firstRun) {
+                    assertEquals(countCompleteFiles, res.countFiles)
+                } else {
+                    assertEquals(0, res.countFiles)
+                    if (!delSkip)
+                        assertEquals(countDays, res.countSkips)
+                    else
+                        assertEquals(0, res.countSkips)
+                }
+                if (firstRun || (!firstRun && (!delFiles || !archiveStorage)))
+                    assertEquals(countErrorFiles, res.countErrors)
                 else
-                    assertEquals(0, res.countSkips)
-            }
-//            def countErrors = 0
-            if (firstRun || (!firstRun && (!delFiles || !archiveStorage)))
-                assertEquals(countErrorFiles, res.countErrors)
-            else
-                assertEquals(0, res.countErrors)
+                    assertEquals(0, res.countErrors)
 
-            if (files('source').story != null)
-                assertEquals(countCompleteFiles, h2Table('h2:story').countRow())
+                if (files('source').story != null)
+                    assertEquals(countCompleteFiles, h2Table('h2:story').countRow())
 
-            assertEquals(countCompleteRows, h2Table('h2:sales_json').countRow())
+                assertEquals(countCompleteRows, h2Table('h2:sales_json').countRow())
 
-            if (delFiles)
-                files('source') {
-                    connect()
-                    def countFiles = 0
-                    if (!delSkip) countFiles += countDays
-                    if (!archiveStorage) countFiles += countErrorFiles
-                    assertEquals(countFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
-                }
+                if (delFiles)
+                    files('source') {
+                        connect()
+                        def countFiles = 0
+                        if (!delSkip) countFiles += countDays
+                        if (!archiveStorage) countFiles += countErrorFiles
+                        assertEquals(countFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+                    }
 
-            if (archiveStorage) {
-                files('archive') {
-                    connect()
-                    assertEquals(countCompleteFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
-                }
+                if (archiveStorage) {
+                    files('archive') {
+                        connect()
+                        assertEquals(countCompleteFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+                    }
 
-                files('errors') {
-                    connect()
-                    assertEquals(countErrorFiles * 2, buildListFiles('*/sales.*.*') { recursive = true }.countRow())
+                    files('errors') {
+                        connect()
+                        assertEquals(countErrorFiles * 2, buildListFiles('*/sales.*.*') { recursive = true }.countRow())
+                    }
                 }
             }
         }
@@ -392,5 +406,33 @@ class FileProcessingTest extends TestDsl {
     @Test
     void parseWithStoryAndDataCacheAndRemove() {
         proc(true, true, true, true, true, true)
+    }
+
+    @Test
+    void parseWithTimeout() {
+        Dsl {
+            files('archive').cleanDir()
+            files('errors').cleanDir()
+            //countFileInDay = 1
+            proc(false, true, false, false, false, false, false, 1500)
+            assertFalse(files('source').list().isEmpty())
+
+            proc(true, true, false, false, false, false, false, 1500)
+            assertFalse(files('source').list().isEmpty())
+            assertTrue(files('archive').list().isEmpty())
+            assertFalse(files('errors').list().isEmpty())
+
+            files('errors').cleanDir()
+            proc(true, true, true, false, false, false, false, 1500)
+            assertTrue(files('source').list().isEmpty())
+            assertTrue(files('archive').list().isEmpty())
+            assertFalse(files('errors').list().isEmpty())
+
+            files('errors').cleanDir()
+            proc(true, true, true, false, false, false, false, 1500)
+            assertTrue(files('source').list().isEmpty())
+            assertTrue(files('archive').list().isEmpty())
+            assertFalse(files('errors').list().isEmpty())
+        }
     }
 }

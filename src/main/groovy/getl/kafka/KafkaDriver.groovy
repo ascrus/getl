@@ -10,18 +10,21 @@ import getl.json.JSONDataset
 import getl.tfs.TFS
 import getl.utils.FileUtils
 import getl.utils.ListUtils
-import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.producer.Callback
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.TopicPartition
 import java.time.Duration
 
@@ -91,22 +94,31 @@ class KafkaDriver extends Driver {
         throw new ExceptionGETL('Not supported!')
     }
 
+    void checkKafkaParams(KafkaDataset ds = null) {
+        if (ds != null && ds.kafkaTopic == null)
+            throw new ExceptionGETL("Required topic name in the dataset \"$ds\"!")
+
+        def con = currentKafkaConnection
+        if (con.bootstrapServers == null)
+            throw new ExceptionGETL('No servers are specified to connect to in the "bootstrapServers" in connection \"$con\"!')
+        if (con.groupId == null)
+            throw new ExceptionGETL('Group id required in connection \"$con\"!')
+    }
+
     @SuppressWarnings(['UnnecessaryQualifiedReference'])
     @Override
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         def ds = dataset as KafkaDataset
-        def topicName = ds.kafkaTopic
-        if (topicName == null)
-            throw new ExceptionGETL('In the dataset, you must specify the name of the topic Kafka!')
+        checkKafkaParams(ds)
 
         if (ds.field.isEmpty())
             throw new ExceptionGETL("Required fields description with dataset!")
 
         def con = currentKafkaConnection
-        if (con.bootstrapServers == null)
-            throw new ExceptionGETL('No servers are specified to connect to in the "bootstrapServers"!')
-        if (con.groupId == null)
-            throw new ExceptionGETL('Group id required!')
+        def topicName = ds.kafkaTopic
+
+        /*if (ds.autoCreateTopic())
+            createTopic(topicName, 1, 1.shortValue(), true)*/
 
         def fields = [] as List<String>
         if (prepareCode != null) {
@@ -121,7 +133,6 @@ class KafkaDriver extends Driver {
         def maxPoolRecords = (params.maxPollRecords as Integer)?:ro.maxPollRecords?:10000
 
         def props = new Properties()
-        props.putAll(con.connectProperties)
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, con.bootstrapServers)
         props.put(ConsumerConfig.GROUP_ID_CONFIG, con.groupId)
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
@@ -132,6 +143,8 @@ class KafkaDriver extends Driver {
             props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, limit)
         else
             props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPoolRecords)
+
+        props.putAll(con.connectProperties)
 
         def res = 0L
         KafkaConsumer<String, String> kafkaConsumer
@@ -166,7 +179,7 @@ class KafkaDriver extends Driver {
                 while (endOffs.any {kafkaConsumer.position(it.key) < it.value }) {
                     ConsumerRecords<String, String> records = kafkaConsumer.poll(dur)
 
-                    if (curRows >= 10000) {
+                    if (curRows >= 10000) { /* TODO: Сделать управляемый параметр */
                         writer.append(']')
                         writer.close()
 
@@ -215,7 +228,7 @@ class KafkaDriver extends Driver {
                     useConnection jsonCon
                     extension = 'json'
                     field = (!fields.isEmpty()) ? ds.getFields(fields) : ds.field
-                    rootNode = '.'
+                    rootNode = '.' /* TODO: вынести управляемым параметром */
                     dataNode = ds.dataNode
                     formatDate = ds.formatDate()
                     formatTime = ds.formatTime()
@@ -255,27 +268,27 @@ class KafkaDriver extends Driver {
 
     @Override
     void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+        def ds = dataset as KafkaDataset
+        checkKafkaParams(ds)
+
         def con = currentKafkaConnection
-        if (con.bootstrapServers == null)
-            throw new ExceptionGETL('No servers are specified to connect to in the "bootstrapServers"!')
-        if (con.groupId == null)
-            throw new ExceptionGETL('Group id required!')
+        def topicName = ds.kafkaTopic
+        if (ds.autoCreateTopic())
+            createTopic(topicName, 1, 1.shortValue(), true)
 
         if (prepareCode != null)
             prepareCode.call([]) as ArrayList
 
         def props = new Properties()
-        props.putAll(con.connectProperties)
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, con.bootstrapServers)
         props.put(ProducerConfig.ACKS_CONFIG, 'all')
-        props.put(ProducerConfig.RETRIES_CONFIG, 0)
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384)
         props.put(ProducerConfig.LINGER_MS_CONFIG, 1)
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432)
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
+        props.putAll(con.connectProperties)
 
-        def ds = dataset as KafkaDataset
         def wp = new WriterParams()
         wp.kafkaTopic = ds.kafkaTopic
         wp.keyName = ds.keyName
@@ -294,7 +307,13 @@ class KafkaDriver extends Driver {
         def json = wp.jsonGen.toJson(row)
         def record = (ds.keyName != null)?new ProducerRecord<String, String>(wp.kafkaTopic, wp.keyName, json): new ProducerRecord<String, String>(wp.kafkaTopic, json)
 
-        wp.kafkaProducer.send(record)
+        wp.kafkaProducer.send(record, new Callback() {
+            @Override
+            void onCompletion(RecordMetadata metadata, Exception exception) {
+                if (exception != null)
+                    throw exception
+            }
+        })
     }
 
     @Override
@@ -328,5 +347,91 @@ class KafkaDriver extends Driver {
     @Override
     Long getSequence(String sequenceName) {
         throw new ExceptionGETL('Not supported!')
+    }
+
+    AdminClient createAdminClient() {
+        checkKafkaParams()
+
+        def con = currentKafkaConnection
+
+        def props = new Properties()
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, con.bootstrapServers)
+        def res = AdminClient.create(props)
+
+        return res
+    }
+
+    List<String> listTopics(AdminClient adminClient = null) {
+        def res = [] as List<String>
+        def admin = adminClient?:createAdminClient()
+        try {
+            admin.listTopics().listings().get().each {topic ->
+                res.add(topic.name())
+            }
+        }
+        finally {
+            if (adminClient == null)
+                admin.close()
+        }
+
+        return res
+    }
+
+    Boolean existsTopic(String topicName, AdminClient adminClient = null) {
+        if (topicName == null)
+            throw new NullPointerException("Required topic name!")
+
+        def admin = adminClient?:createAdminClient()
+        Boolean res = false
+        try {
+            res = (listTopics(admin).indexOf(topicName) != -1)
+        }
+        finally {
+            if (adminClient == null)
+                admin.close()
+        }
+
+        return res
+    }
+
+    void createTopic(String topicName, Integer numPartitions, Short replicationFactor, Boolean ifNotExists, AdminClient adminClient = null) {
+        if (topicName == null)
+            throw new NullPointerException("Required topic name!")
+
+        def admin = adminClient?:createAdminClient()
+        try {
+            def exists = existsTopic(topicName, admin)
+            if (exists && !ifNotExists)
+                throw new ExceptionGETL("Topic \"$topicName\" already exists!")
+
+            if (!exists) {
+                def topic = new NewTopic(topicName, numPartitions, replicationFactor)
+                admin.createTopics(Collections.singleton(topic))
+            }
+        }
+        finally {
+            if (adminClient == null)
+                admin.close()
+        }
+    }
+
+    void dropTopic(String topicName, Boolean ifExists, AdminClient adminClient = null) {
+        if (topicName == null)
+            throw new NullPointerException("Required topic name!")
+
+        def admin = adminClient?:createAdminClient()
+        try {
+            def exists = existsTopic(topicName, admin)
+            if (!exists && !ifExists)
+                throw new ExceptionGETL("Topic \"$topicName\" not exists!")
+
+            if (exists) {
+                admin.deleteTopics(Collections.singleton(topicName))
+            }
+        }
+        finally {
+            if (adminClient == null)
+                admin.close()
+        }
     }
 }

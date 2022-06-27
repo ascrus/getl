@@ -131,11 +131,11 @@ class FileProcessingElement {
     }
 
     /**
-     * Throw exception and save error text to error file
+     * Save error text to error file, mark file as invalid and continue processing the next file
      * @param errorText text of error
      * @param fileName saved file name
      */
-    void throwError(String errorText, String fileName = null) {
+    void abortProcessing(String errorText, String fileName = null) {
         if (errorText == null)
             throw new ExceptionFileListProcessing('Error text must be specified!')
 
@@ -150,13 +150,28 @@ class FileProcessingElement {
      * @param errorText text of error
      * @param fileName saved file name
      */
-    void throwCriticalError(String errorText, String fileName = null) {
+    void throwError(String errorText, String fileName = null) {
         if (errorText == null)
             throw new ExceptionFileListProcessing('Error text must be specified!')
 
+        this.result = errorResult
         this.errorText = errorText
         this.errorFileName = fileName?:("${attr.filename}.error.txt")
+        throw new Exception(errorText)
+    }
+
+    /**
+     * Throw exception and save error text to error file
+     * @param error exception
+     * @param fileName saved file name
+     */
+    void throwError(Exception error, String fileName = null) {
+        if (error == null)
+            throw new ExceptionFileListProcessing('Error must be specified!')
+
         this.result = errorResult
-        throw new ExceptionFileListProcessing(errorText)
+        this.errorText = error.message
+        this.errorFileName = fileName?:("${attr.filename}.error.txt")
+        throw error
     }
 }

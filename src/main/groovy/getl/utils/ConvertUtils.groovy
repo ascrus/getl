@@ -31,11 +31,44 @@ class ConvertUtils {
 	 * @return
 	 */
 	static BigDecimal Object2BigDecimal(Object value) {
-		if (value == null || value.toString().length() == 0)
+		if (value == null)
+			return null
+
+		if (value instanceof BigDecimal)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toBigDecimal()
+
+		value = value.toString()
+		if (value.length() == 0)
 			return null
 
 		//noinspection GroovyAssignabilityCheck
 		return new BigDecimal(value)
+	}
+
+	/**
+	 * Convert object to big integer
+	 * @param value
+	 * @return
+	 */
+	static BigInteger Object2BigInteger(Object value) {
+		if (value == null)
+			return null
+
+		if (value instanceof BigInteger)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toBigInteger()
+
+		value = value.toString()
+		if (value.length() == 0)
+			return null
+
+		//noinspection GroovyAssignabilityCheck
+		return new BigInteger(value)
 	}
 	
 	/**
@@ -44,11 +77,44 @@ class ConvertUtils {
 	 * @return
 	 */
 	static Integer Object2Int(def value) {
-		if (value == null || value.toString().length() == 0)
+		if (value == null)
+			return null
+
+		if (value instanceof Integer)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toInteger()
+
+		value = value.toString()
+		if (value.length() == 0)
 			return null
 
 		//noinspection GroovyAssignabilityCheck
 		return Integer.valueOf(value)
+	}
+
+	/**
+	 * Convert object to short
+	 * @param value
+	 * @return
+	 */
+	static Short Object2Short(def value) {
+		if (value == null)
+			return null
+
+		if (value instanceof Short)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toInteger().shortValue()
+
+		value = value.toString()
+		if (value.length() == 0)
+			return null
+
+		//noinspection GroovyAssignabilityCheck
+		return Short.valueOf(value)
 	}
 	
 	/**
@@ -57,7 +123,17 @@ class ConvertUtils {
 	 * @return
 	 */
 	static Long Object2Long(def value) {
-		if (value == null || value.toString().length() == 0)
+		if (value == null)
+			return null
+
+		if (value instanceof Long)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toLong()
+
+		value = value.toString()
+		if (value.length() == 0)
 			return null
 
 		//noinspection GroovyAssignabilityCheck
@@ -70,11 +146,63 @@ class ConvertUtils {
 	 * @return
 	 */
 	static Double Object2Double(def value) {
-		if (value == null || value.toString().length() == 0)
+		if (value == null)
+			return null
+
+		if (value instanceof Double)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toDouble()
+
+		value = value.toString()
+		if (value.length() == 0)
 			return null
 
 		//noinspection GroovyAssignabilityCheck
 		return Double.valueOf(value)
+	}
+
+	/**
+	 * Convert object to boolean
+	 * @param value
+	 * @return
+	 */
+	static Boolean Object2Boolean(def value) {
+		if (value == null)
+			return null
+
+		if (value instanceof Boolean)
+			return value as Boolean
+
+		value = value.toString()
+		if (value.length() == 0)
+			return null
+
+		return (value.toLowerCase() in ['true', '1', 'on'])
+	}
+
+	/**
+	 * Convert object to float
+	 * @param value
+	 * @return
+	 */
+	static Float Object2Float(def value) {
+		if (value == null)
+			return null
+
+		if (value instanceof Float)
+			return value
+
+		if (value instanceof Number)
+			return (value as Number).toFloat()
+
+		value = value.toString()
+		if (value.length() == 0)
+			return null
+
+		//noinspection GroovyAssignabilityCheck
+		return Float.valueOf(value)
 	}
 	
 	/**

@@ -273,6 +273,15 @@ class FlowCopySpec extends FlowBaseSpec {
         setOnFilter(value)
     }
 
+    /** Code is called after processing rows from source to destination before starting bulk load */
+    Closure getOnPostProcessing() { params.onPostProcessing as Closure }
+    /** Code is called after processing rows from source to destination before starting bulk load */
+    void setOnPostProcessing(Closure value) { saveParamValue('onPostProcessing', value) }
+    /** Code is called after processing rows from source to destination before starting bulk load */
+    void postProcessing(Closure value) {
+        setOnPostProcessing(value)
+    }
+
     /** Initialization code before bulk load file */
     Closure getOnBulkLoad() { params.onBulkLoad as Closure }
     /** Initialization code before bulk load file */

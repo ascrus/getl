@@ -556,9 +556,13 @@ return $className"""
                                 scriptVars.putAll(userVars)
                         }
 
+                        def macroVars = modelVars + addVars
                         scriptVars.each { name, val ->
-                            if (val instanceof String || val instanceof GString)
-                                scriptVars.put(name, StringUtils.EvalMacroString(val.toString(), modelVars + scriptVars + addVars, false))
+                            if (val instanceof String || val instanceof GString) {
+                                def v = val.toString()
+                                if (v.indexOf('{') != -1)
+                                    scriptVars.put(name, StringUtils.EvalMacroString(v, scriptVars + macroVars, false))
+                            }
                         }
 
                         def execVars = new HashMap<String, Object>()
@@ -630,7 +634,7 @@ return $className"""
 
                         Map<String, Object> scriptResult
                         try {
-                            scriptResult = dslCreator.callScript(runClass, execVars, addVars)
+                            scriptResult = dslCreator.callScript(runClass, execVars, macroVars/*addVars*/)
                         }
                         catch (Throwable e) {
                             dslCreator.logError("Error execution class \"${runClass.name}\"", e)

@@ -5,11 +5,12 @@ import getl.lang.Getl
 import getl.stat.ProcessTime
 import getl.test.GetlTest
 import getl.utils.Config
+import getl.utils.Logs
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 
-@Ignore
+//@Ignore
 class KafkaTest extends GetlTest {
     private KafkaConnection con
     private SFTPManager man
@@ -30,11 +31,14 @@ class KafkaTest extends GetlTest {
         Config.LoadConfig(fileName: 'tests/filemanager/sftp.conf')
         man = new SFTPManager(config: 'test_sftp_filemanager')
 
+        Logs.global.logFileName = '{GETL_TEST}/logs/kafka.{date}.log'
+
         ds.with {
             useConnection con
             kafkaTopic = 'test1'
             dataNode = 'data'
             uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss'
+            autoCreateTopic = true
 
             field('ID') { type = bigintFieldType }
             field('SHIPMENT_ID') { type = bigintFieldType }
@@ -50,9 +54,9 @@ class KafkaTest extends GetlTest {
             field('IN_SPS') { type = integerFieldType }
             field('LAST_EVENT_STATE_ID') { type = bigintFieldType }
 
-            field('_meta_operation') { alias = 'meta.op' }
-            field('_meta_table') { alias = 'meta.table' }
-            field('_meta_key_ID') { type = bigintFieldType; alias = 'key.ID' }
+            field('_meta_operation') { alias = '#root.meta.op' }
+            field('_meta_table') { alias = '#root.meta.table' }
+            field('_meta_key_ID') { type = bigintFieldType; alias = '#root.key.ID' }
         }
     }
 
@@ -92,6 +96,8 @@ class KafkaTest extends GetlTest {
     @Test
     void testProducer() {
         Getl.Dsl {
+            con.createTopic('test2', 1, 1, true)
+
             options {processTimeDebug = true }
 
             def jsonFile = json {

@@ -55,7 +55,7 @@ class Flow {
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
-				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone', 'onFilter', 'onBulkLoad',
+				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing',
 				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
 				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics', 'processVars', 'saveExprErrors'])
@@ -64,9 +64,9 @@ class Flow {
 
 		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
 										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'clear', 'writeSynch',
-										  'onInit', 'onDone', 'process'])
+										  'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing',])
 		methodParams.register('writeAllTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'bulkLoad',
-											 'bulkAsGZIP', 'bulkEscaped', 'writeSynch', 'onInit', 'onDone', 'process'])
+											 'bulkAsGZIP', 'bulkEscaped', 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing',])
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
 										  'onInit', 'onDone', 'process', 'statistics', 'onFilter'])
@@ -133,7 +133,7 @@ class Flow {
 	@JsonIgnore
 	TFSDataset getErrorsDataset() { errorsDataset }
 
-	private Long countRow = 0
+	private Long countRow = 0L
 	/** Last number of rows processed */
 	@JsonIgnore
 	Long getCountRow() { countRow }
@@ -368,7 +368,7 @@ class Flow {
 		methodParams.validation("copy", params)
 
 		errorsDataset = null
-		countRow = 0
+		countRow = 0L
 		statistics.clear()
 
 		if (map_code == null && params.process != null)
@@ -507,6 +507,7 @@ class Flow {
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
 		Closure filterCode = params.onFilter as Closure
+		Closure postProcessing = params.onPostProcessing as Closure
 		Closure bulkLoadCode = params.onBulkLoad as Closure
 
 		def debug = BoolUtils.IsValue(params.debug, false)
@@ -542,7 +543,8 @@ class Flow {
 		Map<String, Object> bulkParams = new HashMap<String, Object>()
 		TFSDataset bulkDS = null
 		if (isBulkLoad) {
-			bulkParams.putAll(destParams?:new HashMap<String, Object>())
+			if (destParams != null)
+				bulkParams.putAll(destParams)
 			if (bulkAsGZIP)
 				bulkParams.compressed = "GZIP"
 			if (autoTran)
@@ -808,6 +810,9 @@ class Flow {
 			if (isExprError && scriptExpr != null)
 				logger.dump(null, 'Flow', 'Copy.Expressions', scriptExpr)
 
+			if (postProcessing != null)
+				postProcessing.call()
+
 			if (isBulkLoad) {
 				if (bulkLoadCode != null)
 					bulkLoadCode.call(bulkParams)
@@ -971,9 +976,10 @@ class Flow {
 						 Closure code = null) {
 		methodParams.validation("writeTo", params)
 
-		countRow = 0
+		countRow = 0L
 
-		if (code == null) code = params.process as Closure
+		if (code == null)
+			code = params.process as Closure
 		if (code == null)
 			throw new ExceptionGETL("Required process code for write to destination dataset")
 		
@@ -1010,6 +1016,8 @@ class Flow {
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
+		Closure postProcessing = params.onPostProcessing as Closure
+		Closure bulkLoadCode = params.onBulkLoad as Closure
 		
 		Map<String, Object> destParams
 		if (params.destParams != null && !(params.destParams as Map).isEmpty()) {
@@ -1037,7 +1045,8 @@ class Flow {
 			if (autoTran) bulkParams.autoCommit = false
 			if (bulkAsGZIP) bulkDS.isGzFile = true
 			bulkParams.source = bulkDS
-			if (bulkParams.abortOnError == null) bulkParams.abortOnError = true
+			/*if (bulkParams.abortOnError == null)
+				bulkParams.abortOnError = true*/
 			
 			destParams = new HashMap<String, Object>()
 			writer = bulkDS
@@ -1048,7 +1057,11 @@ class Flow {
 		}
 
 		def updateCode = { Map row ->
-			if (!writeSynch) writer.write(row) else writer.writeSynch(row)
+			if (!writeSynch)
+				writer.write(row)
+			else
+				writer.writeSynch(row)
+
 			countRow++
 		}
 		
@@ -1056,11 +1069,16 @@ class Flow {
 			dest.connection.startTran()
 		}
 		
-		if (clear) dest.truncate(truncate: false)
+		if (clear)
+			dest.truncate(truncate: false)
 		
 		def isError = false
 		try {
-			if (!writeSynch) writer.openWrite(destParams) else writer.openWriteSynch(destParams)
+			if (!writeSynch)
+				writer.openWrite(destParams)
+			else
+				writer.openWriteSynch(destParams)
+
 			code.call(updateCode)
 			writer.doneWrite()
 		}
@@ -1091,10 +1109,15 @@ class Flow {
 			dest.connection.commitTran()
 		}
 
+		if (postProcessing != null)
+			postProcessing.call()
+
 		if (isBulkLoad) {
-			if (autoTran) {
+			if (bulkLoadCode != null)
+				bulkLoadCode.call(bulkParams)
+
+			if (autoTran)
 				dest.connection.startTran()
-			}
 			try {
 				dest.bulkLoadFile(bulkParams)
 			}
@@ -1146,6 +1169,8 @@ class Flow {
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
+		Closure postProcessing = params.onPostProcessing as Closure
+		Closure bulkLoadCode = params.onBulkLoad as Closure
 
 		if (initCode != null) initCode.call()
 		
@@ -1188,7 +1213,9 @@ class Flow {
 					else if (at != null && ((at == "COPY" && isBulkLoad) || (at == "BULK" && !isBulkLoad))) {
 						tr = "ALL"
 					}
-					if (at != tr) destAutoTran.put(d.connection, tr)
+
+					if (at != tr)
+						destAutoTran.put(d.connection, tr)
 				}
 			} 
 			
@@ -1206,7 +1233,8 @@ class Flow {
 				if (isAutoTran) bp.autoCommit = false
 				if (bulkAsGZIP) bulkDS.isGzFile = true
 				bp.source = bulkDS
-				if (bp.abortOnError == null) bp.abortOnError = true
+				/*if (bp.abortOnError == null)
+					bp.abortOnError = true*/
 				
 				bulkParams.put(n, bp)
 				destParams.put(n, new HashMap())
@@ -1244,7 +1272,10 @@ class Flow {
 		def updateCode = { String name, Map row ->
 			curUpdater = name
 			Dataset d = writer.get(name)
-			if (!writeSynch) d.write(row) else d.writeSynch(row)
+			if (!writeSynch)
+				d.write(row)
+			else
+				d.writeSynch(row)
 		}
 		
 		def closeDestinations = { Boolean isError ->
@@ -1336,7 +1367,13 @@ class Flow {
 			rollbackTrans(["ALL", "COPY"])
 			throw e
 		}
-		
+
+		if (postProcessing != null)
+			postProcessing.call()
+
+		if (isBulkLoad && bulkLoadCode != null)
+			bulkLoadCode.call(bulkParams)
+
 		startTrans(["BULK"])
 		bulkLoadDS.each { String n, Dataset d ->
 			Dataset ds = dest.get(n) as Dataset
@@ -1357,7 +1394,8 @@ class Flow {
 			Executor.RunIgnoreErrors(dslCreator) { d.drop() }
 		}
 
-		if (doneCode != null) doneCode.call()
+		if (doneCode != null)
+			doneCode.call()
 	}
 
 	/**
@@ -1369,7 +1407,7 @@ class Flow {
 		methodParams.validation("process", params)
 
 		errorsDataset = null
-		countRow = 0
+		countRow = 0L
 
 		if (code == null) code = params.process as Closure
 		if (code == null)

@@ -1,12 +1,9 @@
+//file:noinspection unused
 package getl.proc.opts
 
 import getl.data.Dataset
 import getl.data.Field
-import getl.exception.ExceptionGETL
-import getl.lang.opts.BaseSpec
 import getl.proc.Flow
-import getl.tfs.TFSDataset
-import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -120,6 +117,42 @@ class FlowWriteSpec extends FlowBaseSpec {
      * Compress bulk file from GZIP algorithm
      */
     void setBulkAsGZIP(Boolean value) { saveParamValue('bulkAsGZIP', value) }
+
+    /** Before process write rows code */
+    Closure getOnPrepare() { params.onInit as Closure }
+    /** Before process write rows code */
+    void setOnPrepare(Closure value) { saveParamValue('onInit', value) }
+    /** Before process write rows code */
+    void prepare(Closure value) {
+        setOnPrepare(value)
+    }
+
+    /** After process write rows code */
+    Closure getOnFinalizing() { params.onDone as Closure }
+    /** After process write rows code */
+    void setOnFinalizing(Closure value) { saveParamValue('onDone', value) }
+    /** After process write rows code */
+    void finalizing(Closure value) {
+        setOnPrepare(value)
+    }
+
+    /** Code is called after processing rows from source to destination before starting bulk load */
+    Closure getOnPostProcessing() { params.onPostProcessing as Closure }
+    /** Code is called after processing rows from source to destination before starting bulk load */
+    void setOnPostProcessing(Closure value) { saveParamValue('onPostProcessing', value) }
+    /** Code is called after processing rows from source to destination before starting bulk load */
+    void postProcessing(Closure value) {
+        setOnPostProcessing(value)
+    }
+
+    /** Initialization code before bulk load file */
+    Closure getOnBulkLoad() { params.onBulkLoad as Closure }
+    /** Initialization code before bulk load file */
+    void setOnBulkLoad(Closure value) { saveParamValue('onBulkLoad', value) }
+    /** Initialization code before bulk load file */
+    void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+        setOnBulkLoad(value)
+    }
 
     /**
      * Closure code process row

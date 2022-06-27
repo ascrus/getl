@@ -51,7 +51,6 @@ import groovy.test.GroovyTestCase
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-
 import java.sql.Time
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
@@ -531,7 +530,8 @@ Examples:
                             def sp = en.path as String
                             if (sp == '.')
                                 storagePath = configFilePath
-                            else if (sp.matches('[.][/].+'))
+                            else //noinspection RegExpSimplifiable
+                            if (sp.matches('[.][/].+'))
                                 storagePath = configFilePath + sp.substring(1)
                             else
                                 storagePath = sp
@@ -2697,77 +2697,108 @@ Examples:
             }
 
             if (value != null) {
+                if (script instanceof Getl && (value instanceof String || value instanceof GString)) {
+                    def v = (value as CharSequence).toString()
+                    if (v.indexOf('{') != -1)
+                        value = StringUtils.EvalMacroString(v, [environment: configuration.environment] + (script as Getl).scriptExtendedVars, false)
+                }
+
                 switch (prop.type) {
                     case Character:
                         if (!(value instanceof Character))
                             value = value.toString().toCharacter()
 
                         break
-                    case String: case GString:
+                    case String:
                         if (value instanceof GetlRepository)
                             value = (value as GetlRepository).dslNameObject
-                        else if (!(value instanceof String || value instanceof GString))
+                        else
                             value = value.toString()
-                        else if (script instanceof Getl)
-                            value = StringUtils.EvalMacroString(value.toString(),
-                                    [environment: configuration.environment] + (script as Getl).scriptExtendedVars, false)
+
+                        break
+                    case GString:
+                        if (value instanceof GetlRepository)
+                            value = (value as GetlRepository).dslNameObject
                         else
                             value = value.toString()
 
                         break
                     case Short:
                         if (!(value instanceof Short))
-                            value = Short.valueOf(value.toString())
+                            value = ConvertUtils.Object2Short(value)
 
                         break
                     case Integer:
                         if (!(value instanceof Integer))
-                            value = Integer.valueOf(value.toString())
+                            value = ConvertUtils.Object2Int(value.toString())
 
                         break
                     case Long:
                         if (!(value instanceof Long))
-                            value = Long.valueOf(value.toString())
+                            value = ConvertUtils.Object2Long(value.toString())
 
                         break
                     case Float:
                         if (!(value instanceof Float))
-                            value = Float.valueOf(value.toString())
+                            value = ConvertUtils.Object2Float(value.toString())
 
                         break
                     case Double:
                         if (!(value instanceof Double))
-                            value = Double.valueOf(value.toString())
+                            value = ConvertUtils.Object2Double(value.toString())
 
                         break
                     case BigInteger:
                         if (!(value instanceof BigInteger))
-                            value = new BigInteger(value.toString())
+                            value = ConvertUtils.Object2BigInteger(value.toString())
 
                         break
                     case BigDecimal:
                         if (!(value instanceof BigDecimal))
-                            value = new BigDecimal(value.toString())
+                            value = ConvertUtils.Object2BigDecimal(value.toString())
 
                         break
                     case Date:
                         if (!(value instanceof Date)) {
-                            value = value.toString()
-                            if (value.length() == 10)
-                                value = DateUtils.ParseDate('yyyy-MM-dd', value, false)
+                            if (value instanceof String || value instanceof GString) {
+                                value = value.toString()
+                                if (value.length() == 10)
+                                    value = DateUtils.ParseDate('yyyy-MM-dd', value, false)
+                                else if (value.length() == 19)
+                                    value = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', value, false)
+                                else if (value.length() == 23)
+                                    value = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', value, false)
+                                else
+                                    throw new ExceptionGETL("Incomprehensible date string \"$value\"!")
+                            }
+                            else if (value instanceof Number)
+                                value = new Date((value as Number).longValue())
                             else
-                                value = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', value, false)
+                                throw new ExceptionGETL("It is not possible to convert the value \"$value\" into a date!")
                         }
 
                         break
                     case Time:
-                        if (!(value instanceof Time))
-                            value = DateUtils.ParseSQLTime('HH:mm:ss', value, false)
+                        if (!(value instanceof Time)) {
+                            if (value instanceof String || value instanceof GString) {
+                                value = value.toString()
+                                if (value.length() == 8)
+                                    value = DateUtils.ParseSQLTime('HH:mm:ss', value, false)
+                                else if (value.length() == 12)
+                                    value = DateUtils.ParseSQLTime('HH:mm:ss.SSS', value, false)
+                                else
+                                    throw new ExceptionGETL("Incomprehensible time string \"$value\"!")
+                            }
+                            else if (value instanceof Number)
+                                value = new Time((value as Number).longValue())
+                            else
+                                throw new ExceptionGETL("It is not possible to convert the value \"$value\" into a time!")
+                        }
 
                         break
                     case Boolean:
                         if (!(value instanceof Boolean)) {
-                            value = (value.toString().toLowerCase() in ['true', '1', 'on'])
+                            value = ConvertUtils.Object2Boolean(value)
                         }
 
                         break
@@ -2784,8 +2815,12 @@ Examples:
 
                         break
                     case Path:
-                        if (!(value instanceof Path))
-                            value = new Path(value.toString())
+                        if (!(value instanceof Path)) {
+                            if (value instanceof String || value instanceof GString)
+                                value = new Path(value.toString())
+                            else
+                                throw new ExceptionGETL("It is not possible to convert the value \"$value\" into a path!")
+                        }
 
                         break
 
@@ -5057,7 +5092,8 @@ Examples:
         def disposeConnections = { Map<String, List<ExecutorThread.CloneObject>> list ->
             (list?.get('getl.lang.sub.RepositoryConnections') as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
                 def con = cloneObject.cloneObject as Connection
-                if (con != null && con.driver.isSupport(Driver.Support.CONNECT)) con.connected = false
+                if (con != null && con.driver?.isSupport(Driver.Support.CONNECT))
+                    con.connected = false
             }
 
             (list?.get('getl.lang.sub.RepositoryFilemanagers') as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->

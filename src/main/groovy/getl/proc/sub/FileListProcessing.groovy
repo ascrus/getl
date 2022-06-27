@@ -605,7 +605,7 @@ abstract class FileListProcessing implements GetlRepository {
     }
 
     /** Used internal names */
-    List<String> getUsedInternalVars() { return null }
+    List<String> getUsedInternalVars() { ['filepath', 'filename', 'filedate', 'filesize'] }
 
     /** Init process */
     protected void initProcess() {
@@ -652,12 +652,14 @@ abstract class FileListProcessing implements GetlRepository {
 
         def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
         usedInternalVars?.each {
-            if (it in vars) throw new ExceptionFileListProcessing("A variable named \"$it\" is not allowed!")
+            if (it in vars)
+                throw new ExceptionFileListProcessing("A variable named \"$it\" is not allowed!")
         }
+        def allVars = usedInternalVars + vars
 
         if (!order.isEmpty()) {
             order.each { col ->
-                if (!((col as String).toLowerCase() in vars))
+                if (!((col as String).toLowerCase() in allVars))
                     throw new ExceptionFileListProcessing("Column \"$col\" specified for sorting was not found!")
             }
         }

@@ -263,22 +263,30 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected Dataset getStoryDataset() {
+        if (storyDatasetName == null)
+            return null
+
         checkGetlInstance()
-        return (storyDatasetName != null)?_dslCreator.dataset(storyDatasetName):null
+        def dsName = modelStoryDatasetName()
+        Dataset res
+        try {
+            res = _dslCreator.dataset(dsName)
+        }
+        catch (ExceptionDSL e) {
+            _dslCreator.logError("Model \"$this\" has invalid story dataset \"$dsName\"", e)
+            throw e
+        }
     }
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
     /** Dataset of mapping processing history */
-    String modelStoryDatasetName() { storyDatasetName }
+    String modelStoryDatasetName() { StringUtils.EvalMacroString(storyDatasetName, modelVars, false) }
 
     /** Use specified dataset name of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected void useStoryDatasetName(String datasetName) {
         checkGetlInstance()
-        if (datasetName != null)
-            _dslCreator.dataset(datasetName)
-
         saveParamValue('storyDatasetName', datasetName)
     }
     /** Use specified dataset of mapping processing history */

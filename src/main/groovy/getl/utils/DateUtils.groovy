@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.ResolverStyle
 import java.time.temporal.ChronoField
+import java.util.concurrent.TimeUnit
 
 /**
  * Data and time library functions class
@@ -993,11 +994,13 @@ class DateUtils {
 
 	/**
 	 * Convert object to duration
-	 * @param obj comma separated text or list with days, hours, minutes, seconds and milliseconds
+	 * @param obj comma separated text or list with days, hours, minutes, seconds and milliseconds or millisecond with long
 	 * @return duration object
 	 */
 	static Duration ToDuration(Object obj) {
-		if (obj == null) return null
+		if (obj == null)
+			return null
+
 		Duration res
 		if (obj instanceof List) {
 			def list = obj as List<Integer>
@@ -1005,8 +1008,22 @@ class DateUtils {
 		}
 		else if (obj instanceof String || obj instanceof GString) {
 			def list = obj.toString().split(',')
-			for (int i = 0; i < list.length; i++) { if (list[i] == '') list[i] = '0' }
+			for (int i = 0; i < list.length; i++) { if (list[i] == '')
+				list[i] = '0' }
 			res = new Duration(list[0].toInteger(), list[1].toInteger(), list[2].toInteger(), list[3].toInteger(), list[4].toInteger())
+		}
+		else if (obj instanceof Long) {
+			def v = obj as Long
+			def days = TimeUnit.MILLISECONDS.toDays(v).intValue()
+			v -= days * 24 * 60 * 60 * 1000
+			def hours = TimeUnit.MILLISECONDS.toHours(v).intValue()
+			v -= hours * 60 * 60 * 1000
+			def minutes = TimeUnit.MILLISECONDS.toMinutes(v).intValue()
+			v -= minutes * 60 * 1000
+			def seconds = TimeUnit.MILLISECONDS.toSeconds(v).intValue()
+			v -= seconds * 1000
+			def ms = TimeUnit.MILLISECONDS.toMillis(v).intValue()
+			res = new Duration(days, hours, minutes, seconds, ms)
 		}
 		else {
 			throw new ExceptionGETL("Unsupported class ${obj.getClass().name} for converting to duration object!")

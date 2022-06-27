@@ -129,7 +129,6 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
             throw new ExceptionModel("The model connection is not specified!")
 
         super.checkModel(checkObjects)
-        checkDataset(storyDataset)
     }
 
     @Override

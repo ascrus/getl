@@ -808,7 +808,7 @@ class Logs {
 		FileUtils.ValidFilePath(fn)
 
 		File df = new File(fn)
-		def w
+		PrintWriter w
 		try {
 			w = new PrintWriter(df.newWriter("UTF-8", true))
 			w.println "******************** Time: ${DateUtils.FormatDateTime(DateUtils.Now())} ********************"

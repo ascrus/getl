@@ -2,12 +2,17 @@
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.ExceptionDSL
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorFactory
 import getl.proc.sub.ExecutorListElement
+import getl.proc.sub.ExecutorRunClosure
+import getl.proc.sub.ExecutorRunCode
 import getl.proc.sub.ExecutorSplitListElement
 import getl.proc.sub.ExecutorThread
+import getl.proc.sub.ExecutorTimeoutException
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -71,6 +76,7 @@ class Executor implements GetlRepository {
 	/** Write thread errors to dump file (default false ) */
 	@Synchronized
 	Boolean getDumpErrors() { dumpErrors }
+	/** Write thread errors to dump file (default false ) */
 	@Synchronized
 	void setDumpErrors(Boolean value) { dumpErrors = value }
 	
@@ -85,8 +91,7 @@ class Executor implements GetlRepository {
 
 	/** Run has errors */
 	private Boolean hasError = false
-	//private final Object lockHashError = new Object()
-	
+
 	/** Threads has errors */
 	@Synchronized
 	Boolean getIsError () { hasError }
@@ -882,4 +887,74 @@ class Executor implements GetlRepository {
 	/** Current logger */
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
+
+	/**
+	 * Execute code no longer than the specified time interval
+	 * @param maximumProcessingTime maximum allowed execution time in milliseconds
+	 * @param cl executable code
+	 * @return code was executed within the specified time interval
+	 */
+	@CompileStatic
+	static void runClosureWithTimeout(Long maximumProcessingTime, Closure cl) {
+		if (cl == null)
+			throw new NullPointerException('Execution code not set in parameter "cl"!')
+
+		if (maximumProcessingTime == null || maximumProcessingTime == 0) {
+			cl.call()
+			return
+		}
+
+		runCodeWithTimeout(maximumProcessingTime, new ExecutorRunClosure(cl))
+	}
+
+	/**
+	 * Execute code no longer than the specified time interval
+	 * @param maximumProcessingTime maximum allowed execution time in milliseconds
+	 * @param code executable code
+	 * @return code was executed within the specified time interval
+	 */
+	@CompileStatic
+	static void runCodeWithTimeout(Long maximumProcessingTime, ExecutorRunCode code) {
+		if (code == null)
+			throw new NullPointerException('Execution code not set in parameter "code"!')
+
+		if (maximumProcessingTime == null || maximumProcessingTime == 0) {
+			try {
+				code.code()
+			}
+			catch (Throwable e) {
+				try {
+					code.error(e)
+				}
+				catch (Throwable ignored) { }
+				throw e
+			}
+			return
+		}
+
+		if (maximumProcessingTime < 0)
+			throw new ExceptionDSL("The value must be greater than zero!")
+
+		def service = Executors.newSingleThreadExecutor(new ExecutorFactory())
+		service.submit(code)
+		service.shutdown()
+
+		def res = true
+		try {
+			if (!service.awaitTermination(maximumProcessingTime, TimeUnit.MILLISECONDS)) {
+				service.shutdownNow()
+				res = false
+			}
+		}
+		catch (InterruptedException e) {
+			service.shutdownNow()
+			throw e
+		}
+
+		if (code.runCodeError != null)
+			throw code.runCodeError
+
+		if (!res)
+			throw new ExecutorTimeoutException(code.timeoutMessageError())
+	}
 }

@@ -42,4 +42,7 @@ class WorkflowUserCode extends Getl {
 
     /** Workflow model variables */
     Map<String, Object> getModelVars() { currentModel.modelVars }
+
+    /** Workflow model attributes */
+    Map<String, Object> getModelAttrs() { currentModel.modelAttrs }
 }

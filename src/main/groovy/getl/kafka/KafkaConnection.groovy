@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.driver.Driver
+import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import groovy.transform.InheritConstructors
 
@@ -29,7 +30,8 @@ class KafkaConnection extends Connection {
     @Override
     protected void registerParameters() {
         super.registerParameters()
-        methodParams.register('Super', ['bootstrapServers', 'connectProperties', 'groupId'])
+        methodParams.register('Super', ['bootstrapServers', 'connectProperties', 'groupId', 'autoCreateTopic', 'groupSeparator', 'uniFormatDateTime',
+                                        'decimalSeparator', 'formatBoolean', 'formatDate', 'formatDateTime', 'formatTime', 'formatTimestampWithTz'])
     }
 
     @Override
@@ -53,6 +55,13 @@ class KafkaConnection extends Connection {
         if (value != null)
             connectProperties.putAll(value)
     }
+
+    /** Automatically create a topic on request if it doesn't exist in Kafka */
+    Boolean getAutoCreateTopic() { params.autoCreateTopic as Boolean }
+    /** Automatically create a topic on request if it doesn't exist in Kafka */
+    void setAutoCreateTopic(Boolean value) { params.autoCreateTopic = value}
+    /** Automatically create a topic on request if it doesn't exist in Kafka */
+    Boolean autoCreateTopic() { BoolUtils.IsValue(autoCreateTopic) }
 
     /** Format for date fields */
     String getFormatDate() { params.formatDate as String }
@@ -106,4 +115,47 @@ class KafkaConnection extends Connection {
     void setGroupSeparator(String value) { params.groupSeparator = value }
     /** Group separator for number fields */
     String groupSeparator() { groupSeparator }
+
+    /**
+     * Check topic existing in Kafka
+     * @param topicName topic name
+     * @return check result
+     */
+    Boolean topicExists(String topicName) {
+        if (topicName == null)
+            throw new NullPointerException("Required name topic!")
+
+        return currentKafkaDriver.existsTopic(topicName)
+    }
+
+    /**
+     * Create topic in Kafka
+     * @param topicName topic name
+     * @param numPartitions number partitions
+     * @param replicationFactor replication factor
+     * @param ifNotExists create topic if not exists in Kafka
+     */
+    void createTopic(String topicName, Integer numPartitions = 1, Integer replicationFactor = 1, Boolean ifNotExists = false) {
+        currentKafkaDriver.createTopic(topicName, numPartitions, replicationFactor.shortValue(), ifNotExists)
+    }
+
+    /**
+     * Drop topic in Kafka
+     * @param topicName topic name
+     * @param ifExists drop topic if exists in Kafka
+     */
+    void dropTopic(String topicName, Boolean ifExists = false) {
+        currentKafkaDriver.dropTopic(topicName, ifExists)
+    }
+
+    /**
+     * Read list of topic in Kafka
+     * @return list of topic
+     */
+    List<String> listTopics() {
+        return currentKafkaDriver.listTopics()
+    }
+
+    @Override
+    String getObjectName() { (bootstrapServers != null)?"Kafka:[$bootstrapServers]":'Kafka' }
 }

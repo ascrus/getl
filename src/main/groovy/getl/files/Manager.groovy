@@ -2045,8 +2045,11 @@ WHERE
 	 */
 	void createLocalDir(String dir, Boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
-		if (!new File(fn).mkdirs() && throwError)
+		def file = new File(fn)
+		if (!file.mkdirs() && throwError)
 			throw new ExceptionGETL("Cannot create local directory \"${fn}\" on source \"$this\"!")
+		if (isTempLocalDirectory)
+			file.deleteOnExit()
 	}
 
 	/**

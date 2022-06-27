@@ -5,6 +5,7 @@ import getl.csv.CSVConnection
 import getl.data.Connection
 import getl.db2.DB2Connection
 import getl.dbf.DBFConnection
+import getl.driver.Driver
 import getl.excel.ExcelConnection
 import getl.firebird.FirebirdConnection
 import getl.h2.H2Connection
@@ -117,6 +118,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     @Override
     protected void processUnregisteringObject(Connection obj) {
         super.processUnregisteringObject(obj)
-        obj.connected = false
+        if (obj.driver?.isSupport(Driver.Support.CONNECT))
+            obj.connected = false
     }
 }

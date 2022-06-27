@@ -6,7 +6,7 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.kafka.opts.KafkaReadSpec
-import getl.utils.DateUtils
+import getl.utils.BoolUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -48,6 +48,13 @@ class KafkaDataset extends Dataset {
     String getKeyName() { params.keyName as String }
     /** Topic key name (default null to get all keys) */
     void setKeyName(String value) { params.keyName = value }
+
+    /** Automatically create a topic on request if it doesn't exist in Kafka */
+    Boolean getAutoCreateTopic() { params.autoCreateTopic as Boolean }
+    /** Automatically create a topic on request if it doesn't exist in Kafka */
+    void setAutoCreateTopic(Boolean value) { params.autoCreateTopic = value}
+    /** Automatically create a topic on request if it doesn't exist in Kafka */
+    Boolean autoCreateTopic() { BoolUtils.IsValue(autoCreateTopic, currentKafkaConnection.autoCreateTopic()) }
 
     /** Format for date fields */
     String getFormatDate() { params.formatDate as String }
@@ -154,8 +161,8 @@ class KafkaDataset extends Dataset {
     @JsonIgnore
     @Override
     String getObjectName() {
-        def objName = (kafkaTopic != null)?"Kafka topic $kafkaTopic":'noname'
-        return (connection != null)?"Kafka servers ${currentKafkaConnection?.bootstrapServers}, $objName":objName
+        def objName = (kafkaTopic != null)?":$kafkaTopic":''
+        return (connection != null)?"${currentKafkaConnection?.bootstrapServers}:[$objName]":'Kafka'
     }
     /** Full dataset name */
     @JsonIgnore

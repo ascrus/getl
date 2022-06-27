@@ -46,7 +46,7 @@ class ExecutorTest extends GetlTest {
                 useList 1, 2, 3
                 countProc = 3
                 run {
-                    this.shouldFail {
+                    shouldFail {
                         run {
                             logError "Double run!"
                         }
@@ -54,7 +54,7 @@ class ExecutorTest extends GetlTest {
                 }
 
                 addThread {
-                    this.shouldFail {
+                    shouldFail {
                         run {
                             logError "Double run!"
                         }
@@ -63,7 +63,7 @@ class ExecutorTest extends GetlTest {
                 exec()
 
                 startBackground {
-                    this.shouldFail {
+                    shouldFail {
                         logInfo 'Start run'
                         run {
                             logError "Double run!"
@@ -196,6 +196,39 @@ class ExecutorTest extends GetlTest {
                 }
             }
             assertEquals(50, so.count)
+        }
+    }
+
+    @Test
+    void testExecuteTimeout() {
+        Getl.Dsl {
+            Executor.runClosureWithTimeout(1000) {
+                logInfo 'Start 1'
+                pause(100)
+                logInfo 'Finish 1'
+            }
+
+            shouldFail { Executor.runClosureWithTimeout(100) {
+                logInfo 'Start 2'
+                pause(1000)
+                logInfo 'Finish 2'
+            }}
+
+            def i = 0L
+            Executor.runClosureWithTimeout(1000) {
+                (1..100).each {
+                    i++
+                }
+            }
+            assertEquals(100L, i)
+
+            i = 0
+            shouldFail { Executor.runClosureWithTimeout(100) {
+                (1..1000000000L).each {
+                    i++
+                }
+            }}
+            assertNotEquals(1000000000L, i)
         }
     }
 }
