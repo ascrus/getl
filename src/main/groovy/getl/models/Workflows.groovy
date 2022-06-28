@@ -318,7 +318,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                 res = +stepExecute(node, addVars, including, excluding, scriptClassLoader)
             }
             catch (Throwable e) {
-                dslCreator.logError("Error execution step \"${node.stepName}\"!", e)
+                dslCreator.logError("Error execution step \"${node.stepName}\"", e)
                 throw e
             }
         }
@@ -462,7 +462,7 @@ return $className"""
                     res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
                 }
                 catch (Throwable e) {
-                    dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+                    dslCreator.logError("Error execution step \"${subNode.stepName}\"", e)
                     throw e
                 }
             }
