@@ -36,4 +36,24 @@ class TestDataset extends GetlTest {
         ds1.field('description') { type = textFieldType }
         assertEquals([description: Dataset.EqualFieldStatus.ADDED], ds1.compareFields(ds2.field))
     }
+
+    @Test
+    void testCheckRow() {
+        new Dataset().tap {
+            field('id') { type = integerFieldType; isKey = true; length = 3 }
+            field('name') {isNull = false; length = 10 }
+            field('value') { type = numericFieldType; length = 5; precision = 2 }
+            field('dt') { type = datetimeFieldType }
+
+            def res1 = checkRowByFields([id: 1234, name: '12345', value: 123.45], true, true)
+            //println res1
+            assertTrue(res1.isEmpty())
+
+            def res2 = checkRowByFields([value: 123.456], true, true)
+            //println res2
+            assertEquals(2, res2.size())
+            assertEquals(['id', 'name'], res2.notnull)
+            assertEquals(['value'], res2.length)
+        }
+    }
 }

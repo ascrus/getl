@@ -218,7 +218,6 @@ println time() + 'start'
 }
 println time() + 'finish' '''
 
-        def count = 0
         def codePage = (Config.isWindows())?'cp866':'utf-8'
         def cmd = (Config.isWindows())?'groovy.bat check_run.groovy':'groovy check_run.groovy'
 
@@ -230,15 +229,12 @@ println time() + 'finish' '''
                 println outConsole.substring(curConsole, outConsole.length() - 1) + ' >>> ' + new Timestamp(new Date().time)
                 curConsole = outConsole.length()
             }
-            count++
         }
 
         if (exitCode != 0)
             println outErrors.toString()
 
         assertEquals(0, exitCode)
-        assertEquals(7, count)
-
         assertEquals(7, outConsole.readLines().size())
         assertEquals(0, outErrors.length())
 

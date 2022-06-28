@@ -1913,4 +1913,50 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		return res
 	}
+
+	/**
+	 * Check row field values for dataset field constraints
+	 * @param row checked row
+	 * @param checkNotNull check null constraint
+	 * @param checkLength check field length limit
+	 * @param excludeFields list of fields excluded from validation
+	 * @return list of fields with errors
+	 */
+	Map<String, List<String>> checkRowByFields(Map row, Boolean checkNotNull = true, Boolean checkLength = false, List<String> excludeFields = null) {
+		if (row == null)
+			throw new NullPointerException('Required row!')
+
+		if (excludeFields != null)
+			excludeFields = excludeFields*.toLowerCase()
+		else
+			excludeFields = [] as List<String>
+
+		def invalidNotNull = [] as List<String>
+		def invalidLength = [] as List<String>
+		field.each { field ->
+			def fieldName = field.name.toLowerCase()
+			if (fieldName in excludeFields)
+				return
+
+			def value = row.get(fieldName)
+
+			if (checkNotNull && !field.isNull && value == null)
+				invalidNotNull.add(field.name)
+			else if (checkLength && field.length != null && value != null && field.AllowLength(field)) {
+				def len = value.toString().length()
+				if (field.type == Field.numericFieldType && field.precision > 0)
+					len--
+				if (len > field.length)
+					invalidLength.add(field.name)
+			}
+		}
+
+		def res = [:] as Map<String, List<String>>
+		if (!invalidNotNull.isEmpty())
+			res.notnull = invalidNotNull
+		if (!invalidLength.isEmpty())
+			res.length = invalidLength
+
+		return res
+	}
 }
