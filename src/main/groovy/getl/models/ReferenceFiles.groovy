@@ -2,6 +2,7 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.files.FileManager
 import getl.files.Manager
@@ -108,6 +109,9 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** Valid manager connection */
     @Override
     void checkModel(Boolean checkObjects = true) {
+        if (!dslCreator.unitTestMode)
+            throw new ExceptionDSL("Working with model \"$this\" is allowed only in unit test mode!")
+
         if (destinationManagerName == null)
             throw new ExceptionModel("The destination manager name is not specified!")
 

@@ -169,12 +169,12 @@ Examples:
         p.register('main.config', ['path', 'filename'])
         p.validation('main', jobArgs)
 
-        def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
+        //def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
 
         GetlSetInstance(this)
         setGetlSystemParameter('mainClass', getClass().name)
         setGetlSystemParameter('groovyConsole', true)
-        setUnitTestMode(isTestMode)
+        setUnitTestMode(true)
 
         if (jobArgs.environment == null) {
             def propPath = new File('.')
@@ -793,7 +793,8 @@ Examples:
             groovyStarter()
     }
 
-    static Boolean LaunchedFromGroovyConsole = false
+    /** Indicates that the script is being run from the Groovy launcher */
+    static public Boolean LaunchedFromGroovyConsole = false
 
     static String MainClassName() {
         def trace = Thread.currentThread().getStackTrace()

@@ -119,6 +119,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     }
 
     @Override
+    void checkModel(Boolean checkObjects = true) {
+        if (!dslCreator.unitTestMode)
+            throw new ExceptionDSL("Working with model \"$this\" is allowed only in unit test mode!")
+        super.checkModel(checkObjects)
+    }
+
+    @Override
     protected void checkModelDataset(Dataset ds, String connectionName = null) {
         super.checkModelDataset(ds, connectionName)
 
@@ -134,10 +141,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /**
      * Create reference tables
      * @param recreate recreate table if exists
-     * @param grantRolesToSchema give access grants to the reference schema for user roles
+     * @param grantUserRolesToSchema give access grants to the reference schema for user roles
+     * @param listSchemaGrants list of roles and users to grant schema access
      */
-    void createReferenceTables(Boolean recreate = false, Boolean grantRolesToSchema = false) {
+    void createReferenceTables(Boolean recreate = false, Boolean grantUserRolesToSchema = false, List<String> listSchemaGrants = null) {
         checkModel()
+        if (listSchemaGrants == null)
+            listSchemaGrants = [] as List<String>
         dslCreator.logFinest("Create reference tables for model [$repositoryModelName] ...")
         new QueryDataset(dslCreator: dslCreator).tap {
             useConnection referenceConnection
@@ -153,24 +163,31 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                     throw e
                 }
                 dslCreator.logInfo("$repositoryModelName: to store the reference data created scheme \"$referenceSchemaName\"")
-                if (grantRolesToSchema) {
-                    query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
-                    def rows = rows()
-                    if (rows.size() != 1)
-                        throw new ExceptionDSL("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
-                    def roles = rows[0].roles as String
-                    if (roles != null && roles != '') {
-                        try {
-                            currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
-                                    [queryParams: [schema: referenceSchemaName, roles: roles]])
-                        }
-                        catch (Exception e) {
-                            dslCreator.logError("Error granting reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\"", e)
-                            throw e
-                        }
-                        dslCreator.logInfo("$repositoryModelName: reference schema \"$referenceSchemaName\" granted to roles: $roles")
+            }
+
+            if (grantUserRolesToSchema) {
+                query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
+                def rows = rows()
+                if (rows.size() != 1)
+                    throw new ExceptionDSL("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
+                def roles = rows[0].roles as String
+                if (roles != null && roles != '') {
+                    roles.split(',').each {
+                        listSchemaGrants.add(it.trim())
                     }
                 }
+            }
+
+            if (!listSchemaGrants.isEmpty()) {
+                try {
+                    currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
+                            [queryParams: [schema: referenceSchemaName, roles: listSchemaGrants.join(', ')]])
+                }
+                catch (Exception e) {
+                    dslCreator.logError("Error granting reference schema \"$referenceSchemaName\" for model \"$repositoryModelName\"", e)
+                    throw e
+                }
+                dslCreator.logInfo("$repositoryModelName: reference schema \"$referenceSchemaName\" granted to $listSchemaGrants")
             }
         }
 

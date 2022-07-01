@@ -320,7 +320,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			vars.put(scriptLabel, rows)
 	}
 
-	private Pattern setOperatorPattern = Pattern.compile('(?i)\\s*[@]?SET\\s+(.*)')
+	private Pattern setOperatorPattern = Pattern.compile('(?im)\\s*[@]?SET\\s+((.|\\n)*)')
 	
 	/*** Do setting variable command */
 	private void doSetVar(SQLParser parser)  {
@@ -478,7 +478,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 
 	/** Logging echo message */
-	private void doEcho(SQLParser parser) {
+	private void doEcho(SQLParser parser) { /* TODO: если ECHO последнее и перед ним SET без точки запятой, то глотается */
 		def parseScript = parser.lexer.script
 
 		def posHeader = parser.lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], 'ECHO')
