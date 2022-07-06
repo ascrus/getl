@@ -129,10 +129,14 @@ class StringUtils {
 
 			def vl = vn.toLowerCase()
 			def varValue = vars.get(vl)
-			if (!vars.containsKey(vl) || (varValue instanceof Map)) {
-				if (errorWhenUndefined)
-					throw new ExceptionGETL("Unknown variable \"$vn\", " +
-							"known vars: ${vars.keySet().toList().sort().join(', ')}")
+			if (!vars.containsKey(vl) || (varValue instanceof Map)) { /* TODO: why not map? */
+				if (errorWhenUndefined) {
+					if ((varValue instanceof Map))
+						throw new ExceptionGETL("Variable \"$vn\" can not be Map!")
+					else
+						throw new ExceptionGETL("Unknown variable \"$vn\", " +
+								"known vars: ${vars.keySet().toList().sort().join(', ')}")
+				}
 
 				sb.append(varName)
 
