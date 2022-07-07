@@ -320,10 +320,10 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			vars.put(scriptLabel, rows)
 	}
 
-	private Pattern setOperatorPattern = Pattern.compile('(?im)\\s*[@]?SET\\s+((.|\\n)*)')
+	private Pattern setOperatorPattern = Pattern.compile('(?is)[\\s\\n]*[@]?SET\\s+(.*)')
 	
 	/*** Do setting variable command */
-	private void doSetVar(SQLParser parser)  {
+	private void doSetVar(SQLParser parser) {
 		def matcher = setOperatorPattern.matcher(parser.lexer.scriptBuild(ignoreComments: true))
 		if (!matcher)
 			throw new ExceptionGETL("Invalid SET statement: ${parser.lexer.script}")
