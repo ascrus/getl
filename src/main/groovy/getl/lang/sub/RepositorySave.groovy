@@ -38,7 +38,7 @@ class RepositorySave extends Getl {
             if (args instanceof String[])
                 args = args.toList()
             else if (args instanceof String || args instanceof GString)
-                args = [args.toString()] as List<String>
+                args = [(args as Object).toString()] as List<String>
             else
                 throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
         }

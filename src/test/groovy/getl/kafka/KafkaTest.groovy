@@ -10,7 +10,7 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 
-//@Ignore
+@Ignore
 class KafkaTest extends GetlTest {
     private KafkaConnection con
     private SFTPManager man

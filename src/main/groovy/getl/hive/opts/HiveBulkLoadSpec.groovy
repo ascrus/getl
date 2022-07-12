@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.hive.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore

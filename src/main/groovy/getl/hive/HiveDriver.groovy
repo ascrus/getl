@@ -22,12 +22,11 @@ class HiveDriver extends JDBCDriver {
     protected void registerParameters() {
         super.registerParameters()
 
-        methodParams.register('createDataset',
-                ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
-                 /*'fieldsTerminated', 'nullDefined', */'select'])
+        methodParams.register('createDataset', ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
+                                                'serdeproperties', 'select', 'fieldsTerminatedBy', 'linesTerminatedBy', 'escapedBy', 'nullDefinedAs'])
         methodParams.register('openWrite', ['overwrite'])
-        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow', 'expression', 'files', 'fileMask'])
+        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin', 'hdfsDir', 'processRow', 'expression',
+                                               'files', 'fileMask'])
     }
 
     @Override
@@ -65,7 +64,7 @@ class HiveDriver extends JDBCDriver {
                 [Driver.Support.LOCAL_TEMPORARY, Driver.Support.DATE, Driver.Support.BOOLEAN, Driver.Support.EXTERNAL, Driver.Support.CREATEIFNOTEXIST,
                  Driver.Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Driver.Support.BULKLOADMANYFILES] -
                 [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD,
-                 Driver.Support.SELECT_WITHOUT_FROM, Driver.Support.TRANSACTIONAL]
+                 Driver.Support.CHECK_FIELD, Driver.Support.SELECT_WITHOUT_FROM, Driver.Support.TRANSACTIONAL]
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -168,38 +167,46 @@ class HiveDriver extends JDBCDriver {
             }
             sb << " ON ${onCols.join(', ')}"
 
-            if (BoolUtils.IsValue(skewed.storedAsDirectories)) sb << ' STORED AS DIRECTORIES'
+            if (BoolUtils.IsValue(skewed.storedAsDirectories))
+                sb << ' STORED AS DIRECTORIES'
 
             sb << '\n'
         }
 
         if (params.rowFormat != null) {
-            sb << "ROW FORMAT ${params.rowFormat}"
-            sb << '\n'
-        }
+            def rowFormat = (params.rowFormat as String).trim().toUpperCase()
+            sb << "ROW FORMAT $rowFormat\n"
 
-        /*
-        if (params.fieldsTerminated != null) {
-            sb << "FIELDS TERMINATED BY '${params.fieldsTerminated}'"
-            sb << '\n'
-        }
+            if (rowFormat == 'DELIMITED') {
+                if (params.fieldsTerminatedBy != null)
+                    sb << "FIELDS TERMINATED BY '${params.fieldsTerminatedBy}'\n"
 
-        if (params.nullDefined != null) {
-            sb << "NULL DEFINED AS '${params.nullDefined}'"
-            sb << '\n'
-        }*/
+                if (params.linesTerminatedBy != null)
+                    sb << "LINES TERMINATED BY '${params.linesTerminatedBy}'\n"
+
+                if (params.escapedBy != null)
+                    sb << "ESCAPED BY '${params.escapedBy}'\n"
+
+                if (params.nullDefinedAs != null)
+                    sb << "NULL DEFINED AS '${params.nullDefinedAs}'\n"
+            }
+        }
 
         if (params.storedAs != null) {
-            sb << "STORED AS ${params.storedAs}"
-
-            sb << '\n'
+            sb << "STORED AS ${params.storedAs}\n"
         }
 
-        if (params.location != null) {
-            sb << "LOCATION '${params.location}'"
-
-            sb << '\n'
+        if (params.serdeproperties != null) {
+            def sp = params.serdeproperties as Map<String, Object>
+            if (!sp.isEmpty()) {
+                sb << 'WITH SERDEPROPERTIES ('
+                sb << sp.collect { k, v -> '"' + k + '"="' + v + '"' }.join(', ')
+                sb << ')\n'
+            }
         }
+
+        if (params.location != null)
+            sb << "LOCATION '${params.location}'\n"
 
         if (params.tblproperties != null) {
             if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
@@ -209,18 +216,13 @@ class HiveDriver extends JDBCDriver {
                 tblproperties.each { k, v ->
                     props << "\"$k\"=\"$v\"".toString()
                 }
-                sb << "TBLPROPERTIES(${props.join(', ')})"
-
-                sb << '\n'
+                sb << "TBLPROPERTIES(${props.join(', ')})\n"
             }
         }
 
         if (params.select != null) {
-            sb << "AS"
-            sb << '\n'
-            sb << "${params.select}"
-
-            sb << '\n'
+            sb << "AS\n"
+            sb << "${params.select}\n"
         }
 
         return sb.toString()
@@ -238,24 +240,29 @@ class HiveDriver extends JDBCDriver {
     void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
         def table = dest as TableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
-        def conHive = dest.connection as HiveConnection
+        def con = table.connection as HiveConnection
 
         //noinspection GroovyUnusedAssignment
         def overwriteTable = BoolUtils.IsValue(bulkParams.overwrite)
-        def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
-        def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
-        def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
-        def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
+        def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, con.hdfsHost()])
+        def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, con.hdfsPort()]) as Integer
+        def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, con.hdfsLogin()])
+        def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, con.hdfsDir()])
         def processRow = bulkParams.processRow as Closure
 
-        def expression = ListUtils.NotNullValue([bulkParams.expression, new HashMap<String, Object>()]) as Map<String, Object> /*TODO: refactoring */
+        def expression = MapUtils.MapToLower(ListUtils.NotNullValue([bulkParams.expression, new HashMap<String, Object>()]) as Map<String, Object>)
         expression.each { String fieldName, expr ->
-            if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
+            def f = table.fieldByName(fieldName)
+            if (f == null)
+                throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter for \"${table.objectFullName}\" dataset!")
         }
 
-        if (hdfsHost == null) throw new ExceptionGETL('Required parameter "hdfsHost"')
-        if (hdfsLogin == null) throw new ExceptionGETL('Required parameter "hdfsLogin"')
-        if (hdfsDir == null) throw new ExceptionGETL('Required parameter "hdfsDir"')
+        if (hdfsHost == null)
+            throw new ExceptionGETL('Required parameter "hdfsHost"')
+        if (hdfsLogin == null)
+            throw new ExceptionGETL('Required parameter "hdfsLogin"')
+        if (hdfsDir == null)
+            throw new ExceptionGETL('Required parameter "hdfsDir"')
 
         List<String> files = []
         if (bulkParams.files != null && !(bulkParams.files as List).isEmpty()) {
@@ -272,54 +279,71 @@ class HiveDriver extends JDBCDriver {
             }
         }
         else {
-            files << source.fullFileName()
+            files.add(source.fullFileName())
         }
 
         // Describe temporary table
-        def tempFile = TFS.dataset()
+        def tempFile = TFS.dataset().tap {
+            header = false
+            fieldDelimiter = '\u0002'
+            quoteStr = '\u0001'
+            rowDelimiter = '\n'
+            quoteMode = CSVDataset.QuoteMode.NORMAL
+            codePage = 'utf-8'
+            escaped = false
+            deleteOnEmpty = true
+
+            field = table.field
+            removeFields(expression.keySet().toList())
+            movePartitionFieldsToLast()
+            resetFieldToDefault(true, true, true, true)
+        }
         def tempFileName = new File(tempFile.fullFileName()).name
-        tempFile.header = false
-        tempFile.fieldDelimiter = '\u0001'
-        tempFile.rowDelimiter = '\n'
-        tempFile.quoteMode = CSVDataset.QuoteMode.COLUMN
-        tempFile.codePage = 'utf-8'
-        tempFile.escaped = true
-        tempFile.nullAsValue = '<NULL>'
 
-        def loadFields = [] as List<String>
-        def partFields = [] as List<String>
-
-        // Add not partition fields to temp file from destination dataset
-        dest.field.each { Field f ->
-            if (f.isAutoincrement || f.isReadOnly || f.compute) return
-            if (f.isPartition) return
-            def n = f.copy()
-            tempFile.field << n
-
-            def exprValue = expression.get(n.name.toLowerCase())
-            if (exprValue == null) {
-                loadFields << fieldPrefix + n.name + fieldPrefix
-            }
-            else {
-                loadFields << exprValue.toString()
+        def tempTable = new HiveTable().tap {
+            connection = con
+            tableName = 'GETL_' + FileUtils.UniqueFileName()
+            field = tempFile.field
+            type = externalTable
+            createOpts {
+                rowFormat = 'DELIMITED'
+                storedAs = 'TEXTFILE'
+                fieldsTerminatedBy = '\\002'
+                location = "$hdfsDir/$tableName"
             }
         }
 
-        // Add partition fields to temp file from destination dataset
-        dest.fieldListPartitions.each { Field f ->
-            def n = f.copy()
-            n.isPartition = false
-            tempFile.field << n
+        def insertFields = [] as List<String>
+        table.field.each { Field f ->
+            if (f.isPartition)
+                return
 
-            partFields << fieldPrefix + n.name + fieldPrefix
+            def fieldName = f.name.toLowerCase()
+            String val
 
-            def exprValue = expression.get(n.name.toLowerCase())
-            if (exprValue == null) {
-                loadFields << fieldPrefix + n.name + fieldPrefix
-            }
-            else {
-                loadFields << exprValue.toString()
-            }
+            def exprValue = expression.get(fieldName)
+            if (exprValue == null)
+                val = fieldPrefix + f.name + fieldPrefix
+            else
+                val = exprValue.toString()
+
+            insertFields.add(val)
+        }
+
+        def partFields = [] as List<String>
+        table.fieldListPartitions.each { Field f ->
+            partFields.add(fieldPrefix + f.name + fieldPrefix)
+
+            def fieldName = f.name.toLowerCase()
+            String val
+
+            def exprValue = expression.get(fieldName)
+            if (exprValue == null)
+                val =  fieldPrefix + f.name + fieldPrefix
+            else
+                val = exprValue.toString()
+
+            insertFields.add(val)
         }
 
         // Copy source file to temp csv file
@@ -328,6 +352,7 @@ class HiveDriver extends JDBCDriver {
         csvCon.extension = null
         def csvFile = source.cloneDataset(csvCon) as CSVDataset
         csvFile.extension = null
+
         files.each { fileName ->
             def file = new File(fileName)
             if (!file.exists())
@@ -339,13 +364,16 @@ class HiveDriver extends JDBCDriver {
             count += new Flow(connection.dslCreator).copy([source: csvFile, dest: tempFile, inheritFields: false,
                                                         dest_append: (count > 0)], processRow)
         }
-        if (count == 0) return
+        if (count == 0)
+            return
 
         // Copy temp csv file to HDFS
         def fileMan = new HDFSManager(rootPath: hdfsDir, server: hdfsHost, port: hdfsPort, login: hdfsLogin,
                             localDirectory: (tempFile.connection as CSVConnection).currentPath())
         fileMan.connect()
         try {
+            fileMan.createDir(tempTable.tableName)
+            fileMan.changeDirectory(tempTable.tableName)
             fileMan.upload(tempFileName)
         }
         finally {
@@ -353,19 +381,14 @@ class HiveDriver extends JDBCDriver {
         }
 
         try {
-            def tempTable = new TableDataset(connection: dest.connection, tableName: "t_${tempFile.fileName()}",
-                    type: JDBCDataset.Type.LOCAL_TEMPORARY)
-            tempTable.field = tempFile.field
-            tempTable.create(rowFormat: """DELIMITED FIELDS TERMINATED BY '\\001' NULL DEFINED AS '${tempFile.nullAsValue()}'""")
+            tempTable.create()
             try {
-                tempTable.connection
-                        .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFileName}' INTO TABLE ${tempTable.tableName}")
-                tempTable.connection
-                        .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
-                        (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
+                tempTable.connection.executeCommand(isUpdate: true,
+                        command: "FROM ${tempTable.tableName} INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${table.fullNameDataset()}" +
+                        (!partFields.isEmpty()?" PARTITION(${partFields.join(', ')})":'') + " SELECT ${insertFields.join(', ')}")
                 source.readRows = count
-                dest.writeRows = count
-                dest.updateRows = count
+                table.writeRows = count
+                table.updateRows = count
             }
             finally {
                 tempTable.drop()
@@ -373,9 +396,10 @@ class HiveDriver extends JDBCDriver {
         }
         finally {
             tempFile.drop()
+
             fileMan.connect()
             try {
-                fileMan.removeFile(tempFileName)
+                fileMan.removeDir(tempTable.tableName, true)
             }
             finally {
                 fileMan.disconnect()

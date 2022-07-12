@@ -1007,7 +1007,7 @@ class DateUtils {
 			res = new Duration(list[0], list[1], list[2], list[3], list[4])
 		}
 		else if (obj instanceof String || obj instanceof GString) {
-			def list = obj.toString().split(',')
+			def list = (obj as Object).toString().split(',')
 			for (int i = 0; i < list.length; i++) { if (list[i] == '')
 				list[i] = '0' }
 			res = new Duration(list[0].toInteger(), list[1].toInteger(), list[2].toInteger(), list[3].toInteger(), list[4].toInteger())

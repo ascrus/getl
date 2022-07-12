@@ -26,16 +26,7 @@ class HiveDriverTest extends JDBCDriverProto {
     String getUseTableName() { 'getl_test_hive' }
 
     @Override
-    protected void createTable() {
-        HiveTable t = table as HiveTable
-        t.schemaName = con.connectDatabase
-        t.drop(ifExists: true)
-        t.field = fields
-        t.create(storedAs: 'ORC', clustered: [by: ['id1'], intoBuckets: 2], tblproperties: [transactional: false])
-    }
-
-    @Override
-    protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+    protected TableDataset createPerformanceTable(JDBCConnection con, String name, List<Field> fields) {
         HiveTable t = new HiveTable(connection: con, schemaName: con.connectDatabase, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create(storedAs: 'ORC', clustered: [by: ['id'], intoBuckets: 2], tblproperties: [transactional: false])
@@ -45,7 +36,7 @@ class HiveDriverTest extends JDBCDriverProto {
     @Test
     void bulkLoadFiles() {
         Getl.Dsl(this) {
-            def hivetable = hiveTable {
+            def ht = hiveTable {
                 connection = this.con
                 tableName = 'testBulkLoad'
                 type = localTemporaryTableType
@@ -55,7 +46,7 @@ class HiveDriverTest extends JDBCDriverProto {
                 create()
             }
 
-            def csv = csvTempWithDataset(hivetable) {
+            def csv = csvTempWithDataset(ht) {
                 fileName = 'hive.bulkload'
                 extension = 'csv'
 
@@ -74,15 +65,34 @@ class HiveDriverTest extends JDBCDriverProto {
                 assertEquals(4, countWritePortions)
             }
 
-            hivetable.tap {
+            ht.tap {
                 bulkLoadCsv(csv) {
                     files = "hive.bulkload.*.csv"
                     loadAsPackage = true
                 }
             }
 
-            assertEquals(3, hivetable.updateRows)
-            assertEquals(3, hivetable.countRow())
+            assertEquals(3, ht.updateRows)
+            assertEquals(3, ht.countRow())
+        }
+    }
+
+    @Override
+    protected void prepareTable() {
+        (table as HiveTable).createOpts {
+            storedAs = 'PARQUET'
+        }
+    }
+
+    @Override
+    protected getLineFeedChar() { '' }
+
+    @Override
+    protected prepareBulkTable(TableDataset table) {
+        (table as HiveTable).tap {
+            createOpts {
+                storedAs = 'PARQUET'
+            }
         }
     }
 }

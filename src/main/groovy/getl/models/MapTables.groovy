@@ -70,7 +70,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
             p.remove('sourceName')
 
             MapUtils.RemoveKeys(p) { k, v ->
-                return (v == null) || (v instanceof String && v.length() == 0) || (v instanceof GString && v.length() == 0)
+                return (v == null) || (v instanceof String && (v as String).length() == 0) || (v instanceof GString && (v as GString).length() == 0)
             }
 
             list.add(new MapTableSpec(own, p))

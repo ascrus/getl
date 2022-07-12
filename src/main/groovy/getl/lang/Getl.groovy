@@ -145,7 +145,7 @@ Examples:
             if (args instanceof String[])
                 args = args.toList() as List<String>
             else if (args instanceof String || args instanceof GString)
-                args = [args.toString()] as List<String>
+                args = [(args as Object).toString()] as List<String>
             else
                 throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
         }
@@ -918,7 +918,8 @@ Examples:
         try {
             if (ownerObject != null) {
                 _ownerObject = ownerObject
-                if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert) setUnitTestMode(true)
+                if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert)
+                    setUnitTestMode(true)
             }
 
             if (cl != null) {
@@ -2699,7 +2700,7 @@ Examples:
 
             if (value != null) {
                 if (script instanceof Getl && (value instanceof String || value instanceof GString)) {
-                    def v = (value as CharSequence).toString()
+                    def v = (value as Object).toString()
                     if (v.indexOf('{') != -1)
                         value = StringUtils.EvalMacroString(v, [environment: configuration.environment] + (script as Getl).scriptExtendedVars, false)
                 }
@@ -2762,7 +2763,7 @@ Examples:
                     case Date:
                         if (!(value instanceof Date)) {
                             if (value instanceof String || value instanceof GString) {
-                                value = value.toString()
+                                value = (value as Object).toString()
                                 if (value.length() == 10)
                                     value = DateUtils.ParseDate('yyyy-MM-dd', value, false)
                                 else if (value.length() == 19)
@@ -2782,7 +2783,7 @@ Examples:
                     case Time:
                         if (!(value instanceof Time)) {
                             if (value instanceof String || value instanceof GString) {
-                                value = value.toString()
+                                value = (value as Object).toString()
                                 if (value.length() == 8)
                                     value = DateUtils.ParseSQLTime('HH:mm:ss', value, false)
                                 else if (value.length() == 12)
@@ -2818,9 +2819,9 @@ Examples:
                     case Path:
                         if (!(value instanceof Path)) {
                             if (value instanceof String || value instanceof GString)
-                                value = new Path(value.toString())
+                                value = new Path((value as Object).toString())
                             else
-                                throw new ExceptionGETL("It is not possible to convert the value \"$value\" into a path!")
+                                throw new ExceptionGETL("It is not possible to convert the value \"${value as Object}\" into a path!")
                         }
 
                         break

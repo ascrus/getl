@@ -576,7 +576,7 @@ class ConfigSlurper extends ConfigManager {
 			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof String || value instanceof GString || value instanceof Enum) {
-			def str = value.toString()
+			def str = (value as Object).toString()
 			def quote = (str.indexOf('${') == -1 || !useVars)?'\'':'"'
 			if (useVars && convertVars) {
 				value = value.toString().replace('${', '${vars.')
@@ -584,7 +584,7 @@ class ConfigSlurper extends ConfigManager {
 			writer.append("${tabStr}${keyStr}${quote}${StringUtils.EscapeJavaWithoutUTF(value.toString())}${quote}")
 		}
 		else if (value instanceof Number || value instanceof Boolean) {
-			writer.append("${tabStr}${keyStr}${value.toString()}")
+			writer.append("${tabStr}${keyStr}${(value as Object).toString()}")
 		}
 		else
 			return false

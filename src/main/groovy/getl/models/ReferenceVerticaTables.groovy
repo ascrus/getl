@@ -62,7 +62,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             p.remove('workTableName')
 
             MapUtils.RemoveKeys(p) { k, v ->
-                return (v == null) || (v instanceof String && v.length() == 0) || (v instanceof GString && v.length() == 0)
+                return (v == null) || (v instanceof String && (v as String).length() == 0) || (v instanceof GString && (v as GString).length() == 0)
             }
 
             list.add(new ReferenceVerticaTableSpec(own, p))

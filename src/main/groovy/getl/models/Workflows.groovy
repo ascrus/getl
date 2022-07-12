@@ -559,7 +559,7 @@ return $className"""
                         def macroVars = modelVars + addVars
                         scriptVars.each { name, val ->
                             if (val instanceof String || val instanceof GString) {
-                                def v = val.toString()
+                                def v = (val as Object).toString()
                                 if (v.indexOf('{') != -1)
                                     scriptVars.put(name, StringUtils.EvalMacroString(v, scriptVars + macroVars, false))
                             }

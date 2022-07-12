@@ -470,7 +470,7 @@ class TableDataset extends JDBCDataset {
 				throw new ExceptionGETL('Story table is not supported for remote file bulk load on cluster nodes!')
 		}
 		else if (files instanceof String || files instanceof GString) {
-			def fn = files.toString()
+			def fn = (files as Object).toString()
 			if ((fn).matches('.*([{]|[*]).*')) { // '.*(\\{|\\*).*'
 				def maskPath = new Path()
 				maskPath.tap {

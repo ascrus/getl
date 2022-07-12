@@ -64,7 +64,7 @@ abstract class JDBCDriverProto extends GetlTest {
         return _con
     }
 
-    String getUseTableName() { 'getl_Test_Data' }
+    protected String getUseTableName() { 'getl_Test_Data' }
     TableDataset table
     List<Field> getFields () {
         def res =
@@ -96,7 +96,9 @@ abstract class JDBCDriverProto extends GetlTest {
         return (con != null)
     }
 
-    void prepareTable() { }
+    protected void prepareTable() { }
+
+    protected getLineFeedChar() { '\n' }
 
     @Before
     void initTable() {
@@ -162,8 +164,12 @@ abstract class JDBCDriverProto extends GetlTest {
             println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, /*schemaName: '_getl_test',*/
-                tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
+        def tempTable = con.newDataset() as TableDataset
+        tempTable.tap {
+            tableName = '_getl_local_temp_test'
+            type = JDBCDataset.Type.LOCAL_TEMPORARY
+        }
+
         tempTable.field = fields
         if (con.driver.isSupport(Driver.Support.INDEX)) {
             tempTable.create(indexes: [_getl_local_temp_test_idx_1: [columns: ['id2', 'name']]])
@@ -187,7 +193,11 @@ abstract class JDBCDriverProto extends GetlTest {
             println "Skip test global temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, tableName: '_getl_global_temp_test', type: JDBCDataset.Type.GLOBAL_TEMPORARY)
+        def tempTable = con.newDataset() as TableDataset
+        tempTable.tap {
+            tableName = '_getl_global_temp_test'
+            type = JDBCDataset.Type.GLOBAL_TEMPORARY
+        }
         tempTable.field = fields
         tempTable.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
@@ -460,15 +470,20 @@ abstract class JDBCDriverProto extends GetlTest {
     }
 
     protected void truncateData() {
-        if (!(con.driver.isOperation(Driver.Operation.DELETE) || con.driver.isOperation(Driver.Operation.TRUNCATE))) return
+        if (!(con.driver.isOperation(Driver.Operation.DELETE) || con.driver.isOperation(Driver.Operation.TRUNCATE)))
+            return
 
-        if (table.countRow() == 0) insertData()
+        if (table.countRow() == 0)
+            insertData()
+
         truncateTable(table)
         assertEquals(0, table.countRow())
     }
 
     private truncateTable(TableDataset source) {
-        if (!(con.driver.isOperation(Driver.Operation.DELETE) || con.driver.isOperation(Driver.Operation.TRUNCATE))) return
+        if (!(con.driver.isOperation(Driver.Operation.DELETE) || con.driver.isOperation(Driver.Operation.TRUNCATE)))
+            return
+
         source.truncate(truncate: con.driver.isOperation(Driver.Operation.TRUNCATE))
     }
 
@@ -567,13 +582,14 @@ abstract class JDBCDriverProto extends GetlTest {
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id1 = num
-                r.name = """'name'\t"$num"\ntest|/,;|\\"""
+                r.name = """'name'\t"$num"${lineFeedChar}test|/,;|\\"""
 
                 updater(r)
             }
         }
         assertEquals(countRows, count)
 
+        prepareBulkTable(bulkTable)
         truncateTable(bulkTable)
 
         bulkTable.bulkLoadFile(source: file)
@@ -586,10 +602,9 @@ abstract class JDBCDriverProto extends GetlTest {
     protected void copyWithBulkLoad() {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
-        def bulkTable = new TableDataset(connection: con)
-        prepareBulkTable(bulkTable)
+        def bulkTable = con.newDataset() as TableDataset
         bulkTable.tap {
-            tableName = 'getl_test_copy_bulk'
+            tableName = 'getl_test_copy_bulk' + tablePrefix
             field('id') { type = integerFieldType }
             field('name') { type = stringFieldType; length = 50 }
             field('dt') { type = datetimeFieldType }
@@ -598,11 +613,13 @@ abstract class JDBCDriverProto extends GetlTest {
                 field('bin') { type = blobFieldType; length = 50 }
             if (useArray)
                 field('list') { type = arrayFieldType; arrayType = useArrayType }
+        }
+        prepareBulkTable(bulkTable)
+        bulkTable.tap {
             if (exists)
                 drop()
             create()
         }
-        truncateTable(bulkTable)
 
         def file = TFS.dataset()
         file.field = bulkTable.field
@@ -612,7 +629,7 @@ abstract class JDBCDriverProto extends GetlTest {
             (2..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id = num
-                r.name = """'name'\t"$num"\ntest|/,;|\\"""
+                r.name = """'name'\t"$num"${lineFeedChar}test|/,;|\\"""
                 if (useArray)
                     r.list = [num, num + 1, num + 2]
 
@@ -628,7 +645,7 @@ abstract class JDBCDriverProto extends GetlTest {
         bulkTable.eachRow(order: ['id'], where: 'id IS NOT NULL') { r ->
             num++
             assertEquals(num, r.id)
-            assertEquals("""'name'\t"$num"\ntest|/,;|\\""", r.name)
+            assertEquals("""'name'\t"$num"${lineFeedChar}test|/,;|\\""", r.name)
             if (useArray)
                 assertEquals([num, num + 1, num + 2], r.list)
         }
@@ -718,10 +735,15 @@ IF ('{support_update}' = 'true') DO {
         assertFalse(con.connected)
     }
 
-    protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
-        def t = new TableDataset(connection: con, schemaName: con.schemaName, tableName: name, field: fields)
-        t.drop(ifExists: true)
-        t.create()
+    protected TableDataset createPerformanceTable(JDBCConnection con, String name, List<Field> fields) {
+        def t = con.newDataset() as TableDataset
+        t.tap {
+            schemaName = con.schemaName
+            tableName = name
+            field = fields
+            drop(ifExists: true)
+            create()
+        }
 
         return t
     }
@@ -745,7 +767,7 @@ IF ('{support_update}' = 'true') DO {
             fields << new Field(name: "value_$num", type: Field.Type.DOUBLE)
 		}
 
-        def t = createPerfomanceTable(c, 'GETL_TEST_PERFOMANCE', fields)
+        def t = createPerformanceTable(c, 'GETL_TEST_PERFOMANCE' + tablePrefix, fields)
         try {
             def pt = new ProcessTime(name: "${c.driverName} perfomance write")
             new Flow().writeTo(dest: t, dest_batchSize: 500L) { Closure updater ->
@@ -905,8 +927,8 @@ IF ('{support_update}' = 'true') DO {
         if (!con.currentJDBCDriver.isSupport(Driver.Support.AUTO_INCREMENT))
             return
 
-        new TableDataset().tap {tab ->
-            setConnection con
+        def tab = con.newDataset() as TableDataset
+        tab.tap {
             dbName = defaultDatabase
             schemaName = defaultSchema
             tableName = 'test_increment'
@@ -958,14 +980,16 @@ IF ('{support_update}' = 'true') DO {
         }
     }
 
+    protected String getTablePrefix() { '' }
+
     @Test
     void testBlobArraysAndLimit() {
         def count = 10
 
-        def table = new TableDataset()
+        def table = con.newDataset() as TableDataset
+        //noinspection GroovyMissingReturnStatement
         table.tap {
-            connection = this.con
-            tableName = 'getl_test_limit'
+            tableName = 'getl_test_limit' + tablePrefix
             field('id') { type = integerFieldType; isKey = true }
             field('name') { length = 50; isNull = false }
             field('dt') { type = datetimeFieldType; isNull = false }
@@ -978,6 +1002,8 @@ IF ('{support_update}' = 'true') DO {
             }
             if (!exists)
                 create()
+            else if (this.con.driver.isOperation(Driver.Operation.TRUNCATE))
+                truncate()
             else
                 deleteRows()
         }

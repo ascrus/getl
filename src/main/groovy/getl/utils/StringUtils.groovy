@@ -159,7 +159,7 @@ class StringUtils {
 				def list = [] as List<String>
 				(varValue as Collection).each { val ->
 					if (val instanceof String || val instanceof GString)
-						list.add('\'' + val + '\'')
+						list.add('\'' + (val as Object).toString() + '\'')
 					else
 						list.add(val.toString())
 				}

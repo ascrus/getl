@@ -133,7 +133,7 @@ class ListUtils {
 		
 		value.each { v ->
 			if (v instanceof String || v instanceof GString)
-				res.add(StringUtils.EvalMacroString(v.toString(), vars, errorWhenUndefined, formatValue))
+				res.add(StringUtils.EvalMacroString((v as Object).toString(), vars, errorWhenUndefined, formatValue))
 			else if (v instanceof List)
 				res.add(EvalMacroValues(v as List, vars, errorWhenUndefined, formatValue))
 			else if (v instanceof Map)

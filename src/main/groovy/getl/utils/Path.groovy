@@ -425,7 +425,7 @@ class Path implements Cloneable, GetlRepository {
 			if (varParams.containsKey('type')) {
 				def type = varParams.get('type')
 				if (type instanceof String || type instanceof GString)
-					varParams.put('type', Field.Type.valueOf(type.toString()))
+					varParams.put('type', Field.Type.valueOf((type as Object).toString()))
 			}
 
 			if (varParams.len != null && (!(varParams.len.toString()).integer))

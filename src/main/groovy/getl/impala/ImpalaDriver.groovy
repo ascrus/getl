@@ -1,16 +1,24 @@
 package getl.impala
 
+import getl.csv.CSVConnection
+import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.files.FileManager
+import getl.files.HDFSManager
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
+import getl.proc.Flow
+import getl.tfs.TFS
 import getl.utils.BoolUtils
+import getl.utils.FileUtils
+import getl.utils.ListUtils
+import getl.utils.MapUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-
 import java.sql.Connection
 
 /**
@@ -18,16 +26,16 @@ import java.sql.Connection
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
+class ImpalaDriver extends JDBCDriver {
     @Override
     protected void registerParameters() {
         super.registerParameters()
         methodParams.register('createDataset',
                 ['sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties',
-                 /*'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', */'select'])
+                 'select', 'fieldsTerminatedBy', 'linesTerminatedBy', 'escapedBy', 'nullDefinedAs'])
         methodParams.register('openWrite', ['overwrite'])
-        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow', 'expression'])
+        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin', 'hdfsDir', 'processRow', 'expression',
+                                               'files', 'fileMask'])
     }
 
     @Override
@@ -61,14 +69,13 @@ class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
                  Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
                  Driver.Support.EXTERNAL, Driver.Support.BULKLOADMANYFILES] -
                 [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD,
-                 Driver.Support.SELECT_WITHOUT_FROM, Driver.Support.TRANSACTIONAL]
+                 Driver.Support.CHECK_FIELD, Driver.Support.SELECT_WITHOUT_FROM, Driver.Support.TRANSACTIONAL]
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() {
-        /* TODO: Fixed bug bulk load to Impala */
-        return super.operations() /*+ [Driver.Operation.BULKLOAD]*/ - [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
+        return super.operations() + [Driver.Operation.BULKLOAD] - [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
@@ -123,24 +130,26 @@ class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
         }
 
         if (params.rowFormat != null) {
-            sb << "ROW FORMAT ${params.rowFormat}"
-            sb << '\n'
+            def rowFormat = (params.rowFormat as String).trim().toUpperCase()
+            sb << "ROW FORMAT $rowFormat\n"
+
+            if (rowFormat == 'DELIMITED') {
+                if (params.fieldsTerminatedBy != null)
+                    sb << "FIELDS TERMINATED BY '${params.fieldsTerminatedBy}'\n"
+
+                if (params.linesTerminatedBy != null)
+                    sb << "LINES TERMINATED BY '${params.linesTerminatedBy}'\n"
+
+                if (params.escapedBy != null)
+                    sb << "ESCAPED BY '${params.escapedBy}'\n"
+
+                if (params.nullDefinedAs != null)
+                    sb << "NULL DEFINED AS '${params.nullDefinedAs}'\n"
+            }
         }
 
-        /*if (params.fieldsTerminated != null) {
-            sb << "FIELDS TERMINATED BY '${params.fieldsTerminated}'"
-            sb << '\n'
-        }
-
-        if (params.escapedBy != null) {
-            sb << "ESCAPED BY '${params.escapedBy}'"
-            sb << '\n'
-        }
-
-        if (params.linesTerminatedBy != null) {
-            sb << "LINES TERMINATED BY '${params.linesTerminatedBy}'"
-            sb << '\n'
-        }*/
+        if (params.storedAs != null)
+            sb << "STORED AS ${params.storedAs}\n"
 
         if (params.serdeproperties != null) {
             if (!(params.serdeproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "serdeproperties"')
@@ -156,17 +165,8 @@ class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
             }
         }
 
-        if (params.storedAs != null) {
-            sb << "STORED AS ${params.storedAs}"
-
-            sb << '\n'
-        }
-
-        if (params.location != null) {
-            sb << "LOCATION '${params.location}'"
-
-            sb << '\n'
-        }
+        if (params.location != null)
+            sb << "LOCATION '${params.location}'\n"
 
         if (params.tblproperties != null) {
             if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
@@ -176,18 +176,13 @@ class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
                 tblproperties.each { k, v ->
                     props << "\"$k\"=\"$v\"".toString()
                 }
-                sb << "TBLPROPERTIES(${props.join(', ')})"
-
-                sb << '\n'
+                sb << "TBLPROPERTIES(${props.join(', ')})\n"
             }
         }
 
         if (params.select != null) {
-            sb << "AS"
-            sb << '\n'
-            sb << "${params.select}"
-
-            sb << '\n'
+            sb << "AS\n"
+            sb << "${params.select}\n"
         }
 
         return sb.toString()
@@ -255,5 +250,176 @@ class ImpalaDriver extends JDBCDriver { /* TODO: Where bulk load? */
         }
 
         return res
+    }
+
+    @Override
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+        def table = dest as TableDataset
+        bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
+        def con = table.connection as ImpalaConnection
+
+        //noinspection GroovyUnusedAssignment
+        def overwriteTable = BoolUtils.IsValue(bulkParams.overwrite)
+        def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, con.hdfsHost()])
+        def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, con.hdfsPort()]) as Integer
+        def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, con.hdfsLogin()])
+        def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, con.hdfsDir()])
+        def processRow = bulkParams.processRow as Closure
+
+        def expression = MapUtils.MapToLower(ListUtils.NotNullValue([bulkParams.expression, new HashMap<String, Object>()]) as Map<String, Object>)
+        expression.each { String fieldName, expr ->
+            def f = table.fieldByName(fieldName)
+            if (f == null)
+                throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter for \"${table.objectFullName}\" dataset!")
+        }
+
+        if (hdfsHost == null)
+            throw new ExceptionGETL('Required parameter "hdfsHost"')
+        if (hdfsLogin == null)
+            throw new ExceptionGETL('Required parameter "hdfsLogin"')
+        if (hdfsDir == null)
+            throw new ExceptionGETL('Required parameter "hdfsDir"')
+
+        List<String> files = []
+        if (bulkParams.files != null && !(bulkParams.files as List).isEmpty()) {
+            files.addAll(bulkParams.files as List)
+        }
+        else if (bulkParams.fileMask != null) {
+            def fm = new FileManager(rootPath: (source.connection as CSVConnection).currentPath())
+            fm.connect()
+            try {
+                fm.list(bulkParams.fileMask as String).each { Map f -> files.add((f.filepath as String) + '/' + (f.filename as String))}
+            }
+            finally {
+                fm.disconnect()
+            }
+        }
+        else {
+            files.add(source.fullFileName())
+        }
+
+        // Describe temporary table
+        def tempFile = TFS.dataset().tap {
+            header = false
+            fieldDelimiter = '\u0002'
+            quoteStr = '\u0001'
+            rowDelimiter = '\n'
+            quoteMode = CSVDataset.QuoteMode.NORMAL
+            codePage = 'utf-8'
+            escaped = false
+            deleteOnEmpty = true
+
+            field = table.field
+            removeFields(expression.keySet().toList())
+            movePartitionFieldsToLast()
+            resetFieldToDefault(true, true, true, true)
+        }
+        def tempFileName = new File(tempFile.fullFileName()).name
+
+        def tempTable = new ImpalaTable().tap {
+            connection = con
+            tableName = 'GETL_' + FileUtils.UniqueFileName()
+            field = tempFile.field
+            type = externalTable
+            createOpts {
+                rowFormat = 'DELIMITED'
+                storedAs = 'TEXTFILE'
+                fieldsTerminatedBy = '\\002'
+                location = "$hdfsDir/$tableName"
+            }
+        }
+
+        def insertFields = [] as List<String>
+        table.field.each { Field f ->
+            if (f.isPartition)
+                return
+
+            def fieldName = f.name.toLowerCase()
+            String val
+
+            def exprValue = expression.get(fieldName)
+            if (exprValue == null)
+                val = fieldPrefix + f.name + fieldPrefix
+            else
+                val = exprValue.toString()
+
+            insertFields.add(val)
+        }
+
+        def partFields = [] as List<String>
+        table.fieldListPartitions.each { Field f ->
+            partFields.add(fieldPrefix + f.name + fieldPrefix)
+
+            def fieldName = f.name.toLowerCase()
+            String val
+
+            def exprValue = expression.get(fieldName)
+            if (exprValue == null)
+                val =  fieldPrefix + f.name + fieldPrefix
+            else
+                val = exprValue.toString()
+
+            insertFields.add(val)
+        }
+
+        // Copy source file to temp csv file
+        def count = 0L
+        def csvCon = source.connection.cloneConnection() as CSVConnection
+        csvCon.extension = null
+        def csvFile = source.cloneDataset(csvCon) as CSVDataset
+        csvFile.extension = null
+
+        files.each { fileName ->
+            def file = new File(fileName)
+            if (!file.exists())
+                throw new ExceptionGETL("File $fileName not found!")
+
+            csvCon.path = file.parent
+            csvFile.fileName = file.name
+
+            count += new Flow(connection.dslCreator).copy([source: csvFile, dest: tempFile, inheritFields: false,
+                                                           dest_append: (count > 0)], processRow)
+        }
+        if (count == 0)
+            return
+
+        // Copy temp csv file to HDFS
+        def fileMan = new HDFSManager(rootPath: hdfsDir, server: hdfsHost, port: hdfsPort, login: hdfsLogin,
+                localDirectory: (tempFile.connection as CSVConnection).currentPath())
+        fileMan.connect()
+        try {
+            fileMan.createDir(tempTable.tableName)
+            fileMan.changeDirectory(tempTable.tableName)
+            fileMan.upload(tempFileName)
+        }
+        finally {
+            fileMan.disconnect()
+        }
+
+        try {
+            tempTable.create()
+            try {
+                tempTable.connection.executeCommand(isUpdate: true,
+                        command: "INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${table.fullNameDataset()}" +
+                                (!partFields.isEmpty()?" PARTITION(${partFields.join(', ')})":'') + " SELECT ${insertFields.join(', ')} FROM ${tempTable.tableName}")
+                source.readRows = count
+                table.writeRows = count
+                table.updateRows = count
+            }
+            finally {
+                tempTable.drop()
+            }
+        }
+        finally {
+            tempFile.drop()
+
+            fileMan.connect()
+            try {
+                fileMan.removeDir(tempTable.tableName, true)
+            }
+            finally {
+                fileMan.disconnect()
+            }
+        }
     }
 }

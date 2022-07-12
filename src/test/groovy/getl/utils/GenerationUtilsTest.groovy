@@ -89,10 +89,10 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertTrue(r instanceof BigDecimal)
 
         r = GenerationUtils.GenerateNumeric(12, 5)
-        assertEquals(5, r.scale)
+        assertEquals(5, r.scale())
 
         r = GenerationUtils.GenerateNumeric(5)
-        assertEquals(5, r.scale)
+        assertEquals(5, r.scale())
     }
 
     @Test

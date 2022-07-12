@@ -494,10 +494,13 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Parse connection host and return host name without port
 	 */
 	static String ConnectHost2HostName(String host) {
-		if (host == null) return null
+		if (host == null)
+			return null
+
 		def pos = host.indexOf(":")
 		String res = host
-		if (pos != -1) res = host.substring(0, pos)
+		if (pos != -1)
+			res = host.substring(0, pos)
 		
 		res
 	}
@@ -506,10 +509,13 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Parse connection host and return port number without host name
 	 */
 	static Integer ConnectHost2PortNumber(String host) {
-		if (host == null) return null
+		if (host == null)
+			return null
+
 		def pos = host.indexOf(":")
 		Integer res = null
-		if (pos != -1) res = Integer.valueOf(host.substring(pos + 1))
+		if (pos != -1)
+			res = Integer.valueOf(host.substring(pos + 1))
 		
 		return res
 	}

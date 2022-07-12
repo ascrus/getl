@@ -86,7 +86,7 @@ class CSVFmtArray extends CellProcessorAdaptor {
 		
 		if (!(value instanceof List || value.class.isArray())) {
 			def b = new ArrayList()
-			throw new SuperCsvCellProcessorException((b.getClass()), value, context, this)
+			throw new SuperCsvCellProcessorException((b.getClass()), value as Object, context, this)
 		}
 
 		if (value.class.isArray())

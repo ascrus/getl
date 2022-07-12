@@ -1,7 +1,9 @@
 package getl.impala
 
+import getl.data.Field
 import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriverProto
+import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.DateUtils
@@ -22,19 +24,10 @@ class ImpalaDriverTest extends JDBCDriverProto {
     }
 
     @Override
-    String getUseTableName() { 'getl_test_impala' }
+    protected String getTablePrefix() { '_impala' }
 
     @Override
-    protected void createTable() {
-        ImpalaTable t = table as ImpalaTable
-        t.schemaName = con.connectDatabase
-        t.drop(ifExists: true)
-        t.field = fields
-        t.create(storedAs: 'PARQUET', sortBy: ['id1'], tblproperties: [transactional: false])
-    }
-
-    @Override
-    String getDescriptionName() { "description" }
+    String getDescriptionName() { 'description' }
 
     @Test
     void testImpalaDsl() {
@@ -42,7 +35,7 @@ class ImpalaDriverTest extends JDBCDriverProto {
             return
 
         Getl.Dsl(this) {
-            useImpalaConnection this.con
+            useImpalaConnection this.con as ImpalaConnection
 
             impalaTable {
                 schemaName = currentImpalaConnection.schemaName
@@ -95,6 +88,77 @@ class ImpalaDriverTest extends JDBCDriverProto {
                     assertEquals(i, row.id)
                 }
             }
+        }
+    }
+
+    @Override
+    protected void prepareTable() {
+        (table as ImpalaTable).createOpts {
+            storedAs = 'PARQUET'
+        }
+    }
+
+    @Override
+    protected getLineFeedChar() { '' }
+
+    @Override
+    protected prepareBulkTable(TableDataset table) {
+        (table as ImpalaTable).tap {
+            createOpts {
+                storedAs = 'PARQUET'
+            }
+        }
+    }
+
+    @Override
+    protected TableDataset createPerformanceTable(JDBCConnection con, String name, List<Field> fields) {
+        def t = new ImpalaTable(connection: con, schemaName: con.connectDatabase, tableName: name, field: fields)
+        t.drop(ifExists: true)
+        t.create(storedAs: 'PARQUET')
+        return t
+    }
+
+    @Test
+    void bulkLoadFiles() {
+        Getl.Dsl(this) {
+            def ht = impalaTable {
+                connection = this.con
+                tableName = 'getl_test_bulkload_impala'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('dt') { type = datetimeFieldType }
+                drop(ifExists: true)
+                create()
+            }
+
+            def csv = csvTempWithDataset(ht) {
+                fileName = 'impala.bulkload'
+                extension = 'csv'
+
+                writeOpts {
+                    splitFile { true }
+                }
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        add id: 1, name: 'one', dt: DateUtils.Now()
+                        add id: 2, name: 'one', dt: DateUtils.Now()
+                        add id: 3, name: 'one', dt: DateUtils.Now()
+                    }
+                }
+                assertEquals(3, writeRows)
+                assertEquals(4, countWritePortions)
+            }
+
+            ht.tap {
+                bulkLoadCsv(csv) {
+                    files = "impala.bulkload.*.csv"
+                    loadAsPackage = true
+                }
+            }
+
+            assertEquals(3, ht.updateRows)
+            assertEquals(3, ht.countRow())
         }
     }
 }

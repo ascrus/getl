@@ -242,7 +242,8 @@ Example:
 	 */
 	static String stat(String pattern, def value, Boolean quote = false) {
 		if (value == null) return ''
-		if ((value instanceof String || value instanceof GString) && value == '') return ''
+		if ((value instanceof String || value instanceof GString) && value == '')
+			return ''
 		if (quote) value = '\'' + value.toString() + '\''
 		return StringUtils.EvalMacroString(pattern, [val: value])
 	}
@@ -252,7 +253,8 @@ Example:
 	 */
 	static String statLine(String pattern, def value, Boolean quote = false) {
 		if (value == null) return ''
-		if ((value instanceof String || value instanceof GString) && value == '') return ''
+		if ((value instanceof String || value instanceof GString) && value == '')
+			return ''
 		if (quote) value = '\'' + value.toString() + '\''
 		return StringUtils.EvalMacroString(pattern, [val: value]) + '\n'
 	}
@@ -266,8 +268,10 @@ Example:
 	 */
 	static String par(String param, def value, Boolean quote = false) {
 		if (value == null) return ''
-		if ((value instanceof String || value instanceof GString) && value == '') return ''
-		if (quote) value = '\'' + value.toString() + '\''
+		if ((value instanceof String || value instanceof GString) && value == '')
+			return ''
+		if (quote)
+			value = '\'' + value.toString() + '\''
 		return param + ' ' + value.toString()
 	}
 
@@ -281,7 +285,8 @@ Example:
 	@SuppressWarnings('SpellCheckingInspection')
 	static String parln(String param, def value, Boolean quote = false) {
 		if (value == null) return ''
-		if ((value instanceof String || value instanceof GString) && value == '') return ''
+		if ((value instanceof String || value instanceof GString) && value == '')
+			return ''
 		if (quote) value = '\'' + value.toString() + '\''
 		return param + ' ' + value.toString() + '\n'
 	}

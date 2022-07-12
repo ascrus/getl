@@ -439,7 +439,7 @@ class MapUtils {
 		def res = new LinkedHashMap()
 		value.each { k, v ->
 			if (v instanceof String || v instanceof GString)
-				res.put(k, StringUtils.EvalMacroString(v.toString(), vars, errorWhenUndefined, formatValue))
+				res.put(k, StringUtils.EvalMacroString((v as Object).toString(), vars, errorWhenUndefined, formatValue))
 			else if (v instanceof Map)
 				res.put(k, EvalMacroValues(v as Map, vars, errorWhenUndefined, formatValue))
 			else if (v instanceof List)

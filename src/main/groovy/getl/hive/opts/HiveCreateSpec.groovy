@@ -1,6 +1,6 @@
+//file:noinspection unused
 package getl.hive.opts
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -22,6 +22,8 @@ class HiveCreateSpec extends CreateSpec {
             params.clustered = new HashMap<String, Object>()
         if (params.skewed == null)
             params.skewed = new HashMap<String, Object>()
+        if (params.serdeproperties == null)
+            params.serdeproperties = new HashMap<String, Object>()
     }
 
     /** Clustered options */
@@ -119,4 +121,32 @@ class HiveCreateSpec extends CreateSpec {
      * Query of select data
      */
     void setSelect(String value) { saveParamValue('select', value) }
+
+    /** Extend serde properties */
+    Map<String, Object> getSerdeproperties() { params.serdeproperties as Map<String, Object> }
+    /** Extend serde properties */
+    void setSerdeproperties(Map<String, Object> value) {
+        serdeproperties.clear()
+        if (value != null) serdeproperties.putAll(value)
+    }
+
+    /** Field delimiter for text file format */
+    String getFieldsTerminatedBy() { params.fieldsTerminatedBy as String }
+    /** Field delimiter for text file format */
+    void setFieldsTerminatedBy(String value) { params.fieldsTerminatedBy = value }
+
+    /** Row delimiter for text file format */
+    String getLinesTerminatedBy() { params.linesTerminatedBy as String }
+    /** Row delimiter for text file format */
+    void setLinesTerminatedBy(String value) { params.linesTerminatedBy = value }
+
+    /** Escape character for text file format */
+    String getEscapedBy() { params.escapedBy as String }
+    /** Escape character for text file format */
+    void setEscapedBy(String value) { params.escapedBy = value }
+
+    /** Null defined value for text file format */
+    String getNullDefinedAs() { params.nullDefinedAs as String }
+    /** Null defined value for text file format */
+    void setNullDefinedAs(String value) { params.nullDefinedAs = value }
 }

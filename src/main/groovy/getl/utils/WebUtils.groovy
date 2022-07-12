@@ -64,7 +64,7 @@ class WebUtils {
                 }
 
                 if ((v instanceof String || v instanceof GString) && isVars) {
-                    v = StringUtils.EvalMacroString(v.toString(), vars, true) {
+                    v = StringUtils.EvalMacroString((v as Object).toString(), vars, true) {
                         (it instanceof Date)?(UrlDateFormatter.format((it as Date).toLocalDateTime()) + 'Z'):
                                 URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.toString())
                     }

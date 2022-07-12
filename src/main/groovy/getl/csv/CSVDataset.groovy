@@ -4,7 +4,6 @@ package getl.csv
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
-
 import getl.data.Connection
 import getl.data.FileDataset
 import getl.exception.ExceptionGETL

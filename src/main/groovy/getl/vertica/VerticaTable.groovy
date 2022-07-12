@@ -150,7 +150,7 @@ class VerticaTable extends TableDataset {
         def res = new HashMap<String, Object>()
 
         if (startPartition instanceof String || startPartition instanceof GString)
-            res.start = '\'' + startPartition + '\''
+            res.start = '\'' + (startPartition as Object).toString() + '\''
         else if (startPartition instanceof Date) {
             if (BoolUtils.IsValue(truncateToDate, true))
                 res.start = '\'' + DateUtils.FormatDate('yyyy-MM-dd', startPartition as Date) + '\'::date'
@@ -161,7 +161,7 @@ class VerticaTable extends TableDataset {
             res.start = startPartition
 
         if (finishPartition instanceof String || finishPartition instanceof GString)
-            res.finish = '\'' + finishPartition + '\''
+            res.finish = '\'' + (finishPartition as Object).toString() + '\''
         else if (finishPartition instanceof Date) {
             if (truncateToDate)
                 res.finish = '\'' + DateUtils.FormatDate('yyyy-MM-dd', finishPartition as Date) + '\'::date'

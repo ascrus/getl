@@ -944,8 +944,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Reset all fields parameters to default
 	 */
-	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true, Boolean clearDefaultValue = true) {
-		getField().each { Field f ->
+	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true, Boolean clearDefaultValue = true, Boolean clearPartition = true) {
+		field.each { Field f ->
 			if (clearNotNull)
 				f.isNull = true
 			if (clearKey)
@@ -954,6 +954,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				f.defaultValue = null
 				f.checkValue = null
 				f.compute = null
+			}
+			if (clearPartition) {
+				f.isPartition = false
+				f.ordKey = null
 			}
 
 			f.isAutoincrement = false
@@ -1667,7 +1671,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/**
-	 * Clone current dataset on specified connection
+	 * Clone the current dataset to a new instance
+	 * @param newConnection use the connection for the new dataset (if not specified, the connection of the current dataset will be assigned)
+	 * @param otherParams set the specified parameters for the new dataset over the parameters of the current dataset
+	 * @param getl assign the owner of the dataset to the getl instance (if not specified, getl of the current dataset will be used)
+	 * @return new dataset
 	 */
 	@Synchronized
 	Dataset cloneDataset(Connection newConnection = null, Map otherParams = new HashMap(), Getl getl = null) {
@@ -1682,7 +1690,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			MapUtils.MergeMap(p, otherParams)
 
 		Dataset ds = CreateDatasetInternal([dataset: className] + p)
-		ds.sysParams.dslCreator = dslCreator?:getl /* TODO: This is correct? */
+		ds.sysParams.dslCreator = getl?:dslCreator
 		ds.sysParams.dslNameObject = dslNameObject
 
 		if (newConnection != null)
@@ -1958,5 +1966,28 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			res.length = invalidLength
 
 		return res
+	}
+
+	/** Move partition fields to the start of the field list */
+	void movePartitionFieldsToFirst() {
+		def partFields = fieldListPartitions
+		def p = 0
+		partFields.each { f ->
+			if (!field.remove(f))
+				throw new ExceptionGETL("Failed to move field \"${f.name}\" to the end of the list in dataset \"$objectFullName\"!")
+
+			field.add(p, f)
+			p++
+		}
+	}
+
+	/** Move partition fields to the end of the field list */
+	void movePartitionFieldsToLast() {
+		def partFields = fieldListPartitions
+		partFields.each { f ->
+			if (!field.remove(f))
+				throw new ExceptionGETL("Failed to move field \"${f.name}\" to the end of the list in dataset \"$objectFullName\"!")
+			field.add(f)
+		}
 	}
 }

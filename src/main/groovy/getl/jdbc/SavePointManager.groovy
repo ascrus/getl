@@ -489,7 +489,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 				value instanceof Integer || value instanceof Long || 
 				value instanceof BigDecimal || 
 				value instanceof String || value instanceof GString)) {
-			 throw new ExceptionGETL("Not allowed save point type \"${value.getClass().name}\"")
+			 throw new ExceptionGETL("Not allowed save point type \"${(value as Object).getClass().name}\"")
 		}
 		
 		def type
@@ -503,8 +503,9 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		}
 		else if (value instanceof String || value instanceof GString) {
 			type = "D"
-			if (format == null) format = "yyyy-MM-dd HH:mm:ss.SSS"
-			value = DateUtils.Timestamp2Value(DateUtils.ParseDate(format, value, false))
+			if (format == null)
+				format = "yyyy-MM-dd HH:mm:ss.SSS"
+			value = DateUtils.Timestamp2Value(DateUtils.ParseDate(format, (value as Object), false))
 		}
 		else if (value instanceof Integer || value instanceof Long) {
 			type = "N"

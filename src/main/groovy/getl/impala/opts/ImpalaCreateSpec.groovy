@@ -1,10 +1,8 @@
+//file:noinspection unused
 package getl.impala.opts
 
 import getl.jdbc.opts.CreateSpec
-import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 
 /**
  * Impala create table options
@@ -16,8 +14,10 @@ class ImpalaCreateSpec extends CreateSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.tblproperties == null) params.tblproperties = new HashMap<String, Object>()
-        if (params.serdeproperties == null) params.serdeproperties = new HashMap<String, Object>()
+        if (params.tblproperties == null)
+            params.tblproperties = new HashMap<String, Object>()
+        if (params.serdeproperties == null)
+            params.serdeproperties = new HashMap<String, Object>()
         if (params.sortBy == null)
             params.sortBy = [] as List<String>
     }
@@ -26,11 +26,6 @@ class ImpalaCreateSpec extends CreateSpec {
     String getRowFormat() { params.rowFormat as String }
     /** Name of type row format */
     void setRowFormat(String value) { saveParamValue('rowFormat', value) }
-
-    /** Field delimiter */
-    //String getFieldsTerminated() { params.fieldsTerminated as String }
-    /** Field delimiter */
-    //void setFieldsTerminated(String value) { saveParamValue('fieldsTerminated', value) }
 
     /** Store name */
     String getStoredAs() { params.storedAs as String }
@@ -71,4 +66,24 @@ class ImpalaCreateSpec extends CreateSpec {
         if (value != null)
             sortBy.addAll(value)
     }
+
+    /** Field delimiter for text file format */
+    String getFieldsTerminatedBy() { params.fieldsTerminatedBy as String }
+    /** Field delimiter for text file format */
+    void setFieldsTerminatedBy(String value) { params.fieldsTerminatedBy = value }
+
+    /** Row delimiter for text file format */
+    String getLinesTerminatedBy() { params.linesTerminatedBy as String }
+    /** Row delimiter for text file format */
+    void setLinesTerminatedBy(String value) { params.linesTerminatedBy = value }
+
+    /** Escape character for text file format */
+    String getEscapedBy() { params.escapedBy as String }
+    /** Escape character for text file format */
+    void setEscapedBy(String value) { params.escapedBy = value }
+
+    /** Null defined value for text file format */
+    String getNullDefinedAs() { params.nullDefinedAs as String }
+    /** Null defined value for text file format */
+    void setNullDefinedAs(String value) { params.nullDefinedAs = value }
 }

@@ -36,7 +36,7 @@ class ImpalaConnection extends JDBCConnection {
     /** HDFS host */
     void setHdfsHost (String value) { params.hdfsHost = value }
     /** HDFS host */
-    String hdfsHost() { hdfsHost?:connectHost }
+    String hdfsHost() { hdfsHost?:connectHostName }
 
     /** HDFS port */
     Integer getHdfsPort() { params.hdfsPort as Integer }
@@ -57,7 +57,10 @@ class ImpalaConnection extends JDBCConnection {
     /** HDFS directory for bulkload files */
     void setHdfsDir (String value) { params.hdfsDir = value }
     /** HDFS directory for bulkload files */
-    String hdfsDir() { hdfsDir?:((hdfsLogin() != null)?"/user/${hdfsLogin()}":null) }
+    String hdfsDir() {
+        def hl = hdfsLogin()
+        return hdfsDir?:((hl != null)?"/user/$hl":null)
+    }
 
     /** Pseudo dual table name*/
     String getDualTable() { params.dualTable }
