@@ -425,7 +425,9 @@ class GenerationUtilsTest extends getl.test.GetlTest {
                 '**field2_1': '${source.field2 + \'!\'}',
                 '*field2': '${source.field1.toUpperCase()}',
                 field2: '${source.field2_1}',
-                field3: '${vars.field3.toLowerCase()}'
+                field3: '${vars.field3.toLowerCase()}',
+                field4: '-123.45',
+                field5: '\'test\''
         ]
 
         def cl = GenerationUtils.GenerateCalculateMapClosure(map)
@@ -439,5 +441,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals('TEST!', source.field2_1)
         assertEquals('TEST!', dest.field2)
         assertEquals('test', dest.field3)
+        assertEquals(-123.45, dest.field4)
+        assertEquals('test', dest.field5)
     }
 }

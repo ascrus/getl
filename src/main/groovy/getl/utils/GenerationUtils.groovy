@@ -317,13 +317,17 @@ $body
 		listFormats.each {el ->
 			def dfName = FormatterName(el.type, el.format)
 			sbHead.append(tabHeadSpace)
+			//noinspection GroovyFallthrough
 			switch (el.type) {
 				case Field.dateFieldType:
 					sbHead.append("def $dfName = getl.utils.DateUtils.BuildDateFormatter(\"${StringUtils.EscapeJava(el.format)}\")\n")
 					break
-				case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+
+				case Field.datetimeFieldType:
+				case Field.timestamp_with_timezoneFieldType:
 					sbHead.append("def $dfName = getl.utils.DateUtils.BuildDateTimeFormatter(\"${StringUtils.EscapeJava(el.format)}\")\n")
 					break
+
 				case Field.timeFieldType:
 					sbHead.append("def $dfName = getl.utils.DateUtils.BuildTimeFormatter(\"${StringUtils.EscapeJava(el.format)}\")\n")
 					break
@@ -395,6 +399,7 @@ $body
 	 */
 	static String GenerateEmptyValue(Field.Type type, String variableName) {
 		String r
+		//noinspection GroovyFallthrough
 		switch (type) {
 			case Field.stringFieldType: case Field.uuidFieldType:
 				r = "String ${variableName}"
@@ -512,8 +517,10 @@ $body
 		sourceValue = "${sourceMap}.${sourceValue}"
 		def destValue = dest.name.toLowerCase().replace('\'', '\\\'')
 
+		//noinspection GroovyFallthrough
 		switch (dest.type) {
 			case Field.stringFieldType: case Field.textFieldType:
+				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.stringFieldType: case Field.textFieldType:
 						r = sourceValue
@@ -606,6 +613,7 @@ $body
 						if (formatField == null)
 							r = "Integer.valueOf($sourceValue as String)"
 						else {
+							//noinspection GroovyFallthrough
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard': case 'comma':
 									r = "Integer.valueOf($sourceValue as String)"
@@ -647,6 +655,7 @@ $body
 				break
 
 			case Field.bigintFieldType:
+				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.bigintFieldType:
 						r = sourceValue
@@ -657,6 +666,7 @@ $body
 						if (formatField == null)
 							r = "Long.valueOf($sourceValue as String)"
 						else {
+							//noinspection GroovyFallthrough
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard': case 'comma':
 									r = "Long.valueOf($sourceValue as String)"
@@ -820,6 +830,7 @@ $body
 			case Field.dateFieldType:
 				formatField = formatField?:DateFormat(dest.type)
 
+				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.dateFieldType:
 						r = sourceValue
@@ -860,6 +871,7 @@ $body
 			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
 				formatField = formatField?:DateFormat(dest.type)
 
+				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.datetimeFieldType:
 						r = sourceValue
@@ -901,6 +913,7 @@ $body
 			case Field.timeFieldType:
 				formatField = formatField?: DateFormat(dest.type)
 
+				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.timeFieldType:
 						r = sourceValue
@@ -1108,7 +1121,8 @@ $body
 		
 		if (f.isNull && GenerateBoolean())
 			return null
-		
+
+		//noinspection GroovyFallthrough
 		switch (f.type) {
 			case Field.stringFieldType:
 				if (lengthTextInBytes)
@@ -1273,8 +1287,8 @@ $body
 			def isNull = f.isNull
 			def length = f.length
 			def precision = f.precision
-			def minValue = ListUtils.NotNullValue(f.minValue, minValueAll) as Integer
-			def maxValue = ListUtils.NotNullValue(f.maxValue, maxValueAll) as Integer
+			Integer minValue = ListUtils.NotNullValue(f.minValue, minValueAll) as Integer
+			Integer maxValue = ListUtils.NotNullValue(f.maxValue, maxValueAll) as Integer
 
 			def rule = (rules.get(fieldName)?:new HashMap<String, Object>()) as Map<String, Object>
 			if (rule.isNull != null) isNull = BoolUtils.IsValue(rule.isNull)
@@ -1291,6 +1305,7 @@ $body
 			def isIdentity = BoolUtils.IsValue(rule.identity)
 
 			String func
+			//noinspection GroovyFallthrough
 			switch (f.type) {
 				case Field.integerFieldType: case Field.bigintFieldType:
 					if (!isIdentity) {
@@ -1734,8 +1749,9 @@ sb << """
 	 * @return
 	 */
 	static void FieldConvertToString (Field field) {
-		def len
 		def type = Field.stringFieldType
+
+		//noinspection GroovyFallthrough
 		switch (field.type) {
 			case Field.stringFieldType:
 				break
@@ -1744,36 +1760,36 @@ sb << """
 				break
 			case Field.textFieldType: case Field.blobFieldType:
 				type = Field.stringFieldType
-				if (field.length == null) len = 65000
+				if (field.length == null)
+					field.length = 65000
 				break
 			case Field.bigintFieldType:
-				len = 38
+				field.length = 38
 				break
 			case Field.integerFieldType:
-				len = 13
+				field.length = 13
 				break
 			case Field.dateFieldType: case Field.datetimeFieldType: case Field.timeFieldType:
 			case Field.timestamp_with_timezoneFieldType:
-				len = 30
+				field.length = 30
 				break
 			case Field.booleanFieldType:
-				len = 5
+				field.length = 5
 				break
 			case Field.doubleFieldType:
-				len = 50
+				field.length = 50
 				break
 			case Field.numericFieldType:
-				len = (field.length?:50) + 1
+				field.length = (field.length?:50) + 1
 				break
 			case Field.uuidFieldType:
 				type = Field.stringFieldType
-				len = 36
+				field.length = 36
 				break
 			default:
 				throw new ExceptionGETL("Not support convert field type \"${field.type}\" to \"STRING\" from field \"${field.name}\"")
 		}
 		field.type = type
-		if (len != null) field.length = len
 		field.precision = null
 		field.typeName = null
 		field.columnClassName = null
@@ -1854,7 +1870,8 @@ sb << """
 	static String Field2ParamName(String fieldName) {
 		if (fieldName == null) return null
 
-        return fieldName.replaceAll("(?i)[^a-z0-9_]", "_").toLowerCase()
+		//noinspection RegExpSimplifiable
+		return fieldName.replaceAll("(?i)[^a-z0-9_]", "_").toLowerCase()
 	}
 	
 	/**
@@ -2075,6 +2092,7 @@ sb << """
 	static String GenerateSetParam(JDBCDriver driver, Integer paramNum, Field field, Integer fieldType, String value) {
 		String res
 		Map types = driver.javaTypes()
+		//noinspection GroovyFallthrough
 		switch (fieldType) {
 			case types.BIGINT:
 				res = "if ($value != null) _getl_stat.setLong($paramNum, ($value) as Long) else _getl_stat.setNull($paramNum, java.sql.Types.BIGINT)"
@@ -2216,6 +2234,7 @@ else
 			dtFormat = formats.uniFormatDateTime as String
 
 		String res = null
+		//noinspection GroovyFallthrough
 		switch (field.type) {
 			case Field.dateFieldType:
 				res = dtFormat?:(formats.formatDate as String)
@@ -2270,8 +2289,16 @@ else
 		sb.append('void process(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {\n')
 
 		//noinspection RegExpRedundantEscape
-		def p1 = Pattern.compile('^\\$\\{(.+)\\}$')
-		def p2 = Pattern.compile('^([*]+)(.+)')
+		// Calculated field
+		//noinspection RegExpRedundantEscape
+		def pCalculated = Pattern.compile('^\\$\\{(.+)\\}$')
+		// Virtual field
+		def pVirtual = Pattern.compile('^([*]+)(.+)')
+		// Numeric constant
+		//noinspection RegExpSimplifiable
+		def pNumeric = Pattern.compile('^([+-]*\\d+[.]{0,1}\\d*)$')
+		// String constant
+		def pString = Pattern.compile('^(\'.*\')$')
 
 		def removeKeys = [] as List<String>
 		def clearKeys = [] as List<String>
@@ -2280,14 +2307,25 @@ else
 		map.each { destName, sourceName ->
 			String destValue = null
 			if (sourceName != null && sourceName.length() > 0) {
-				def m1 = p1.matcher(sourceName)
-				destValue = (m1.find()) ? m1.group(1) : null
+				def mNumeric = pNumeric.matcher(sourceName)
+				if (mNumeric.find())
+					destValue = mNumeric.group(1)
+				else {
+					def mString = pString.matcher(sourceName)
+					if (mString.find())
+						destValue = mString.group(1)
+					else {
+						def mCalculated = pCalculated.matcher(sourceName)
+						if (mCalculated.find())
+							destValue = mCalculated.group(1)
+					}
+				}
 			}
 
-			def m2 = p2.matcher(destName)
-			def isVirtual = m2.find()
-			def virtualLevel = (isVirtual)?m2.group(1).length():null
-			def virtualName = (isVirtual)?m2.group(2):null
+			def mVirtual = pVirtual.matcher(destName)
+			def isVirtual = mVirtual.find()
+			def virtualLevel = (isVirtual)?mVirtual.group(1).length():null
+			def virtualName = (isVirtual)?mVirtual.group(2):null
 
 			if (!isVirtual) {
 				if (destValue == null)
