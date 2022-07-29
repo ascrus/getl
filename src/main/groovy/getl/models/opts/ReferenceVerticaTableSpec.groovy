@@ -3,6 +3,7 @@ package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
@@ -127,9 +128,18 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     /**
      * Filling reference data from source table
      * @param onlyForEmpty copy data for empty tables only (default true)
+     * @param source source dataset (default current table)
+     * @param bulkLoad bulk load from source dataset (default false)
+     * @param nullAsValue encoding null as specified value for bulkload copy type
      * @return reference data was copied
      */
-    Boolean copyFromDataset(Boolean onlyForEmpty = true, Dataset source = null) {
+    Boolean copyFromDataset(Boolean onlyForEmpty = true, Dataset source = null, Boolean bulkLoad = false, String nullAsValue = null) {
+        bulkLoad = BoolUtils.IsValue(bulkLoad)
+        if (source == null && bulkLoad)
+            throw new ExceptionDSL('Required source dataset for bulk loading!')
+        if (!bulkLoad && nullAsValue != null)
+            throw new ExceptionDSL('Null as value supported if using bulk load copy mode!')
+
         def destTable = referenceTable as VerticaTable
 
         if (!isAllowCopy()) {
@@ -155,9 +165,13 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
         def sourceTable = source?:sourceDataset?:workTable
         if (sourceTable.connection?.dslNameObject == destTable.connection?.dslNameObject) {
             def vSource = sourceTable.cloneDataset() as VerticaTable
-            vSource.readOpts {
-                if (whereCopy != null) where = StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
-                if (sampleCopy != null && sampleCopy > 0) tablesample = sampleCopy
+            vSource.readOpts {opt ->
+                if (whereCopy != null)
+                    opt.where = StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
+                if (sampleCopy != null && sampleCopy > 0)
+                    opt.tablesample = sampleCopy
+                if (limitCopy != null && limitCopy > 0)
+                    opt.limit = limitCopy
             }
 
             def vDest = destTable
@@ -167,21 +181,32 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
         }
         else {
             def vSource = sourceTable.cloneDataset()
-            if (whereCopy != null)
+            if (whereCopy != null) {
                 if (vSource instanceof TableDataset)
                     (vSource as TableDataset).readOpts.where = StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
                 else
                     ownerModel.dslCreator.logWarn("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: the source " +
                             "is not a JDBC table and cannot use conditions in \"whereCopy\"!")
+            }
 
-            if (sampleCopy != null)
+            if (sampleCopy != null) { /* TODO: Проверить что работает */
                 if (vSource instanceof VerticaTable)
                     (vSource as VerticaTable).readOpts.tablesample = sampleCopy
                 else
                     ownerModel.dslCreator.logWarn("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: the source " +
                             "is not a Vertica table and cannot use sampling in \"sampleCopy\"!")
+            }
 
-            destRows = new Flow(ownerModel.dslCreator).copy(source: vSource, dest: destTable, bulkLoad: true, bulkAsGZIP: true)
+            if (limitCopy != null) { /* TODO: Проверить что работает */
+                if (vSource instanceof TableDataset)
+                    (vSource as TableDataset).readOpts.limit = limitCopy
+                else
+                    ownerModel.dslCreator.logWarn("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: the source " +
+                            "is not a JDBC table and cannot use limit in \"limitCopy\"!")
+            }
+
+            destRows = new Flow(ownerModel.dslCreator).copy(source: vSource, dest: destTable,
+                    bulkLoad: bulkLoad, bulkAsGZIP: true, bulkNullAsValue: nullAsValue)
         }
 
         ownerModel.dslCreator.logInfo("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
@@ -191,21 +216,38 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
         return true
     }
 
+    /** Copy source data from another Vertica cluster with EXPORT TO VERTICA operator */
+    static public final String exportToVerticaCopyType = 'EXPORT'
+    /** Copy source data from another Vertica cluster with standard copy rows */
+    static public final String etlCopyType = 'ETL'
+    /** Copy source data from another Vertica cluster with bulk loading temporary csv files */
+    static public final String bulkloadCopyType = 'BULKLOAD'
+
     /**
      * Fill the reference table with data from the table of the specified Vertica connection
      * @param externalConnection Vertica cluster from which to copy data
      * @param onlyForEmpty copy data for empty tables only (default true)
-     * @param useExportCopy copy data between clusters Vertica using operator "EXPORT TO" (default false)
+     * @param copyType copy type (ETL, BULKLOAD OR EXPORT), default ETL
+     * @param nullAsValue encoding null as specified value for bulkload copy type
      * @return reference data was copied
      */
-    Boolean copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, Boolean useExportCopy = false) {
+    Boolean copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, String copyType = etlCopyType, String nullAsValue = null) {
+        if (externalConnection == null)
+            throw new NullPointerException('Required external connection!')
+        onlyForEmpty = BoolUtils.IsValue(onlyForEmpty, true)
+        if (copyType == null)
+            copyType = etlCopyType
+        copyType = copyType.toUpperCase()
+        if (!(copyType in [etlCopyType, bulkloadCopyType, exportToVerticaCopyType]))
+            throw new ExceptionDSL("Unknown copy type \"$copyType\", allowed: $etlCopyType, $bulkloadCopyType or $exportToVerticaCopyType")
+
         def sourceTable = workTable.cloneDataset(externalConnection) as VerticaTable
         if (!sourceTable.exists)
             throw new ExceptionModel("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
                     "source table $sourceTable not found in Vertica cluster!")
 
-        if (!useExportCopy) {
-            return copyFromDataset(onlyForEmpty, sourceTable)
+        if (copyType != exportToVerticaCopyType) {
+            return copyFromDataset(onlyForEmpty, sourceTable, copyType == bulkloadCopyType, nullAsValue)
         }
 
         def destTable = referenceTable

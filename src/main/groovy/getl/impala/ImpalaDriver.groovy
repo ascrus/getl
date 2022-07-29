@@ -254,6 +254,9 @@ class ImpalaDriver extends JDBCDriver {
 
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+        if (source.nullAsValue() != null) /* TODO: Проверить, что действительно не поддерживает nullAsValue */
+            throw new ExceptionGETL("Connection ${dest.connection} not support \"nullAsValue\" in bulk load files!")
+
         def table = dest as TableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def con = table.connection as ImpalaConnection

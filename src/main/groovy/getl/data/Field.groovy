@@ -409,6 +409,7 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Valid convert one type to another
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	static Boolean IsConvertibleType(Type source, Type dest) {
 		if (source == dest) return true
 		
@@ -503,6 +504,7 @@ class Field implements Serializable, Cloneable {
 	}
 
 	/** Compare from field */
+	@SuppressWarnings('GroovyFallthrough')
 	boolean compare(Field o, Boolean softComparison = false, Boolean compareExpressions = true) {
 		if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
 

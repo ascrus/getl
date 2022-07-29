@@ -336,7 +336,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			def historyPath = dslCreator.options.fileManagerLoggingPath
 			if (historyPath != null) {
 				def objName = ParseObjectName.Parse(dslNameObject, false)
-				res = historyPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment?:'prod'}.{date}.sql"
+				res = historyPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment?:'prod'}.{date}.txt"
 			}
 		}
 		return FileUtils.ConvertToDefaultOSPath(res)

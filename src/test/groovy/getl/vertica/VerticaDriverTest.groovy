@@ -46,7 +46,6 @@ class VerticaDriverTest extends JDBCDriverProto {
         (table as VerticaTable).tap {
             readOpts {label = 'test_getl'}
             writeOpts {direct = 'DIRECT'}
-            bulkLoadOpts { useEscapedInFlow = true }
         }
     }
 
@@ -623,10 +622,5 @@ LIMIT 1'''
                 }
             }
         }
-    }
-
-    @Override
-    protected prepareBulkTable(TableDataset table) {
-        table.bulkLoadDirective.useEscapedInFlow = false
     }
 }

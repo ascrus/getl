@@ -408,9 +408,10 @@ class Executor implements GetlRepository {
 					num++
 					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
-						objects.add("[${num}] $errorText: ${obj.toString()}")
+						objects.add("[$num] $errorText: ${obj.toString()}")
+						logger.dump(e, "${getClass().name} [$num]", obj.toString(), null)
 					} else {
-						objects.add("[${num}] $errorText")
+						objects.add("[$num] $errorText")
 					}
 				}
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
@@ -576,9 +577,10 @@ class Executor implements GetlRepository {
 					num++
 					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
-						objects << "[${num}] $errorText: ${obj.toString()}"
+						objects << "[$num] $errorText: ${obj.toString()}"
+						logger.dump(e, "${getClass().name} [$num]", obj.toString(), null)
 					} else {
-						objects << "[${num}] $errorText"
+						objects << "[$num] $errorText"
 					}
 				}
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
@@ -735,9 +737,10 @@ class Executor implements GetlRepository {
 					num++
 					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
-						objects << "[${num}] $errorText: ${obj.toString()}"
+						objects << "[$num] $errorText: ${obj.toString()}"
+						logger.dump(e, "${getClass().name} [$num]", obj.toString(), null)
 					} else {
-						objects << "[${num}] $errorText"
+						objects << "[$num] $errorText"
 					}
 				}
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")

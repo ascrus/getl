@@ -29,7 +29,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
-				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath', 'useEscapedInFlow',
+				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
 				 'location', 'formatDate', 'formatTime', 'formatDateTime', 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
@@ -158,6 +158,7 @@ class VerticaDriver extends JDBCDriver {
 		return 'U&\'' + sb.toString() + '\''
 	}
 
+	@SuppressWarnings('GroovyFallthrough')
 	String copyFormatField(CSVDataset ds, Field field, String fieldName, String formatDate, String formatTime, String formatDateTime) {
 		String res = null
 		switch (field.type) {
@@ -240,6 +241,8 @@ class VerticaDriver extends JDBCDriver {
 				throw new ExceptionGETL('Quote separator with unicode value 1 is not supported!')
 			if (rowDelimiterChar == '\u0001')
 				throw new ExceptionGETL('Row separator with unicode value 1 is not supported!')
+			if (source.nullAsValue() != null)
+				throw new ExceptionGETL('Vertica driver not support nullAsValue option, when bulk loading not escaped file!')
 
 			def opts = [
 					'type=\'traditional\'',
@@ -252,8 +255,8 @@ class VerticaDriver extends JDBCDriver {
 			]
 
 			parserText = "\nWITH PARSER public.fcsvparser(${opts.join(', ')})"
-			if (source.nullAsValue() != null)
-				nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+			/*if (source.nullAsValue() != null)
+				nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"*/
 		}
 
 		if (parserText.length() == 0) {
@@ -544,15 +547,6 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
-		super.prepareCsvTempFile(source, csvFile)
-		if (!(source instanceof TableDataset))
-			throw new ExceptionGETL("Need table type!")
-		def table = source as TableDataset
-		csvFile.escaped = BoolUtils.IsValue(table.bulkLoadDirective.useEscapedInFlow)
-	}
-
-	@Override
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.validCsvTempFile(source, csvFile)
 		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
@@ -756,6 +750,13 @@ class VerticaDriver extends JDBCDriver {
 		}
 
 		return res
+	}
+
+	@Override
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		super.prepareCsvTempFile(source, csvFile)
+		if (csvFile.nullAsValue() != null && !csvFile.escaped())
+			csvFile.escaped = true
 	}
 
 	/*

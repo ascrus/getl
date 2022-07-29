@@ -578,6 +578,7 @@ class DateUtils {
 	 * @param part date part (HOUR, HH, MINUTE, mm, SECOND, ss)
 	 * @return modified date
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	static Date TruncTime(String part, Date date) {
 		Integer partNum
 		if (part.toUpperCase() in ['HOUR', 'MINUTE', 'SECOND'])

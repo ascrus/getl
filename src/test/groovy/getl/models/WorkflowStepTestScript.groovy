@@ -19,7 +19,11 @@ void check() {
     assert macro == "$stepNum:$stepName"
 }
 
-def varEvent = (onEvent != null)?onEvent():null
+def varEvent = onEvent?.call()
 logInfo "Step \"$stepName\" from $stepNum complete (${configContent.countProcessed}) with macro \"$macro\"${(varEvent != null)?" and event \"$varEvent\"":''}"
 
-return [processed: stepNum, map: map, list: list, ext_var1: scriptExtendedVars.ext_var1, varEvent: varEvent]
+println scriptEvents
+def varEvent1 = scriptEvents.eventFromAll('event1')?.call()
+def varEvent2 = scriptEvents.eventFromObject('object1', 'event2')?.call()
+
+return [processed: stepNum, map: map, list: list, ext_var1: scriptExtendedVars.ext_var1, varEvent: varEvent, varEvent1: varEvent1, varEvent2: varEvent2]

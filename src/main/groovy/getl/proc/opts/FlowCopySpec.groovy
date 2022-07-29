@@ -163,6 +163,11 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Compress bulk file from GZIP algorithm */
     void setBulkAsGZIP(Boolean value) { saveParamValue('bulkAsGZIP', value) }
 
+    /** Use nullAsValue option for bulk load files */
+    String getBulkNullAsValue() { params.bulkNullAsValue }
+    /** Use nullAsValue option for bulk load files */
+    void setBulkNullAsValue(String value) { saveParamValue('bulkNullAsValue', value) }
+
     /** Format for date fields */
     String getFormatDate() { params.formatDate as String }
     /** Format for date fields */

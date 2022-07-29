@@ -217,7 +217,7 @@ class ExcelDriver extends FileDriver {
         return countRec
     }
 
-    @SuppressWarnings('unused')
+    @SuppressWarnings(['unused', 'GroovyFallthrough'])
     @CompileStatic
     static private Object getCellValue(Cell cell, FileDataset dataset, Field field, DateTimeFormatter formatDate, DateTimeFormatter formatTime,
                                        DateTimeFormatter formatDateTime, String formatBoolean, DecimalFormat df) {

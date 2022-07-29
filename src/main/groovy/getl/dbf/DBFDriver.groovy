@@ -43,6 +43,7 @@ class DBFDriver extends FileDriver {
 
 
     /** Convert DBF field to Getl field */
+    @SuppressWarnings('GroovyFallthrough')
     static Field DBFField2Field(DBFField dbfField) {
         Field res = new Field(name: dbfField.name, typeName: dbfField.type.toString())
         switch (dbfField.type) {
@@ -130,6 +131,7 @@ class DBFDriver extends FileDriver {
         return res
     }
 
+    @SuppressWarnings('GroovyFallthrough')
     @CompileStatic
     @Override
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {

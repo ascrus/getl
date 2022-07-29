@@ -62,10 +62,10 @@ class WebServiceDataset extends FileDataset {
     /** Variable parameter values */
     Map<String, Object> webVars() {
         def res = new HashMap<String, Object>()
-        res.putAll(attributes())
         if (connection != null)
             res.putAll(currentWebServiceConnection.webVars)
         res.putAll(webVars)
+        res.putAll(attributes())
 
         return res
     }

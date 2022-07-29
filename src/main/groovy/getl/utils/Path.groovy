@@ -399,6 +399,7 @@ class Path implements Cloneable, GetlRepository {
 	 * </ul>
 	 * @param params path parameters
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	void compile(Map params = new HashMap()) {
 		if (params == null)
 			params = new HashMap()
@@ -706,7 +707,7 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Analyze object name */
-	@SuppressWarnings('UnnecessaryQualifiedReference')
+	@SuppressWarnings(['UnnecessaryQualifiedReference', 'GroovyFallthrough'])
 	Map analyze(String objName, Boolean isHierarchy = false, Map<String, Object> extendVars = null) {
 		if (!isCompile) compile()
 
@@ -905,6 +906,7 @@ class Path implements Cloneable, GetlRepository {
 	/**
 	 * Format variable with type of value
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	String formatVariable(String varName, def value) {
 		if (!vars.containsKey(varName))
 			throw new ExceptionGETL("Variable ${varName} not found in filepath mask [$maskStr}]!")

@@ -372,7 +372,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (cacheTable != null)
             saveCacheStory()
 
-        Operation(destinations, numberAttempts, timeAttempts, dslCreator) { man ->
+        Operation(destinations, numberAttempts, timeAttempts, this) { man ->
             try {
                 man.changeDirectoryToRoot()
                 man.changeLocalDirectoryToRoot()
@@ -458,12 +458,12 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 if (beforeCopy != null)
                     beforeCopy.call(infile, outfile)
 
-                Operation([src], numberAttempts, timeAttempts, dslCreator) { man ->
+                Operation([src], numberAttempts, timeAttempts, this) { man ->
                     man.download(infilename, outfilename)
                 }
 
                 try {
-                    Operation(dst, numberAttempts, timeAttempts, dslCreator) { man ->
+                    Operation(dst, numberAttempts, timeAttempts, this) { man ->
                         man.upload(outfilename)
                     }
                 }
@@ -477,7 +477,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 storyWrite(infile + [fileloaded: new Date()])
 
                 if (isRemoveFile) {
-                    Operation([src], numberAttempts, timeAttempts, dslCreator) { man ->
+                    Operation([src], numberAttempts, timeAttempts, this) { man ->
                         man.removeFile(infilename)
                     }
                 }
@@ -497,7 +497,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         finally {
             files.currentJDBCConnection.connected = false
 
-            Operation([src], numberAttempts, timeAttempts, dslCreator) { man ->
+            Operation([src], numberAttempts, timeAttempts, this) { man ->
                 try {
                     man.changeLocalDirectoryToRoot()
                     man.removeLocalDirs('.')

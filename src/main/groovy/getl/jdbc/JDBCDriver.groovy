@@ -225,6 +225,7 @@ class JDBCDriver extends Driver {
 	 */
 	String defaultConnectURL () { null }
 
+	@SuppressWarnings('GroovyFallthrough')
 	@Override
 	void prepareField (Field field) {
 		if (field.dbType == null)
@@ -2988,18 +2989,6 @@ FROM {source} {after_from}'''
 		return executeCommand(sql, [queryParams: qParams])
 	}
 
-	@Override
-	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
-		super.prepareCsvTempFile(source, csvFile)
-		csvFile.codePage = 'UTF-8'
-		csvFile.header = false
-		csvFile.fieldDelimiter = '|'
-		csvFile.rowDelimiter = '\n'
-		csvFile.quoteStr = '"'
-		csvFile.nullAsValue = null
-		csvFile.formatTimestampWithTz = DateUtils.defaultTimestampWithTzSmallMask
-	}
-
 	/** Generate query parameters for script of create schema */
 	protected Map<String, Object> createSchemaParams(String schemaName, Map<String, Object> createParams) {
 		def res = new HashMap<String, Object>()
@@ -3153,6 +3142,7 @@ FROM {source} {after_from}'''
 	 * @param sqlType SQL type name
 	 * @return Java class
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	Class sqlType2JavaClass(String sqlType) {
 		if (sqlType == null)
 			return Object

@@ -69,10 +69,6 @@ class BoolUtils {
         return result
 	}
 
-	/*static public Boolean IsValue(def value) {
-		IsValue(value, false)
-	}*/
-	
 	/**
 	 * Validation instanceof use class for super class
 	 * @param useClass
@@ -89,6 +85,6 @@ class BoolUtils {
 			i++
 		}
 		
-		false
+		return false
 	}
 }

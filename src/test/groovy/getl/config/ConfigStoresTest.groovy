@@ -6,6 +6,7 @@ import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.MapUtils
 import groovy.json.JsonBuilder
+import groovy.json.JsonGenerator
 import org.junit.Test
 
 class ConfigStoresTest extends GetlTest {
@@ -22,7 +23,7 @@ class ConfigStoresTest extends GetlTest {
         def configSection = 'test_config'
         def configKey = 'test key'
 
-        def builder = new JsonBuilder()
+        def builder = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
         def conf = builder.root {
             map {
                 list 'a', 1, null

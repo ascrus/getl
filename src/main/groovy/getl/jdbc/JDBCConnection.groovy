@@ -395,6 +395,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type, retrieveInfo)
 	 * @param filter user filter code
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	List<TableDataset> retrieveDatasets(Map params,
 										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 												 Closure<Boolean> filter = null) {

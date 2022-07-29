@@ -8,6 +8,7 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
+import getl.utils.BoolUtils
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
 import getl.utils.Path
@@ -180,7 +181,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
             if (!listSchemaGrants.isEmpty()) {
                 try {
-                    currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
+                    currentJDBCConnection.executeCommand('GRANT USAGE, CREATE, SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON SCHEMA {schema} TO {roles}',
                             [queryParams: [schema: referenceSchemaName, roles: listSchemaGrants.join(', ')]])
                 }
                 catch (Exception e) {
@@ -218,17 +219,36 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         dslCreator.logInfo("$repositoryModelName: reference schema \"${referenceSchemaName}\" dropped")
     }
 
+    /** Copy source data from another Vertica cluster with EXPORT TO VERTICA operator */
+    static public final String exportToVerticaCopyType = 'EXPORT'
+    /** Copy source data from another Vertica cluster with standard copy rows */
+    static public final String etlCopyType = 'ETL'
+    /** Copy source data from another Vertica cluster with bulk loading temporary csv files */
+    static public final String bulkloadCopyType = 'BULKLOAD'
+
     /**
      * Filling reference data from other Vertica cluster
      * @param externalConnection Vertica cluster from which to copy data
      * @param onlyForEmpty copy data for empty tables only (default true)
-     * @param useExportCopy copy data between clusters Vertica using operator "EXPORT TO" (default false)
+     * @param copyType copy type (ETL, BULKLOAD OR EXPORT), default ETL
+     * @param nullAsValue encoding null as specified value for bulkload copy type
      * @param include list of tables included for processing
      * @param exclude list of tables excluded from processing
      * @return count of tables copied
      */
-    Integer copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, Boolean useExportCopy = false,
+    Integer copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, String copyType = etlCopyType, String nullAsValue = null,
                             List<String> include = null, List<String> exclude = null) {
+        if (externalConnection == null)
+            throw new NullPointerException('Required external connection!')
+        onlyForEmpty = BoolUtils.IsValue(onlyForEmpty, true)
+        if (copyType == null)
+            copyType = etlCopyType
+        copyType = copyType.toUpperCase()
+        if (!(copyType in [etlCopyType, bulkloadCopyType, exportToVerticaCopyType]))
+            throw new ExceptionDSL("Unknown copy type \"$copyType\", allowed: $etlCopyType, $bulkloadCopyType or $exportToVerticaCopyType")
+        if (copyType != bulkloadCopyType && nullAsValue != null)
+            throw new ExceptionDSL('Null as value supported if using bulk load copy mode!')
+
         checkModel()
 
         dslCreator.logFinest("Copy Vertica external tables to reference model [$repositoryModelName] ...")
@@ -237,7 +257,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         def excludePath = Path.Masks2Paths(exclude)
 
         def res = 0
-        if (useExportCopy) {
+        if (copyType) {
             externalConnection.attachExternalVertica(referenceConnection)
             dslCreator.logInfo("$repositoryModelName: connection to \"$referenceConnection\" of \"$externalConnection\" is established")
         }
@@ -254,7 +274,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 }
 
                 try {
-                    if (spec.copyFromVertica(externalConnection, onlyForEmpty, useExportCopy))
+                    if (spec.copyFromVertica(externalConnection, onlyForEmpty, copyType, nullAsValue))
                         res++
                 }
                 catch (Exception e) {
@@ -266,7 +286,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             dslCreator.logInfo("${repositoryModelName}: $res tables copied successfully to reference tables from other Vertica cluster")
         }
         finally {
-            if (useExportCopy) {
+            if (copyType) {
                 externalConnection.detachExternalVertica(referenceConnection)
                 dslCreator.logInfo("${repositoryModelName}: connection with \"$referenceConnection\" of \"$externalConnection\" is broken")
             }
@@ -303,7 +323,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             }
 
             try {
-                if (spec.copyFromDataset(onlyForEmpty)) res++
+                if (spec.copyFromDataset(onlyForEmpty))
+                    res++
             }
             catch (Exception e) {
                 dslCreator.logError("Error copying to reference table \"$name\" in model \"$repositoryModelName\"", e)

@@ -276,6 +276,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             _dslCreator.logError("Model \"$this\" has invalid story dataset \"$dsName\"", e)
             throw e
         }
+
+        return res
     }
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
@@ -390,13 +392,13 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             def objName = obj.objectNameInModel()
             if (objName != null) {
                 if (includePath == null && excludePath == null)
-                    res << objName
+                    res.add(objName)
                 else if (includePath != null) {
                     if (Path.MatchList(objName, includePath))
                         if (excludePath == null || !Path.MatchList(objName, excludePath))
-                            res << objName
+                            res.add(objName)
                 } else if (excludePath != null && !Path.MatchList(objName, excludePath))
-                    res << objName
+                    res.add(objName)
             }
         }
 

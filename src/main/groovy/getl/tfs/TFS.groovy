@@ -38,7 +38,7 @@ class TFS extends CSVConnection {
 	protected void validParams() {
 		super.validParams()
 		if (params.fieldDelimiter == null)
-			fieldDelimiter = "|"
+			fieldDelimiter = ","
 		if (params.rowDelimiter == null)
 			rowDelimiter = "\n"
 		if (params.autoSchema == null)

@@ -142,4 +142,26 @@ class ResourceManagerTest extends TestDsl {
             println jarFile.delete()
         }
     }
+
+    @Test
+    void testBadNames() {
+        Getl.Dsl {
+            def configName = 'easyportal.conf'
+            def jarFile = new File('tests/jar files/easyloader test.jar')
+            def classLoader = new URLClassLoader(new URL[] { jarFile.toURI().toURL() }, null as ClassLoader)
+            resourceFiles {
+                useClassLoader classLoader
+                useResourcePath FileUtils.ConvertToUnixPath(jarFile.path)
+
+                assertTrue(existsFile(configName))
+                download(configName)
+                def f = new File("${localDirectory}/$configName")
+                def opts = getl.config.ConfigSlurper.LoadConfigFile(f)
+                assertEquals('easyloader', opts.name)
+
+                def files = buildListFiles('*.class') { recursive = true }
+                assertEquals(1, files.countRow('filepath = \'ru/easydata/easyloader/launcher\' AND filename = \'Job.class\''))
+            }
+        }
+    }
 }

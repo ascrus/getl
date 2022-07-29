@@ -4,7 +4,6 @@ import getl.job.jdbc.RunSql
 import getl.lang.Getl
 import getl.test.GetlDslTest
 import getl.utils.BoolUtils
-import getl.utils.ListUtils
 import org.junit.Test
 
 class WorkflowTest extends GetlDslTest {
@@ -25,8 +24,20 @@ class WorkflowTest extends GetlDslTest {
                 start('Start 1') {
                     countThreads = 2
 
-                    initCode = '''ifUnitTestMode { configContent.init_code = true }; vars('root2').onEvent = { 'SCRIPT EVENT' }'''
-                    finalCode = '''ifUnitTestMode { configContent.final_code = true }; assert result('root2').varEvent == 'SCRIPT EVENT' '''
+                    initCode = '''
+                                    ifUnitTestMode { configContent.init_code = true }
+                                    vars('root2').onEvent = { return 'SCRIPT EVENT' }
+                                    events('root2') {
+                                      event('event1') { return 'event1' }
+                                      event('object1', 'event2') { return 'event2' }
+                                    }
+                                '''
+                    finalCode = '''
+                                    ifUnitTestMode { configContent.final_code = true }
+                                    assert result('root2').varEvent == 'SCRIPT EVENT'
+                                    assert result('root2').varEvent1 == 'event1'
+                                    assert result('root2').varEvent2 == 'event2' 
+                                    '''
 
                     exec('Root1') {
                         className = WorkflowStepTestScript.name

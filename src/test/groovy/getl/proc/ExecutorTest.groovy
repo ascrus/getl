@@ -178,6 +178,8 @@ class ExecutorTest extends GetlTest {
     void testNested() {
         Getl.Dsl {
             def so = new SynchronizeObject()
+            def smax = new SynchronizeObject()
+            def smin = new SynchronizeObject()
             thread {
                 useList((1..5))
                 setCountProc 3
@@ -186,16 +188,21 @@ class ExecutorTest extends GetlTest {
                         thread {
                             useList(1..10)
                             setCountProc 5
-                            def sc = new SynchronizeObject()
-                            run { sc.addCount(1) }
-                            assertEquals(10, sc.count)
-                            so.addCount(sc.count)
-                            countRow = sc.count
+                            run {
+                                counter.addCount(1)
+                                smin.compareMin(counter.count)
+                                smax.compareMax(counter.count)
+                            }
+                            assertEquals(10, counter.count)
+                            so.addCount(counter.count)
+                            countRow = counter.count
                         }
                     }
                 }
             }
             assertEquals(50, so.count)
+            assertEquals(1, smin.compare)
+            assertEquals(10, smax.compare)
         }
     }
 

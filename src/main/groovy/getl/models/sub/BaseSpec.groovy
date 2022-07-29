@@ -212,8 +212,11 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
      * @return attribute value set
      */
     @Synchronized('synchAttrs')
-    Map<String, Object> subAttributesValues(String topName) {
-        return MapUtils.EvalMacroValues(subAttributes(topName), ownerModel.modelVars + objectVars, false)
+    Map<String, Object> subAttributesValues(String topName, Map<String, Object> vars = null) {
+        def attrParams = ownerModel.modelVars + objectVars
+        if (vars != null)
+            attrParams.putAll(vars)
+        return MapUtils.EvalMacroValues(subAttributes(topName), attrParams, false)
     }
 
     /**

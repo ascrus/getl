@@ -187,7 +187,7 @@ class FileProcessingTest extends TestDsl {
                         run { Integer num ->
                             def writer = new File("$path/sales.${StringUtils.AddLedZeroStr(num, 4)}.json").newWriter()
                             def builder = new StreamingJsonBuilder(writer,
-                                    new JsonGenerator.Options().timezone(TimeZone.default.ID).dateFormat('yyyy-MM-dd').build())
+                                    new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.ID).dateFormat('yyyy-MM-dd').build())
                             def r = new ArrayList(rows) as List<Map>
                             if (num == 2) r.removeLast()
                             if (num == 3) writer.append('{a=1234567890}')

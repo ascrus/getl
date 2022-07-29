@@ -274,6 +274,7 @@ class EtlSpec extends BaseSpec {
      * @param table source table
      * @param row row search field values (search in fields with blob, array and object types is not supported)
      */
+    @SuppressWarnings('GroovyFallthrough')
     Map<String, Object> findRow(TableDataset table, Map<String, Object> row) {
         if (table == null)
             throw new ExceptionDSL('Required to specify a table for search!')

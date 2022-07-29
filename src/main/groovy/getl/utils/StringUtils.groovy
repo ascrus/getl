@@ -8,6 +8,7 @@ import groovy.transform.CompileStatic
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import java.security.Key
+import java.sql.Time
 import java.sql.Timestamp
 import java.util.regex.Pattern
 
@@ -66,7 +67,7 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	static String AddLedZeroStr (def s, Integer len) {
+	static String AddLedZeroStr(def s, Integer len) {
 		if (s == null) return null
 		return s.toString().padLeft(len, '0')
 	}
@@ -481,12 +482,16 @@ class StringUtils {
 	 * @return
 	 */
 	static String TransformObjectName(String str) {
-		if (str == null) return null
+		if (str == null)
+			return null
+
 		return str.replace('.', '_').replace('-', '_')
 				.replace(' ', '_').replace('(', '_')
 				.replace(')', '_').replace('[', '_')
-				.replace(']', '_').replace(":", "_")
-				.replace('"', '').replace("'", "")
+				.replace(']', '_').replace(':', '_')
+				.replace('"', '').replace("'", '')
+				.replace('<', '_').replace('>', '_')
+				.replace('\n', '_').replace('\r', '_').replace('\t', '_')
 	}
 	
 	/**
@@ -803,5 +808,28 @@ class StringUtils {
 	 */
 	static String NullIsEmpty(String value) {
 		return (value != null && value.length() == 0)?null:value
+	}
+
+	/**
+	 * Prepare parameter for using as sql parameter
+	 * @param param parameter value
+	 * @return prepared parameter value
+	 */
+	static String PrepareSQLParameter(Object param) {
+		String res
+		if (param instanceof Time)
+			res = "'" + DateUtils.FormatDate('HH:mm:ss', param as Time) + "'::time"
+		else if (param instanceof java.sql.Date)
+			res = "'" + DateUtils.FormatDate('yyyy-MM-dd', param as java.sql.Date) + "'::date"
+		else if (param instanceof Timestamp)
+			res = "'" + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', param as Timestamp) + "'::timestamp"
+		else if (param instanceof Date)
+			res = "'" + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', param as Timestamp) + "'::timestamp"
+		else if (param instanceof String)
+			res = "'" + param + "'"
+		else
+			res = param
+
+		return res
 	}
 }

@@ -583,7 +583,7 @@ class TableDataset extends JDBCDataset {
 			if (remoteLoad) {
 				ProcessTime ptf = null
 				if (getl != null)
-					ptf = getl.startProcess("${fullTableName}: load files from \"$files\"", 'file')
+					ptf = getl.startProcess("${fullTableName}: load files from \"$files\"")
 
 				if (beforeLoad != null)
 					beforeLoad.call(files)
@@ -617,7 +617,7 @@ class TableDataset extends JDBCDataset {
 
 						ProcessTime ptf = null
 						if (getl != null)
-							ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.SizeBytes(tSize)})", 'file')
+							ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.SizeBytes(tSize)})")
 
 						def fileAttrs = (file + [fullname: fileName]) as Map<String, Object>
 						if (beforeLoad != null)

@@ -55,18 +55,20 @@ class Flow {
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
-				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing',
-				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
+				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
+				 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing', 'process',
+				 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
 				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics', 'processVars', 'saveExprErrors'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
 		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
-										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'clear', 'writeSynch',
-										  'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing',])
-		methodParams.register('writeAllTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'bulkLoad',
-											 'bulkAsGZIP', 'bulkEscaped', 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing',])
+										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue', 'clear', 'writeSynch',
+										  'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing'])
+
+		methodParams.register('writeAllTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
+											 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing'])
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
 										  'onInit', 'onDone', 'process', 'statistics', 'onFilter'])
@@ -272,7 +274,7 @@ class Flow {
 					mapFormat = GenerationUtils.FieldFormat(formats, df)
 			}
 
-			Field s
+			Field s = null
 			// Use field is mapping
 			if (mn != null)
 				s = source.fieldByName(mn)
@@ -458,8 +460,9 @@ class Flow {
 		def isChilds = (!childs.isEmpty())
 
 		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad, false)
-		Boolean bulkEscaped = params.bulkEscaped
-		Boolean bulkAsGZIP = params.bulkAsGZIP
+		Boolean bulkEscaped = params.bulkEscaped as Boolean
+		Boolean bulkAsGZIP = params.bulkAsGZIP as Boolean
+		String bulkNullAsValue = params.bulkNullAsValue as String
 		if (isBulkLoad) {
 			if (isDestTemp || isDestVirtual)
 				throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset!")
@@ -543,43 +546,37 @@ class Flow {
 		Map<String, Object> bulkParams = new HashMap<String, Object>()
 		TFSDataset bulkDS = null
 		if (isBulkLoad) {
-			if (destParams != null)
-				bulkParams.putAll(destParams)
-			if (bulkAsGZIP)
-				bulkParams.compressed = "GZIP"
-			if (autoTran)
-				bulkParams.autoCommit = false
-			destParams = new HashMap<String, Object>()
-
-			bulkDS = PrepareBulkDSParams(dest, bulkEscaped, bulkAsGZIP)
+			bulkDS = PrepareBulkDSParams(dest, bulkEscaped, bulkAsGZIP, bulkNullAsValue)
 			writer = bulkDS
 			bulkParams.source = bulkDS
 			writeSynch = false
 
+			if (destParams != null)
+				bulkParams.putAll(destParams)
+			if (bulkDS.isGzFile)
+				bulkParams.compressed = 'GZIP'
+			if (autoTran)
+				bulkParams.autoCommit = false
+			destParams = new HashMap<String, Object>()
+
 			childs.each { String name, FlowCopyChild child ->
 				def dataset = child.dataset
+				def childDS = PrepareBulkDSParams(dataset, bulkEscaped, bulkAsGZIP, bulkNullAsValue)
+				childDS.field = dataset.field
 
 				def bulkChildParams = new HashMap<String, Object>()
 				child.bulkParams = bulkChildParams
 				if (child.datasetParams != null)
 					bulkChildParams.putAll(child.datasetParams)
 
-				if (bulkAsGZIP)
-					bulkChildParams.compressed = "GZIP"
+				if (childDS.isGzFile)
+					bulkChildParams.compressed = 'GZIP'
 				if (child.autoTran)
 					bulkChildParams.autoCommit = false
 				child.datasetParams?.clear()
 
 				if (dataset.field.isEmpty())
 					dataset.retrieveFields()
-
-				def childDS = TFS.dataset()
-				childDS.field = dataset.field
-				dataset.prepareCsvTempFile(childDS)
-				if (bulkEscaped != null)
-					childDS.escaped = bulkEscaped
-				if (bulkAsGZIP != null)
-					childDS.isGzFile = bulkAsGZIP
 
 				bulkChildParams.source = childDS
 				child.writer = childDS
@@ -633,7 +630,7 @@ class Flow {
             if (createDest)
 				dest.create()
 
-			if (clear)
+			if (clear && !isBulkLoad)
 				dest.truncate(truncate: false)
 
 			destParams.prepare = initDest
@@ -667,13 +664,15 @@ class Flow {
 		sourceParams.prepare = initSource
 		
 		autoTran = (autoTran && !dest.connection.isTran())
-		if (autoTran) {
-			dest.connection.startTran()
-		}
-		childs.each { String name, FlowCopyChild child ->
-			def dataset = child.dataset as Dataset
-			def autoTranChild = BoolUtils.IsValue(child.autoTran)
-			if (autoTranChild) dataset.connection.startTran()
+		if (!isBulkLoad) {
+			if (autoTran)
+				dest.connection.startTran()
+			childs.each { String name, FlowCopyChild child ->
+				def dataset = child.dataset as Dataset
+				def autoTranChild = BoolUtils.IsValue(child.autoTran)
+				if (autoTranChild)
+					dataset.connection.startTran()
+			}
 		}
 
 		try {
@@ -814,17 +813,32 @@ class Flow {
 				postProcessing.call()
 
 			if (isBulkLoad) {
+				if (autoTran)
+					dest.connection.startTran()
+				childs.each { String name, FlowCopyChild child ->
+					def dataset = child.dataset as Dataset
+					def autoTranChild = BoolUtils.IsValue(child.autoTran)
+					if (autoTranChild)
+						dataset.connection.startTran()
+				}
+
+				if (clear)
+					dest.truncate(truncate: false)
+
 				if (bulkLoadCode != null)
 					bulkLoadCode.call(bulkParams)
+
 				try {
 					dest.bulkLoadFile(bulkParams)
 				}
 				catch (Exception e) {
 					if (debug && logger.fileNameHandler != null) {
 						def dn = "${logger.dumpFolder()}/${dest.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
-						if (bulkAsGZIP) dn += ".gz"
+						if (bulkDS.isGzFile)
+							dn += ".gz"
 						FileUtils.CopyToFile((bulkParams.source as CSVDataset).fullFileName(), dn, true)
 					}
+
 					throw e
 				}
 
@@ -838,7 +852,8 @@ class Flow {
 					catch (Exception e) {
 						if (debug && logger.fileNameHandler != null) {
 							def dn = "${logger.dumpFolder()}/${(bulkChildParams.source as Dataset).objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
-							if (bulkAsGZIP) dn += ".gz"
+							if (bulkDS.isGzFile)
+								dn += ".gz"
 							FileUtils.CopyToFile((bulkChildParams.source as CSVDataset).fullFileName(), dn, true)
 						}
 						throw e
@@ -941,13 +956,15 @@ class Flow {
 	 * @param bulkAsGZIP write CSV file with GZ compression
 	 * @return temporary file dataset
 	 */
-	static protected TFSDataset PrepareBulkDSParams(Dataset dest, Boolean bulkEscaped, Boolean bulkAsGZIP) {
+	static protected TFSDataset PrepareBulkDSParams(Dataset dest, Boolean bulkEscaped, Boolean bulkAsGZIP, String bulkNullAsValue) {
 		TFSDataset bulkDS = TFS.dataset()
-		dest.prepareCsvTempFile(bulkDS)
 		if (bulkEscaped != null)
 			bulkDS.escaped = bulkEscaped
 		if (bulkAsGZIP != null)
 			bulkDS.isGzFile = bulkAsGZIP
+		if (bulkNullAsValue != null)
+			bulkDS.nullAsValue = bulkNullAsValue
+		dest.prepareCsvTempFile(bulkDS)
 
 		return bulkDS
 	}
@@ -1007,8 +1024,9 @@ class Flow {
 		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
 		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD))
 			throw new ExceptionGETL("Destination dataset not support bulk load")
-		def bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP)
-		def bulkEscaped = BoolUtils.IsValue(params.bulkEscaped)
+		def bulkAsGZIP = params.bulkAsGZIP as Boolean
+		def bulkEscaped = params.bulkEscaped as Boolean
+		String bulkNullAsValue = params.bulkNullAsValue as String
 		
 		def clear = BoolUtils.IsValue(params.clear)
 		
@@ -1032,22 +1050,22 @@ class Flow {
 		TFSDataset bulkDS = null
 		Dataset writer
 
-		if (initCode != null) initCode.call()
+		if (initCode != null)
+			initCode.call()
 
 		if (isBulkLoad) {
-			bulkDS = TFS.dataset()
-			bulkDS.escaped = bulkEscaped
-			if (dest.field.isEmpty()) dest.retrieveFields()
+			bulkDS = PrepareBulkDSParams(dest, bulkEscaped, bulkAsGZIP, bulkNullAsValue)
+			if (dest.field.isEmpty())
+				dest.retrieveFields()
 			bulkDS.field = dest.field
-			
+
 			bulkParams = destParams
-			if (bulkAsGZIP) bulkParams.compressed = "GZIP"
-			if (autoTran) bulkParams.autoCommit = false
-			if (bulkAsGZIP) bulkDS.isGzFile = true
+			if (bulkDS.isGzFile)
+				bulkParams.compressed = 'GZIP'
+			if (autoTran)
+				bulkParams.autoCommit = false
 			bulkParams.source = bulkDS
-			/*if (bulkParams.abortOnError == null)
-				bulkParams.abortOnError = true*/
-			
+
 			destParams = new HashMap<String, Object>()
 			writer = bulkDS
 			writeSynch = false
@@ -1164,15 +1182,17 @@ class Flow {
 		def writeSynch = BoolUtils.IsValue(params."writeSynch", false)
 
 		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
-		def bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP)
-		def bulkEscaped = (params.bulkEscaped)
+		def bulkAsGZIP = params.bulkAsGZIP as Boolean
+		def bulkEscaped = params.bulkEscaped as Boolean
+		String bulkNullAsValue = params.bulkNullAsValue as String
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
 		Closure postProcessing = params.onPostProcessing as Closure
 		Closure bulkLoadCode = params.onBulkLoad as Closure
 
-		if (initCode != null) initCode.call()
+		if (initCode != null)
+			initCode.call()
 		
 		Map<Connection, String> destAutoTran = new HashMap<Connection, String>()
 		def destParams = new HashMap()
@@ -1185,8 +1205,7 @@ class Flow {
 				destParams.put(n, (params.destParams as Map).get(n) as Map<String, Object>)
 			}
 			else {
-				Map<String, Object> p = (MapUtils.GetLevel(params, "dest_${n}_") as Map<String, Object>)
-						?:new HashMap<String, Object>()
+				Map<String, Object> p = (MapUtils.GetLevel(params, "dest_${n}_") as Map<String, Object>)?:new HashMap<String, Object>()
 				destParams.put(n, p)
 			}
 
@@ -1223,19 +1242,18 @@ class Flow {
 			if (isBulkLoad) {
 				if (!d.connection.driver.isOperation(Driver.Operation.BULKLOAD))
 					throw new ExceptionGETL("Destination dataset \"${n}\" not support bulk load")
-				if (d.field.isEmpty()) d.retrieveFields()
-				TFSDataset bulkDS = TFS.dataset()
-				bulkDS.escaped = bulkEscaped
+				if (d.field.isEmpty())
+					d.retrieveFields()
+				def bulkDS = PrepareBulkDSParams(d, bulkEscaped, bulkAsGZIP, bulkNullAsValue)
 				bulkLoadDS.put(n, bulkDS)
 				
 				def bp = destParams.get(n) as Map
-				if (bulkAsGZIP) bp.compressed = "GZIP"
-				if (isAutoTran) bp.autoCommit = false
-				if (bulkAsGZIP) bulkDS.isGzFile = true
+				if (bulkDS.isGzFile)
+					bp.compressed = "GZIP"
+				if (isAutoTran)
+					bp.autoCommit = false
 				bp.source = bulkDS
-				/*if (bp.abortOnError == null)
-					bp.abortOnError = true*/
-				
+
 				bulkParams.put(n, bp)
 				destParams.put(n, new HashMap())
 				
@@ -1318,7 +1336,7 @@ class Flow {
 			}
 		}
 		
-		startTrans(["ALL", "COPY"])
+		startTrans(['ALL', 'COPY'])
 		
 		writer.each { String n, Dataset d ->
 			try {
@@ -1328,7 +1346,7 @@ class Flow {
 			catch (Exception e) {
 				logger.severe("Error writing rows to \"${d.objectName}\"", e)
 				closeDestinations(true)
-				rollbackTrans(["ALL", "COPY"])
+				rollbackTrans(['ALL', 'COPY'])
 				throw e
 			}
 		}
@@ -1342,7 +1360,7 @@ class Flow {
 			}
 			logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 			closeDestinations(true)
-			rollbackTrans(["ALL", "COPY"])
+			rollbackTrans(['ALL', 'COPY'])
 			throw e
 		}
 		
@@ -1354,7 +1372,7 @@ class Flow {
 		catch (Exception e) {
 			logger.severe("Error saving buffer to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 			closeDestinations(true)
-			rollbackTrans(["ALL", "COPY"])
+			rollbackTrans(['ALL', 'COPY'])
 			throw e
 		}
 		
@@ -1364,7 +1382,7 @@ class Flow {
 		catch (Exception e) {
 			logger.severe("Close error \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 			closeDestinations(true)
-			rollbackTrans(["ALL", "COPY"])
+			rollbackTrans(['ALL', 'COPY'])
 			throw e
 		}
 
@@ -1374,7 +1392,7 @@ class Flow {
 		if (isBulkLoad && bulkLoadCode != null)
 			bulkLoadCode.call(bulkParams)
 
-		startTrans(["BULK"])
+		startTrans(['BULK'])
 		bulkLoadDS.each { String n, Dataset d ->
 			Dataset ds = dest.get(n) as Dataset
 			Map bp = bulkParams.get(n) as Map
@@ -1383,12 +1401,12 @@ class Flow {
 			}
 			catch (Exception e) {
 				logger.severe("Error loading CSV file \"${bp.source}\" to \"${ds.objectName}\"", e)
-				rollbackTrans(["ALL", "COPY", "BULK"])
+				rollbackTrans(['ALL', 'COPY', 'BULK'])
 				throw e
 			}
 		}
 		
-		commitTrans(["ALL", "COPY", "BULK"])
+		commitTrans(['ALL', 'COPY', 'BULK'])
 		
 		bulkLoadDS.each { String n, Dataset d ->
 			Executor.RunIgnoreErrors(dslCreator) { d.drop() }

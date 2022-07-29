@@ -74,7 +74,7 @@ class XMLDriver extends WebServiceDriver {
 	}
 
 	/** Generate the default alias for field */
-	@SuppressWarnings("GrMethodMayBeStatic")
+	@SuppressWarnings(["GrMethodMayBeStatic", 'GroovyFallthrough'])
 	protected String field2alias(Field field, String name, Boolean isAlias, Integer defaultAccessMethod) {
 		if (isAlias) {
 			if (!(name in ['@', '#']))

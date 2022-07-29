@@ -11,6 +11,7 @@ import getl.models.opts.WorkflowSpec
 import getl.models.opts.WorkflowSpec.Operation
 import getl.models.sub.BaseModel
 import getl.models.sub.BaseSpec
+import getl.lang.sub.ScriptEvents
 import getl.models.sub.WorkflowUserCode
 import getl.proc.Executor
 import getl.utils.BoolUtils
@@ -377,25 +378,6 @@ import getl.data.*
 import getl.utils.*
 import getl.models.*
 import getl.models.opts.*
-import static getl.utils.DateUtils.AddDate as addDate
-import static getl.utils.DateUtils.ClearTime as clearTime
-import static getl.utils.DateUtils.CurrentDate as currentDate
-import static getl.utils.DateUtils.DiffDate as diffDate
-import static getl.utils.DateUtils.FirstDateOfMonth as firstDateOfMonth
-import static getl.utils.DateUtils.FormatDate as formatDate
-import static getl.utils.DateUtils.FormatTime as formatTime
-import static getl.utils.DateUtils.FormatDateTime as formatDateTime
-import static getl.utils.DateUtils.LastDateOfMonth as lastDateOfMonth
-import static getl.utils.DateUtils.LastDayOfMonth as lastDayOfMonth
-import static getl.utils.DateUtils.Now as now
-import static getl.utils.DateUtils.PartOfDate as partOfDate
-import static getl.utils.DateUtils.TruncDay as truncDay
-import static getl.utils.NumericUtils.IsEven as isEven
-import static getl.utils.NumericUtils.IsMultiple as isMultiple
-import static getl.utils.NumericUtils.Round as round
-import static getl.utils.StringUtils.AddLedZeroStr as addLedZero
-import static getl.utils.StringUtils.LeftStr as leftStr
-import static getl.utils.StringUtils.RightStr as rightStr
 class $className extends getl.models.sub.WorkflowUserCode {
 """
 
@@ -482,7 +464,7 @@ return $className"""
             }
             catch (Throwable e) {
                 dslCreator.logError("$methodType code execution error for step \"$stepLabel\"", e)
-                dslCreator.logging.dump(e, 'workflow', "${dslNameObject}.$stepLabel", scriptUserCode)
+                dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel]", scriptUserCode)
                 throw e
             }
 
@@ -550,10 +532,13 @@ return $className"""
                         def classParams = ReadClassFields(runClass)
                         def scriptVars = (scriptParams.vars as Map<String, Object>)?:(new HashMap<String, Object>())
 
+                        ScriptEvents userEvents = null
                         if (generatedUserCode != null) {
                             def userVars = generatedUserCode.vars(scriptName)
-                            if (userVars != null)
+                            if (userVars != null && !userVars.isEmpty())
                                 scriptVars.putAll(userVars)
+
+                            userEvents = generatedUserCode.events(scriptName)
                         }
 
                         def macroVars = modelVars + addVars
@@ -634,10 +619,12 @@ return $className"""
 
                         Map<String, Object> scriptResult
                         try {
-                            scriptResult = dslCreator.callScript(runClass, execVars, macroVars/*addVars*/)
+                            scriptResult = dslCreator.callScript(runClass, execVars, macroVars, userEvents)
                         }
                         catch (Throwable e) {
-                            dslCreator.logError("Error execution class \"${runClass.name}\"", e)
+                            dslCreator.logError("Error execution class \"$scriptName\"[${runClass.name}] in step \"$stepLabel\"", e)
+                            if (!userEvents?.isEmpty())
+                                dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel].[$scriptName]", scriptUserCode)
                             throw e
                         }
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {

@@ -300,7 +300,7 @@ abstract class FileListProcessing implements GetlRepository {
                 break
 
 
-            dslCreator.logWarn("When executing command an error occurred $res in \"$name\", attemp $retry of $attempts")
+            logger.warning("When executing command an error occurred $res in \"$name\", attemp $retry of $attempts")
             sleep(time * 1000)
             retry++
         }
@@ -321,7 +321,7 @@ abstract class FileListProcessing implements GetlRepository {
             if (throwOnError)
                 throw new ExceptionFileListProcessing(errText)
 
-            dslCreator.logWarn(errText)
+            logger.warning(errText)
         }
 
         return res
@@ -339,7 +339,7 @@ abstract class FileListProcessing implements GetlRepository {
      */
     void changeDir(List<Manager> managers, String path,
                    Boolean isCreateDir, Integer attempts, Integer time) {
-        Operation(managers, attempts, time, dslCreator) { man ->
+        Operation(managers, attempts, time, this) { man ->
             man.changeDirectoryToRoot()
             synchronized (createDirectoryLock) {
                 if (!man.existsDirectory(path)) {
@@ -402,7 +402,7 @@ abstract class FileListProcessing implements GetlRepository {
                         logger.severe("Unable to connect to \"$man\"", e)
                         throw e
                     }
-                    dslCreator.logWarn("Unable to connect to \"$man\", attemp $retry of $attempts", e)
+                    logger.warning("Unable to connect to \"$man\", attemp $retry of $attempts", e)
                     sleep(time * 1000)
 
                     retry++
@@ -475,7 +475,8 @@ abstract class FileListProcessing implements GetlRepository {
      * @param dslCreator Getl instance
      * @param cl operation code on specified manager
      */
-    static void Operation(List<Manager> managers, Integer attempts, Integer time, Getl dslCreator,
+    @CompileStatic
+    static void Operation(List<Manager> managers, Integer attempts, Integer time, FileListProcessing processing,
                           @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl) {
         def code = { Manager man ->
             def retry = 1
@@ -491,7 +492,7 @@ abstract class FileListProcessing implements GetlRepository {
                     if (retry > attempts)
                         throw e
 
-                    dslCreator.logWarn("Cannot do operation for \"$man\", attemp $retry of $attempts", e)
+                    processing.logger.warning("Cannot do operation for \"$man\", attemp $retry of $attempts", e)
                     sleep(time * 1000)
                     retry++
 
@@ -521,7 +522,7 @@ abstract class FileListProcessing implements GetlRepository {
                                 if (retry > attempts)
                                     throw e
 
-                                dslCreator.logWarn("Cannot connection to \"$man\", attemp $retry of $attempts", e)
+                                processing.logger.warning("Cannot connection to \"$man\", attemp $retry of $attempts", e)
                                 sleep(time * 1000)
                                 retry++
                             }
@@ -538,7 +539,7 @@ abstract class FileListProcessing implements GetlRepository {
                 code.call(managers[0])
                 break
             default:
-                new Executor(dslCreator: dslCreator).with {
+                new Executor(dslCreator: processing.dslCreator).with {
                     useList(managers)
                     countProc = managers.size()
                     abortOnError = true
@@ -801,7 +802,7 @@ abstract class FileListProcessing implements GetlRepository {
     void process() {
         initProcess()
         if (!quietMode)
-            dslCreator.logConsistently { infoProcess() }
+            logger.consistently { infoProcess() }
 
         beforeProcessing()
         try {
@@ -867,7 +868,7 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
         finally {
-            Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
+            Operation([source], numberAttempts, timeAttempts, this) { man ->
                 if (man.connected)
                     man.changeDirectoryToRoot()
 
@@ -997,7 +998,7 @@ abstract class FileListProcessing implements GetlRepository {
     abstract protected void processFiles()
 
     protected void delEmptyFolders() {
-        Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
+        Operation([source], numberAttempts, timeAttempts, this) { man ->
             man.changeDirectoryToRoot()
         }
 
@@ -1028,7 +1029,7 @@ abstract class FileListProcessing implements GetlRepository {
         if (!deleteDirs.isEmpty())
             logger.info("In the source \"$source\" empty directories were removed: ${deleteDirs.sort()}")
 
-        Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
+        Operation([source], numberAttempts, timeAttempts, this) { man ->
             man.changeDirectoryToRoot()
         }
     }

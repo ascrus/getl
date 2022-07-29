@@ -85,7 +85,7 @@ abstract class Job {
 	/**
 	 * Run job process
 	 */
-	@SuppressWarnings(["UnnecessaryQualifiedReference", "GroovyVariableNotAssigned"])
+	@SuppressWarnings(["UnnecessaryQualifiedReference", "GroovyVariableNotAssigned", 'GroovyUnusedAssignment'])
 	protected void doRun () {
 		DateUtils.init()
 		//if (dslCreator == null)

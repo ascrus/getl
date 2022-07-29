@@ -4,6 +4,7 @@ import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.utils.*
 import groovy.json.JsonBuilder
+import groovy.json.JsonGenerator
 import groovy.json.JsonSlurper
 import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
@@ -214,7 +215,7 @@ class ConfigFiles extends ConfigManager {
 
         def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 
-        JsonBuilder b = new JsonBuilder()
+        JsonBuilder b = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
         try {
             b.call(data)
         }

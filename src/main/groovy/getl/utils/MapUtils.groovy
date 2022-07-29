@@ -417,7 +417,7 @@ class MapUtils {
 	static String ToJson (Map value) {
 		if (value == null) return null
 
-		def gen = new JsonGenerator.Options().timezone(TimeZone.default.getID())
+		def gen = new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID())
 		def build = new JsonBuilder(gen.build())
 		build.call(value)
 
@@ -766,7 +766,8 @@ class MapUtils {
         return fieldList
 	}
 
-    @CompileDynamic
+	@SuppressWarnings('GroovyFallthrough')
+	@CompileDynamic
 	static void XsdType2FieldType(Map<String, Object> map, String typeName, Field field) {
         def res = XsdTypeProcess(map, typeName)
 

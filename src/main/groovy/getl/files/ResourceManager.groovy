@@ -215,16 +215,17 @@ class ResourceManager extends Manager {
         def res = (classLoader != null)?classLoader.getResource(resourcePath):
                 GroovyClassLoader.getResource(resourcePath)
 
+        File file = null
         isZipFile = false
         if (res == null && FileUtils.ExistsFile(resourcePath)) {
-            def file = new File(resourcePath)
+            file = new File(resourcePath)
             res = file.toURI().toURL()
             isZipFile = true
         }
         if (res == null)
             throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources on source \"$this\"!")
 
-        rootNode = (res.protocol == 'file' && !isZipFile)?ListDirFiles(res.file):ListDirJar(res.file)
+        rootNode = (res.protocol == 'file' && !isZipFile)?ListDirFiles(res.file):ListDirJar(file.path)
         setCurrentDirectory(directoryFromPath(currentRootPath))
     }
 

@@ -190,13 +190,6 @@ class PostgreSQLDriver extends JDBCDriver {
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.prepareCsvTempFile(source, csvFile)
-		csvFile.header = true
-		csvFile.fieldDelimiter = '|'
-		csvFile.rowDelimiter = '\n'
-		csvFile.escaped = false
-		csvFile.nullAsValue = '<NULL>'
-		csvFile.quoteStr = '"'
-		csvFile.isGzFile = true
 		csvFile.arrayOpeningBracket = '{'
 		csvFile.arrayClosingBracket = '}'
 	}

@@ -575,6 +575,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param format text to timestamp format
 	 * @return type and value
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	Map convertValue(Field.Type type, String format, def value) {
 		def res = new HashMap()
 		if (value == null)

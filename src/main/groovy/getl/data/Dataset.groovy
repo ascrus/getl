@@ -1324,7 +1324,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Close dataset
 	 */
 	void closeWrite() {
-		if (status != Status.WRITE) return
+		if (status != Status.WRITE)
+			return
 		try {
 			connection.driver.closeWrite(this)
 		}
@@ -1836,6 +1837,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param type source type
 	 * @return the resulting type for comparison
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	static Field.Type FieldSoftType(Field.Type type) {
 		def res = type
 		switch (type) {

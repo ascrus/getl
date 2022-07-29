@@ -21,28 +21,28 @@ import org.supercsv.util.CsvContext
 class CSVFmtArray extends CellProcessorAdaptor {
 	CSVFmtArray() {
 		super()
-		json = new JsonBuilder()
+		json = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
 	}
 
 	CSVFmtArray(String openBracket, String closeBracket) {
 		super()
 		if (openBracket != '[' || closeBracket != ']')
-			json = new JsonBuilder(new ArrayGenerator(new JsonGenerator.Options(), openBracket, closeBracket))
+			json = new JsonBuilder(new ArrayGenerator(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()), openBracket, closeBracket))
 		else
-			json = new JsonBuilder()
+			json = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
 	}
 
     CSVFmtArray(StringCellProcessor next) {
 		super(next)
-		json = new JsonBuilder()
+		json = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
 	}
 
 	CSVFmtArray(StringCellProcessor next, String openBracket, String closeBracket) {
 		super(next)
 		if (openBracket != '[' || closeBracket != ']')
-			json = new JsonBuilder(new ArrayGenerator(new JsonGenerator.Options(), openBracket, closeBracket))
+			json = new JsonBuilder(new ArrayGenerator(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()), openBracket, closeBracket))
 		else
-			json = new JsonBuilder()
+			json = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
 	}
 
 	class ArrayGenerator extends DefaultJsonGenerator {

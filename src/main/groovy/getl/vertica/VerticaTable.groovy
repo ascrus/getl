@@ -152,7 +152,7 @@ class VerticaTable extends TableDataset {
         if (startPartition instanceof String || startPartition instanceof GString)
             res.start = '\'' + (startPartition as Object).toString() + '\''
         else if (startPartition instanceof Date) {
-            if (BoolUtils.IsValue(truncateToDate, true))
+            if (truncateToDate || startPartition instanceof java.sql.Date)
                 res.start = '\'' + DateUtils.FormatDate('yyyy-MM-dd', startPartition as Date) + '\'::date'
             else
                 res.start = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', startPartition as Date) + '\'::timestamp'
@@ -163,7 +163,7 @@ class VerticaTable extends TableDataset {
         if (finishPartition instanceof String || finishPartition instanceof GString)
             res.finish = '\'' + (finishPartition as Object).toString() + '\''
         else if (finishPartition instanceof Date) {
-            if (truncateToDate)
+            if (truncateToDate || finishPartition instanceof java.sql.Date)
                 res.finish = '\'' + DateUtils.FormatDate('yyyy-MM-dd', finishPartition as Date) + '\'::date'
             else
                 res.finish = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', finishPartition as Date) + '\'::timestamp'

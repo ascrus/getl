@@ -335,8 +335,9 @@ Example:
 	 * @return
 	 */
 	String ddl(String schema, String object) {
-		def name = schema + '.' + object
-		def qExportObjects = new QueryDataset(connection: cVertica, query: "SELECT EXPORT_OBJECTS('', '$name', false)")
+		def name = "\"${schema.replace("'", "\\'").replace('"', '""')}\"." +
+				"\"${object.replace("'", "\\'").replace('"', '""')}\""
+		def qExportObjects = new QueryDataset(connection: cVertica, query: "SELECT EXPORT_OBJECTS('', E'$name', false)")
 		def r = qExportObjects.rows()
 		assert r.size() == 1, "Object \"$name\" not found"
 		String s = (r[0].export_objects as String).replace('\r', '')
@@ -505,7 +506,13 @@ Example:
 		def v = new HashMap<String, String>()
 		currentVars.each { var ->
 			v.put(var.key, var.value.replace('*', '_').replace('?', '_')
-					.replace('/', '_').replace('\\', '_'))
+					.replace('/', '_').replace('\\', '_')
+					.replace(':', '_').replace('\n', ' ')
+					.replace('\r', ' ').replace('\t', ' ')
+					.replace('<', '_').replace('>', '_')
+					.replace('\'', '_').replace('"', '_')
+					.replace('~', '_').replace('`', '_')
+					.replace((Config.windows)?'%':'$', ''))
 		}
 		def filename = StringUtils.EvalMacroString(currentFileMask, v).toLowerCase()
 		def filepath = "$scriptPath${File.separatorChar}${filename}.sql"

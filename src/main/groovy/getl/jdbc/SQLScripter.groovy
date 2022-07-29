@@ -519,6 +519,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * Run SQL script
 	 * @param useParsing enable script command parsing (defaults to extensionForSqlScripts from connection)
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	@Synchronized
 	void runSql(Boolean useParsing = null) {
 		if (connection == null)

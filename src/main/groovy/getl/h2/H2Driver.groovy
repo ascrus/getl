@@ -1,6 +1,8 @@
 //file:noinspection SqlNoDataSourceInspection
 package getl.h2
 
+import static getl.driver.Driver.Support
+import static getl.driver.Driver.Operation
 import getl.jdbc.sub.BulkLoadMapping
 import groovy.transform.InheritConstructors
 import getl.csv.*
@@ -8,8 +10,6 @@ import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.utils.*
-import static getl.driver.Driver.Support
-import static getl.driver.Driver.Operation
 
 /**
  * H2 driver class
@@ -110,6 +110,9 @@ class H2Driver extends JDBCDriver {
 
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+		if (source.escaped())
+			throw new ExceptionGETL("Escaped mode not support from bulk load file to dataset \"$dest\"!")
+
 		def table = dest as TableDataset
 		params = bulkLoadFilePrepare(source, table, params, prepareCode)
 		def map = params.map as List<BulkLoadMapping>
@@ -141,10 +144,12 @@ class H2Driver extends JDBCDriver {
 		def tableFields = fieldList.join(', ')
 		def csvFields = csvFieldList.join(', ')
 		def heads = (!source.isHeader()) ? "'" + headers.join(source.fieldDelimiter()) + "'" : "null"
-		fParams << "charset=${source.codePage()}".toString()
-		fParams << "fieldSeparator=${source.fieldDelimiter()}".toString()
+		fParams.add("charset=${source.codePage()}")
+		fParams.add("fieldSeparator=${source.fieldDelimiter()}")
 		if (source.quoteStr() != null)
-			fParams << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
+			fParams.add("fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}")
+		if (source.nullAsValue() != null)
+			fParams.add("null=${StringUtils.EscapeJava(source.nullAsValue())}")
 		def functionParams = fParams.join(" ")
 
 		sb << """INSERT INTO ${fullNameDataset(table)} (
@@ -240,12 +245,6 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			if (match.find())
 				field.arrayType = match.group(1).toUpperCase()
 		}
-	}
-
-	@Override
-	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
-		super.prepareCsvTempFile(source, csvFile)
-		csvFile.escaped = false
 	}
 
 	@Override

@@ -119,7 +119,7 @@ class CSVDriver extends FileDriver {
 		return res
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
+	@SuppressWarnings(['UnnecessaryQualifiedReference', 'GroovyFallthrough'])
 	@Override
 	List<Field> fields(Dataset dataset) {
 		def csv = dataset as CSVDataset

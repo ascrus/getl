@@ -8,6 +8,7 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.MapUtils
 import groovy.json.JsonBuilder
+import groovy.json.JsonGenerator
 import org.junit.Test
 
 /**
@@ -25,7 +26,7 @@ class ConfigFilesTest extends GetlTest {
         def configFile = new File("${configPath.currentPath()}/test_config.conf")
         configFile.deleteOnExit()
 
-        def builder = new JsonBuilder()
+        def builder = new JsonBuilder(new JsonGenerator.Options().disableUnicodeEscaping().timezone(TimeZone.default.getID()).build())
         def conf = builder.root {
             map {
                 list 'a', 1, null

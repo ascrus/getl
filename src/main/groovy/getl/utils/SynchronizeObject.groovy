@@ -51,6 +51,37 @@ class SynchronizeObject {
 		return count
 	}
 
+	private Comparable compare
+	/** Compareble value */
+	@Synchronized
+	Comparable getCompare() { compare }
+	@Synchronized
+	void setCompare(Comparable value) { compare = value }
+
+	/** Set a new value if it is less than the current one */
+	@Synchronized
+	Comparable compareMin(Comparable value) {
+		if (value == null)
+			return null
+
+		if (compare == null || value < compare)
+			compare = value
+
+		return compare
+	}
+
+	/** Set a new value if it is greater than the current one */
+	@Synchronized
+	Comparable compareMax(Comparable value) {
+		if (value == null)
+			return null
+
+		if (compare == null || value > compare)
+			compare = value
+
+		return compare
+	}
+
 	/** Text value */
 	private String text
 

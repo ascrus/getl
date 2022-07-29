@@ -295,10 +295,12 @@ class FileProcessing extends FileListProcessing {
 
     /** Source element */
     class ListPoolElement {
-        ListPoolElement(Manager man) {
+        ListPoolElement(FileProcessing owner, Manager man) {
+            this.owner = owner
             this.man = man
         }
 
+        FileProcessing owner
         Manager man
         TableDataset story
         TDSTable delTable
@@ -340,7 +342,7 @@ class FileProcessing extends FileListProcessing {
             if (!isLocalFile)
                 FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.canonicalPath, destFileName)
 
-            Operation([man], numberAttempts, timeAttempts, dslCreator) { man ->
+            Operation([man], numberAttempts, timeAttempts, owner) { man ->
                 man.upload(destFileName)
             }
 
@@ -380,7 +382,7 @@ class FileProcessing extends FileListProcessing {
                 curPath = uploadPath
             }
 
-            Operation([man], numberAttempts, timeAttempts, dslCreator) { man ->
+            Operation([man], numberAttempts, timeAttempts, owner) { man ->
                 man.upload(localFile.parent, localFile.name)
             }
         }
@@ -452,7 +454,7 @@ class FileProcessing extends FileListProcessing {
             src.story = null
             ConnectTo([src], numberAttempts, timeAttempts)
 
-            def element = new ListPoolElement(src)
+            def element = new ListPoolElement(this, src)
             if (delFilesTable != null)
                 element.delTable = delFilesTable.cloneDatasetConnection() as TDSTable
 
@@ -465,7 +467,7 @@ class FileProcessing extends FileListProcessing {
             (1..countOfThreadProcessing).each {
                 def src = storageProcessedFiles.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
                 ConnectTo([src], numberAttempts, timeAttempts)
-                processedList.add(new ListPoolElement(src))
+                processedList.add(new ListPoolElement(this, src))
             }
         }
 
@@ -475,7 +477,7 @@ class FileProcessing extends FileListProcessing {
             (1..countOfThreadProcessing).each {
                 def src = storageErrorFiles.cloneManager([localDirectory: source.localDirectory, isTempLocalDirectory: true], dslCreator)
                 ConnectTo([src], numberAttempts, timeAttempts)
-                errorList.add(new ListPoolElement(src))
+                errorList.add(new ListPoolElement(this, src))
             }
         }
 
@@ -563,7 +565,7 @@ class FileProcessing extends FileListProcessing {
                                         changeLocalDir(errorElement.man, filepath, true)
                                 }
                                 if (!isDirectly && !isLocalManager) {
-                                    Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
+                                    Operation([sourceElement.man], numberAttempts, timeAttempts, this) { man ->
                                         man.download(filename)
                                     }
                                 }
@@ -682,7 +684,7 @@ class FileProcessing extends FileListProcessing {
                                             if (fileDesc != null)
                                                 errorElement.uploadLocalFile(fileDesc, fileElement.savedFilePath)
                                             else {
-                                                Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
+                                                Operation([sourceElement.man], numberAttempts, timeAttempts, this) { man ->
                                                     man.download(filename)
                                                 }
                                                 fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
@@ -705,7 +707,7 @@ class FileProcessing extends FileListProcessing {
                                             BoolUtils.IsValue(fileElement.removeFile, procResult != fileElement.skipResult) &&
                                             (procResult != fileElement.errorResult || errorElement != null)) {
                                         if (delTable == null || procResult != fileElement.completeResult) {
-                                            Operation([sourceElement.man], numberAttempts, timeAttempts, dslCreator) { man ->
+                                            Operation([sourceElement.man], numberAttempts, timeAttempts, this) { man ->
                                                 man.removeFile(filename)
                                             }
                                         } else {
@@ -830,7 +832,7 @@ class FileProcessing extends FileListProcessing {
                         changeDir([source], filepath, false, numberAttempts, timeAttempts)
                         curPath = filepath
                     }
-                    Operation([source], numberAttempts, timeAttempts, dslCreator) { man ->
+                    Operation([source], numberAttempts, timeAttempts, this) { man ->
                         man.removeFile(file.filename as String)
                     }
                 }

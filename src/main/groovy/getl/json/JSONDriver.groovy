@@ -274,7 +274,7 @@ class JSONDriver extends WebServiceDriver {
 		def writeRows = driverParams.get('write_rows') as List<Map<String, Object>>
 
 		def format = ds.uniFormatDateTime()?:ds.formatTimestampWithTz()
-		def gen = new JsonGenerator.Options().dateFormat(format, Locale.default).timezone(TimeZone.default.getID()).build()
+		def gen = new JsonGenerator.Options().disableUnicodeEscaping().dateFormat(format, Locale.default).timezone(TimeZone.default.getID()).build()
 		if (ds.rootNode != '.') {
 			def jsonRoot = new HashMap<String, Object>()
 			MapUtils.SetValue(jsonRoot, ds.rootNode, writeRows)

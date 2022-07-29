@@ -125,7 +125,7 @@ class ParamMethodValidator {
 						value.each { subKey, subValue ->
 							if (!(subValue instanceof Map))
 								throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.${subKey}\", map expected")
-							validationSub(subValue, subContentName, "${contentName}.${key}.${subKey}", excludeSections)
+							validationSub(subValue as Map, subContentName, "${contentName}.${key}.${subKey}", excludeSections)
 						}
 					}
 				}
@@ -137,7 +137,7 @@ class ParamMethodValidator {
 					value.each { subValue ->
 						if (!(subValue instanceof Map))
 							throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.*\", map expected")
-						validationSub(subValue, subContentName, "${contentName}.${key}[]", excludeSections)
+						validationSub(subValue as Map, subContentName, "${contentName}.${key}[]", excludeSections)
 					}
 				}
 			}
