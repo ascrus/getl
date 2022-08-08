@@ -10,8 +10,23 @@ import java.util.concurrent.ThreadFactory
  */
 @InheritConstructors
 class ExecutorFactory implements ThreadFactory {
+    ExecutorFactory() {
+        super()
+    }
+
+    ExecutorFactory(ExecutorThread owner) {
+        super()
+        this._owner = owner
+    }
+
+    private ExecutorThread _owner
+
     @Override
     Thread newThread(Runnable r) {
-        return new ExecutorThread(r)
+        def res = new ExecutorThread(r)
+        if (_owner != null)
+            res.ownerThread = _owner
+
+        return res
     }
 }

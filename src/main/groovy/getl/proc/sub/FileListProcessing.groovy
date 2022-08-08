@@ -159,6 +159,36 @@ abstract class FileListProcessing implements GetlRepository {
     /** Execute code when file processing ends */
     void finishProcess(Closure value) { params.finishProcess = value }
 
+    /**
+     * Code to track file processing progress<br>
+     * Closure parameters:
+     * <ul>
+     *     <li>Long countFiles - number of files to process </li>
+     *     <li>Long processFiles - number of processed files</li>
+     * </ul>
+     */
+    Closure getOnProcessTrackCode() { params.processTrackCode as Closure }
+    /**
+     * Code to track file processing progress<br>
+     * Closure parameters:
+     * <ul>
+     *     <li>Long countFiles - number of files to process </li>
+     *     <li>Long processFiles - number of processed files</li>
+     * </ul>
+     */
+    void setOnProcessTrackCode(Closure value) { params.processTrackCode = value }
+    /**
+     * Code to track file processing progress<br>
+     * Closure parameters:
+     * <ul>
+     *     <li>Long countFiles - number of files to process </li>
+     *     <li>Long processFiles - number of processed files</li>
+     * </ul>
+     */
+    void processTrackCode(@ClosureParams(value = SimpleType, options = ['java.lang.Long', 'java.lang.Long']) Closure value) {
+        setOnProcessTrackCode(value)
+    }
+
     /** Source file path mask */
     Path getSourcePath() { params.sourcePath as Path }
     /** Source file path mask */

@@ -497,7 +497,7 @@ class JDBCDriver extends Driver {
 	@Synchronized
 	Sql newSql(Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
-		def javaDriver = driverClass.getDeclaredConstructor().newInstance() as java.sql.Driver
+		def javaDriver = driverClass.getConstructor().newInstance() as java.sql.Driver
 		def prop = new Properties()
 		if (login != null) prop.user = login
 		if (password != null) prop.password = password
@@ -2462,7 +2462,7 @@ $sql
 			throw e
 		}
 
-		Closure setStatement
+		Closure setStatement = null
 		if (dataset.sysParams.lastwrite != null) {
 			def lastWrite = (dataset.sysParams.lastwrite as Map)
 			if ((lastWrite.operation as String) == operation && (lastWrite.fields == fields) && (lastWrite.statFields == statFields)) {
@@ -2958,7 +2958,7 @@ FROM {source} {after_from}'''
 		def transFields = new HashMap<String, String>()
 		dest.field.each { destField ->
 			def destName = destField.name.toLowerCase()
-			String val
+			String val = null
 
 			if (transRules.containsKey(destName)) {
 				def mapVal = transRules.get(destName)

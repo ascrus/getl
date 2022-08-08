@@ -218,7 +218,7 @@ class RepositoryStorageManager {
         if (classRepository == null)
             throw new ExceptionDSL('Required repository class name!')
 
-        def parent = classRepository.getDeclaredConstructor().newInstance()
+        def parent = classRepository.getConstructor().newInstance()
         registerRepository(classRepository.name, parent, priority)
     }
 
@@ -506,6 +506,7 @@ class RepositoryStorageManager {
         if (isResourceStoragePath) {
             fm = new ResourceManager()
             fm.resourcePath = storagePath.substring('resource:'.length())
+            fm.writeErrorsToLog = false
             if (!fm.existsDirectory(repFilePath)) return null
         }
         else {
@@ -623,7 +624,9 @@ class RepositoryStorageManager {
 
                     countProc = this.dslCreator.options.countThreadsLoadRepository
                     abortOnError = true
-                    dumpErrors = false
+                    dumpErrors = true
+                    debugElementOnError = false
+                    logErrors = this.dslCreator.logging.manager.printStackTraceError
                     runSplit { elem ->
                         def fileAttr = elem.item as Map<String, Object>
 
@@ -653,7 +656,7 @@ class RepositoryStorageManager {
                                 def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
                                         configVars: this.dslCreator.configVars, owner: dslCreator)
                                 GetlRepository obj
-                                obj = repository.importConfig(objParams, null)
+                                obj = repository.importConfig(objParams, null, name)
                                 runWithLoadMode(true) {
                                     repository.registerObject(this.dslCreator, obj, name, true)
                                 }
@@ -723,7 +726,7 @@ class RepositoryStorageManager {
                     throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")
             }
             def isExists = (obj != null)
-            obj = repository.importConfig(objParams, obj)
+            obj = repository.importConfig(objParams, obj, name)
             if (register) {
                 if (!isExists)
                     repository.registerObject(this.dslCreator, obj, name, true)
@@ -765,7 +768,7 @@ class RepositoryStorageManager {
 
         def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8', environment: env,
                 configVars: this.dslCreator.configVars, owner: dslCreator)
-        obj = repository.importConfig(objParams, obj)
+        obj = repository.importConfig(objParams, obj, obj?.dslNameObject)
         repository.initRegisteredObject(obj)
     }
 

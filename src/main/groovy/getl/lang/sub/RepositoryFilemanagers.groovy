@@ -36,8 +36,8 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
-        (existObject != null)?(existObject as Manager).importParams(config):Manager.CreateManager(config)
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
+        return (existObject != null)?(existObject as Manager).importParams(config):Manager.CreateManager(config)
     }
 
     @Override

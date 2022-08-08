@@ -7,7 +7,7 @@ import groovy.transform.CompileStatic
  * @author Alexsey Konstantinov
  */
 @CompileStatic
-abstract class ExecutorRunCode implements Runnable {
+abstract class ExecutorRunCode extends ExecutorThread {
     private Throwable runCodeError
     /** Error while executing code */
     Throwable getRunCodeError() { runCodeError }

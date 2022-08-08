@@ -463,6 +463,6 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
     @Override
     String toString() {
-        super.toString() + "(referencing ${usedObjects.size()} tables from \"$referenceConnectionName\" connection in \"$referenceSchemaName\" schemata)"
+        super.toString() + "(referencing ${usedObjects?.size()?:0} tables from \"$referenceConnectionName\" connection in \"$referenceSchemaName\" schemata)"
     }
 }

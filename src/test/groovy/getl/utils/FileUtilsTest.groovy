@@ -219,7 +219,7 @@ println time() + 'start'
 println time() + 'finish' '''
 
         def codePage = (Config.isWindows())?'cp866':'utf-8'
-        def cmd = (Config.isWindows())?'groovy.bat check_run.groovy':'groovy check_run.groovy'
+        def cmd = FileUtils.TransformFilePath((Config.isWindows())?'{GROOVY_HOME}\\bin\\groovy.bat check_run.groovy':'{GROOVY_HOME}/bin/groovy check_run.groovy')
 
         def outConsole = new StringBuilder()
         def outErrors = new StringBuilder()

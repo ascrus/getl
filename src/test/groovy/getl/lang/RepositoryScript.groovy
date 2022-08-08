@@ -8,9 +8,9 @@ import groovy.transform.Field
 
 forGroup 'test'
 
-@Field H2Table test_table
+@Field H2Table test_table = null
 
-assert test_table.tableName == 'table1'
+assert test_table?.tableName == 'table1'
 
 assert files('#main').rootPath == '/tmp/main'
 files('#child', true).rootPath = '/tmp/child'

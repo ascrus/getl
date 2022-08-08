@@ -117,7 +117,9 @@ class Connection implements Cloneable, GetlRepository {
 			throw new ExceptionGETL("Required parameter \"connection\"")
 
 		MapUtils.RemoveKeys(params, ["connection", "config"])
-		def con = (Class.forName(connectionClass).newInstance(params)) as Connection
+		//def con = (Class.forName(connectionClass).newInstance(params)) as Connection
+		def constr = Class.forName(connectionClass).getConstructor([Map].toArray([] as Class[]))
+		def con = constr.newInstance(params) as Connection
 
 		return con
 	}
@@ -169,7 +171,7 @@ class Connection implements Cloneable, GetlRepository {
 
 	/** Create a new dataset object for the current connection */
 	Dataset newDataset() {
-		def ds = datasetClass.getDeclaredConstructor().newInstance()
+		def ds = datasetClass.getConstructor().newInstance()
 		ds.connection = this
 		return ds
 	}

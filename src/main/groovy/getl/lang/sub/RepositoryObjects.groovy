@@ -526,7 +526,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param current an existing object if you want to import the configuration into it
      * @return imported object
      */
-    abstract GetlRepository importConfig(Map config, GetlRepository existObject)
+    abstract GetlRepository importConfig(Map config, GetlRepository existObject, String objectName)
 
     /** Repository objects require configuration storage separately for different environments */
     Boolean needEnvConfig() { false }

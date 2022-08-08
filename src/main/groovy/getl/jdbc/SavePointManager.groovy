@@ -232,7 +232,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
-		def res = getClass().getDeclaredConstructor().newInstance() as SavePointManager
+		def res = getClass().getConstructor().newInstance() as SavePointManager
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
 
@@ -596,7 +596,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 				res."type" = "N"
 				try {
                     //noinspection GroovyAssignabilityCheck
-                    res."value" = new Long(value)
+                    res."value" = Long.valueOf(value)
 				}
 				catch (Exception e) {
 					logger.severe("Can not parse \"$value\" to long")

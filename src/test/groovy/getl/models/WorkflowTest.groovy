@@ -22,7 +22,7 @@ class WorkflowTest extends GetlDslTest {
         Getl.Dsl {getl ->
             def mod1 = models.workflow('test:workflow', true) {
                 start('Start 1') {
-                    countThreads = 2
+                    countThreads = 1
 
                     initCode = '''
                                     ifUnitTestMode { configContent.init_code = true }
@@ -34,6 +34,7 @@ class WorkflowTest extends GetlDslTest {
                                 '''
                     finalCode = '''
                                     ifUnitTestMode { configContent.final_code = true }
+                                    println result('root2')
                                     assert result('root2').varEvent == 'SCRIPT EVENT'
                                     assert result('root2').varEvent1 == 'event1'
                                     assert result('root2').varEvent2 == 'event2' 
@@ -46,6 +47,12 @@ class WorkflowTest extends GetlDslTest {
                     exec('Root2') {
                         className = WorkflowStepTestScript.name
                         vars = [stepName: stepName, stepNum: 2, macro: '{stepNum}:{stepName}']
+                    }
+
+                    events('Root1') {
+                        event('EVENT') {
+                            assertEquals(1, it)
+                        }
                     }
 
                     onError {

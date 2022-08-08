@@ -335,6 +335,13 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                         countProc = list.size()
                         abortOnError = true
 
+                        def countFileList = this.tmpProcessFiles.countRow()
+                        if (onProcessTrackCode != null) {
+                            mainCode {
+                                onProcessTrackCode.call(countFileList, this.counter.count)
+                            }
+                        }
+
                         run { Integer segment ->
                             def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}", isTempLocalDirectory: true], dslCreator)
                             FileUtils.ValidPath(src.localDirectory, true)

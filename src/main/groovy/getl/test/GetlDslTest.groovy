@@ -97,14 +97,16 @@ class GetlDslTest extends GetlTest {
         }
 
         if (!Getl.GetlInstanceCreated()) {
-            def eng = useGetlClass().getDeclaredConstructor().newInstance()
+            def eng = useGetlClass().getConstructor().newInstance()
             Getl.GetlSetInstance(eng)
             eng.options.autoInitFromConfig = autoLoadProperties()
         }
 
-        Getl.Dsl(this) {
+        Getl.GetlInstance().tap {
             if (configuration.environment != configEnvironment)
                 configuration.environment = configEnvironment
+            if (configuration.environment != 'prod')
+                enableUnitTestMode()
         }
 
         if ((!this.onceRunInitClass() || !initWasRun)) {

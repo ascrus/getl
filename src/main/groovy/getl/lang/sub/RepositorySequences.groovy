@@ -41,10 +41,17 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
         def connectionName = config.connection as String
-        if (connectionName != null)
-            dslCreator.registerConnection(null, connectionName, false, false) as Connection
+        if (connectionName != null) {
+            try {
+                dslCreator.registerConnection(null, connectionName, false, false) as Connection
+            }
+            catch (Exception e) {
+                dslCreator.logError("Invalid connection \"$connectionName\" for sequence \"$objectName\"", e)
+                throw new ExceptionDSL("Invalid connection \"$connectionName\" for sequence \"$objectName\": ${e.message}")
+            }
+        }
 
         def obj = (existObject as Sequence)?:(new Sequence())
         obj.importParams(config)

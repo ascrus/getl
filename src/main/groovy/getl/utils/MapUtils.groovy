@@ -370,7 +370,7 @@ class MapUtils {
 				if (str.trim().length() == 0) continue
 				def le = str.indexOf('=')
 				String name
-				String value
+				String value = null
 				if (le != -1) {
 					name = str.substring(0, le)
 					def c = name.indexOf('.')
@@ -1057,7 +1057,7 @@ class MapUtils {
 	 */
 	static Map Clone(Map map) {
 		if (map == null) return null
-		def res = map.getClass().getDeclaredConstructor().newInstance() as Map
+		def res = map.getClass().getConstructor().newInstance() as Map
 		map.each { k, v ->
 			if (v instanceof Map)
 				res.put(k, Clone(v))

@@ -525,33 +525,33 @@ class CSVDriverTest extends GetlTest {
                 escaped = true
                 nullAsValue = '\u0001'
                 write()
-                assertEquals('''id|name|v1|v2|v3|v4|v5
-1|"one"|1|"\\"string\\""|2019-12-31|123.45|true
-2|"two"|\u0001|\u0001|\u0001|\u0001|\u0001
+                assertEquals('''id,name,v1,v2,v3,v4,v5
+1,"one",1,"\\"string\\"",2019-12-31,123.45,true
+2,"two",\u0001,\u0001,\u0001,\u0001,\u0001
 ''',read())
 
                 escaped = false
                 nullAsValue = '\u0002'
                 write()
-                assertEquals('''id|name|v1|v2|v3|v4|v5
-1|one|1|"""string"""|2019-12-31|123.45|true
-2|two|\u0002|\u0002|\u0002|\u0002|\u0002
+                assertEquals('''id,name,v1,v2,v3,v4,v5
+1,one,1,"""string""",2019-12-31,123.45,true
+2,two,\u0002,\u0002,\u0002,\u0002,\u0002
 ''',read())
 
                 escaped = true
                 nullAsValue = '\\\\'
                 write()
-                assertEquals('''id|name|v1|v2|v3|v4|v5
-1|"one"|1|"\\"string\\""|2019-12-31|123.45|true
-2|"two"|\\\\|\\\\|\\\\|\\\\|\\\\
+                assertEquals('''id,name,v1,v2,v3,v4,v5
+1,"one",1,"\\"string\\"",2019-12-31,123.45,true
+2,"two",\\\\,\\\\,\\\\,\\\\,\\\\
 ''',read())
 
                 escaped = false
                 nullAsValue = '\\\\'
                 write()
-                assertEquals('''id|name|v1|v2|v3|v4|v5
-1|one|1|"""string"""|2019-12-31|123.45|true
-2|two|\\\\|\\\\|\\\\|\\\\|\\\\
+                assertEquals('''id,name,v1,v2,v3,v4,v5
+1,one,1,"""string""",2019-12-31,123.45,true
+2,two,\\\\,\\\\,\\\\,\\\\,\\\\
 ''',read())
             }
         }
@@ -663,7 +663,7 @@ class CSVDriverTest extends GetlTest {
             }
             assertEquals(1000 * 100, csvTemp('test_append_threads').readLinesCount())
             csvTemp('test_append_threads').datasetFile().text.eachLine {
-                assertFalse("Invalid line: $it", it.matches('^(?!\\d+[|].+[|].+[|].+).*$'))
+                assertFalse("Invalid line: $it", it.matches('^(?!\\d+[,].+[,].+[,].+).*$'))
             }
             csvTemp('test_append_threads').eachRow { row ->
                 assertNotNull(row.num)

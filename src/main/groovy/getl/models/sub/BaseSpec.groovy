@@ -2,6 +2,7 @@
 package getl.models.sub
 
 import getl.exception.ExceptionDSL
+import getl.utils.CloneUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
 import getl.utils.MapUtils
@@ -252,5 +253,15 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     /** Check model owner */
     protected void checkGetlInstance() {
         ownerModel.checkGetlInstance()
+    }
+
+    @Override
+    Object clone() {
+        def clParams = CloneUtils.CloneMap(params)
+
+        def constr = this.getClass().getConstructor([BaseModel, Boolean, Map].toArray([] as Class[]))
+        def res = constr.newInstance(this.ownerObject, false, clParams) as BaseSpec
+
+        return res
     }
 }

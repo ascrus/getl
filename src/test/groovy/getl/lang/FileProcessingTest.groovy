@@ -248,7 +248,7 @@ class FileProcessingTest extends TestDsl {
                     storageProcessedFiles = files('archive')
                     storageErrorFiles = files('errors')
                 }
-                if (cacheStory)
+                if (cacheStory) {
                     if (!debug)
                         cacheFilePath = "${workPath}/storycache"
                     else {
@@ -256,6 +256,11 @@ class FileProcessingTest extends TestDsl {
                         new H2Connection(connectDatabase: "${workPath}/storycache")
                         cacheFilePath = "${workPath}/storycache"
                     }
+                }
+
+                processTrackCode { count, proc ->
+                    logFinest ">>>Complete $proc/$count files"
+                }
 
                 processFile { proc ->
                     if (proc.attr.date == null)

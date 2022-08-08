@@ -16,13 +16,13 @@ import groovy.transform.Field
 void check() {
     def countProcess = (configContent.countProcessed ?: 0) + 1
     configContent.countProcessed = countProcess
-    assert macro == "$stepNum:$stepName"
+    assert macro == "$stepNum:$stepName", "Invalid [$macro] value from step [$stepNum]:[$stepName]"
 }
 
 def varEvent = onEvent?.call()
+scriptEvents.get('EVENT')?.call(1)
 logInfo "Step \"$stepName\" from $stepNum complete (${configContent.countProcessed}) with macro \"$macro\"${(varEvent != null)?" and event \"$varEvent\"":''}"
 
-println scriptEvents
 def varEvent1 = scriptEvents.eventFromAll('event1')?.call()
 def varEvent2 = scriptEvents.eventFromObject('object1', 'event2')?.call()
 

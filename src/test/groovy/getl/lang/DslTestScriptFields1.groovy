@@ -10,7 +10,10 @@ import groovy.transform.Field
 @BaseScript TestRunner main
 
 testCase {
-    assertTrue(main.unitTestMode)
+    if (configuration.environment != 'prod')
+        assertTrue(main.unitTestMode)
+    else
+        assertFalse(main.unitTestMode)
     assertTrue(BoolUtils.IsValue(main.configGlobal.inittest))
 }
 

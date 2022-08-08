@@ -405,21 +405,29 @@ class JDBCConnection extends Connection implements UserLogins {
 		def result = [] as List<TableDataset>
 		(retrieveObjects(MapUtils.Copy(params, ['retrieveInfo']), filter) as List<Map>).each { row ->
 			TableDataset d
+			def constr = tableClass.getConstructor()
 			switch ((row.type as String)?.toUpperCase()) {
 				case 'VIEW':
 					d = new ViewDataset(type: JDBCDataset.viewType)
 					break
 				case 'GLOBAL TEMPORARY':
-					d = tableClass.newInstance(type: JDBCDataset.globalTemporaryTableType)
+					//d = tableClass.newInstance(type: JDBCDataset.globalTemporaryTableType)
+					d = constr.newInstance() as TableDataset
+					d.type = JDBCDataset.globalTemporaryTableType
 					break
 				case 'LOCAL TEMPORARY':
-					d = tableClass.newInstance(type: JDBCDataset.localTemporaryTableType)
+					//d = tableClass.newInstance(type: JDBCDataset.localTemporaryTableType)
+					d = constr.newInstance() as TableDataset
+					d.type = JDBCDataset.localTemporaryTableType
 					break
 				case 'TABLE': case 'BASE TABLE':
-					d = tableClass.getDeclaredConstructor().newInstance()
+					//d = tableClass.getConstructor().newInstance()
+					d = constr.newInstance() as TableDataset
 					break
 				case 'SYSTEM TABLE':
-					d = tableClass.newInstance(type: JDBCDataset.systemTable)
+					//d = tableClass.newInstance(type: JDBCDataset.systemTable)
+					d = constr.newInstance() as TableDataset
+					d.type = JDBCDataset.systemTable
 					break
 				default:
 					throw new ExceptionGETL("Not support dataset type \"${row.type}\"")

@@ -28,7 +28,7 @@ class GetlTest extends GroovyAssert {
     /** Install the required configuration manager */
     protected InstallConfigManager() {
         if (!useConfigManager().isInstance(Config.configClassManager))
-            Config.configClassManager = useConfigManager().getDeclaredConstructor().newInstance() as ConfigManager
+            Config.configClassManager = useConfigManager().getConstructor().newInstance() as ConfigManager
     }
 
     /** Variables for testing from JVM environment */

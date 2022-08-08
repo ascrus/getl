@@ -674,7 +674,7 @@ class CSVDriver extends FileDriver {
 			def cur = 0L
 			def line = 0L
 			while (true) {
-				Map row
+				Map row = null
 				def isError = false
 				try {
 					cur++

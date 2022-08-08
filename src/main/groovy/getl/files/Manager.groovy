@@ -99,7 +99,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (className == null)
 			throw new ExceptionGETL("Required class name as \"manager\" property!")
 
-		Manager manager = Class.forName(className).getDeclaredConstructor().newInstance() as Manager
+		Manager manager = Class.forName(className).getConstructor().newInstance() as Manager
 		manager.importParams(parameters)
 
 		return manager

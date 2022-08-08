@@ -3,7 +3,6 @@ package getl.models.sub
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
 import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
@@ -13,6 +12,7 @@ import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
+
 import java.lang.reflect.ParameterizedType
 import java.sql.Timestamp
 import java.util.concurrent.CopyOnWriteArrayList
@@ -78,14 +78,18 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Override
     void importFromMap(Map<String, Object> importParams) {
         if (importParams == null)
-            throw new ExceptionGETL('Required "importParams" value!')
+            throw new NullPointerException('Required importParams!')
 
-        def objParams = importParams.usedObjects as List<Object>
+        def objParams = importParams.usedObjects as List
         def objects = [] as List<T>
         objParams?.each { obj ->
-            objects << newSpec(obj)
+            if (obj instanceof BaseSpec)
+                objects.add(createSpec((obj as BaseSpec).params))
+            else if (obj instanceof Map)
+                objects.add(createSpec(obj as Map))
+            else
+                throw new ExceptionDSL("Invalid used object type \"${obj.getClass()}\" in model \"$this\" [${this.getClass()}]!")
         }
-        //params.putAll(importParams)
         MapUtils.MergeMap(params, importParams)
         params.usedObjects = objects
     }
@@ -300,20 +304,29 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         saveParamValue('storyDatasetName', dataset?.dslNameObject)
     }
 
-    /** Create new instance model object */
-    protected T newSpec(Object... args) {
+    protected Class<T> usedModelClass() {
         def genClass = this.getClass()
         while (!(genClass.genericSuperclass instanceof ParameterizedType)) {
             genClass = genClass.superclass
             if (!BaseModel.isAssignableFrom(genClass))
                 throw new ExceptionDSL("Can't find super class model for class \"${this.getClass()}\"!")
         }
-        def modelSpecClass = (genClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
-        def param = [this] as List<Object>
-        if (args != null) param.addAll(args.toList())
-        def res = modelSpecClass.newInstance(param.toArray(String[])) as T
-        (params.usedObjects as List<T>).add(res)
+        return (genClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
+    }
+
+    /** Create new instance model object */
+    protected T createSpec(Map objectParams) {
+        def modelSpecClass = usedModelClass()
+        def constr = modelSpecClass.getConstructor([BaseModel, Boolean, Map].toArray([] as Class[]))
+        def res = constr.newInstance(this, false, objectParams) as T
+
         return res
+    }
+
+    /** Add model object to list of model objects */
+    protected T addSpec(T spec) {
+        (params.usedObjects as List<T>).add(spec)
+        return spec
     }
 
     /**

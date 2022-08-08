@@ -80,6 +80,52 @@ class Workflows extends BaseModel<WorkflowSpec> {
         _result.clear()
     }
 
+    private final Map<String, Map<String, Object>> modelScriptVars = new HashMap<String, Map<String, Object>>()
+
+    /** Set variable value in workflow script */
+    Map<String, Object> vars(String scriptName) {
+        if (scriptName == null || scriptName.length() == 0)
+            throw new ExceptionModel('The script name is required for "vars" function!')
+
+        if (scriptByName(scriptName) == null)
+            throw new ExceptionModel("There is script \"$scriptName\" specified in the vars function, which is not defined " +
+                    "for model \"$dslNameObject\"!")
+
+        scriptName = scriptName.toUpperCase()
+        def sv = modelScriptVars.get(scriptName)
+        if (sv == null) {
+            sv = new HashMap<String, Object>()
+            modelScriptVars.put(scriptName, sv)
+        }
+
+        return sv
+    }
+
+    /** Script events code */
+    private final Map<String, ScriptEvents> modelScriptEvents = new HashMap<String, ScriptEvents>()
+
+    /** Events on script */
+    ScriptEvents events(String scriptName, @DelegatesTo(ScriptEvents) Closure cl = null) {
+        if (scriptName == null || scriptName.length() == 0)
+            throw new ExceptionModel('The script name is required for "events" function!')
+
+        if (scriptByName(scriptName) == null)
+            throw new ExceptionModel("There is script \"$scriptName\" specified in the events function, which is not defined " +
+                    "for model \"$dslNameObject\"!")
+
+        scriptName = scriptName.toUpperCase()
+        def res = modelScriptEvents.get(scriptName)
+        if (res == null) {
+            res = new ScriptEvents()
+            modelScriptEvents.put(scriptName, res)
+        }
+
+        if (cl != null)
+            res.tap(cl)
+
+        return res
+    }
+
     /** Process start operator */
     static public final Operation executeOperation = Operation.EXECUTE
     /** Process error operator */
@@ -90,6 +136,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
         def res = [] as List<Integer>
 
         nodes.each {node ->
+            //noinspection RegExpSimplifiable
             if (node.stepName.matches("(?i)STEP[ ]\\d+"))
                 res.add(node.stepName.substring(4).toInteger())
 
@@ -113,6 +160,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
 
         nodes.each {node ->
             node.scripts.each { name, scriptParams ->
+                //noinspection RegExpSimplifiable
                 if (name.matches("(?i)SCRIPT[ ]\\d+"))
                     res.add(name.substring(6).toInteger())
             }
@@ -266,7 +314,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
         if (stepByName(stepName) != null)
             throw new ExceptionModel("The step named \"$stepName\" is already defined in the workflow!")
 
-        def parent = newSpec(stepName, executeOperation)
+        def parent = addSpec(new WorkflowSpec(this, stepName, executeOperation))
         parent.runClosure(cl)
 
         return parent
@@ -531,15 +579,8 @@ return $className"""
                         def runClass = classes.get(scriptName.toUpperCase())
                         def classParams = ReadClassFields(runClass)
                         def scriptVars = (scriptParams.vars as Map<String, Object>)?:(new HashMap<String, Object>())
-
-                        ScriptEvents userEvents = null
-                        if (generatedUserCode != null) {
-                            def userVars = generatedUserCode.vars(scriptName)
-                            if (userVars != null && !userVars.isEmpty())
-                                scriptVars.putAll(userVars)
-
-                            userEvents = generatedUserCode.events(scriptName)
-                        }
+                        if (modelScriptVars.containsKey(scriptName.toUpperCase()))
+                            scriptVars.putAll(modelScriptVars.get(scriptName.toUpperCase()))
 
                         def macroVars = modelVars + addVars
                         scriptVars.each { name, val ->
@@ -619,11 +660,11 @@ return $className"""
 
                         Map<String, Object> scriptResult
                         try {
-                            scriptResult = dslCreator.callScript(runClass, execVars, macroVars, userEvents)
+                            scriptResult = dslCreator.callScript(runClass, execVars, macroVars, modelScriptEvents.get(scriptName.toUpperCase()))
                         }
                         catch (Throwable e) {
                             dslCreator.logError("Error execution class \"$scriptName\"[${runClass.name}] in step \"$stepLabel\"", e)
-                            if (!userEvents?.isEmpty())
+                            if (generatedUserCode != null)
                                 dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel].[$scriptName]", scriptUserCode)
                             throw e
                         }
@@ -721,7 +762,7 @@ return $className"""
 
         def res = [] as List<Map<String, Object>>
 
-        def script = scriptClass.getDeclaredConstructor().newInstance()
+        def script = scriptClass.getConstructor().newInstance()
         def fields = script.getClass().declaredFields.toList()
         script.getClass().fields.each { f ->
             if (fields.find { it.name == f.name } == null)

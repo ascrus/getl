@@ -66,6 +66,15 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Use specified dataset of processing history */
     void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
 
+    /** Create new model table */
+    protected DatasetSpec newDataset(String tableName) {
+        def modelSpecClass = usedModelClass()
+        def constr = modelSpecClass.getConstructor([DatasetsModel, String].toArray([] as Class[]))
+        def res = constr.newInstance(this, tableName) as T
+
+        return res
+    }
+
     /**
      * Use dataset in model
      * @param datasetName name dataset in repository
@@ -89,7 +98,8 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
 
         def parent = (usedDatasets.find { t -> t.datasetName == dslDatasetName })
         if (parent == null)
-            parent = newSpec(dslDatasetName) as T
+            //parent = createSpec(dslDatasetName) as T
+            parent = addSpec(newDataset(dslDatasetName)) as T
 
         parent.runClosure(cl)
 

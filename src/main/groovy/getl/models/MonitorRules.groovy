@@ -192,7 +192,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
         def parent = findRule(dslQueryName)
         if (parent == null)
-            parent = newSpec(dslQueryName) as MonitorRuleSpec
+            parent = addSpec(new MonitorRuleSpec(this, dslQueryName))
 
         parent.runClosure(cl)
 

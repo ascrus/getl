@@ -25,8 +25,8 @@ class RepositoryMapTables extends RepositoryObjects<MapTables> {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
-        (existObject != null)?((existObject as MapTables).importParams(config) as MapTables):
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
+        return (existObject != null)?((existObject as MapTables).importParams(config) as MapTables):
                 new MapTables(dslCreator, false, config)
     }
 }

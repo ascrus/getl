@@ -48,7 +48,7 @@ class CloneUtils {
         if (obj == null)
             return null
 
-        def res = obj.getClass().getDeclaredConstructor().newInstance() as Map
+        def res = obj.getClass().getConstructor().newInstance() as Map
         obj.each { k, v ->
             if (v == null)
                 res.put(k, v)
@@ -70,7 +70,7 @@ class CloneUtils {
         if (obj == null)
             return null
 
-        def res = obj.getClass().getDeclaredConstructor().newInstance() as Collection
+        def res = obj.getClass().getConstructor().newInstance() as Collection
         for (Integer i = 0; i < obj.size(); i++) {
             def v = obj[i]
             if (v == null)

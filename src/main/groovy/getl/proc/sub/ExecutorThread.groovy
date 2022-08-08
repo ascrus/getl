@@ -1,7 +1,13 @@
+//file:noinspection unused
 package getl.proc.sub
 
+import getl.data.Connection
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.files.Manager
 import getl.lang.sub.GetlRepository
+import getl.utils.Logs
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -9,6 +15,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
+@CompileStatic
 class ExecutorThread extends Thread {
     /**
      * Clone list element
@@ -25,10 +32,24 @@ class ExecutorThread extends Thread {
         Object cloneObject
     }
 
-    private final Map<String, List<CloneObject>> cloneObjects = new HashMap<String, List<CloneObject>>()
+    /** Thread owner object */
+    private ExecutorThread _ownerThread
+    /** Thread owner object */
+    ExecutorThread getOwnerThread() { _ownerThread }
+    /** Thread owner object */
+    void setOwnerThread(ExecutorThread value) {
+        _ownerThread = value
+        _cloneObjects = _ownerThread.cloneObjects
+        _params = _ownerThread.params
+    }
+
+    /** List of cloned objects by types */
+    private Map<String, List<CloneObject>> _cloneObjects = new HashMap<String, List<CloneObject>>()
+    /** List of cloned objects by types */
+    Map<String, List<CloneObject>> getCloneObjects() { _cloneObjects }
 
     /** Thread parameters */
-    private final Map<String, Object> _params = [cloneObjects: cloneObjects] as Map<String, Object>
+    private Map<String, Object> _params = [cloneObjects: _cloneObjects] as Map<String, Object>
 
     /** Thread parameters */
     Map<String, Object> getParams() { _params as Map<String, Object> }
@@ -39,9 +60,6 @@ class ExecutorThread extends Thread {
             params.putAll(value)
     }
 
-    /** Groups clone objects */
-    Map<String, List<CloneObject>> getCloneObjects() { cloneObjects }
-
     /**
      * Get a list of a group of cloned objects
      * @param groupName object group name
@@ -51,7 +69,7 @@ class ExecutorThread extends Thread {
         if (groupName == null)
             throw new ExceptionGETL('Group name required!')
 
-        return cloneObjects.get(groupName) as List<CloneObject>
+        return _cloneObjects.get(groupName) as List<CloneObject>
     }
 
 
@@ -64,7 +82,7 @@ class ExecutorThread extends Thread {
         def list = listCloneObject(groupName)
         if (list == null) {
             list = [] as List<CloneObject>
-            cloneObjects.put(groupName, list)
+            _cloneObjects.put(groupName, list)
         }
 
         return list
@@ -89,7 +107,10 @@ class ExecutorThread extends Thread {
 
         if (clone == null) {
             clone = new CloneObject(obj)
-            if (cloneCode != null) clone.cloneObject = cloneCode.call(obj) else clone.cloneObject = obj.clone()
+            if (cloneCode != null)
+                clone.cloneObject = cloneCode.call(obj)
+            else if (obj instanceof GetlRepository)
+                clone.cloneObject = (obj as GetlRepository).clone()
             list.add(clone)
         }
 
@@ -111,5 +132,55 @@ class ExecutorThread extends Thread {
             (it.cloneObject instanceof GetlRepository) && ((it.cloneObject as GetlRepository).dslNameObject == name)
         }
         return res?.cloneObject
+    }
+
+    /**
+     * Dispose thread resources
+     * @param listDisposeThreadResource user dispose code
+     * @param logger log manager
+     */
+    void clearCloneObjects(List<Closure> listDisposeThreadResource, Logs logger) {
+        try {
+            listDisposeThreadResource?.each { Closure disposeCode ->
+                disposeCode.call(cloneObjects)
+            }
+        }
+        finally {
+            if (_cloneObjects != null && _ownerThread == null) {
+                try {
+                    (_cloneObjects.get('getl.lang.sub.RepositoryConnections') as List<CloneObject>)?.each { cloneObject ->
+                        def con = cloneObject.cloneObject as Connection
+                        if (con != null && con.driver?.isSupport(Driver.Support.CONNECT))
+                            con.connected = false
+                    }
+                }
+                catch (Exception e) {
+                    logger.exception(e)
+                }
+
+                try {
+                    (_cloneObjects.get('getl.lang.sub.RepositoryFilemanagers') as List<CloneObject>)?.each { cloneObject ->
+                        def man = cloneObject.cloneObject as Manager
+                        if (man != null && man.connected)
+                            man.disconnect()
+                    }
+                }
+                catch (Exception e) {
+                    logger.exception(e)
+                }
+
+                _cloneObjects.each { String name, List<CloneObject> objects ->
+                    objects?.each { CloneObject obj ->
+                        obj.origObject = null
+                        if (obj.cloneObject != null) {
+                            if (obj.cloneObject instanceof GetlRepository)
+                                (obj.cloneObject as GetlRepository).dslCleanProps()
+                            obj.cloneObject = null
+                        }
+                    }
+                }
+                _cloneObjects.clear()
+            }
+        }
     }
 }

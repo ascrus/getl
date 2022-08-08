@@ -226,6 +226,8 @@ class ListUtils {
         if (strList == null)
 			return null
 
+		def constr = elemClass.getConstructor([String].toArray([] as Class[]))
+
         def list = strList.split(delimRegex)
         def result = []
         list.each { String elem ->
@@ -234,11 +236,13 @@ class ListUtils {
 
             def i = elem.indexOf('-')
             if (i == -1)
-                result << elemClass.newInstance(elem)
+                //result << elemClass.newInstance(elem)
+				result.add(constr.newInstance(elem))
             else {
-                def firstElem = elemClass.newInstance(elem.substring(0, i))
-                def lastElem = elemClass.newInstance(elem.substring(i + 1))
-                (firstElem..lastElem).each { subElem -> result << subElem}
+				// elemClass.newInstance(...)
+                def firstElem = constr.newInstance(elem.substring(0, i))
+                def lastElem = constr.newInstance(elem.substring(i + 1))
+                (firstElem..lastElem).each { subElem -> result.add(subElem) }
             }
         }
 

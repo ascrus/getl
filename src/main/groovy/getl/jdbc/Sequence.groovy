@@ -206,7 +206,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
-		def res = getClass().getDeclaredConstructor().newInstance() as Sequence
+		def res = getClass().getConstructor().newInstance() as Sequence
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
 		res.params.putAll(p)

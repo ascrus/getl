@@ -40,7 +40,7 @@ class RepositoryHistorypoints extends RepositoryObjects<HistoryPointManager> {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
         def obj = (existObject as HistoryPointManager)?:(new HistoryPointManager())
         obj.importParams(config)
         return obj

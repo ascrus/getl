@@ -25,8 +25,8 @@ class RepositoryMonitorRules extends RepositoryObjects<MonitorRules>  {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
-        (existObject != null)?((existObject as MonitorRules).importParams(config) as MonitorRules):
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
+        return (existObject != null)?((existObject as MonitorRules).importParams(config) as MonitorRules):
                 new MonitorRules(dslCreator, false, config)
     }
 }

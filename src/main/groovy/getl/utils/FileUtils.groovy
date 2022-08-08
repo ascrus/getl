@@ -772,7 +772,7 @@ class FileUtils {
 	static Long ConvertText(Reader reader, Writer writer, List rules,
 							 @ClosureParams(value = SimpleType, options = ['Long', 'java.lang.Object']) Closure convertLine,
 							 def convertBuffer) {
-		Closure convertCode
+		Closure convertCode = null
 		if (rules != null && !rules.isEmpty()) {
 			StringBuilder sb = new StringBuilder()
 			sb << "{ String line -> methodConvertText(line) }\n"

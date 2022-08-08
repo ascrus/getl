@@ -486,7 +486,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			throw new ExceptionGETL("Invalid ECHO statement: $parseScript")
 		def tokenHeader = parser.lexer.tokens[posHeader]
 
-		String text
+		String text = null
 		def posText = (tokenHeader.first as Integer) + 5
 		if (posText < parseScript.length() - 1)
 			text = parseScript.substring(posText).trim().trim()
@@ -549,6 +549,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			return
 		}
 
+		//noinspection GroovyUnusedAssignment
 		def st = new SQLParser(script).scripts()
 		requiredExit = false
 		rowCount = 0
@@ -710,7 +711,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			newPointConnection = this.pointConnection
 
 		def className = this.getClass().name
-		def res = Class.forName(className).getDeclaredConstructor().newInstance() as SQLScripter
+		def res = Class.forName(className).getConstructor().newInstance() as SQLScripter
 
 		if (newConnection != null)
 			res.connection = newConnection

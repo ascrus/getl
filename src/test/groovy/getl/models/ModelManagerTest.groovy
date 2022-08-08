@@ -10,6 +10,7 @@ class ModelManagerTest extends TestRepository {
     @Test
     void testRegistration() {
         Dsl {
+            def testObj = new Object()
             def origMod = models.referenceVerticaTables('test:model1', true) {
                 useReferenceConnection verticaConnection('ver:con')
                 referenceSchemaName = '_test_reference'
@@ -19,6 +20,7 @@ class ModelManagerTest extends TestRepository {
                 referenceFromTable('ver:table1') {
                     attrs.test = 'b'
                     objectVars.test = 2
+                    objectVars.object = testObj
                 }
             }
             assertEquals(['test:model1'], models.listReferenceVerticaTables('test:*'))
@@ -27,18 +29,26 @@ class ModelManagerTest extends TestRepository {
                 runMany(3) {
                     def mod = models.referenceVerticaTables('test:model1')
                     assertNotEquals(origMod, mod)
+                    assertNotEquals(origMod.usedTables, mod.usedTables)
+                    assertNotEquals(origMod.referenceFromTable('ver:table1'), mod.referenceFromTable('ver:table1'))
                     mod.tap {
                         assertEquals(verticaConnection('ver:con'), referenceConnection)
                         assertEquals('_test_reference', referenceSchemaName)
                         assertEquals(1, modelVars.test)
                         assertEquals(2, referenceFromTable('ver:table1').objectVars.test)
                         assertEquals(2, referenceFromTable('ver:table1').variable('test'))
+                        assertEquals(testObj, referenceFromTable('ver:table1').variable('object'))
                         assertEquals('a', modelAttrs.test)
                         assertEquals('b', referenceFromTable('ver:table1').attrs.test)
                         assertEquals('b', referenceFromTable('ver:table1').attribute('test'))
+
+                        referenceFromTable('ver:table1').objectVars.object = new Object()
+                        assertNotEquals(testObj, referenceFromTable('ver:table1').variable('object'))
                     }
                 }
             }
+
+            assertEquals(testObj, origMod.referenceFromTable('ver:table1').variable('object'))
 
             forGroup 'test'
             models.referenceVerticaTables('model2', true) {

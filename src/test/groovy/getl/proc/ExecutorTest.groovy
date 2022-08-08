@@ -1,10 +1,12 @@
 package getl.proc
 
+import getl.data.Connection
 import getl.lang.Getl
 import getl.test.GetlTest
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
 import getl.utils.SynchronizeObject
 import org.junit.Test
 
@@ -84,8 +86,10 @@ class ExecutorTest extends GetlTest {
                 processTimeTracing = false
             }
 
-            embeddedTable('table1', true) {
-                useConnection embeddedConnection('con1', true) { inMemory = true }
+            def mainCon1 = embeddedConnection('con1', true) { inMemory = true }
+
+            def mainTable1 = embeddedTable('table1', true) {
+                useConnection mainCon1
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 create()
@@ -97,55 +101,86 @@ class ExecutorTest extends GetlTest {
                     }
                 }
             }
-            csvTempWithDataset('file1', embeddedTable('table1')) {
+            def mainFile1 = csvTempWithDataset('file1', embeddedTable('table1')) {
                 clearKeys()
                 writeOpts { append = true }
             }
 
-            csvTempWithDataset('file2', embeddedTable('table1')) {
+            def mainFile2 = csvTempWithDataset('file2', embeddedTable('table1')) {
                 clearKeys()
                 etl.copyRows(embeddedTable('table1'), it)
             }
 
+            def sessions = h2Table('sessions', true) {
+                useConnection mainCon1
+                schemaName = 'INFORMATION_SCHEMA'
+                tableName = 'SESSIONS'
+            }
+
             def heapSizeStart = Runtime.runtime.totalMemory()
-            thread {
-                useList (1..10000)
+            thread { proc ->
+                useList (1..10)
                 abortOnError = true
+                debugElementOnError = true
 
                 waitTime = 500
                 mainCode {
-                    logFine "Rows ${counter.count}, total: ${FileUtils.SizeBytes(Runtime.runtime.totalMemory())}, free: total: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
+                    def countSessions = sessions.countRow()
+                    logFine "Sessions: $countSessions, Rows ${counter.count}, total: ${FileUtils.SizeBytes(Runtime.runtime.totalMemory())}, free: total: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
                 }
 
-                runSplit(32) {
-                    counter.nextCount()
+                run(10) {
+                    thread {
+                        useList (1..1000)
+                        abortOnError = true
+                        debugElementOnError = true
 
-                    def table1 = embeddedTable('table1')
-                    assertEquals(2, table1.field.size())
-                    def table2 = embeddedTable {
-                        useConnection embeddedConnection('con1')
-                        field = table1.field
+                        runSplit(50) {
+                            proc.counter.nextCount()
+
+                            assertNotEquals(mainCon1, embeddedConnection('con1'))
+
+                            def table1 = embeddedTable('table1')
+                            assertNotEquals(mainTable1, table1)
+                            assertNotEquals(mainCon1, table1.connection)
+                            assertEquals(embeddedConnection('con1'), table1.connection)
+                            assertEquals(MapUtils.Copy(mainTable1.params, ['connection']), MapUtils.Copy(table1.params, ['connection']))
+                            assertEquals(2, table1.field.size())
+                            def table2 = embeddedTable {
+                                useConnection embeddedConnection('con1')
+                                field = table1.field
+                            }
+                            assertEquals(table2.connection, table1.connection)
+                            assertTrue(table2.currentH2Connection.inMemory)
+
+                            def rows = table1.rows(limit: 1)
+                            assertEquals(1, rows.size())
+                            assertEquals(1, rows[0].id)
+                            assertEquals('name 1', rows[0].name)
+
+                            def file1 = csvTemp('file1')
+                            assertNotEquals(mainFile1, file1)
+                            assertNotEquals(mainFile1.connection, file1.connection)
+                            assertEquals(MapUtils.Copy(mainFile1.params, ['connection']), MapUtils.Copy(file1.params, ['connection']))
+                            etl.copyRows(table1, file1) {
+                                cacheName = 'testBigThreads'
+                            }
+                            assertEquals(10, table1.readRows)
+                            assertEquals(10, file1.writeRows)
+
+                            assertEquals(10, csvTemp('file2').rows().size())
+
+                            assertTrue(table1.connection.connected)
+                            proc.counter.addToList(table1.connection)
+                        }
+                        assertEquals(1000, countProcessed)
                     }
-                    assertTrue(table2.currentH2Connection.inMemory)
-
-                    def rows = table1.rows(limit: 1)
-                    assertEquals(1, rows.size())
-                    assertEquals(1, rows[0].id)
-                    assertEquals('name 1', rows[0].name)
-
-                    def file1 = csvTemp('file1')
-                    etl.copyRows(table1, file1) {
-                        cacheName = 'testBigThreads'
-                    }
-                    assertEquals(10, table1.readRows)
-                    assertEquals(10, file1.writeRows)
-
-                    assertEquals(10, csvTemp('file2').rows().size())
                 }
-
-                assertEquals(10000, countProcessed)
-                assertEquals(10000, counter.count)
+                assertEquals(10000, proc.counter.count)
+                (proc.counter.list as List<Connection>).each { con -> assertFalse(con.connected)}
             }
+
+            assertEquals(1, sessions.countRow())
             System.gc()
             def heapSizeFinish = Runtime.runtime.totalMemory()
             logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)} free: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"

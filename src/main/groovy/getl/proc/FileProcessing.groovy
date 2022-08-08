@@ -531,12 +531,21 @@ class FileProcessing extends FileListProcessing {
                 try {
                     // Thread processing files by group
                     def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: BoolUtils.IsValue(debugMode),
-                            logErrors: BoolUtils.IsValue(debugMode), dslCreator: dslCreator)
+                            logErrors: BoolUtils.IsValue(debugMode), debugElementOnError: BoolUtils.IsValue(debugMode), dslCreator: dslCreator)
 
                     exec.tap {
                         useList files
                         onStartingThread = this.onStartingThread
                         onFinishingThread = this.onFinishingThread
+                        waitTime = 500
+
+                        def countFileList = this.tmpProcessFiles.countRow()
+                        if (onProcessTrackCode != null) {
+                            mainCode {
+                                onProcessTrackCode.call(countFileList, this.counter.count)
+                            }
+                        }
+
                         runSplit { threadItem ->
                             // Detect free managers from pools
                             def sourceElement = FreePoolElement(sourceList)

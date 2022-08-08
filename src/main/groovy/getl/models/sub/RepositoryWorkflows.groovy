@@ -25,8 +25,8 @@ class RepositoryWorkflows extends RepositoryObjects<Workflows> {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
-        (existObject != null)?((existObject as Workflows).importParams(config) as Workflows):
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
+        return (existObject != null)?((existObject as Workflows).importParams(config) as Workflows):
                 new Workflows(dslCreator, false, config)
     }
 }

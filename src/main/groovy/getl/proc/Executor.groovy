@@ -213,9 +213,9 @@ class Executor implements GetlRepository {
 	}
 
 	/** Code on dispose resource after run the thread */
-	private List<Closure> listDisposeThreadResource = [] as List<Closure>
+	private final List<Closure> listDisposeThreadResource = [] as List<Closure>
 	/** Added code on dispose resource after run the thread */
-	void disposeThreadResource(Closure cl) { listDisposeThreadResource << cl }
+	void disposeThreadResource(Closure cl) { listDisposeThreadResource.add(cl) }
 
 	/** Checking element permission */
 	private Closure<Boolean> onValidAllowRun
@@ -336,27 +336,8 @@ class Executor implements GetlRepository {
 			finally {
 				node.put('finish', new Date())
 				try {
-					if (Thread.currentThread() instanceof ExecutorThread) {
-						def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-						try {
-							listDisposeThreadResource.each { Closure disposeCode ->
-								disposeCode.call(cloneObjects)
-							}
-						}
-						finally {
-							cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-								objects?.each { ExecutorThread.CloneObject obj ->
-									obj.origObject = null
-									if (obj.cloneObject != null) {
-										if (obj.cloneObject instanceof GetlRepository)
-											(obj.cloneObject as GetlRepository).dslCleanProps()
-										obj.cloneObject = null
-									}
-								}
-							}
-							cloneObjects.clear()
-						}
-					}
+					if (Thread.currentThread() instanceof ExecutorThread)
+						(Thread.currentThread() as ExecutorThread).clearCloneObjects(listDisposeThreadResource, logger)
 				}
 				finally {
 					removeNodeToThreadActive(node)
@@ -414,7 +395,7 @@ class Executor implements GetlRepository {
 						objects.add("[$num] $errorText")
 					}
 				}
-				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+				throw new ExceptionGETL("Thread errors:\n${objects.join('\n')}")
 			}
 
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
@@ -508,27 +489,8 @@ class Executor implements GetlRepository {
 						onFinishingThread.call(node)
 				}
 				finally {
-					if (Thread.currentThread() instanceof ExecutorThread) {
-						def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-						try {
-							listDisposeThreadResource.each { Closure disposeCode ->
-								disposeCode.call(cloneObjects)
-							}
-						}
-						finally {
-							cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-								objects?.each { ExecutorThread.CloneObject obj ->
-									obj.origObject = null
-									if (obj.cloneObject != null) {
-										if (obj.cloneObject instanceof GetlRepository)
-											(obj.cloneObject as GetlRepository).dslCleanProps()
-										obj.cloneObject = null
-									}
-								}
-							}
-							cloneObjects.clear()
-						}
-					}
+					if (Thread.currentThread() instanceof ExecutorThread)
+						(Thread.currentThread() as ExecutorThread).clearCloneObjects(listDisposeThreadResource, logger)
 				}
 				removeNodeToThreadActive(node)
 				node.remove('threadSubmit')
@@ -583,7 +545,7 @@ class Executor implements GetlRepository {
 						objects << "[$num] $errorText"
 					}
 				}
-				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+				throw new ExceptionGETL("Thread errors:\n${objects.join('\n')}")
 			}
 
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
@@ -659,27 +621,8 @@ class Executor implements GetlRepository {
 							counterProcessed.nextCount()
 						}
 						finally {
-							if (Thread.currentThread() instanceof ExecutorThread) {
-								def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-								try {
-									listDisposeThreadResource.each { Closure disposeCode ->
-										disposeCode.call(cloneObjects)
-									}
-								}
-								finally {
-									cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-										objects?.each { ExecutorThread.CloneObject obj ->
-											obj.origObject = null
-											if (obj.cloneObject != null) {
-												if (obj.cloneObject instanceof GetlRepository)
-													(obj.cloneObject as GetlRepository).dslCleanProps()
-												obj.cloneObject = null
-											}
-										}
-									}
-									cloneObjects.clear()
-								}
-							}
+							if (Thread.currentThread() instanceof ExecutorThread)
+								(Thread.currentThread() as ExecutorThread).clearCloneObjects(listDisposeThreadResource, logger)
 						}
 						removeNodeToThreadActive(node)
 						node.remove('threadSubmit')
@@ -938,7 +881,8 @@ class Executor implements GetlRepository {
 		if (maximumProcessingTime < 0)
 			throw new ExceptionDSL("The value must be greater than zero!")
 
-		def service = Executors.newSingleThreadExecutor(new ExecutorFactory())
+		def ownerThread = (Thread.currentThread() instanceof ExecutorThread)?Thread.currentThread() as ExecutorThread:null as ExecutorThread
+		def service = Executors.newSingleThreadExecutor(new ExecutorFactory(ownerThread))
 		service.submit(code)
 		service.shutdown()
 

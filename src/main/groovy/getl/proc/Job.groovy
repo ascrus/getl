@@ -40,7 +40,7 @@ abstract class Job {
 		// Set job parameters from arguments
 		jobArgs.clear()
 		//noinspection SpellCheckingInspection
-		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
+		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'errout', 'stdcodepage']))
 		if (jobArgs.vars == null)
 			jobArgs.vars = new HashMap()
 		Config.Init(m)

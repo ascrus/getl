@@ -103,7 +103,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                                         @DelegatesTo(ReferenceFileSpec)
                                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceFileSpec'])
                                                 Closure cl = null) {
-        super.modelFile(filePath, cl)
+        modelFile(filePath, cl)
     }
 
     /** Valid manager connection */
@@ -175,8 +175,11 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                 }
                 try {
                     dest.changeDirectoryToRoot()
-                    if (modelFile.destinationPath != null)
+                    if (modelFile.destinationPath != null) {
+                        if (createDestinationDirectories && !dest.existsDirectory(modelFile.destinationPath))
+                            dest.createDirs(modelFile.destinationPath)
                         dest.changeDirectory(modelFile.destinationPath)
+                    }
 
                     if (!isLocalUnpack || unpackCommand == null) {
                         new ProcessTime(dslCreator: dslCreator,

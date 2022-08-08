@@ -152,7 +152,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (datasetClass == null)
 			throw new ExceptionGETL("Required parameter \"dataset\"")
 		
-		def dataset = Class.forName(datasetClass).getDeclaredConstructor().newInstance() as Dataset
+		def dataset = Class.forName(datasetClass).getConstructor().newInstance() as Dataset
 		dataset.importParams(params)
 
 		return dataset

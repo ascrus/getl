@@ -1256,6 +1256,7 @@ $body
 	 * @param script generated script
 	 * @return code for generating a record with field values
 	 */
+	@SuppressWarnings('GrEqualsBetweenInconvertibleTypes')
 	@CompileStatic
 	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = new HashMap(), StringBuilder script = null) {
 		if (excludeFields == null) excludeFields = [] as List<String>

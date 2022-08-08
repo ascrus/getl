@@ -139,11 +139,18 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     }
 
     @Override
-    GetlRepository importConfig(Map config, GetlRepository existObject) {
+    GetlRepository importConfig(Map config, GetlRepository existObject, String objectName) {
         def connectionName = config.connection as String
-        Connection con
-        if (connectionName != null)
-            con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
+        Connection con = null
+        if (connectionName != null) {
+            try {
+                con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
+            }
+            catch (Exception e) {
+                dslCreator.logError("Invalid connection \"$connectionName\" for dataset \"$objectName\"", e)
+                throw new ExceptionDSL("Invalid connection \"$connectionName\" for dataset \"$objectName\": ${e.message}")
+            }
+        }
 
         def importParams = MapUtils.Copy(config, ['connection', 'fields', 'attributeFields']) as Map<String, Object>
         def obj = (existObject != null)?(existObject as Dataset).importParams(importParams):

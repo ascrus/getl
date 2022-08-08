@@ -225,7 +225,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 
-		def res = getClass().getDeclaredConstructor().newInstance() as HistoryPointManager
+		def res = getClass().getConstructor().newInstance() as HistoryPointManager
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
 		if (con != null)

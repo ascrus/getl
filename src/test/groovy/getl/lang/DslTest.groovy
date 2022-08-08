@@ -979,12 +979,32 @@ ORDER BY t1.id"""
 
     @Test
     void test99_03RunGetlMain() {
+        Job.ExitOnError = false
+
         Getl.Module([
-                'runclass=getl.lang.DslTestScriptFields1', 'unittest=true',
+                'runclass=getl.lang.DslTestScriptFields1',
                 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
                 'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
                 'vars.param9=true', 'vars.paramCountTableRow=100'])
+
+        Getl.Module([
+                'runclass=getl.lang.DslTestScriptFields1', 'unittest=true', 'environment=dev',
+                'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
+                'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
+                'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
+                'vars.param9=true', 'vars.paramCountTableRow=100'])
+
+        shouldFail {
+            Getl.Module([
+                    'runclass=getl.lang.DslTestScriptFields1', 'unittest=true',
+                    'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
+                    'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
+                    'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
+                    'vars.param9=true', 'vars.paramCountTableRow=100'])
+        }
+
+        Job.ExitOnError = true
     }
 
     @Test

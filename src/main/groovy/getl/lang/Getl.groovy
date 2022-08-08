@@ -46,8 +46,6 @@ import getl.utils.sub.*
 import getl.vertica.*
 import getl.xml.*
 import getl.yaml.*
-import groovy.test.GroovyAssert
-import groovy.test.GroovyTestCase
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -174,7 +172,6 @@ Examples:
         GetlSetInstance(this)
         setGetlSystemParameter('mainClass', getClass().name)
         setGetlSystemParameter('groovyConsole', true)
-        setUnitTestMode(true)
 
         if (jobArgs.environment == null) {
             def propPath = new File('.')
@@ -193,6 +190,9 @@ Examples:
             }
             configuration.environment = env
         }
+
+        if (configuration.environment != 'prod')
+            enableUnitTestMode()
 
         _initGetlProperties(null, jobArgs.getlprop as Map<String, Object>, true)
         logInfo("### Start script ${getClass().name}")
@@ -312,7 +312,7 @@ Examples:
                     runClass = launcher?:Getl
                 }
 
-                eng = runClass.getDeclaredConstructor().newInstance() as Getl
+                eng = runClass.getConstructor().newInstance() as Getl
                 eng.configuration.manager.init(jobArgs)
                 if (jobArgs.vars != null)
                     eng.configVars.putAll(jobArgs.vars as Map)
@@ -444,7 +444,7 @@ Examples:
                             MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
 
                 logFinest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
-                if (unitTestMode)
+                if (this.unitTestMode)
                     logWarn('Used to work in unit testing mode!')
 
                 def procs = new HashMap<String, Closure>()
@@ -700,13 +700,13 @@ Examples:
     }
 
     /** The name of the main class of the process */
-    String getGetlMainClassName() { _params.mainClass as String }
+    String getGetlMainClassName() { getGetlSystemParameter('mainClass') as String }
 
     /** The name of the process initializing class */
-    String getGetlInitClassName() { _params.initClass as String }
+    String getGetlInitClassName() { getGetlSystemParameter('initClass') as String }
 
     /** Main Getl instance */
-    Getl getGetlMainInstance() { _params.mainInstance as Getl }
+    Getl getGetlMainInstance() { getGetlSystemParameter('mainInstance') as Getl }
 
     /** Checking process permission */
     @Synchronized
@@ -715,7 +715,7 @@ Examples:
 
         if (_langOpts.processControlDataset != null) {
             if (processName == null)
-                processName = (_params.mainClass)?:this.getClass().name
+                processName = getGetlMainClassName()?:this.getClass().name
             if (processName == null)
                 throw new ExceptionDSL('Required name for the process being checked!')
 
@@ -765,8 +765,6 @@ Examples:
 
     /** Init Getl instance */
     protected void initGetlParams() {
-        _params.executedClasses = new SynchronizeObject()
-
         _langOpts = new LangSpec(this)
         _configOpts = new ConfigSpec(this)
         _logOpts = new LogSpec(this)
@@ -776,6 +774,7 @@ Examples:
         _models = new ModelSpec(this)
         _fileman = new FilemanSpec(this)
 
+        _params.executedClasses = new SynchronizeObject()
         _params.langOpts = _langOpts
         _params.configOpts = _configOpts
         _params.logOpts = _logOpts
@@ -891,7 +890,7 @@ Examples:
             _getl.repositoryStorageManager.clearRepositories()
 
         if (softClean && _getl != null) {
-            _getl = _getl.getClass().getDeclaredConstructor().newInstance()
+            _getl = _getl.getClass().getConstructor().newInstance()
             _getl._getlInstance = true
             _getl.setGetlSystemParameter('mainInstance', _getl)
         }
@@ -900,13 +899,19 @@ Examples:
         }
     }
 
-    /** Work in unit test mode */
-    Boolean getUnitTestMode() { BoolUtils.IsValue(_params.unitTestMode) }
-    /** Work in unit test mode */
+    /** Unit test mode */
+    Boolean getUnitTestMode() { BoolUtils.IsValue(getGetlSystemParameter('unitTestMode')) }
+    /** Unit test mode */
     @Synchronized
     void setUnitTestMode(Boolean value) {
-        _params.unitTestMode = value
+        if (value == true && configuration.environment == 'prod')
+            throw new ExceptionGETL('It is not allowed to enable unit testing mode for prod environment!')
+        setGetlSystemParameter('unitTestMode', value)
     }
+    /** Enable unit test mode */
+    void enableUnitTestMode() { setUnitTestMode(true) }
+    /** Disable unit test mode */
+    void disableUnitTestMode() { setUnitTestMode(false) }
 
     /** Run DSL script */
     Object runDsl(def ownerObject,
@@ -918,8 +923,8 @@ Examples:
         try {
             if (ownerObject != null) {
                 _ownerObject = ownerObject
-                if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert)
-                    setUnitTestMode(true)
+                /*if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert)
+                    enableUnitTestMode()*/
             }
 
             if (cl != null) {
@@ -962,7 +967,7 @@ Examples:
     }
 
     /** Running init script */
-    Boolean getIsInitMode() { BoolUtils.IsValue(_params.isInitMode) }
+    Boolean getIsInitMode() { BoolUtils.IsValue(getGetlSystemParameter('isInitMode')) }
 
     /** Set language parameters */
     protected void importGetlParams(Map importParams) {
@@ -974,7 +979,8 @@ Examples:
         _configOpts.importParams((importParams.configOpts as ConfigSpec).params, true)
         _logOpts.importParams((importParams.logOpts as LogSpec).params, !isThread)
 
-        _repositoryFilter = _params.repositoryFilter as RepositoryFilter
+        //_repositoryFilter = _params.repositoryFilter as RepositoryFilter
+        //_repositoryFilter.importParams((_params.repositoryFilter as RepositoryFilter).params, false)
         _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
         _etl = _params.etl as EtlSpec
         _models = _params.models as ModelSpec
@@ -1006,7 +1012,7 @@ Examples:
     }
 
     /** list of executed script classes and call parameters */
-    protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
+    protected SynchronizeObject getExecutedClasses() { getGetlSystemParameter('executedClasses') as SynchronizeObject }
 
     /** Repository object filtering manager */
     private RepositoryFilter _repositoryFilter
@@ -1507,7 +1513,7 @@ Examples:
     }
 
     /** Default JDBC connection for datasets */
-    private ConcurrentHashMap<String, JDBCConnection> _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
+    private final Map<String, JDBCConnection> _defaultJDBCConnection = new HashMap<String, JDBCConnection>()
 
     /** Default JDBC connection for datasets */
     JDBCConnection defaultJdbcConnection(String datasetClassName = null) {
@@ -1518,9 +1524,11 @@ Examples:
             if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listJdbcClasses))
                 throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
 
-            res = _defaultJDBCConnection.get(datasetClassName)
-            if (res == null && lastJdbcDefaultConnection != null && datasetClassName == RepositoryDatasets.QUERYDATASET)
-                res = lastJdbcDefaultConnection
+            synchronized (_lockLastJDBCDefaultConnection) {
+                res = _defaultJDBCConnection.get(datasetClassName)
+                if (res == null && lastJdbcDefaultConnection != null && datasetClassName == RepositoryDatasets.QUERYDATASET)
+                    res = lastJdbcDefaultConnection
+            }
         }
 
         if (_langOpts.useThreadModelCloning && IsCurrentProcessInThread(false)) {
@@ -1539,15 +1547,17 @@ Examples:
 
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
-        if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
+        /*if (IsCurrentProcessInThread(true))
+            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')*/
 
-        if (datasetClassName != null) {
-            if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listJdbcClasses))
-                throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
-            _defaultJDBCConnection.put(datasetClassName, value)
+        synchronized (_lockLastJDBCDefaultConnection) {
+            if (datasetClassName != null) {
+                if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listJdbcClasses))
+                    throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
+                _defaultJDBCConnection.put(datasetClassName, value)
+            }
+            setLastJdbcDefaultConnection(value)
         }
-        setLastJdbcDefaultConnection(value)
 
         return value
     }
@@ -1571,18 +1581,20 @@ Examples:
         }
     }
 
-    private ConcurrentHashMap<String, FileConnection> _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
+    private final Map<String, FileConnection> _defaultFileConnection = new HashMap<String, FileConnection>()
 
     /** Default file connection for datasets */
     FileConnection defaultFileConnection(String datasetClassName = null) {
         FileConnection res
-        if (datasetClassName == null)
-            res = lastFileDefaultConnection
-        else {
-            if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listFileClasses))
-                throw new ExceptionDSL("$datasetClassName is not file dataset class!")
+        synchronized (_lockLastFileDefaultConnection) {
+            if (datasetClassName == null)
+                res = lastFileDefaultConnection
+            else {
+                if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listFileClasses))
+                    throw new ExceptionDSL("$datasetClassName is not file dataset class!")
 
-            res = _defaultFileConnection.get(datasetClassName)
+                res = _defaultFileConnection.get(datasetClassName)
+            }
         }
 
         if (_langOpts.useThreadModelCloning && IsCurrentProcessInThread(false)) {
@@ -1601,16 +1613,18 @@ Examples:
 
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
-        if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
+        /*if (IsCurrentProcessInThread(true))
+            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')*/
 
-        if (datasetClassName != null) {
-            if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listFileClasses))
-                throw new ExceptionDSL("$datasetClassName is not file dataset class!")
+        synchronized (_lockLastFileDefaultConnection) {
+            if (datasetClassName != null) {
+                if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listFileClasses))
+                    throw new ExceptionDSL("$datasetClassName is not file dataset class!")
 
-            _defaultFileConnection.put(datasetClassName, value)
+                _defaultFileConnection.put(datasetClassName, value)
+            }
+            setLastFileDefaultConnection(value)
         }
-        setLastFileDefaultConnection(value)
 
         return value
     }
@@ -1634,18 +1648,20 @@ Examples:
         }
     }
 
-    private ConcurrentHashMap<String, Connection> _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
+    private final Map<String, Connection> _defaultOtherConnection = new HashMap<String, Connection>()
 
     /** Default other type connection for datasets */
     Connection defaultOtherConnection(String datasetClassName = null) {
         Connection res
-        if (datasetClassName == null)
-            res = lastOtherDefaultConnection
-        else {
-            if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listOtherClasses))
-                throw new ExceptionDSL("$datasetClassName is not dataset class!")
+        synchronized (_lockLastOtherDefaultConnection) {
+            if (datasetClassName == null)
+                res = lastOtherDefaultConnection
+            else {
+                if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listOtherClasses))
+                    throw new ExceptionDSL("$datasetClassName is not dataset class!")
 
-            res = _defaultOtherConnection.get(datasetClassName)
+                res = _defaultOtherConnection.get(datasetClassName)
+            }
         }
 
         if (_langOpts.useThreadModelCloning && IsCurrentProcessInThread(false)) {
@@ -1664,16 +1680,18 @@ Examples:
 
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
-        if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
+        /*if (IsCurrentProcessInThread(true))
+            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')*/
 
-        if (datasetClassName != null) {
-            if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listOtherClasses))
-                throw new ExceptionDSL("$datasetClassName is not dataset class!")
+        synchronized (_lockLastOtherDefaultConnection) {
+            if (datasetClassName != null) {
+                if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listOtherClasses))
+                    throw new ExceptionDSL("$datasetClassName is not dataset class!")
 
-            _defaultOtherConnection.put(datasetClassName, value)
+                _defaultOtherConnection.put(datasetClassName, value)
+            }
+            setLastOtherDefaultConnection(value)
         }
-        setLastOtherDefaultConnection(value)
 
         return value
     }
@@ -2262,7 +2280,7 @@ Examples:
 
         Script script
         synchronized (_lockMainThread) {
-            script = groovyClass.getDeclaredConstructor().newInstance() as Script
+            script = groovyClass.getConstructor().newInstance() as Script
         }
         def res = runGroovyInstance(script, true, vars, extVars, events)
 
@@ -2310,8 +2328,8 @@ Examples:
         def exitCode = 0
         def result = null
 
-        if (runScript)
-            _repositoryFilter.pushOptions(true)
+        /*if (runScript)
+            _repositoryFilter.pushOptions(true)*/
 
         def isGetlScript = (script instanceof Getl)
         try {
@@ -2422,7 +2440,7 @@ Examples:
                     releaseTemporaryObjects(script as Getl)
 
                 this._setGetlInstance()
-                _repositoryFilter.pullOptions()
+                /*_repositoryFilter.pullOptions()*/
             }
         }
 
@@ -2621,7 +2639,7 @@ Examples:
      * @return
      */
     Getl useScript(Class<Getl> scriptClass, Map vars = new HashMap(), Map extVars = null, ScriptEvents events = null) {
-        def script = scriptClass.getDeclaredConstructor().newInstance() as Getl
+        def script = scriptClass.getConstructor().newInstance() as Getl
         return useScript(script, vars, extVars, events)
     }
 
@@ -2630,7 +2648,7 @@ Examples:
      * @param script script to use
      * @param vars set values for public script fields declared
      * @param extVars extended variables
-     * @param events script events codeadditional variables for the script
+     * @param events script events code additional variables for the script
      * @return
      */
     Getl useScript(Getl script, Map vars = new HashMap(), Map extVars = null, ScriptEvents events = null) {
@@ -5112,21 +5130,7 @@ Examples:
     /** Run code in multithread mode */
     Executor thread(@DelegatesTo(Executor)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.Executor']) Closure cl) {
-        def disposeConnections = { Map<String, List<ExecutorThread.CloneObject>> list ->
-            (list?.get('getl.lang.sub.RepositoryConnections') as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
-                def con = cloneObject.cloneObject as Connection
-                if (con != null && con.driver?.isSupport(Driver.Support.CONNECT))
-                    con.connected = false
-            }
-
-            (list?.get('getl.lang.sub.RepositoryFilemanagers') as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
-                def man = cloneObject.cloneObject as Manager
-                if (man != null && man.connected) man.disconnect()
-            }
-        }
-
         def parent = new Executor(abortOnError: true, dslCreator: this)
-        parent.disposeThreadResource(disposeConnections)
         parent.dumpErrors = logging.logPrintStackTraceError
         parent.logErrors = logging.logPrintStackTraceError
         parent.debugElementOnError = logging.logPrintStackTraceError
@@ -5390,7 +5394,7 @@ Examples:
     void ifUnitTestMode(String env,
                         @DelegatesTo(GetlTest)
                         @ClosureParams(value = SimpleType, options = ['getl.test.GetlTest']) Closure cl) {
-        if (unitTestMode && (env == null || configuration.environment == env))
+        if (this.unitTestMode && (env == null || configuration.environment == env))
             testCase(cl)
     }
 
@@ -5399,7 +5403,7 @@ Examples:
      * @param cl
      */
     void ifRunAppMode(Closure cl) {
-        if (!unitTestMode)
+        if (!this.unitTestMode)
             cl.call()
     }
 

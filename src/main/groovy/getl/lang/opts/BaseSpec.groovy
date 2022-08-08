@@ -190,7 +190,18 @@ class BaseSpec implements Cloneable {
     @Override
     Object clone() {
         def clParams = CloneUtils.CloneMap(params)
-        def res = this.getClass().newInstance(this.ownerObject, false, clParams) as BaseSpec
+        //def res = this.getClass().newInstance(this.ownerObject, false, clParams) as BaseSpec
+
+        def constr = this.getClass().getConstructor([Object, Boolean, Map].toArray([] as Class[]))
+        def res
+        try {
+            res = constr.newInstance(this.ownerObject, false, clParams) as BaseSpec
+        }
+        catch (Exception e) {
+            println this.getClass()
+            throw e
+        }
+
         return res
     }
 }

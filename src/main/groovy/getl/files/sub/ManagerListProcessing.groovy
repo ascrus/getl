@@ -22,7 +22,7 @@ abstract class ManagerListProcessing {
 	/** Clone class for use in thread */
 	@Synchronized
 	ManagerListProcessing newProcessing() {
-		ManagerListProcessing res = getClass().getDeclaredConstructor().newInstance() as ManagerListProcessing
+		ManagerListProcessing res = getClass().getConstructor().newInstance() as ManagerListProcessing
 		res.params.putAll(params)
 
 		return res

@@ -44,6 +44,15 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         saveParamValue('sourceManagerName', manager.dslNameObject)
     }
 
+    /** Create new model file */
+    FileSpec newFile(String fileName) {
+        def modelSpecClass = usedModelClass()
+        def constr = modelSpecClass.getConstructor([FilesModel, String].toArray([] as Class[]))
+        def res = constr.newInstance(this, fileName) as T
+
+        return res
+    }
+
     /**
      * Add file to model
      * @param filePath path to file
@@ -57,7 +66,8 @@ class FilesModel<T extends FileSpec> extends BaseModel {
 
         def parent = ((usedObjects as List<ReferenceFileSpec>).find { modelFile -> (modelFile.filePath == filePath) }) as T
         if (parent == null)
-            parent = newSpec(filePath) as T
+            //parent = createSpec(filePath) as T
+            parent = addSpec(newFile(filePath)) as T
 
         parent.runClosure(cl)
 

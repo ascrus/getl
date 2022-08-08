@@ -7,7 +7,7 @@ import getl.lang.Getl
  * Getl repository registration and operation interface
  * @author Alexsey Konstantinov
  */
-interface GetlRepository {
+interface GetlRepository extends Cloneable {
     /** Name in Getl Dsl repository */
     @JsonIgnore
     String getDslNameObject()
@@ -28,4 +28,7 @@ interface GetlRepository {
 
     /** Clean Dsl properties */
     void dslCleanProps()
+
+    @Override
+    Object clone()
 }

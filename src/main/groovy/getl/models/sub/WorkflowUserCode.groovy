@@ -1,7 +1,6 @@
+//file:noinspection unused
 package getl.models.sub
 
-import com.cloudera.impala.jdbc42.internal.com.cloudera.altus.shaded.org.bouncycastle.util.Times
-import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.ScriptEvents
 import getl.models.Workflows
@@ -18,9 +17,6 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  */
 class WorkflowUserCode extends Getl {
-    private final Map<String, Map<String, Object>> scriptVars = new HashMap<String, Map<String, Object>>()
-    private final Map<String, ScriptEvents> scriptEvents = new HashMap<String, ScriptEvents>()
-
     /** Current workflow model */
     public Workflows currentModel
 
@@ -29,20 +25,7 @@ class WorkflowUserCode extends Getl {
 
     /** Set variable value in workflow script */
     Map<String, Object> vars(String scriptName) {
-        if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel('The script name is required for "vars" function!')
-
-        if (currentModel.scriptByName(scriptName) == null)
-            throw new ExceptionModel("There is script \"$scriptName\" specified in the vars function, which is not defined " +
-                    "for model \"${currentModel.dslNameObject}\"!")
-
-        scriptName = scriptName.toUpperCase()
-        def sv = scriptVars.get(scriptName)
-        if (sv == null) {
-            sv = new HashMap<String, Object>()
-            scriptVars.put(scriptName, sv)
-        }
-        return sv
+        return currentModel.vars(scriptName)
     }
 
     /** Return result from workflow script */
@@ -58,24 +41,7 @@ class WorkflowUserCode extends Getl {
 
     /** Events on script */
     ScriptEvents events(String scriptName, @DelegatesTo(ScriptEvents) Closure cl = null) {
-        if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel('The script name is required for "vars" function!')
-
-        if (currentModel.scriptByName(scriptName) == null)
-            throw new ExceptionModel("There is script \"$scriptName\" specified in the vars function, which is not defined " +
-                    "for model \"${currentModel.dslNameObject}\"!")
-
-        scriptName = scriptName.toUpperCase()
-        def res = scriptEvents.get(scriptName)
-        if (res == null) {
-            res = new ScriptEvents()
-            scriptEvents.put(scriptName, res)
-        }
-
-        if (cl != null)
-            res.tap(cl)
-
-        return res
+        return currentModel.events(scriptName, cl)
     }
 
     /** List of script in model */

@@ -8,7 +8,7 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  */
 class ScriptEvents extends HashMap<String, HashMap<String, Closure>> {
-    /** Name of all objects identificator */
+    /** Name of all objects identification */
     static public final ALL_OBJECTS = '#ALL#'
 
     /**
