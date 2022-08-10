@@ -316,4 +316,15 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		con.tryConnect()
 		con.currentJDBCDriver.dropSequence(fullName, ifExists)
 	}
+
+	/**
+	 * Restart sequence value
+	 * @param newValue new value
+	 */
+	void restartWith(Long newValue) {
+		validConnection()
+		def con = currentJDBCConnection
+		con.tryConnect()
+		con.currentJDBCDriver.restartSequence(fullName, newValue)
+	}
 }

@@ -117,7 +117,8 @@ class JDBCDriver extends Driver {
 				ddlTruncateTable: 'TRUNCATE TABLE {tableName}',
 				ddlTruncateDelete: 'DELETE FROM {tableName}',
 				ddlCreateSequence: 'CREATE SEQUENCE{ %ifNotExists%} {name}{ INCREMENT BY %increment%}{ MINVALUE %min%}{ MAXVALUE %max%}{ START WITH %start%}{ CACHE %cache%}{%CYCLE%}',
-				ddlDropSequence: 'DROP SEQUENCE{ %ifExists%} {name}'
+				ddlDropSequence: 'DROP SEQUENCE{ %ifExists%} {name}',
+				ddlRestartSequence: 'ALTER SEQUENCE {name} RESTART WITH {value}'
 		]
 	}
 
@@ -3195,5 +3196,11 @@ FROM {source} {after_from}'''
 		}
 
 		return res
+	}
+
+	/** Restart sequence value */
+	void restartSequence(String name, Long newValue) {
+		def qp = [name: name, value: newValue]
+		executeCommand(sqlExpressionValue('ddlRestartSequence', qp))
 	}
 }
