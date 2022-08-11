@@ -478,7 +478,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 
 	/** Logging echo message */
-	private void doEcho(SQLParser parser) { /* TODO: если ECHO последнее и перед ним SET без точки запятой, то глотается */
+	private void doEcho(SQLParser parser) {
 		def parseScript = parser.lexer.script
 
 		def posHeader = parser.lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], 'ECHO')

@@ -266,7 +266,7 @@ class FlowCopySpec extends FlowBaseSpec {
     void setOnFinalizing(Closure value) { saveParamValue('onDone', value) }
     /** After process copy rows code */
     void finalizing(Closure value) {
-        setOnPrepare(value)
+        setOnFinalizing(value)
     }
 
     /** Source rows filtering code */

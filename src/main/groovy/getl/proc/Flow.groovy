@@ -615,9 +615,8 @@ class Flow {
 			
 			if (inheritFields)
 				assignFieldToTemp(source, writer, mapRules)
-			else
-				if (isBulkLoad)
-					PrepareBulkDsFields(dest, bulkDS, mapRules)
+			else if (isBulkLoad)
+				PrepareBulkDsFields(dest, bulkDS, mapRules)
 
 			if (initCode != null)
 				initCode.call()

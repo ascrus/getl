@@ -64,12 +64,22 @@ class FlowTest extends GetlDslTest {
             valid(table1)
 
             table1.truncate()
+            def initValue = 0
+            def doneValue = 0
             etl.copyRows(file1, table1) {
+                prepare {
+                    initValue = 1
+                }
+                finalizing {
+                    doneValue = 1
+                }
                 copyRow { s, d ->
                     assertEquals(s."class", d."class")
                 }
             }
             valid(table1)
+            assertEquals(1, initValue)
+            assertEquals(1, doneValue)
 
             etl.copyRows(file1, table1) {
                 clear = true
