@@ -1548,8 +1548,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				useFiles.create()
 				
 				def validFiles = new TableDataset(connection: storyTable.connection,
-						tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
-						type: JDBCDataset.Type.LOCAL_TEMPORARY)
+						tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
 				//noinspection SpellCheckingInspection
 				validFiles.field = newFiles.getFields(['FILENAME', 'FILEDATE', 'FILESIZE'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
@@ -1778,7 +1777,7 @@ FROM (
 				ds.retrieveFields()
 
 			String storyTable = "T_${StringUtils.RandomStr().replace('-', '_').toUpperCase()}"
-			storyFiles = new TableDataset(connection: ds.connection, tableName: storyTable, manualSchema: true, type: JDBCDataset.Type.LOCAL_TEMPORARY)
+			storyFiles = new TableDataset(connection: ds.connection, tableName: storyTable, manualSchema: true)
 			storyFiles.field = fileList.field
 			storyFiles.removeField('FILEID')
 			storyFiles.create()

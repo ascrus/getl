@@ -33,7 +33,7 @@ class KafkaDriver extends Driver {
     @Override
     protected void registerParameters() {
         super.registerParameters()
-        methodParams.register("eachRow", ['fields', 'filter', 'readDuration'])
+        methodParams.register('eachRow', ['fields', 'filter', 'readDuration', 'offsetForRegister', 'limit', 'maxPollRecords'])
     }
 
     @Override
@@ -117,33 +117,29 @@ class KafkaDriver extends Driver {
         def con = currentKafkaConnection
         def topicName = ds.kafkaTopic
 
-        /*if (ds.autoCreateTopic())
-            createTopic(topicName, 1, 1.shortValue(), true)*/
-
         def fields = [] as List<String>
         if (prepareCode != null) {
             prepareCode.call(fields)
         } else if (params.fields != null)
             fields = ListUtils.ToList(params.fields) as List<String>
 
-        def ro = ds.readOpts
         def keyName = ds.keyName
-        def dur = Duration.ofMillis((params.readDuration as Long)?:ro.readDuration?:(Long.MAX_VALUE))
-        def limit = ro.limit
-        def maxPoolRecords = (params.maxPollRecords as Integer)?:ro.maxPollRecords?:10000
+        def dur = (params.readDuration != null)?Duration.ofSeconds(params.readDuration as Long):Duration.ofMillis(Long.MAX_VALUE)
+        def limit = (params.limit as Long)?:0L
+        def maxPoolRecords = (params.maxPollRecords as Integer)?:10000
+        def offsetForRegister = (params.offsetForRegister as String)?:KafkaDataset.offsetForRegisterLatest
 
         def props = new Properties()
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, con.bootstrapServers)
         props.put(ConsumerConfig.GROUP_ID_CONFIG, con.groupId)
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, 'latest')
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetForRegister.toLowerCase())
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.name)
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.name)
-        if (limit != null && limit > 0)
+        if (limit != 0 && limit < maxPoolRecords)
             props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, limit)
         else
             props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPoolRecords)
-
         props.putAll(con.connectProperties)
 
         def res = 0L
@@ -169,6 +165,7 @@ class KafkaDriver extends Driver {
             kafkaConsumer.assign(topicParts)
             def endOffs = kafkaConsumer.endOffsets(topicParts)
 
+            def countRows = 0L
             def curRows = 0L
             def countPortions = 1
             def isStart = true
@@ -179,7 +176,7 @@ class KafkaDriver extends Driver {
                 while (endOffs.any {kafkaConsumer.position(it.key) < it.value }) {
                     ConsumerRecords<String, String> records = kafkaConsumer.poll(dur)
 
-                    if (curRows >= 10000) { /* TODO: Сделать управляемый параметр */
+                    if (curRows >= maxPoolRecords) {
                         writer.append(']')
                         writer.close()
 
@@ -204,11 +201,12 @@ class KafkaDriver extends Driver {
                                     writer.append(',')
                                 writer.append(recValue)
                                 curRows++
+                                countRows++
                             }
                         }
                     }
 
-                    if (limit != null && limit > 0)
+                    if (limit > 0 && countRows >= limit)
                         break
                 }
                 writer.append(']')
@@ -228,7 +226,7 @@ class KafkaDriver extends Driver {
                     useConnection jsonCon
                     extension = 'json'
                     field = (!fields.isEmpty()) ? ds.getFields(fields) : ds.field
-                    rootNode = '.' /* TODO: вынести управляемым параметром */
+                    rootNode = '.'
                     dataNode = ds.dataNode
                     formatDate = ds.formatDate()
                     formatTime = ds.formatTime()
@@ -253,7 +251,6 @@ class KafkaDriver extends Driver {
             kafkaConsumer.commitSync()
         }
         finally {
-            kafkaConsumer.unsubscribe()
             kafkaConsumer.close()
         }
         return res

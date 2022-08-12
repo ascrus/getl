@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.tfs
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -6,7 +7,6 @@ import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.h2.*
-import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import org.h2.tools.DeleteDbFiles
 
@@ -84,7 +84,7 @@ class TDS extends H2Connection {
 	/** Generate new table from temporary data stage */
 	static TDSTable dataset () {
 		def res = new TDSTable()
-		res.connection = new TDS(connectDatabase: storageDatabaseName)
+		res.connection = NewDefaultConnection()
 		return res
 	}
 
@@ -109,4 +109,12 @@ class TDS extends H2Connection {
 
 	@Override
 	protected Class<TableDataset> getTableClass() { TDSTable }
+
+	/** Create new default connection */
+	static TDS NewDefaultConnection() { new TDS(connectDatabase: storageDatabaseName) }
+
+	/** Shutdown default TDS database and close all sessions */
+	static void ShutdownDefaultDatabase(Boolean immediately = false) {
+		NewDefaultConnection().shutdownDatabase((immediately)?'IMMEDIATELY':null)
+	}
 }

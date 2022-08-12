@@ -3,6 +3,7 @@ package getl.test
 import getl.config.ConfigFiles
 import getl.config.ConfigManager
 import getl.lang.Getl
+import getl.tfs.TDS
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -63,6 +64,7 @@ class GetlTest extends GroovyAssert {
         Getl.CleanGetl(false)
         Logs.Done()
         FileUtils.ListResourcePath.clear()
+        TDS.NewDefaultConnection().executeCommand('DROP ALL OBJECTS')
     }
 
     @Before

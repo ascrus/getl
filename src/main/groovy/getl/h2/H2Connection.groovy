@@ -73,4 +73,12 @@ class H2Connection extends JDBCConnection {
 			return null
 		return rows[0].value as String
 	}
+
+	/**
+	 * Shutdown database and close all sessions
+	 * @param option shutdown option: IMMEDIATELY, COMPACT or DEFRAG
+	 */
+	void shutdownDatabase(String option = null) {
+		executeCommand('SHUTDOWN{ %option%}', [queryParams: [option: option]])
+	}
 }

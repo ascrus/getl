@@ -180,8 +180,8 @@ class ExecutorTest extends GetlTest {
                 (proc.counter.list as List<Connection>).each { con -> assertFalse(con.connected)}
             }
 
-            assertEquals(1, sessions.countRow())
             System.gc()
+            assertEquals(1, sessions.countRow())
             def heapSizeFinish = Runtime.runtime.totalMemory()
             logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)} free: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
             embeddedTable('table1').drop(ifExists: true)

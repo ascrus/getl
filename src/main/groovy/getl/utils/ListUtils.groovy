@@ -40,8 +40,11 @@ class ListUtils {
 	static List<String> QuoteList(List list, String quote) {
 		if (list == null) return null
 		
-		def res = []
-		list.each { if (it != null && it != '') res << "${quote}${it}${quote}" }
+		def res = [] as List<String>
+		list.each {
+			if (it != null && it != '')
+				res.add("${quote}${it}${quote}".toString())
+		}
 
 		return res
 	}
@@ -77,7 +80,7 @@ class ListUtils {
 	static List<String> ToLowerCase(List<String> list) {
 		if (list == null) return null
 		
-		def res = []
+		def res = [] as List<String>
 		list.each {
 			res << it.toLowerCase()
 		}
@@ -92,7 +95,7 @@ class ListUtils {
 	static List<String> ToUpperCase(List<String> list) {
 		if (list == null) return null
 		
-		def res = []
+		def res = [] as List<String>
 		list.each {
 			res << it.toUpperCase()
 		}

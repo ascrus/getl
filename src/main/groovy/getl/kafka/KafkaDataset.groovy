@@ -14,6 +14,10 @@ import groovy.transform.stc.SimpleType
 
 @InheritConstructors
 class KafkaDataset extends Dataset {
+    static public String offsetForRegisterLatest = 'latest'
+    static public String offsetForRegisterEarliest = 'earliest'
+    static public String offsetForRegisterNone = 'none'
+
     @Override
     protected void initParams() {
         super.initParams()
