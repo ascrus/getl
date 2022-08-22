@@ -392,6 +392,20 @@ class ConvertUtils {
 	}
 
 	/**
+	 * Convert object to list
+	 * @param value any value
+	 * @return list
+	 */
+	static List Object2List(Object value) {
+		if (value == null)
+			return null
+		if (value instanceof List)
+			return (value as List)
+
+		return String2List(value.toString())
+	}
+
+	/**
 	 * Convert string expression to map structure
 	 * @param value expression
 	 * @return map
@@ -468,6 +482,20 @@ class ConvertUtils {
 		}
 
 		return res
+	}
+
+	/**
+	 * Convert object to map structure
+	 * @param value any value
+	 * @return map
+	 */
+	static Map Object2Map(Object value) {
+		if (value == null)
+			return null
+		if (value instanceof Map)
+			return (value as Map)
+
+		return String2Map(value.toString())
 	}
 
 	/**

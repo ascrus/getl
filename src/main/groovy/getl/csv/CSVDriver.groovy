@@ -551,6 +551,17 @@ class CSVDriver extends FileDriver {
 		return header.toArray()
 	}
 
+	/**
+	 * Get reader local data
+	 * @param dataset
+	 * @param localData
+	 * @return
+	 */
+	@CompileStatic
+	Reader getLocalDataReader(FileDataset dataset, String localData) {
+		return new StringReader(localData?:'')
+	}
+
 	@CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -577,12 +588,16 @@ class CSVDriver extends FileDriver {
 		def skipRows = ConvertUtils.Object2Long(params.skipRows)?:0L
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L
 
+		def localData = (params.localDatasetData as String)?:(cds.localDatasetData as String)
+
 		def filter = params.filter as Closure<Boolean>
 
 		//noinspection UnnecessaryQualifiedReference
 		CSVDriver.ReadParams p = readParamDataset(cds, params)
 		def countRec = 0L
 		Boolean isSplit = BoolUtils.IsValue(p.isSplit)
+		if (isSplit && localData != null)
+			throw new ExceptionGETL('When working with local data, the "isSplit" option must be turned off!')
 
 		def fileMask = fileMaskDataset(cds, isSplit)
 		List<Map> files
@@ -590,7 +605,7 @@ class CSVDriver extends FileDriver {
 		Integer numPortion = null
 		Reader bufReader
 		if (isSplit) {
-			def fm = cds.currentCsvConnection.connectionFileManager.cloneManager(null, dataset.dslCreator) as FileManager
+			def fm = cds.currentCsvConnection.connectionFileManager.cloneManager(null, cds.dslCreator) as FileManager
 
 			def vars = new HashMap()
 			vars.put('number', [type: Field.Type.INTEGER, len: 4])
@@ -606,7 +621,11 @@ class CSVDriver extends FileDriver {
 		else {
 			files = [] as List<Map>
 		}
-		bufReader = getFileReader(dataset as FileDataset, params, numPortion)
+
+		if (localData != null)
+			bufReader = getLocalDataReader(cds, localData)
+		else
+			bufReader = getFileReader(cds, params, numPortion)
 
 		Closure processError = (params.processError != null)?params.processError as Closure:null
 		def isValid = BoolUtils.IsValue(params.isValid, cds.isConstraintsCheck())
@@ -623,17 +642,17 @@ class CSVDriver extends FileDriver {
 			if (p.isHeader) {
 				header = reader.getHeader(true)
 				if (fieldOrderByHeader)
-					fileFields = header2fields(header, dataset.field)
+					fileFields = header2fields(header, cds.field)
 				else {
-					header = fields2header(dataset.field, null)
-					fileFields = dataset.field
+					header = fields2header(cds.field, null)
+					fileFields = cds.field
 				}
 			}
 			else {
-				fileFields = dataset.field
-				header = fields2header(dataset.field, null)
+				fileFields = cds.field
+				header = fields2header(cds.field, null)
 				if (fieldOrderByHeader) {
-					try (def newBufReader = getFileReader(dataset as FileDataset, params, numPortion)) {
+					try (def newBufReader = getFileReader(cds, params, numPortion)) {
 						CsvMapReader newReader
 						if (escaped)
 							newReader = new CsvMapReader(new CSVEscapeTokenizer(newBufReader, pref, p.isHeader), pref)
@@ -665,7 +684,7 @@ class CSVDriver extends FileDriver {
 				listFields = fileFields.findAll { field -> !field.name.matches('(?i)^[_]getl[_]csv[_]col[_]\\d+') }
 						.collect { field -> field.name }
 			
-			CellProcessor[] cp = fields2cellProcessor(dataset: dataset, fields: listFields, header: header,
+			CellProcessor[] cp = fields2cellProcessor(dataset: cds, fields: listFields, header: header,
 					isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped,
 					nullAsValue: p.nullAsValue, formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime,
 					formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime,
@@ -710,7 +729,7 @@ class CSVDriver extends FileDriver {
 						if (portion != null && (portion + 1) < files.size()) {
 							reader.close()
 							portion++
-							bufReader = getFileReader(dataset as FileDataset, params, (Integer)files[portion].number)
+							bufReader = getFileReader(cds, params, (Integer)files[portion].number)
 							
 							if (escaped) {
 								reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
@@ -741,7 +760,7 @@ class CSVDriver extends FileDriver {
 		}
 		finally {
 			reader.close()
-			dataset.sysParams.countReadPortions = portion + 1
+			cds.sysParams.countReadPortions = portion + 1
 		}
 		
 		return countRec

@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.*
 import getl.csv.*
 import getl.data.*
+import getl.data.sub.AttachData
 import getl.db2.*
-import getl.dbf.DBFConnection
-import getl.dbf.DBFDataset
+import getl.dbf.*
 import getl.deploy.Version
 import getl.driver.Driver
 import getl.excel.*
@@ -18,17 +18,11 @@ import getl.hive.*
 import getl.impala.*
 import getl.jdbc.*
 import getl.json.*
-import getl.kafka.KafkaConnection
-import getl.kafka.KafkaDataset
+import getl.kafka.*
 import getl.lang.opts.*
 import getl.lang.sub.*
-import getl.models.MapTables
-import getl.models.MonitorRules
-import getl.models.ReferenceFiles
-import getl.models.ReferenceVerticaTables
-import getl.models.SetOfTables
-import getl.models.sub.BaseModel
-import getl.models.sub.RepositoryWorkflows
+import getl.models.*
+import getl.models.sub.*
 import getl.mssql.*
 import getl.mysql.*
 import getl.netezza.*
@@ -41,6 +35,8 @@ import getl.salesforce.*
 import getl.stat.*
 import getl.test.GetlTest
 import getl.tfs.*
+import getl.transform.ArrayDataset
+import getl.transform.ArrayDatasetConnection
 import getl.utils.*
 import getl.utils.sub.*
 import getl.vertica.*
@@ -1716,7 +1712,7 @@ Examples:
 
     /** Register dataset in repository */
     Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
-                                      Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
+                                      Connection defaultConnection = null, Class<Connection> classConnection = null, Closure cl = null) {
         (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).register(this, connection,
                 datasetClassName, name, registration, defaultConnection, classConnection, cl)
     }
@@ -4694,7 +4690,7 @@ Examples:
     }
 
     /** Use default Kafka connection for new datasets */
-    KafkaConnection useSalesforceConnection(KafkaConnection connection) {
+    KafkaConnection useKafkaConnection(KafkaConnection connection) {
         useOtherConnection(RepositoryDatasets.KAFKADATASET, connection) as KafkaConnection
     }
 
@@ -5433,5 +5429,133 @@ Examples:
      */
     static String Size2String(Long bytes) {
         return FileUtils.SizeBytes(bytes)
+    }
+
+    /**
+     * Attach local data for dataset processing
+     * @param dataset destination dataset
+     * @param data local data
+     * @return destination dataset
+     */
+    Dataset attachToDataset(Object data, Dataset dataset) {
+        if (dataset == null)
+            throw new NullPointerException('Required dataset!')
+        if (!(dataset instanceof AttachData))
+            throw new ExceptionDSL("Dataset \"$dataset\" is not attachment dataset type!")
+
+        (dataset as AttachData).localDatasetData = data
+
+        return dataset as Dataset
+    }
+
+    /**
+     * Attach local data for dataset processing
+     * @param datasetName destination dataset
+     * @param data local data
+     * @return destination dataset
+     */
+    Dataset attachToDataset(Object data, String datasetName) {
+        if (datasetName == null)
+            throw new NullPointerException('Required dataset name!')
+
+        def dataset = dataset(datasetName)
+        return attachToDataset(data, dataset)
+    }
+
+    /**
+     * Attach local data for dataset processing
+     * @param dataset destination dataset
+     * @param data local data
+     * @return destination dataset
+     */
+    ArrayDataset attachToArray(Iterable data, ArrayDataset dataset) {
+        if (dataset == null)
+            throw new NullPointerException('Required dataset!')
+
+        dataset.localDatasetData = data
+
+        return dataset
+    }
+
+    /**
+     * Attach local data for dataset processing
+     * @param datasetName destination dataset, auto create if not exists
+     * @param fieldName field name for storage value (default name "value")
+     * @param data local data
+     * @return destination dataset
+     */
+    ArrayDataset attachToArray(Iterable data, String datasetName, @DelegatesTo(Field) Closure cl = null) {
+        if (datasetName == null)
+            throw new NullPointerException('Required dataset name!')
+
+        def dataset = findDataset(datasetName)
+        if (dataset == null)
+            dataset = arrayDataset(datasetName, true)
+        else if (!(dataset instanceof ArrayDataset))
+            throw new ExceptionDSL("Dataset \"$dataset\" not array dataset!")
+
+        if (cl != null)
+            dataset.field[0].tap(cl)
+
+        return attachToArray(data, dataset as ArrayDataset)
+    }
+
+    /** Array dataset */
+    ArrayDataset arrayDataset(String name, Boolean registration,
+                              @DelegatesTo(ArrayDataset)
+                              @ClosureParams(value = SimpleType, options = ['getl.transform.ArrayDataset']) Closure cl = null) {
+        def parent = registerDataset(null, RepositoryDatasets.ARRAYDATASET, name, registration,
+                defaultOtherConnection(RepositoryDatasets.ARRAYDATASET), ArrayDatasetConnection, cl) as ArrayDataset
+
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+
+    /** Array dataset */
+    ArrayDataset arrayDataset(String name,
+                              @DelegatesTo(ArrayDataset)
+                              @ClosureParams(value = SimpleType, options = ['getl.transform.ArrayDataset']) Closure cl = null) {
+        arrayDataset(name, false, cl)
+    }
+
+    /** Array dataset */
+    ArrayDataset arrayDataset(@DelegatesTo(ArrayDataset)
+                              @ClosureParams(value = SimpleType, options = ['getl.transform.ArrayDataset']) Closure cl = null) {
+        arrayDataset(null, false, cl)
+    }
+
+    /** Array dataset connection */
+    ArrayDatasetConnection arrayDatasetConnection(String name, Boolean registration,
+                                           @DelegatesTo(ArrayDatasetConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.transform.ArrayDatasetConnection']) Closure cl = null) {
+        def parent = registerConnection(RepositoryConnections.ARRAYDATASETCONNECTION, name, registration) as ArrayDatasetConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Array dataset connection */
+    ArrayDatasetConnection arrayDatasetConnection(String name,
+                                    @DelegatesTo(ArrayDatasetConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.transform.ArrayDatasetConnection']) Closure cl = null) {
+        arrayDatasetConnection(name, false, cl)
+    }
+
+    /** Array dataset connection */
+    ArrayDatasetConnection arrayDatasetConnection(@DelegatesTo(ArrayDatasetConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.transform.ArrayDatasetConnection']) Closure cl) {
+        arrayDatasetConnection(null, false, cl)
+    }
+
+    /** Array dataset default connection */
+    ArrayDatasetConnection arrayDatasetConnection() {
+        defaultOtherConnection(RepositoryDatasets.ARRAYDATASET) as ArrayDatasetConnection
+    }
+
+    /** Use default array dataset connection for new datasets */
+    ArrayDatasetConnection useArrayDatasetConnection(ArrayDatasetConnection connection) {
+        useOtherConnection(RepositoryDatasets.ARRAYDATASET, connection) as ArrayDatasetConnection
     }
 }

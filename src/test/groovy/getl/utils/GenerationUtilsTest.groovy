@@ -432,10 +432,10 @@ class GenerationUtilsTest extends getl.test.GetlTest {
 
         def cl = GenerationUtils.GenerateCalculateMapClosure(map)
         assertEquals([field1: 'field1'], map)
-        def source = [field1: 'test']
-        def dest = [:]
-        def vars = [field3: 'TEST']
-        cl(source, dest, vars)
+        def source = [field1: 'test'] as Map<String, Object>
+        def dest = [:] as Map<String, Object>
+        def vars = [field3: 'TEST'] as Map<String, Object>
+        cl.processRow(source, dest, vars)
         assertNull(dest.field1)
         assertEquals('TEST', source.field2)
         assertEquals('TEST!', source.field2_1)

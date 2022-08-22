@@ -311,7 +311,7 @@ class FileDriver extends Driver {
 		def codePage = wp.codePage as String
 		return new BufferedReader(new InputStreamReader(getFileInputStream(dataset, params, portion), codePage), dataset.bufferSize())
 	}
-	
+
 	/**
 	 * Get writer file
 	 * @param dataset

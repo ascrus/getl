@@ -23,6 +23,7 @@ import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
+import getl.transform.ArrayDatasetConnection
 import getl.vertica.VerticaConnection
 import getl.xml.XMLConnection
 import getl.yaml.YAMLConnection
@@ -58,13 +59,14 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String VERTICACONNECTION = VerticaConnection.name
     static public final String XMLCONNECTION = XMLConnection.name
     static public final String YAMLCONNECTION = YAMLConnection.name
+    static public final String ARRAYDATASETCONNECTION = ArrayDatasetConnection.name
 
     /** List of allowed connection classes */
     static public final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, DBFCONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
         MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
-        VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION
+        VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION, ARRAYDATASETCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */
@@ -81,7 +83,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed jdbc connection classes */
     static public final List<String> LISTOTHERCONNECTIONS = [
-        SALESFORCECONNECTION, KAFKACONNECTION
+        SALESFORCECONNECTION, KAFKACONNECTION, ARRAYDATASETCONNECTION
     ]
 
     /** List of allowed connection classes */

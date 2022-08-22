@@ -32,7 +32,7 @@ dependencies {
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'
-	addJars 'net.lingala.zip4j:zip4j:2.11.0'
+	addJars 'net.lingala.zip4j:zip4j:2.11.1'
 	//noinspection GradlePackageUpdate
 	addJars 'com.sun.mail:smtp:1.6.5'
 	addJars 'com.sun.mail:mailapi:1.6.5'

@@ -625,7 +625,7 @@ fileman.processing(sftp('source')) {
       // Организовать запись в подчиненную таблицу Vertica
       childs(verticaTable('detail')) {
         // Код записи в подчиненную таблицу
-        writeRow { add, source_row -> // Дескриптор и обрабатываемая запись
+        writeRow { source_row, dest_row, add -> // Записи источника и приёмника и дескриптор записи в дочерний датасет
           // Перебрать список записей из поля "details"
           source_row.details?.each { elem ->
             // Записать в подчинненую таблицу id мастер записи и значение из списка детализации

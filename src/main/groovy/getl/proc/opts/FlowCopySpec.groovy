@@ -35,6 +35,8 @@ class FlowCopySpec extends FlowBaseSpec {
     Dataset getSource() { params.source as Dataset }
     /** Source dataset */
     void setSource(Dataset value) { saveParamValue('source', value) }
+    /** Source dataset */
+    void useSource(Dataset value) { setSource(value) }
 
     /** Destination dataset */
     Dataset getDestination() { params.dest as Dataset }
@@ -309,8 +311,10 @@ class FlowCopySpec extends FlowBaseSpec {
                 @DelegatesTo(FlowCopyChildSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopyChildSpec'])
                         Closure cl) {
-        if (name == null) throw new ExceptionGETL("For the child dataset, you must specify a name!")
-        if (cl == null) throw new ExceptionGETL("Child dataset \"$name\" required processing code!")
+        if (name == null)
+            throw new NullPointerException('Required name!')
+        if (cl == null)
+            throw new NullPointerException("Child dataset \"$name\" required processing code!")
 
         def parent = childs.get(name)
         if (parent == null) {
@@ -318,7 +322,8 @@ class FlowCopySpec extends FlowBaseSpec {
             parent.dataset = dataset
             childs.put(name, parent)
         }
-        if (parent.dataset == null) throw new ExceptionGETL("Child dataset \"$name\" required dataset!")
+        if (parent.dataset == null)
+            throw new ExceptionGETL("\"$name\" required dataset!")
 
         runClosure(parent, cl)
         childs.put(name, parent)
@@ -329,11 +334,17 @@ class FlowCopySpec extends FlowBaseSpec {
                 @DelegatesTo(FlowCopyChildSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopyChildSpec'])
                         Closure cl) {
-        childs(StringUtils.RandomStr(), dataset, cl)
+        if (dataset == null)
+            throw new NullPointerException('Required dataset!')
+
+        childs(dataset.dslNameObject?:StringUtils.RandomStr(), dataset, cl)
     }
 
     /** Children flow dataset */
     Dataset childs(String name) {
+        if (name == null)
+            throw new NullPointerException('Required name!')
+
         return childs.get(name).dataset
     }
 

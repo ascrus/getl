@@ -6,6 +6,7 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.lang.Getl
+import getl.utils.sub.CalcMapVarsScript
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -2274,20 +2275,23 @@ else
 	 * @param owner getl instance
 	 * @return closure code
 	 */
-	static Closure GenerateCalculateMapClosure(Map<String, String> map, Getl owner = null, StringBuilder sb = null) {
+	static CalcMapVarsScript GenerateCalculateMapClosure(Map<String, String> map, Getl owner = null, StringBuilder sb = null) {
 		if (map == null)
 			return null
 
 		if (map.isEmpty())
 			throw new ExceptionGETL("Empty map not supported!")
 
+		def className = "Flow_calc_${StringUtils.RandomStr().replace('-', '')}"
 		if (sb == null)
 			sb = new StringBuilder()
-		sb.append('import getl.utils.*\n')
-		sb.append('import getl.xml.sub.XmlParser\n')
-		sb.append('import groovy.json.JsonSlurper\n')
-		sb.append('import groovy.yaml.YamlSlurper\n')
-		sb.append('void process(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {\n')
+
+		sb.append """import getl.utils.*
+class $className extends getl.utils.sub.CalcMapVarsScript {
+@Override
+void processRow(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {
+  if (vars == null) vars = new HashMap<String, Object>()
+"""
 
 		//noinspection RegExpRedundantEscape
 		// Calculated field
@@ -2305,6 +2309,7 @@ else
 		def clearKeys = [] as List<String>
 		def virtualValues = [:] as Map<Integer, List<String>>
 		def destValues = [] as List<String>
+		def calcVars = [:] as Map<String, String>
 		map.each { destName, sourceName ->
 			String destValue = null
 			if (sourceName != null && sourceName.length() > 0) {
@@ -2341,7 +2346,9 @@ else
 					vm = [] as List<String>
 					virtualValues.put(virtualLevel, vm)
 				}
-				vm.add("source.put('${StringUtils.EscapeJavaWithoutUTF(virtualName.toLowerCase())}', $destValue)")
+				def vName = virtualName.toLowerCase()
+				calcVars.put(vName, destValue)
+				vm.add("source.put('${StringUtils.EscapeJavaWithoutUTF(vName)}', $destValue)")
 				removeKeys.add(destName)
 			}
 			else {
@@ -2367,17 +2374,26 @@ else
 			sb.append('\n')
 		}
 
-		sb.append('}\n')
-		sb.append('def cl = { Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars ->\n')
-		sb.append('  process(source, dest, vars?:new HashMap<String, Object>())\n')
-		sb.append('}\n')
-		sb.append('return cl\n')
+		sb.append """}
+}
+
+return $className"""
 
 		MapUtils.RemoveKeys(map, removeKeys)
 		clearKeys.each { map.put(it, null) }
 
 //		println sb.toString()
 
-		return GenerationUtils.EvalGroovyClosure(value: sb.toString(), owner: owner)
+		def classGenerated = GenerationUtils.EvalGroovyScript(sb.toString(), null, false, null, owner) as Class<Getl>
+        CalcMapVarsScript res = null
+        if (owner != null)
+		    res = owner.useScript(classGenerated) as CalcMapVarsScript
+        else
+            Getl.Dsl {
+                res = useScript(classGenerated) as CalcMapVarsScript
+            }
+		res.calcVars.putAll(calcVars)
+
+        return res
 	}
 }

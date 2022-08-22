@@ -191,7 +191,7 @@ class JSONDriver extends WebServiceDriver {
 		if (dataset.field.isEmpty())
 			throw new ExceptionGETL("Required fields description with dataset!")
 
-		def data = params.data
+		def data = params.localDatasetData?:dataset.localDatasetData
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L
 
 		if (data == null) {

@@ -2,7 +2,6 @@ package getl.json
 
 import getl.lang.Getl
 import getl.lang.sub.RepositoryDatasets
-import getl.test.GetlDslTest
 import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
@@ -20,7 +19,7 @@ class JsonTest extends GetlTest {
     @Test
     void testRead() {
         Getl.Dsl(this) {
-            json {ds ->
+            json('json:customers', true) {ds ->
                 fileName = 'resource:/json/customers.json'
 
                 rootNode = 'data.customers'
@@ -33,6 +32,7 @@ class JsonTest extends GetlTest {
                 field('timestamptz') { type = timestamp_with_timezoneFieldType; alias = 'dt.ts.timestamptz' }
                 field('customer_type') {length = 10 }
                 field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
+                field('values') { type = arrayFieldType }
 
                 def i = 0
                 eachRow { row ->
@@ -56,6 +56,79 @@ class JsonTest extends GetlTest {
                 fr = rows()
                 assertEquals(1, fr.size())
                 assertEquals(1, fr[0].id)
+            }
+
+            json('json:phones', true) {
+                rootNode = '.'
+                field('phone')
+            }
+
+            json('json:customers').readOpts.onFilter = null
+            csvTempWithDataset('csv:customers', json('json:customers')) {
+                removeField('phones')
+                removeField('values')
+            }
+            csvTempWithDataset('csv:phones', json('json:phones')) {
+                field('id') { type = integerFieldType }
+            }
+            csvTemp('csv:values', true) {
+                field('id') { type = integerFieldType }
+                field('value') { type = integerFieldType }
+            }
+
+            def listPhones = [:] as Map<Integer, List<String>>
+            def listValues = [:] as Map<Integer, List<Integer>>
+            etl.copyRows(json('json:customers'), csvTemp('csv:customers')) {
+                map.'*list_phones' = '${source.phones}'
+                map.'*list_values' = '${source.values}'
+                childs(csvTemp('csv:phones')) {
+                    linkSource = json('json:phones')
+                    linkField = 'phones'
+                }
+                childs(csvTemp('csv:values')) {
+                    linkSource = arrayDataset('json:values', true) {
+                        field('value') { type = integerFieldType }
+                    }
+                    linkField = 'list_values'
+                }
+
+                copyRow { s, d ->
+                    def l = [] as List<String>
+                    (s.list_phones as List<Map>).each { phoneRow ->
+                        l << (phoneRow.phone as String)
+                    }
+                    listPhones.put(s.id as Integer, l)
+
+                    def v = [] as List<Integer>
+                    (s.list_values as List<Integer>).each { value ->
+                        v << value
+                    }
+                    listValues.put(s.id as Integer, v)
+                }
+            }
+
+            assertEquals(3, csvTemp('csv:customers').countRow())
+
+            assertEquals(['+7 (001) 100-00-01', '+7 (001) 100-00-02', '+7 (001) 100-00-03'], listPhones.get(1))
+            assertEquals(['+7 (111) 111-00-11', '+7 (111) 111-00-12'], listPhones.get(2))
+            assertEquals(['+7 (222) 222-00-11', '+7 (222) 222-00-12'], listPhones.get(3))
+
+            assertEquals([1,2,3], listValues.get(1))
+            assertEquals([4,5,6], listValues.get(2))
+            assertEquals([7,8,9], listValues.get(3))
+
+            assertEquals(7, csvTemp('csv:phones').countRow())
+            csvTemp('csv:phones').eachRow { r ->
+                assertNotNull(r.id)
+                assertNotNull(r.phone)
+                assertNotNull(listPhones.get(r.id as Integer).find { it == r.phone })
+            }
+
+            assertEquals(9, csvTemp('csv:values').countRow())
+            csvTemp('csv:values').eachRow { r ->
+                assertNotNull(r.id)
+                assertNotNull(r.value)
+                assertNotNull(listValues.get(r.id as Integer).find { it == r.value })
             }
         }
     }
@@ -303,7 +376,7 @@ class JsonTest extends GetlTest {
                     println row
                     detail.eachRow(data: row.fuelsenses) {detailRow -> println '  ' + detailRow }
                 }*/
-                def subRows = detail.rows(data: rows[0].fuelsenses)
+                def subRows = detail.rows(localDatasetData: rows[0].fuelsenses)
                 assertEquals(2, subRows.size())
                 def i = 0
                 subRows.each { r ->

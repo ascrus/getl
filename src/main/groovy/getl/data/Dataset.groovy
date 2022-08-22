@@ -3,6 +3,7 @@ package getl.data
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.data.opts.DatasetLookupSpec
+import getl.data.sub.FieldList
 import getl.data.sub.WithConnection
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
@@ -113,6 +114,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Format schema files */
 	static enum FormatSchemaFile {JSON, SLURPER}
+
+	/** Allow change list of field */
+	Boolean allowChangeFields() { true }
 
 	/**
 	 * <p>Create new dataset with name of class dataset</p>
@@ -278,20 +282,20 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	private Boolean workSetField = false
 
 	/** Fields of dataset */
-	private final List<Field> field = [] as List<Field>
+	protected final FieldList _field = new FieldList(this)
 	/** Fields of dataset */
 	List<Field> getField() {
-		if (!workSetField && !isManualSchema() && this.field.isEmpty() && schemaFileName != null)
+		if (!workSetField && !isManualSchema() &&_field.isEmpty() && schemaFileName != null)
 			loadDatasetMetadata()
 
-		return this.field
+		return this._field
 	}
 	/** Fields of dataset */
 	void setField(List<Field> value) {
 		workSetField = true
 		try {
-			field.clear()
-			saveFields(value)
+			_field.setFields(value)
+			//saveFields(value)
 		}
 		finally {
 			workSetField = false
@@ -315,7 +319,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Set fields from source list
 	 * @param value field description list
 	 */
-	protected void saveFields(List<Field> value) {
+	/*protected void saveFields(List<Field> value) {
 		value.each { Field f ->
 			if (indexOfField(f.name) != -1)
 				return
@@ -326,7 +330,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 			this.field.add(n)
 		}
-	}
+	}*/
 	
 	/**
 	 * Add list of fields
@@ -466,7 +470,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone fields to other list
 	 */
 	List<Field> fieldClone() {
-		return field.collect { field -> field.copy() }
+		return _field.collect { field -> field.copy() }
 	}
 	
 	/**
@@ -494,7 +498,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Remove all fields
 	 */
-	void removeFields() { field.clear() }
+	void removeFields() { _field.clear() }
 	
 	/**
 	* Remove field by list of name
@@ -575,7 +579,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			return
 
 		if (updateFieldType == UpdateFieldType.CLEAR)
-			field.clear()
+			_field.clear()
 
 		def cur = 0
 		sourceFields.each { Field newField ->
@@ -689,7 +693,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def i = indexOfField(name)
 		if (i == -1) return null
 		
-		return this.field[i]
+		return this._field[i]
 	}
 	
 	/** Current status of dataset */
@@ -815,7 +819,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				if (connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) retrieveFields()
 			}
 		}
-		if (field.isEmpty())
+		if (_field.isEmpty())
 			throw new ExceptionGETL("Destination dataset required declare fields!")
 		
 		CSVDataset source = procParams.source as CSVDataset
@@ -824,7 +828,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		validCsvTempFile(source)
 		if (BoolUtils.IsValue(procParams.inheritFields))
-			source.setField(field)
+			source.setField(_field)
 
 		if (source.field.isEmpty()) {
 			if (BoolUtils.IsValue(procParams.source_autoSchema, source.isAutoSchema())) {
@@ -945,7 +949,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Reset all fields parameters to default
 	 */
 	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true, Boolean clearDefaultValue = true, Boolean clearPartition = true) {
-		field.each { Field f ->
+		_field.each { Field f ->
 			if (clearNotNull)
 				f.isNull = true
 			if (clearKey)
@@ -996,7 +1000,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	@JsonIgnore
 	List<Field> getFieldListKeys () {
 		def res = [] as List<Field>
-		field.each { Field field ->
+		_field.each { Field field ->
 			if (field.isKey)
 				res.add(field)
 		}
@@ -1354,12 +1358,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void saveDatasetMetadataToJSON(Writer writer, List<String> fieldList = null) {
 		List<Field> fl = []
 		if (fieldList == null || fieldList.isEmpty()) {
-			this.field.each { Field f ->
+			this._field.each { Field f ->
 				fl << f
 			}
 		}
 		else {
-			this.field.each { Field f ->
+			this._field.each { Field f ->
 				def n = f.name.toLowerCase()
 				if (fieldList.find { it.toLowerCase() == n } != null) fl << f
 			}
@@ -1388,12 +1392,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void saveDatasetMetadataToSlurper(File file, List<String> fieldList = null) {
 		List<Field> fl = []
 		if (fieldList == null || fieldList.isEmpty()) {
-			this.field.each { Field f ->
+			this._field.each { Field f ->
 				fl << f
 			}
 		}
 		else {
-			this.field.each { Field f ->
+			this._field.each { Field f ->
 				def n = f.name.toLowerCase()
 				if (fieldList.find { it.toLowerCase() == n } != null) fl << f
 			}
@@ -1697,7 +1701,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (newConnection != null)
 			ds.connection = newConnection
 
-		ds.setField(this.field)
+		ds.setField(this._field)
 		ds.manualSchema = this.manualSchema
 
 		ds.afterClone()
@@ -1724,7 +1728,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
         if (eqFields == null) return false
         if (getField().size() != eqFields.size()) return false
 		def l = getField()
-        for (Integer i = 0; i < field.size(); i++) {
+        for (Integer i = 0; i < _field.size(); i++) {
             if (!l[i].equalsAll(eqFields[i])) return false
         }
 
@@ -1748,9 +1752,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 					retrieveFields()
 			}
 
-			if (field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
+			if (_field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
 		}
-		this.csvTempFile.field = field
+		this.csvTempFile.setField(_field)
 
 		prepareCsvTempFile(this.csvTempFile)
 	}
@@ -1917,7 +1921,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 
 		def comparedNames = compared.collect { field -> field.name.toLowerCase() }
-		field.findAll { field -> !(field.name.toLowerCase() in comparedNames) }.each { field ->
+		_field.findAll { field -> !(field.name.toLowerCase() in comparedNames) }.each { field ->
 			res.put(field.name, EqualFieldStatus.ADDED)
 		}
 
@@ -1943,7 +1947,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def invalidNotNull = [] as List<String>
 		def invalidLength = [] as List<String>
-		field.each { field ->
+		_field.each { field ->
 			def fieldName = field.name.toLowerCase()
 			if (fieldName in excludeFields)
 				return

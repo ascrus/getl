@@ -33,12 +33,22 @@ class FlowCopyChildSpec extends BaseSpec {
         if (value != null) datasetParams.putAll(value)
     }
 
+    /** Link dataset with source data */
+    Dataset getLinkSource() { params.linkSource as Dataset }
+    /** Link dataset with source data */
+    void setLinkSource(Dataset value) { saveParamValue('linkSource', value) }
+
+    /** Linked field */
+    String getLinkField() { params.linkField as String }
+    /** Linked field */
+    void setLinkField(String value) { saveParamValue('linkField', value) }
+
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
     Closure getOnProcess() { params.process as Closure }
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
     void setOnProcess(Closure value) { saveParamValue('process', value) }
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
-    void writeRow(@ClosureParams(value = SimpleType, options = ['groovy.lang.Closure', 'java.util.HashMap'])
+    void writeRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap', 'groovy.lang.Closure'])
                           Closure value) {
         setOnProcess(value)
     }

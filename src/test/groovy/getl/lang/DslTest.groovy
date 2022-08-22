@@ -402,7 +402,7 @@ ORDER BY t1.id"""
 
             etl.copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
                 childs(csvTemp('getl.testdsl.csv:table2')) {
-                    writeRow { add, sourceRow ->
+                    writeRow { sourceRow, destRow, add ->
                         sourceRow.name = (sourceRow.name as String).toLowerCase()
                         add sourceRow
                     }
@@ -434,7 +434,7 @@ ORDER BY t1.id"""
 
             etl.copyRows(csvTemp('getl.testdsl.csv:table1'), h2Table('table1')) {
                 childs(h2Table('table2')) {
-                    writeRow { add, sourceRow ->
+                    writeRow { sourceRow, destRow, add ->
                         add sourceRow
                     }
                 }

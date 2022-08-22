@@ -15,13 +15,6 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class StructureFileDataset extends WebServiceDataset {
 	@Override
-	protected void registerParameters() {
-		super.registerParameters()
-
-		methodParams.register('eachRow', ['data'])
-	}
-
-	@Override
 	protected void initParams() {
 		super.initParams()
 		params.attributeField = [] as List<Field>

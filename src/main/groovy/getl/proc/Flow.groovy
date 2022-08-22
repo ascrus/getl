@@ -4,6 +4,7 @@ package getl.proc
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.*
+import getl.data.sub.AttachData
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
@@ -13,6 +14,7 @@ import getl.proc.sub.FlowProcessException
 import getl.transform.*
 import getl.utils.*
 import getl.tfs.*
+import getl.utils.sub.CalcMapVarsScript
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -61,7 +63,7 @@ class Flow {
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
 				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics', 'processVars', 'saveExprErrors'])
 		methodParams.register('copy.destChild',
-				['dataset', 'datasetParams', 'process', 'init', 'done'])
+				['dataset', 'datasetParams', 'linkSource', 'linkField', 'process', 'init', 'done'])
 
 		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
 										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue', 'clear', 'writeSynch',
@@ -439,9 +441,20 @@ class Flow {
 			if (!dataset.connection.driver.isSupport(Driver.Support.WRITE))
 				throw new ExceptionGETL("The children dataset \"$name\" does not support writing data!")
 
+			def linkSource = childParams.linkSource as Dataset
+			def linkField = childParams.linkField as String
+			if (linkField != null) {
+				if (linkSource == null)
+					throw new ExceptionGETL("Requrired source dataset for the children dataset \"$name\" if linked field \"$linkField\" is specified!")
+				if (!(linkSource instanceof AttachData))
+					throw new ExceptionGETL("For the child dataset \"$name\", the source \"$linkSource\" is specified, which does not support working with local data!")
+			}
+
 			def process = childParams.process as Closure
-			if (childParams.process == null)
-				throw new ExceptionGETL("No set process closure for the children dataset \"$name\"!")
+			if (childParams.process == null && linkSource == null)
+				throw new ExceptionGETL("No set processing code for the children dataset \"$name\"!")
+			if (childParams.process != null && linkSource != null)
+				throw new ExceptionGETL("Processing code for the children dataset \"$name\" if source dataset \"$linkSource\" is specified!")
 
 			def datasetParams = childParams.datasetParams as Map
 			def autoTranChild = (autoTranParams &&
@@ -453,8 +466,8 @@ class Flow {
 			def childInit = childParams.onInit as Closure
 			def childDone = childParams.onDone as Closure
 
-			def child = new FlowCopyChild(dataset: dataset, process: process, writeSynch: writeSynch,
-					datasetParams: datasetParams, autoTran: autoTranChild, onInit: childInit, onDone: childDone)
+			def child = new FlowCopyChild(dataset: dataset, linkSource: linkSource, linkField: linkField?.toLowerCase(), process: process,
+											writeSynch: writeSynch, datasetParams: datasetParams, autoTran: autoTranChild, onInit: childInit, onDone: childDone)
 			childs.put(name, child)
 		}
 		def isChilds = (!childs.isEmpty())
@@ -481,7 +494,7 @@ class Flow {
 		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
 
 		Map<String, String> map = CloneUtils.CloneMap(params.map as Map) as Map<String, String>
-		Closure calcCode = null
+        CalcMapVarsScript calcCode = null
 		scriptExpr = null
 		if (map != null && !map.isEmpty()) {
 			def calcMapScriptCode = new StringBuilder()
@@ -622,6 +635,12 @@ class Flow {
 				initCode.call()
 
 			childs.each { String name, FlowCopyChild child ->
+				if (child.linkField != null) {
+					if (source.fieldByName(child.linkField) == null && calcCode != null && !calcCode.calcVars.containsKey(child.linkField))
+						throw new ExceptionGETL("In the child dataset \"$name\", the link field \"${child.linkField}\" is specified, " +
+								"which is not in the source \"$source\"!")
+				}
+
 				if (child.onInit != null)
 					child.onInit.call()
 			}
@@ -699,15 +718,15 @@ class Flow {
 
 					if (calcCode != null) {
 						try {
-							calcCode.call(inRow, outRow, processVars)
+							calcCode.processRow(inRow, outRow, processVars)
 						}
 						catch (Exception e) {
+							isExprError = true
 							if (!saveExprErrors) {
 								writer.isWriteError = true
 								throw e
 							}
 							isError = true
-							isExprError = true
 							Map errorRow = new HashMap()
 							errorRow.putAll(outRow)
 							errorRow.error = e.message
@@ -745,7 +764,7 @@ class Flow {
 
 						if (isChilds) {
 							childs.each { String name, FlowCopyChild child ->
-								child.processRow(inRow.clone() as Map)
+								child.processRow(inRow, outRow)
 							}
 						}
 

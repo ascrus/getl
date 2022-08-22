@@ -1042,4 +1042,22 @@ class CSVDriverTest extends GetlTest {
             }
         }
     }
+
+    @Test
+    void testLocalData() {
+        Getl.Dsl {
+            csvTemp { ds ->
+                field('id') { type = integerFieldType }
+                field('name')
+                attachToDataset('1,Тест1\n2,Тест2\n3,Тест3', ds)
+                def i = 0
+                eachRow { r ->
+                    i++
+                    assertEquals(i, r.id)
+                    assertEquals('Тест' + i, r.name)
+                }
+                assertEquals(3, readRows)
+            }
+        }
+    }
 }

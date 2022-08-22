@@ -421,8 +421,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
 
         def className = "Workflow_${StringUtils.RandomStr().replace('-', '')}"
         def sb = new StringBuilder()
-        sb.append """package getl.user.workflow
-import getl.data.*
+        sb.append """import getl.data.*
 import getl.utils.*
 import getl.models.*
 import getl.models.opts.*

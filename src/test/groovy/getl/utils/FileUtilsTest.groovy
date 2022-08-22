@@ -266,12 +266,24 @@ println time() + 'finish' '''
         assertTrue(FileUtils.DeleteFile(zipName))
         assertTrue(FileUtils.DeleteFile(fileName))
 
-        FileUtils.UnzipFile('resource:/reference/zip/test.zip', TFS.systemPath, null, 'cp866')
+        def zipPath = TFS.systemPath + '/test-zip'
+        FileUtils.UnzipFile('resource:/reference/zip/test.zip', zipPath, null, 'cp866')
         try {
-            assertEquals('12345', new File("${TFS.systemPath}/тест.txt").text)
+            assertEquals('12345', new File("$zipPath/тест.txt").text)
+            assertEquals('12345', new File("$zipPath/1/тест.txt").text)
+            assertEquals('12345', new File("$zipPath/1/2/тест.txt").text)
+
+            FileUtils.CompressToZip(zipName, zipPath + '/*')
+            FileUtils.DeleteFolder(zipPath, true)
+
+            FileUtils.UnzipFile(zipName, zipPath)
+            assertEquals('12345', new File("$zipPath/тест.txt").text)
+            assertEquals('12345', new File("$zipPath/1/тест.txt").text)
+            assertEquals('12345', new File("$zipPath/1/2/тест.txt").text)
         }
         finally {
-            FileUtils.DeleteFile("${TFS.systemPath}/тест.txt")
+            FileUtils.DeleteFolder(zipPath, true, false)
+            new File(zipName).delete()
         }
     }
 

@@ -30,6 +30,7 @@ import getl.salesforce.SalesForceQueryDataset
 import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.tfs.TFSDataset
+import getl.transform.ArrayDataset
 import getl.utils.GenerationUtils
 import getl.utils.MapUtils
 import getl.vertica.VerticaTable
@@ -72,12 +73,13 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String VERTICATABLE = VerticaTable.name
     static public final String XMLDATASET = XMLDataset.name
     static public final String YAMLDATASET = YAMLDataset.name
+    static public final String ARRAYDATASET = ArrayDataset.name
 
     /** List of allowed dataset classes */
     static public final List<String> LISTDATASETS = [
         CSVDATASET, CSVTEMPDATASET, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
-        SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET
+        SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET, ARRAYDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
@@ -93,7 +95,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed other dataset classes */
     static public List<String> LISTOTHER = [
-            SALESFORCEDATASET, SALESFORCEQUERYDATASET, KAFKADATASET
+            SALESFORCEDATASET, SALESFORCEQUERYDATASET, KAFKADATASET, ARRAYDATASET
     ]
 
     /** List of allowed dataset classes */

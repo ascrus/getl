@@ -2,6 +2,7 @@ package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileReadSpec
+import getl.data.sub.AttachData
 import getl.data.sub.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
@@ -17,11 +18,12 @@ import groovy.transform.InheritConstructors
  */
 @SuppressWarnings('unused')
 @InheritConstructors
-class FileDataset extends Dataset {
+class FileDataset extends Dataset implements AttachData {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
 
+		methodParams.register('eachRow', ['deleteOnEmpty', 'append', 'localDatasetData'])
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
 		methodParams.register('drop', ['validExist', 'portions'])
 	}
@@ -374,4 +376,18 @@ class FileDataset extends Dataset {
 
 		return parent
 	}
+
+	/**
+	 * Local dataset data<br><br>
+	 * The data must be in the form of a slurper object. If they are specified, then the data from the file is not used.
+	 */
+	@JsonIgnore
+	@Override
+	Object getLocalDatasetData() { sysParams.localDatasetData }
+	/**
+	 * Local dataset data<br><br>
+	 * The data must be in the form of a slurper object. If they are specified, then the data from the file is not used.
+	 */
+	@Override
+	void setLocalDatasetData(Object value) { sysParams.localDatasetData = value }
 }

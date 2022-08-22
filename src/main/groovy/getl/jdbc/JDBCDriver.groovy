@@ -1732,7 +1732,8 @@ class JDBCDriver extends Driver {
 			}
 			
 			ArrayList<String> listFields = new ArrayList<String>()
-			if (prepareCode != null) listFields = (ArrayList<String>)(prepareCode.call(metaFields))
+			if (prepareCode != null)
+				listFields = (prepareCode.call(metaFields)) as ArrayList<String>
 			
 			List<Field> fields = []
 			if (listFields.isEmpty()) {

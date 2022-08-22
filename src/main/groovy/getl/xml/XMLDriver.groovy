@@ -226,7 +226,7 @@ class XMLDriver extends WebServiceDriver {
 		if (dataset.rootNode == null)
 			throw new ExceptionGETL("Required \"rootNode\" value with xml dataset!")
 
-		def data = params.data
+		def data = params.localDatasetData?:dataset.localDatasetData
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L
 
 		if (data == null) {

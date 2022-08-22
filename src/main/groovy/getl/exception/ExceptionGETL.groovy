@@ -8,5 +8,5 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class ExceptionGETL extends GroovyRuntimeException {
+class ExceptionGETL extends Exception {
 }

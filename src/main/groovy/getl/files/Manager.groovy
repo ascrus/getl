@@ -2,6 +2,7 @@ package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.*
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.files.opts.ManagerBuildListSpec
 import getl.files.opts.ManagerDownloadSpec
@@ -1549,6 +1550,8 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				
 				def validFiles = new TableDataset(connection: storyTable.connection,
 						tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
+				if (validFiles.connection.driver.isSupport(Driver.Support.LOCAL_TEMPORARY))
+					validFiles.type = JDBCDataset.Type.LOCAL_TEMPORARY
 				//noinspection SpellCheckingInspection
 				validFiles.field = newFiles.getFields(['FILENAME', 'FILEDATE', 'FILESIZE'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
@@ -1778,6 +1781,8 @@ FROM (
 
 			String storyTable = "T_${StringUtils.RandomStr().replace('-', '_').toUpperCase()}"
 			storyFiles = new TableDataset(connection: ds.connection, tableName: storyTable, manualSchema: true)
+			if (storyFiles.connection.driver.isSupport(Driver.Support.LOCAL_TEMPORARY))
+				storyFiles.type = JDBCDataset.Type.LOCAL_TEMPORARY
 			storyFiles.field = fileList.field
 			storyFiles.removeField('FILEID')
 			storyFiles.create()

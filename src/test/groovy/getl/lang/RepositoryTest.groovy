@@ -32,7 +32,7 @@ class RepositoryTest extends TestDsl {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
         def rep = new RepositoryConnections(dslCreator: getl)
-        assertEquals(23, rep.listClasses.size())
+        assertEquals(24, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
         assertNull(rep.find(new H2Connection()))
@@ -113,13 +113,13 @@ class RepositoryTest extends TestDsl {
             thread {
                 abortOnError = true
                 addThread {
-                    def tobj = rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset
-                    assertNotSame(obj, tobj)
-                    assertEquals('test', tobj.params.test)
+                    def tObj = rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset
+                    assertNotSame(obj, tObj)
+                    assertEquals('test', tObj.params.test)
                     assertNotSame(con, getl.h2Connection('group:con'))
-                    assertSame(getl.h2Connection('group:con'), tobj.connection)
-                    assertNotSame(con, tobj.connection)
-                    assertSame(tobj.connection, (rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset).connection)
+                    assertSame(getl.h2Connection('group:con'), tObj.connection)
+                    assertNotSame(con, tObj.connection)
+                    assertSame(tObj.connection, (rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset).connection)
                 }
                 exec()
             }
@@ -244,7 +244,8 @@ class RepositoryTest extends TestDsl {
                 login = 'user'
                 password = 'password'
             }
-            assertEquals(4, listConnections().size())
+            arrayDatasetConnection('transform:array', true)
+            assertEquals(5, listConnections().size())
 
             embeddedTable('table', true) {
                 useConnection embeddedConnection('con')
@@ -292,7 +293,11 @@ class RepositoryTest extends TestDsl {
                 setQuery 'SELECT Max(dt) FROM table1 WHERE \'{region}\' = \'all\' OR region = \'{region}\''
                 queryParams.region = 'all'
             }
-            assertEquals(7, listDatasets().size())
+            arrayDataset('transform:array', true) {
+                useConnection arrayDatasetConnection('transform:array')
+                fieldByName('value').tap { name = 'num'; type = integerFieldType }
+            }
+            assertEquals(8, listDatasets().size())
 
             sequence('sequence', true) {
                 useConnection embeddedConnection('con')
@@ -399,7 +404,7 @@ class RepositoryTest extends TestDsl {
             assertTrue(models.listReferenceVerticaTables().isEmpty())
 
             repositoryStorageManager {
-                assertEquals(8, repositoryFiles(RepositoryDatasets.name).countRow())
+                assertEquals(9, repositoryFiles(RepositoryDatasets.name).countRow())
                 assertEquals(2, repositoryFiles(RepositoryDatasets.name, null, 'rules').countRow())
                 assertEquals(1, repositoryFiles(RepositoryDatasets.name, null, 'ver').countRow())
             }
@@ -408,8 +413,8 @@ class RepositoryTest extends TestDsl {
                 //loadRepositories()
                 autoLoadForList = true
             }
-            assertEquals(4, listConnections().size())
-            assertEquals(8, listDatasets().size())
+            assertEquals(5, listConnections().size())
+            assertEquals(9, listDatasets().size())
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
@@ -470,6 +475,14 @@ class RepositoryTest extends TestDsl {
                 assertEquals(h2Connection('h2:con'), currentJDBCConnection)
                 assertEquals('SELECT Max(dt) FROM table1 WHERE \'{region}\' = \'all\' OR region = \'{region}\'', query)
                 assertEquals('all', queryParams.region)
+            }
+            arrayDataset('transform:array') {
+                assertEquals(arrayDatasetConnection('transform:array'), currentArrayDatasetConnection())
+                assertEquals(1, field.size())
+                assertEquals(Field.integerFieldType, fieldByName('num').type)
+                assertEquals(0, countRow())
+                localDatasetData = '[1,2,3,4,5]'
+                assertEquals(5, countRow())
             }
 
             sequence('sequence') {
