@@ -577,13 +577,14 @@ class CSVDriver extends FileDriver {
 		def escaped = BoolUtils.IsValue([params.escaped, cds.escaped()])
 		def readAsText = BoolUtils.IsValue(params.readAsText)
 		def fieldOrderByHeader = BoolUtils.IsValue(params.fieldOrderByHeader, cds.isFieldOrderByHeader())
-		def formatDate = params.formatDate as String
-		def formatTime = params.formatTime as String
-		def formatDateTime = params.formatDateTime as String
-		def formatTimestampWithTz = params.formatDate as String
-		def uniFormatDateTime = params.uniFormatDateTime as String
-		def arrayOpeningBracket = params.arrayOpeningBracket as String
-		def arrayClosingBracket = params.arrayClosingBracket as String
+		def locale = (params.locale as String)?:cds.locale()
+		def formatDate = (params.formatDate as String)?:cds.formatDate?:cds.currentCsvConnection.formatDate
+		def formatTime = (params.formatTime as String)?:cds.formatTime?:cds.currentCsvConnection.formatTime
+		def formatDateTime = (params.formatDateTime as String)?:cds.formatDateTime?:cds.currentCsvConnection.formatDateTime
+		def formatTimestampWithTz = (params.formatTimestampWithTz as String)?:cds.formatTimestampWithTz?:cds.currentCsvConnection.formatTimestampWithTz
+		def uniFormatDateTime = (params.uniFormatDateTime as String)?:cds.uniFormatDateTime()
+		def arrayOpeningBracket = (params.arrayOpeningBracket as String)?:cds.arrayOpeningBracket()
+		def arrayClosingBracket = (params.arrayClosingBracket as String)?:cds.arrayClosingBracket()
 
 		def skipRows = ConvertUtils.Object2Long(params.skipRows)?:0L
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L

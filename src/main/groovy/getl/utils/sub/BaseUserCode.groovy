@@ -6,7 +6,6 @@ import getl.utils.*
 import groovy.json.JsonSlurper
 import groovy.xml.XmlParser
 import groovy.yaml.YamlSlurper
-
 import java.sql.Timestamp
 
 /**
@@ -207,11 +206,27 @@ class BaseUserCode extends Getl {
     }
 
     /** Parse text to xml data */
-    static Object parseXML(String text) { new XmlParser().parseText(text) }
+    static Object parseXML(String text) {
+        return (text != null)?new XmlParser().parseText(text):null
+    }
 
     /** Parse text to json data */
-    static Object parseJSON(String text) { new JsonSlurper().parseText(text) }
+    static Object parseJSON(String text) {
+        return (text != null)?new JsonSlurper().parseText(text):null
+    }
 
     /** Parse text to yaml data */
-    static Object parseYAML(String text) { new YamlSlurper().parseText(text) }
+    static Object parseYAML(String text) {
+        return (text != null)?new YamlSlurper().parseText(text):null
+    }
+
+    /** Convert properties description text to Map structure */
+    static Map parseProperties(String text, String fieldDelimited = '\n', String valueDelimited = '=') {
+        return TransformUtils.DenormalizeColumn(text, fieldDelimited, valueDelimited)
+    }
+
+    /** Convert array description text to list structure */
+    static List text2List(String text, String fieldDelimited = ';') {
+        return TransformUtils.ListFromColumn(text, fieldDelimited)
+    }
 }

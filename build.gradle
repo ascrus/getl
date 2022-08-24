@@ -84,7 +84,8 @@ dependencies {
 }
 
 test {
-	jvmArgs '-Xmx4g'
+	maxHeapSize = '4G'
+	//jvmArgs += ['-Djava.locale.providers=COMPAT,SPI,CLDR']
 
 	(System.properties as Map<String, String>).each { String k, String v ->
 		if (k.matches('getl[-]vars[.].+'))

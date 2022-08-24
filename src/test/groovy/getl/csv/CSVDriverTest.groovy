@@ -1047,14 +1047,21 @@ class CSVDriverTest extends GetlTest {
     void testLocalData() {
         Getl.Dsl {
             csvTemp { ds ->
+                useConnection csvTempConnection {
+                    locale = 'ce-RU'
+                    formatDateTime = 'dd MMM yyyy HH:mm:ss'
+                    formatDate = 'dd MMM yyyy'
+                }
                 field('id') { type = integerFieldType }
                 field('name')
-                attachToDataset('1,Тест1\n2,Тест2\n3,Тест3', ds)
+                field('date') { type = dateFieldType }
+                attachToDataset('1,Тест1,31 дек 2013\n2,Тест2,23 ноя 2013\n3,Тест3,1 янв 2014', ds)
                 def i = 0
                 eachRow { r ->
                     i++
                     assertEquals(i, r.id)
                     assertEquals('Тест' + i, r.name)
+                    assertNotNull(r.date)
                 }
                 assertEquals(3, readRows)
             }

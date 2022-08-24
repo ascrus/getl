@@ -17,7 +17,9 @@ class TransformUtils {
 	 * @return
 	 */
     static Map DenormalizeColumn(String text, String fieldDelimited, String valueDelimited) {
-		if (text == null) return null
+		if (text == null)
+			return null
+
 		def fields = text.split(fieldDelimited)
 		def values = new HashMap()
 		fields.each { String v ->
@@ -27,7 +29,7 @@ class TransformUtils {
 			values.put(name.toLowerCase(), value)
 		}
 		
-		values
+		return values
 	}
 
 	/**
@@ -37,14 +39,19 @@ class TransformUtils {
 	 * @return
 	 */
 	static List ListFromColumn(String text, String fieldDelimited) {
-		if (text == null) return null
+		if (text == null)
+			return null
+
 		text += fieldDelimited + '\u0001'
 		List res = []
 		List v = text.split(fieldDelimited).toList()
 		for (Integer i = 0; i < v.size() - 1; i++) {
-			if (v[i] == '') res << null else res << v[i]
+			if (v[i] == '')
+				res << null
+			else
+				res << v[i]
 		}
-		
-		res
+
+		return res
 	}
 }
