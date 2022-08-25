@@ -336,18 +336,14 @@ class NumericUtils {
 	static DecimalFormatSymbols BuildDecimalFormatSymbols(Character decimalChar = null, Character groupingChar = null, String locale = null) {
 		def res = (locale == null)?new DecimalFormatSymbols():new DecimalFormatSymbols(StringUtils.NewLocale(locale))
 
-		/*if (groupingChar == null)
-			groupingChar = ','
-		if (decimalChar == null)
-			decimalChar = '.'*/
-
-		if (groupingChar != null && decimalChar != null && groupingChar == decimalChar)
+		if (groupingChar == null && decimalChar != null && res.groupingSeparator == decimalChar)
 			groupingChar = ' '
 
 		if (groupingChar != null)
 			res.setGroupingSeparator(groupingChar)
+
 		if (decimalChar != null)
-		res.setDecimalSeparator(decimalChar)
+			res.setDecimalSeparator(decimalChar)
 
 		return res
 	}

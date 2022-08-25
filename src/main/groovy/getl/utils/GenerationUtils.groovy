@@ -2396,4 +2396,32 @@ return $className"""
 
         return res
 	}
+
+	/**
+	 * Preparing list of fields for using as order in sql selects
+	 * @param orderFields list of fields
+	 * @return preparing map (field:sorting)
+	 */
+	static Map<String, String> PrepareSortFields(List<String> orderFields) {
+		if (orderFields == null)
+			return null
+
+		def res = [:] as Map<String, String>
+		orderFields.each { fieldName ->
+			def vn = fieldName.trim()
+			def sort = 'ASC'
+			def i = vn.lastIndexOf(' ')
+			if (i > -1) {
+				def ls = vn.substring(i + 1).toUpperCase()
+				if (ls in ['ASC', 'DESC']) {
+					vn = vn.substring(0, i).trim()
+					sort = ls
+				}
+			}
+
+			res.put(vn, sort)
+		}
+
+		return res
+	}
 }

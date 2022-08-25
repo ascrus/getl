@@ -1380,7 +1380,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 			fileList.field.add(field)
 		}
 
-		fileListSortOrder.each {f ->
+
+		def orderFields = GenerationUtils.PrepareSortFields(fileListSortOrder)
+		orderFields.keySet().toList().each {f ->
 			if (fileList.fieldByName(f) == null)
 				throw new ExceptionGETL("The sort contains an unknown field \"$f\"!")
 		}
@@ -1650,7 +1652,7 @@ FROM (
 				if (storyTable != null)
 					queryParams.join = "INNER JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 				if (!fileListSortOrder.isEmpty())
-					queryParams.order = fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')
+					queryParams.order = orderFields.collect {  col, sortMethod -> '"' + col.toUpperCase() + '" ' + sortMethod }.join(', ')
 				if (limitCountFiles != null)
 					queryParams.limit = limitCountFiles
 				if (limitSizeFiles != null)

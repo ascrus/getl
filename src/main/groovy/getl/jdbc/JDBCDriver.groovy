@@ -1210,9 +1210,9 @@ class JDBCDriver extends Driver {
 				if (!isSupport(Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
 				(params.indexes as Map<String, Map>).each { name, value ->
 					def idxCols = []
-					(value.columns as List<String>)?.each { nameCol ->
-						idxCols << ((dataset.fieldByName(nameCol) != null)?
-										prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol)
+					def orderFields = GenerationUtils.PrepareSortFields(value.columns as List<String>)
+					orderFields?.each { nameCol, sortMethod ->
+						idxCols.add(((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) + ' ' + sortMethod)
 					}
 					
 					def varsCI = [
@@ -1617,13 +1617,12 @@ class JDBCDriver extends Driver {
 				}
 			}
 
-			def order = ListUtils.ToList(params.order) as List<String>
+			def order = GenerationUtils.PrepareSortFields(ListUtils.ToList(params.order) as List<String>)
 			String orderBy = null
 			if (order != null && !order.isEmpty()) {
 				def orderFields = [] as List<String>
-				order.each { String col ->
-					if (dataset.fieldByName(col) != null)
-						orderFields << prepareFieldNameForSQL(col, dataset as JDBCDataset) else orderFields << col
+				order.each { col, sortMethod ->
+					orderFields.add(((dataset.fieldByName(col) != null)?prepareFieldNameForSQL(col, dataset as JDBCDataset):col) + ' ' + sortMethod)
 				}
 				orderBy = orderFields.join(", ")
 			}

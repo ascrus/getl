@@ -233,7 +233,7 @@ class FileProcessingTest extends TestDsl {
                     variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
                     variable('num') { type = integerFieldType; length = 4 }
                 }
-                order = ['num']
+                order = ['num DESC']
                 threadGroupColumns = ['date']
                 countOfThreadProcessing = countFileInDay
                 removeEmptyDirs = true

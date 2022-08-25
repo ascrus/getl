@@ -58,7 +58,7 @@ class Flow {
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
-				 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing', 'process',
+				 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing', 'process', 'onBeforeWrite', 'onAfterWrite',
 				 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
 				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics', 'processVars', 'saveExprErrors'])
@@ -67,10 +67,10 @@ class Flow {
 
 		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
 										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue', 'clear', 'writeSynch',
-										  'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing'])
+										  'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing', 'onBeforeWrite', 'onAfterWrite'])
 
 		methodParams.register('writeAllTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
-											 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing'])
+											 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing', 'onBeforeWrite', 'onAfterWrite'])
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
 										  'onInit', 'onDone', 'process', 'statistics', 'onFilter'])
@@ -525,6 +525,8 @@ class Flow {
 		Closure filterCode = params.onFilter as Closure
 		Closure postProcessing = params.onPostProcessing as Closure
 		Closure bulkLoadCode = params.onBulkLoad as Closure
+		Closure beforeWrite = params.onBeforeWrite as Closure
+		Closure afterWrite = params.onAfterWrite as Closure
 
 		def debug = BoolUtils.IsValue(params.debug, false)
 
@@ -650,6 +652,9 @@ class Flow {
 
 			if (clear && !isBulkLoad)
 				dest.truncate(truncate: false)
+
+			if (!isBulkLoad && beforeWrite != null)
+				beforeWrite.call()
 
 			destParams.prepare = initDest
 			if (!writeSynch)
@@ -827,9 +832,6 @@ class Flow {
 			if (isExprError && scriptExpr != null)
 				logger.dump(null, 'Flow', 'Copy.Expressions', scriptExpr)
 
-			if (postProcessing != null)
-				postProcessing.call()
-
 			if (isBulkLoad) {
 				if (autoTran)
 					dest.connection.startTran()
@@ -840,13 +842,19 @@ class Flow {
 						dataset.connection.startTran()
 				}
 
-				if (clear)
-					dest.truncate(truncate: false)
-
-				if (bulkLoadCode != null)
-					bulkLoadCode.call(bulkParams)
-
 				try {
+					if (postProcessing != null)
+						postProcessing.call(bulkDS)
+
+					if (clear)
+						dest.truncate(truncate: false)
+
+					if (beforeWrite != null)
+						beforeWrite.call()
+
+					if (bulkLoadCode != null)
+						bulkLoadCode.call(bulkParams)
+
 					dest.bulkLoadFile(bulkParams)
 				}
 				catch (Exception e) {
@@ -878,29 +886,30 @@ class Flow {
 					}
 				}
 			}
-			
-			if (doneCode != null)
-				doneCode.call()
+
+			if (afterWrite != null)
+				afterWrite.call()
+
+			if (autoTran)
+				dest.connection.commitTran()
+
 			childs.each { String name, FlowCopyChild child ->
-				if (child.onDone != null) {
-					child.onDone.call()
-				}
+				def dataset = child.dataset as Dataset
+				def autoTranChild = BoolUtils.IsValue(child.autoTran)
+				if (autoTranChild)
+					dataset.connection.commitTran()
 			}
 		}
 		catch (Exception e) {
 			logger.severe("Error copying rows from \"${sourceDescription}\" to \"${destDescription}\"", e)
 
 			if (autoTran && dest.connection.isTran())
-				Executor.RunIgnoreErrors(dslCreator) {
-					dest.connection.rollbackTran()
-				}
+				Executor.RunIgnoreErrors(dslCreator) { dest.connection.rollbackTran() }
 			childs.each { String name, FlowCopyChild child ->
 				def dataset = child.dataset
 				def autoTranChild = BoolUtils.IsValue(child.autoTran)
 				if (autoTranChild && dataset.connection.isTran())
-					Executor.RunIgnoreErrors(dslCreator) {
-						dataset.connection.rollbackTran()
-					}
+					Executor.RunIgnoreErrors(dslCreator) { dataset.connection.rollbackTran() }
 			}
 
 			throw e
@@ -915,14 +924,12 @@ class Flow {
 			}
 		}
 		
-		if (autoTran)
-			dest.connection.commitTran()
+		if (doneCode != null)
+			doneCode.call()
 
 		childs.each { String name, FlowCopyChild child ->
-			def dataset = child.dataset as Dataset
-			def autoTranChild = BoolUtils.IsValue(child.autoTran)
-			if (autoTranChild)
-				dataset.connection.commitTran()
+			if (child.onDone != null)
+				child.onDone.call()
 		}
 
 		return countRow
@@ -1054,6 +1061,8 @@ class Flow {
 		Closure doneCode = params.onDone as Closure
 		Closure postProcessing = params.onPostProcessing as Closure
 		Closure bulkLoadCode = params.onBulkLoad as Closure
+		Closure beforeWrite = params.onBeforeWrite as Closure
+		Closure afterWrite = params.onAfterWrite as Closure
 		
 		Map<String, Object> destParams
 		if (params.destParams != null && !(params.destParams as Map).isEmpty()) {
@@ -1101,82 +1110,113 @@ class Flow {
 			countRow++
 		}
 		
-		if (autoTran && !isBulkLoad) {
+		if (autoTran && !isBulkLoad)
 			dest.connection.startTran()
-		}
-		
-		if (clear)
-			dest.truncate(truncate: false)
-		
+
 		def isError = false
 		try {
-			if (!writeSynch)
-				writer.openWrite(destParams)
-			else
-				writer.openWriteSynch(destParams)
+			try {
+				if (clear)
+					dest.truncate(truncate: false)
 
-			code.call(updateCode)
-			writer.doneWrite()
+				if (!isBulkLoad && beforeWrite != null)
+					beforeWrite.call()
+
+				if (!writeSynch)
+					writer.openWrite(destParams)
+				else
+					writer.openWriteSynch(destParams)
+
+				code.call(updateCode)
+
+				writer.doneWrite()
+			}
+			catch (Exception e) {
+				isError = true
+				writer.isWriteError = true
+				logger.severe("Error writing rows to \"${writer.objectName}\"", e)
+
+				throw e
+			}
+			finally {
+				if (writer.status == Dataset.Status.WRITE) {
+					Executor.RunIgnoreErrors(dslCreator) {
+						if (!writeSynch)
+							writer.closeWrite()
+						else
+							writer.closeWriteSynch()
+					}
+				}
+				if (isBulkLoad && isError)
+					Executor.RunIgnoreErrors(dslCreator) { bulkDS.drop() }
+			}
+
+			if (!isBulkLoad && afterWrite != null)
+				afterWrite.call()
 		}
 		catch (Exception e) {
-			isError = true
-			writer.isWriteError = true
-			logger.severe("Error writing rows to \"${writer.objectName}\"", e)
-			if (autoTran && !isBulkLoad && dest.connection.isTran())
+			if (autoTran && !isBulkLoad && dest.connection.isTran()) {
 				Executor.RunIgnoreErrors(dslCreator) {
 					dest.connection.rollbackTran()
 				}
+			}
 
 			throw e
 		}
-		finally {
-			if (writer.status == Dataset.Status.WRITE)
-				Executor.RunIgnoreErrors(dslCreator) {
-					if (!writeSynch)
-						writer.closeWrite()
-					else
-						writer.closeWriteSynch()
-				}
-			if (isBulkLoad && isError)
-				Executor.RunIgnoreErrors(dslCreator) { bulkDS.drop() }
-		}
-		
-		if (autoTran && !isBulkLoad) {
-			dest.connection.commitTran()
-		}
-
-		if (postProcessing != null)
-			postProcessing.call()
 
 		if (isBulkLoad) {
-			if (bulkLoadCode != null)
-				bulkLoadCode.call(bulkParams)
-
 			if (autoTran)
 				dest.connection.startTran()
+
 			try {
+				if (postProcessing != null)
+					postProcessing.call(bulkDS)
+
+				if (beforeWrite != null)
+					beforeWrite.call()
+
+				if (bulkLoadCode != null)
+					bulkLoadCode.call(bulkParams)
+
 				dest.bulkLoadFile(bulkParams)
 			}
 			catch (Exception e) {
 				logger.severe("Error loading CSV file \"${bulkDS.fullFileName()}\" to \"${writer.objectName}\"", e)
 				
-				if (autoTran && dest.connection.isTran())
+				if (autoTran && dest.connection.isTran()) {
 					Executor.RunIgnoreErrors(dslCreator) {
 						dest.connection.rollbackTran()
 					}
+				}
 				
 				throw e
 			}
 			finally {
 				bulkDS.drop()
 			}
-			if (autoTran) {
-				dest.connection.commitTran()
-			}
+
 			countRow = dest.updateRows
 		}
 
-		if (doneCode != null) doneCode.call()
+		try {
+			if (afterWrite != null)
+				afterWrite.call()
+
+			if (autoTran)
+				dest.connection.commitTran()
+		}
+		catch (Exception e) {
+			if (autoTran && dest.connection.isTran()) {
+				Executor.RunIgnoreErrors(dslCreator) {
+					dest.connection.rollbackTran()
+				}
+			}
+
+			throw e
+		}
+
+		if (doneCode != null)
+			doneCode.call()
 
 		return countRow
 	}
@@ -1208,6 +1248,8 @@ class Flow {
 		Closure doneCode = params.onDone as Closure
 		Closure postProcessing = params.onPostProcessing as Closure
 		Closure bulkLoadCode = params.onBulkLoad as Closure
+		Closure beforeWrite = params.onBeforeWrite as Closure
+		Closure afterWrite = params.onAfterWrite as Closure
 
 		if (initCode != null)
 			initCode.call()
@@ -1318,11 +1360,18 @@ class Flow {
 			writer.each { String n, Dataset d ->
 				if (d.status == Dataset.Status.WRITE) {
 					if (!isError)
-						if (!writeSynch) d.closeWrite()  else d.closeWriteSynch()
-					else
+						if (!writeSynch)
+							d.closeWrite()
+						else
+							d.closeWriteSynch()
+					else {
 						Executor.RunIgnoreErrors(dslCreator) {
-							if (!writeSynch) d.closeWrite()  else d.closeWriteSynch()
+							if (!writeSynch)
+								d.closeWrite()
+							else
+								d.closeWriteSynch()
 						}
+					}
 				}
 				if (isError && bulkLoadDS.get(n) != null)
 					Executor.RunIgnoreErrors(dslCreator) { (bulkLoadDS.get(n) as Dataset).drop() }
@@ -1355,80 +1404,81 @@ class Flow {
 		}
 		
 		startTrans(['ALL', 'COPY'])
-		
-		writer.each { String n, Dataset d ->
+
+		try {
 			try {
-				if (!writeSynch)
-					d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
+				if (!isBulkLoad && beforeWrite != null)
+					beforeWrite.call()
+
+				writer.each { String n, Dataset d ->
+					try {
+						if (!writeSynch)
+							d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
+					}
+					catch (Exception e) {
+						logger.severe("Error writing rows to \"${d.objectName}\"", e)
+						closeDestinations(true)
+						rollbackTrans(['ALL', 'COPY'])
+						throw e
+					}
+				}
+
+				code.call(updateCode)
+
+				writer.each { String n, Dataset d ->
+					d.doneWrite()
+				}
 			}
 			catch (Exception e) {
-				logger.severe("Error writing rows to \"${d.objectName}\"", e)
+				writer.each { String n, Dataset d ->
+					d.isWriteError = true
+				}
+				logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
 				closeDestinations(true)
-				rollbackTrans(['ALL', 'COPY'])
 				throw e
 			}
-		}
-		
-		try {
-			code.call(updateCode)
-		}
-		catch (Exception e) {
-			writer.each { String n, Dataset d ->
-				d.isWriteError = true
-			}
-			logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
-			closeDestinations(true)
-			rollbackTrans(['ALL', 'COPY'])
-			throw e
-		}
-		
-		try {
-			writer.each { String n, Dataset d ->
-				d.doneWrite()
-			}
-		}
-		catch (Exception e) {
-			logger.severe("Error saving buffer to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
-			closeDestinations(true)
-			rollbackTrans(['ALL', 'COPY'])
-			throw e
-		}
-		
-		try {
+
 			closeDestinations(false)
 		}
 		catch (Exception e) {
-			logger.severe("Close error \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
-			closeDestinations(true)
 			rollbackTrans(['ALL', 'COPY'])
 			throw e
 		}
 
-		if (postProcessing != null)
-			postProcessing.call()
+		if (isBulkLoad) {
+			startTrans(['BULK'])
 
-		if (isBulkLoad && bulkLoadCode != null)
-			bulkLoadCode.call(bulkParams)
-
-		startTrans(['BULK'])
-		bulkLoadDS.each { String n, Dataset d ->
-			Dataset ds = dest.get(n) as Dataset
-			Map bp = bulkParams.get(n) as Map
 			try {
-				ds.bulkLoadFile(bp)
+				if (postProcessing != null)
+					postProcessing.call(bulkLoadDS)
+
+				if (beforeWrite != null)
+					beforeWrite.call()
+
+				if (bulkLoadCode != null)
+					bulkLoadCode.call(bulkParams)
+
+				bulkLoadDS.each { String n, Dataset d ->
+					Dataset ds = dest.get(n) as Dataset
+					Map bp = bulkParams.get(n) as Map
+					ds.bulkLoadFile(bp)
+				}
 			}
 			catch (Exception e) {
-				logger.severe("Error loading CSV file \"${bp.source}\" to \"${ds.objectName}\"", e)
 				rollbackTrans(['ALL', 'COPY', 'BULK'])
 				throw e
 			}
+			finally {
+				bulkLoadDS.each { String n, Dataset d ->
+					Executor.RunIgnoreErrors(dslCreator) { d.drop() }
+				}
+			}
 		}
-		
+
+		if (!isBulkLoad && afterWrite != null)
+			afterWrite.call()
+
 		commitTrans(['ALL', 'COPY', 'BULK'])
-		
-		bulkLoadDS.each { String n, Dataset d ->
-			Executor.RunIgnoreErrors(dslCreator) { d.drop() }
-		}
 
 		if (doneCode != null)
 			doneCode.call()

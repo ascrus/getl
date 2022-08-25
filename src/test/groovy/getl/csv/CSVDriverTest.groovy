@@ -1051,17 +1051,22 @@ class CSVDriverTest extends GetlTest {
                     locale = 'ce-RU'
                     formatDateTime = 'dd MMM yyyy HH:mm:ss'
                     formatDate = 'dd MMM yyyy'
+                    decimalSeparator = ','
+                    fieldDelimiter = ';'
                 }
                 field('id') { type = integerFieldType }
                 field('name')
                 field('date') { type = dateFieldType }
-                attachToDataset('1,Тест1,31 дек 2013\n2,Тест2,23 ноя 2013\n3,Тест3,1 янв 2014', ds)
+                field('value') { type = numericFieldType; length = 15; precision = 12 }
+                attachToDataset('1;Тест1;31 дек 2013;100,001\n2;Тест2;23 ноя 2013;200,002\n3;Тест3;1 янв 2014;300,003', ds)
                 def i = 0
                 eachRow { r ->
                     i++
                     assertEquals(i, r.id)
                     assertEquals('Тест' + i, r.name)
                     assertNotNull(r.date)
+                    assertNotNull(r.value)
+                    assertEquals(i * 100 + i / 1000, r.value)
                 }
                 assertEquals(3, readRows)
             }

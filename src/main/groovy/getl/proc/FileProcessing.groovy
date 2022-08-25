@@ -277,18 +277,18 @@ class FileProcessing extends FileListProcessing {
 
     @Override
     protected List<List<String>> getExtendedIndexes() {
-        def res = ([] as List<List<String>>)
+        def res = [] as List<List<String>>
 
         if (!threadGroupColumns.isEmpty())
-            res << (threadGroupColumns*.toUpperCase())
+            res.add(threadGroupColumns)
 
         def idx = ['_HASH_'] as List<String>
         if (!order.isEmpty())
-            idx.addAll(order.collect { '"' + it.toUpperCase() + '"' } as List<String>)
+            idx.addAll(order)
         else
             idx << 'FILENAME'
 
-        res << idx
+        res.add(idx)
 
         return res
     }

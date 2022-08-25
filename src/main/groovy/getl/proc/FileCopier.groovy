@@ -272,8 +272,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     @SuppressWarnings('SpellCheckingInspection')
     protected List<List<String>> getExtendedIndexes() {
         def idx = ['_SEGMENTED_']
-        if (!order.isEmpty())
-            idx.addAll(order.collect { '"' + it.toUpperCase() + '"' } as List<String>)
+        idx.addAll(order)
         idx.add('_OUTPATH_')
 
         return [idx]

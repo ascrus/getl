@@ -280,12 +280,26 @@ class FlowCopySpec extends FlowBaseSpec {
         setOnFilter(value)
     }
 
+    /** Code is called before writing rows to destination */
+    Closure getOnBeforeWrite() { params.onBeforeWrite as Closure }
+    /** Code is called before writing rows to destination */
+    void setOnBeforeWrite(Closure value) { saveParamValue('onBeforeWrite', value) }
+    /** Code is called before writing rows to destination */
+    void beforeWrite(Closure value) { setOnBeforeWrite(value) }
+
+    /** Code is called after writing rows to destination */
+    Closure getOnAfterWrite() { params.onAfterWrite as Closure }
+    /** Code is called after writing rows to destination */
+    void setOnAfterWrite(Closure value) { saveParamValue('onAfterWrite', value) }
+    /** Code is called after writing rows to destination */
+    void afterWrite(Closure value) { setOnAfterWrite(value) }
+
     /** Code is called after processing rows from source to destination before starting bulk load */
     Closure getOnPostProcessing() { params.onPostProcessing as Closure }
     /** Code is called after processing rows from source to destination before starting bulk load */
     void setOnPostProcessing(Closure value) { saveParamValue('onPostProcessing', value) }
     /** Code is called after processing rows from source to destination before starting bulk load */
-    void postProcessing(Closure value) {
+    void postProcessing(@ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure value) {
         setOnPostProcessing(value)
     }
 

@@ -108,9 +108,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /** Code is called after processing rows from source to destination before starting bulk load */
     void setOnPostProcessing(Closure value) { saveParamValue('onPostProcessing', value) }
     /** Code is called after processing rows from source to destination before starting bulk load */
-    void postProcessing(Closure value) {
-        setOnPostProcessing(value)
-    }
+    void postProcessing(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) { setOnPostProcessing(value) }
 
     /** Initialization code before bulk load file */
     Closure getOnBulkLoad() { params.onBulkLoad as Closure }
@@ -120,6 +118,20 @@ class FlowWriteManySpec extends FlowBaseSpec {
     void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnBulkLoad(value)
     }
+
+    /** Code is called before writing rows to destination */
+    Closure getOnBeforeWrite() { params.onBeforeWrite as Closure }
+    /** Code is called before writing rows to destination */
+    void setOnBeforeWrite(Closure value) { saveParamValue('onBeforeWrite', value) }
+    /** Code is called before writing rows to destination */
+    void beforeWrite(Closure value) { setOnBeforeWrite(value) }
+
+    /** Code is called after writing rows to destination */
+    Closure getOnAfterWrite() { params.onAfterWrite as Closure }
+    /** Code is called after writing rows to destination */
+    void setOnAfterWrite(Closure value) { saveParamValue('onAfterWrite', value) }
+    /** Code is called after writing rows to destination */
+    void afterWrite(Closure value) { setOnAfterWrite(value) }
 
     /** Closure code process row */
     void writeRow(@ClosureParams(value = SimpleType, options = ['groovy.lang.Closure']) Closure value = null) {

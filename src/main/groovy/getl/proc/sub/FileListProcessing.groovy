@@ -689,8 +689,9 @@ abstract class FileListProcessing implements GetlRepository {
         def allVars = usedInternalVars + vars
 
         if (!order.isEmpty()) {
-            order.each { col ->
-                if (!((col as String).toLowerCase() in allVars))
+            def orderFields = GenerationUtils.PrepareSortFields(order).keySet().toList()
+            orderFields.each { col ->
+                if (!(col.toLowerCase() in allVars))
                     throw new ExceptionFileListProcessing("Column \"$col\" specified for sorting was not found!")
             }
         }
