@@ -23,14 +23,14 @@ class SetOfTablesTest extends TestRepository {
                 }
                 assertEquals('Upper(name)', table('h2:table2').map.name)
 
-                assertEquals(['h2:table1', 'h2:table2'], findModelDatasets())
-                assertEquals(['h2:table1', 'h2:table2'], findModelDatasets(['h2:*']))
-                assertEquals(['h2:table1'], findModelDatasets(['h2:*1']))
-                assertTrue(findModelDatasets(null, ['h2:*']).isEmpty())
-                assertEquals(['h2:table1'], findModelDatasets(null, ['h2:*2']))
-                assertEquals(['h2:table1'], findModelDatasets(['h2:*'], ['h2:*2']))
+                assertEquals(['h2:table1', 'h2:table2'], findModelObjects())
+                assertEquals(['h2:table1', 'h2:table2'], findModelObjects(['h2:*']))
+                assertEquals(['h2:table1'], findModelObjects(['h2:*1']))
+                assertTrue(findModelObjects(null, ['h2:*']).isEmpty())
+                assertEquals(['h2:table1'], findModelObjects(null, ['h2:*2']))
+                assertEquals(['h2:table1'], findModelObjects(['h2:*'], ['h2:*2']))
 
-                assertTrue(datasetInModel('h2:table1'))
+                assertTrue(isObjectInModel('h2:table1'))
             }
         }
     }

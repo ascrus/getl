@@ -385,6 +385,15 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     }
 
     /**
+     * Find object from model by name
+     * @param name object name
+     * @return model object
+     */
+    T findModelObject(String name) {
+        return usedObjects.find { obj -> obj.objectNameInModel() == name }
+    }
+
+    /**
      * Return a list of model objects
      * @param includeMask list of masks to include objects
      * @param excludeMask list of masks to exclude objects
@@ -418,11 +427,15 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         return res
     }
 
-    /** Return model object by name */
-    T objectByName(String name) {
-        return usedObjects.find { obj -> obj.objectNameInModel() == name }
-    }
-
     @Override
     String toString() { "Model \"${dslNameObject?:'unnamed'}\"" }
+
+    /**
+     * Check the presence of a object in the model by its name
+     * @param name model object name
+     * @return find result
+     */
+    Boolean isObjectInModel(String name) {
+        return findModelObject(name) != null
+    }
 }

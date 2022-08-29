@@ -557,6 +557,7 @@ class CSVDriver extends FileDriver {
 	 * @param localData
 	 * @return
 	 */
+	@SuppressWarnings('GrMethodMayBeStatic')
 	@CompileStatic
 	Reader getLocalDataReader(FileDataset dataset, String localData) {
 		return new StringReader(localData?:'')
@@ -688,7 +689,7 @@ class CSVDriver extends FileDriver {
 			CellProcessor[] cp = fields2cellProcessor(dataset: cds, fields: listFields, header: header,
 					isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped,
 					nullAsValue: p.nullAsValue, formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime,
-					formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime,
+					formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime, locale: locale,
 					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket)
 			
 			def cur = 0L

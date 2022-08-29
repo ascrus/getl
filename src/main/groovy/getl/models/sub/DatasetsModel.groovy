@@ -6,7 +6,7 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.data.Field
 import getl.data.FileDataset
-import getl.exception.ExceptionDSL
+import getl.data.sub.AttachData
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
@@ -93,12 +93,10 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         checkModel(false)
 
         def table = dslCreator.dataset(datasetName)
-        checkModelDataset(table)
         def dslDatasetName = table.dslNameObject
 
         def parent = (usedDatasets.find { t -> t.datasetName == dslDatasetName })
         if (parent == null)
-            //parent = createSpec(dslDatasetName) as T
             parent = addSpec(newDataset(dslDatasetName)) as T
 
         parent.runClosure(cl)
@@ -113,7 +111,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      */
     protected T useDataset(Dataset dataset, Closure cl = null) {
         if (dataset.dslNameObject == null)
-            throw new ExceptionDSL("The dataset \"$dataset\" is not registered in the repository!")
+            throw new ExceptionModel("The dataset \"$dataset\" is not registered in the repository!")
         this.dataset(dataset.dslNameObject, cl)
     }
 
@@ -144,33 +142,62 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     @Override
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
-        def spec = obj as DatasetSpec
-        checkModelDataset(spec.modelDataset)
+        def node = obj as DatasetSpec
 
-        def hp = (spec.historyPointName != null)?dslCreator.findHistorypoint(spec.historyPointName):null
-        if (spec.historyPointName != null) {
+        checkDataset(node.modelDataset)
+        if (node.parentDatasetName == null)
+            checkModelDataset(node.modelDataset)
+
+        def hp = (node.historyPointName != null)?dslCreator.findHistorypoint(node.historyPointName):null
+        if (node.historyPointName != null) {
             if (hp == null)
-                throw new ExceptionDSL("Increment point manager \"${spec.historyPointName}\" not found!")
+                throw new ExceptionModel("Increment point manager \"${node.historyPointName}\" not found!")
             hp.checkManager()
         }
-        if (spec.incrementFieldName != null) {
-            def field = spec.modelDataset.fieldByName(spec.incrementFieldName)
+        if (node.incrementFieldName != null) {
+            def field = node.modelDataset.fieldByName(node.incrementFieldName)
             if (field == null)
-                throw new ExceptionDSL("Increment field \"${spec.incrementFieldName}\" was not found in dataset \"${spec.modelDataset}\"!")
+                throw new ExceptionModel("Increment field \"${node.incrementFieldName}\" was not found in dataset \"${node.modelDataset}\"!")
             if (hp != null) {
                 switch (hp.sourceType) {
                     case hp.identitySourceType:
                         if (!(field.type in [Field.integerFieldType, Field.bigintFieldType, Field.numericFieldType]))
-                            throw new ExceptionDSL("Field \"${spec.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
+                            throw new ExceptionModel("Field \"${node.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
                                     "type \"${hp.sourceType}\" of incremental manager \"$hp\" (allowed INTEGER, BIGINT and NUMERIC types)!")
                         break
                     case hp.timestampSourceType:
                         if (!(field.type in [Field.dateFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]))
-                            throw new ExceptionDSL("Field \"${spec.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
+                            throw new ExceptionModel("Field \"${node.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
                                     "type \"${hp.sourceType}\" of incremental manager \"$hp\" (allowed DATE, DATETIME and TIMESTAMP_WITH_TIMEZONE types)!")
                 }
             }
         }
+
+        if (node.partitionsDatasetName != null) {
+            def ds = dslCreator.findDataset(node.partitionsDatasetName)
+            if (ds == null)
+                throw new ExceptionModel("Dataset of the list of partitions \"${node.partitionsDatasetName}\" not found for model table \"${node.datasetName}\"!")
+
+            checkDataset(node.partitionsDataset)
+        }
+
+        if (node.parentDatasetName != null) {
+            if (findModelObject(node.parentDatasetName) == null)
+                throw new ExceptionModel("Parent dataset \"${node.parentDatasetName}\" for model table \"${node.datasetName}\" " +
+                        "not defined in model!")
+            def parentDataset = node.parentDataset
+            checkDataset(parentDataset)
+            if (!(node.modelDataset instanceof AttachData))
+                throw new ExceptionModel("Dataset \"${node.datasetName}\" does not support working with local data and cannot be used as a child dataset in a model!")
+            if (node.parentLinkFieldName != null) {
+                if (!parentDataset.field.isEmpty() && parentDataset.fieldByName(node.parentLinkFieldName) == null)
+                    throw new ExceptionModel("Link field \"${node.parentLinkFieldName}\" not found in parent dataset \"${node.parentDatasetName}\" " +
+                            "for model table \"${node.datasetName}\"!")
+            }
+        }
+        else if (node.parentLinkFieldName != null)
+            throw new ExceptionModel("When specifying the link field \"${node.parentLinkFieldName}\" in \"parentLinkFieldName\", " +
+                    "needed set parent dataset for model table \"${node.datasetName}\"!")
     }
 
     protected checkDataset(Dataset ds) {
@@ -213,30 +240,10 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      */
     protected void checkModelDataset(Dataset ds, String connectionName = null) {
         if (ds == null)
-            throw new ExceptionDSL('No dataset specified!')
-
-        checkDataset(ds)
+            throw new ExceptionModel('No dataset specified!')
 
         def dsn = ds.dslNameObject
         if (ds.connection.dslNameObject != (connectionName?:modelConnectionName))
             throw new ExceptionModel("The connection of dataset \"$dsn\" does not match the specified connection to the model connection!")
-    }
-
-    /**
-     * Return a list of model datasets
-     * @param includeMask list of masks to include datasets
-     * @param excludeMask list of masks to exclude datasets
-     * @return list of names of found model datasets
-     */
-    List<String> findModelDatasets(List<String> includeMask = null, List<String> excludeMask = null) {
-        return findModelObjects(includeMask, excludeMask)
-    }
-
-    /**
-     * Check the presence of a dataset in the model by its name
-     * @param name source dataset name
-     */
-    Boolean datasetInModel(String name) {
-        return usedDatasets.find {it.datasetName == name.toLowerCase() } != null
     }
 }

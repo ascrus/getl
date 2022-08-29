@@ -6,6 +6,7 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.data.FileConnection
 import getl.exception.ExceptionDSL
+import getl.exception.ExceptionModel
 import getl.jdbc.JDBCConnection
 import getl.models.opts.TableSpec
 import getl.models.sub.BaseSpec
@@ -126,18 +127,5 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     }
 
     @Override
-    void checkObject(BaseSpec obj) {
-        super.checkObject(obj)
-
-        def node = obj as TableSpec
-        if (node.partitionsDatasetName != null) {
-            def ds = dslCreator.findDataset(node.partitionsDatasetName)
-            if (ds == null)
-                throw new ExceptionDSL("Dataset of the list of partitions \"${node.partitionsDatasetName}\" not found!")
-            checkDataset(node.partitionsDataset)
-        }
-    }
-
-    @Override
-    String toString() { "Grouping ${usedObjects.size()} tables from \"$sourceConnectionName\" connection" }
+    String toString() { "setOfTable('${dslNameObject?:'unregister'}')" }
 }

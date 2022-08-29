@@ -25,13 +25,13 @@ class WebUtilsTest extends GetlDslTest {
             println serverProc.errorStream.readLines()
         assertTrue(serverProc.alive)
         def countPing = 0
-        def isHostReady = WebUtils.PingHost('localhost', 8089, 1000)
+        def isHostReady = WebUtils.PingHost('localhost', 8089, 500)
         while (countPing < 10 && !isHostReady) {
             countPing++
-            isHostReady = WebUtils.PingHost('localhost', 8089, 1000)
+            isHostReady = WebUtils.PingHost('localhost', 8089, 500)
         }
         if (!isHostReady) {
-            serverProc.waitForOrKill(1000)
+            serverProc.waitForOrKill(2000)
             throw new ExceptionGETL("Can not run webserver!")
         }
 

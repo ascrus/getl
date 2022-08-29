@@ -3,7 +3,6 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
@@ -147,7 +146,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     @SuppressWarnings("GrMethodMayBeStatic")
     void validQuery(QueryDataset query) {
         if (query == null)
-            throw new ExceptionDSL('No query specified!')
+            throw new ExceptionModel('No query specified!')
         if (query.dslNameObject == null)
             throw new ExceptionModel("Query is not registered in the repository!")
         def dsn = query.dslNameObject
@@ -163,7 +162,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param queryName
      * @return rule specification
      */
-    MonitorRuleSpec findRule(String queryName) { objectByName(queryName) }
+    MonitorRuleSpec findRule(String queryName) { findModelObject(queryName) }
 
     /**
      * Define monitor source table
@@ -610,5 +609,5 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     @Override
-    String toString() { "Monitoring ${usedObjects.size()} rules in \"$statusTableName\" table" }
+    String toString() { "monitorRules('${dslNameObject?:'unregister'}')" }
 }

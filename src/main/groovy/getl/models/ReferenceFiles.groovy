@@ -110,7 +110,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     @Override
     void checkModel(Boolean checkObjects = true) {
         if (!dslCreator.unitTestMode)
-            throw new ExceptionDSL("Working with model \"$this\" is allowed only in unit test mode!")
+            throw new ExceptionModel("Working with model \"$this\" is allowed only in unit test mode!")
 
         if (destinationManagerName == null)
             throw new ExceptionModel("The destination manager name is not specified!")
@@ -248,5 +248,5 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     }
 
     @Override
-    String toString() { "Referencing ${usedObjects.size()} files from \"$sourceManagerName\" to \"$destinationManagerName\" file managers" }
+    String toString() { "referenceFiles('${dslNameObject?:'unregister'}')" }
 }

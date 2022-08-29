@@ -51,43 +51,6 @@ class TableSpec extends DatasetSpec {
     @JsonIgnore
     FileDataset getSourceFile() { sourceDataset as FileDataset }
 
-    /** List of key values for partitions being processed */
-    List getListPartitions() { params.listPartitions as List }
-    /** List of key values for partitions being processed */
-    void setListPartitions(List value) {
-        listPartitions.clear()
-        if (value != null)
-            listPartitions.addAll(value)
-    }
-
-    /** Get a list of partitions from the specified dataset */
-    String getPartitionsDatasetName() { params.partitionsDatasetName as String }
-    /** Get a list of partitions from the specified dataset */
-    void setPartitionsDatasetName(String value) { saveParamValue('partitionsDatasetName', value) }
-    /** Get a list of partitions from the specified dataset */
-    @JsonIgnore
-    Dataset getPartitionsDataset() {
-        return (partitionsDatasetName != null)?ownerModel.dslCreator.dataset(partitionsDatasetName):null
-    }
-    /** Get a list of partitions from the specified dataset */
-    @JsonIgnore
-    void setPartitionsDataset(Dataset value) { usePartitionsFrom(value) }
-
-    /** Use a list of partitions from the specified dataset */
-    void usePartitionsFrom(String listDatasetName) { partitionsDatasetName = listDatasetName }
-    /** Use a list of partitions from the specified dataset */
-    void usePartitionsFrom(Dataset listDataset) {
-        if (listDataset != null) {
-            def name = listDataset.dslNameObject
-            if (name == null)
-                throw new ExceptionModel("$sourceTableName: the dataset $listDataset must be registered in the repository!")
-
-            partitionsDatasetName = name
-        }
-        else
-            partitionsDatasetName = null
-    }
-
     /** source table mapping rules: map.put('sourceField', 'expression') */
     LinkedHashMap<String, String> getMap() { params.map as LinkedHashMap<String, String> }
     /** source table mapping rules: map.put('sourceField', 'expression') */
@@ -95,22 +58,5 @@ class TableSpec extends DatasetSpec {
         map.clear()
         if (value != null)
             map.putAll(value)
-    }
-
-    /**
-     * Return partitions from list or dataset
-     * @param queryParams parameters for getting a list of partitions from a dataset
-     * @return list of partitions
-     */
-    List<Map<String, Object>> readListPartitions(Map queryParams = null) {
-        def res = listPartitions.collect { [partition: it] }
-        if (res.isEmpty() && partitionsDatasetName != null) {
-            def qp = new HashMap()
-            if (queryParams != null)
-                qp.put('queryParams', queryParams)
-            res = partitionsDataset.rows(qp)
-        }
-
-        return res
     }
 }

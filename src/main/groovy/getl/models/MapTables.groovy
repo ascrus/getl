@@ -166,52 +166,30 @@ class MapTables extends DatasetsModel<MapTableSpec> {
 
     @Override
     void checkModel(Boolean checkObjects = true) {
-        if (sourceConnectionName == null)
-            throw new ExceptionModel("The source connection is not specified!")
         if (destinationConnectionName == null)
             throw new ExceptionModel("The destination connection is not specified!")
 
         super.checkModel(checkObjects)
-
-        if (checkObjects)
-            checkMapping()
     }
 
     @Override
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
-        checkModelDataset((obj as MapTableSpec).destination, destinationConnectionName)
 
         def node = obj as MapTableSpec
-        if (node.partitionsDatasetName != null) {
-            def ds = dslCreator.findDataset(node.partitionsDatasetName)
-            if (ds == null)
-                throw new ExceptionDSL("Dataset of the list of partitions \"${node.partitionsDatasetName}\" not found!")
-            checkDataset(node.partitionsDataset)
-        }
-    }
 
-    /**
-     * Check mapping objects
-     * @param cl validation code
-     */
-    void checkMapping(@DelegatesTo(MapTableSpec)
-                      @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec']) Closure cl = null) {
-        usedMapping.each { node ->
-            if (node.destinationName == null)
-                throw new ExceptionDSL("The destination is not specified for table \"${node.sourceName}\"!")
+        if (node.destinationName == null)
+            throw new ExceptionModel("Destination is not specified for table \"${node.sourceName}\"!")
+        if (dslCreator.findDataset(node.destinationName) == null)
+            throw new ExceptionModel("Destination dataset \"${node.destinationName}\" " +
+                    "specified for model table \"${node.sourceName}\" was not found!")
 
-            if (node.partitionsDatasetName != null && dslCreator.findDataset(node.partitionsDatasetName) == null)
-                throw new ExceptionDSL("The dataset of the list of partitions \"${node.partitionsDatasetName}\" " +
-                        "specified for table \"${node.sourceName}\" was not found!")
-
-            if (cl != null)
-                node.tap(cl)
-        }
+        checkDataset(node.destination)
+        checkModelDataset(node.destination, destinationConnectionName)
     }
 
     @Override
-    String toString() { "Mapping ${usedObjects.size()} tables from \"$sourceConnectionName\" to \"$destinationConnectionName\" connections" }
+    String toString() { "mapTables('${dslNameObject?:'unregister'}')" }
 
     /**
      * Add linked tables to mapping

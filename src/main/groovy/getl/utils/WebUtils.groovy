@@ -3,7 +3,6 @@ package getl.utils
 import getl.exception.ExceptionGETL
 import groovy.transform.CompileStatic
 import groovy.transform.NamedVariant
-
 import java.nio.charset.StandardCharsets
 import java.time.format.DateTimeFormatter
 
@@ -143,11 +142,18 @@ class WebUtils {
      * @return ping result
      */
     static Boolean PingHost(String host, int port, int timeout) {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), timeout)
-            return true
-        } catch (IOException ignored) {
-            return false
+        def i = 0
+        while (true) {
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(host, port), timeout)
+                return socket.connected
+            } catch (IOException ignored) {
+                i++
+                if (i > 1)
+                    return false
+
+                sleep(timeout)
+            }
         }
     }
 }

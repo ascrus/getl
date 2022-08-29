@@ -87,7 +87,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                      Closure cl = null) {
         if (!(dslCreator.dataset(tableName) instanceof VerticaTable))
-            throw new ExceptionDSL('Vertica table is required!')
+            throw new ExceptionModel('Vertica table is required!')
 
         dataset(tableName, cl) as ReferenceVerticaTableSpec
     }
@@ -102,7 +102,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                                     Closure cl) {
         def owner = DetectClosureDelegate(cl, true)
         if (!(owner instanceof VerticaTable))
-            throw new ExceptionDSL('Vertica table is required!')
+            throw new ExceptionModel('Vertica table is required!')
 
         return referenceFromTable((owner as VerticaTable).dslNameObject, cl)
     }
@@ -122,7 +122,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     @Override
     void checkModel(Boolean checkObjects = true) {
         if (!dslCreator.unitTestMode)
-            throw new ExceptionDSL("Working with model \"$this\" is allowed only in unit test mode!")
+            throw new ExceptionModel("Working with model \"$this\" is allowed only in unit test mode!")
         super.checkModel(checkObjects)
     }
 
@@ -170,7 +170,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
                 def rows = rows()
                 if (rows.size() != 1)
-                    throw new ExceptionDSL("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
+                    throw new ExceptionModel("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
                 def roles = rows[0].roles as String
                 if (roles != null && roles != '') {
                     roles.split(',').each {
@@ -245,9 +245,9 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             copyType = etlCopyType
         copyType = copyType.toUpperCase()
         if (!(copyType in [etlCopyType, bulkloadCopyType, exportToVerticaCopyType]))
-            throw new ExceptionDSL("Unknown copy type \"$copyType\", allowed: $etlCopyType, $bulkloadCopyType or $exportToVerticaCopyType")
+            throw new ExceptionModel("Unknown copy type \"$copyType\", allowed: $etlCopyType, $bulkloadCopyType or $exportToVerticaCopyType")
         if (copyType != bulkloadCopyType && nullAsValue != null)
-            throw new ExceptionDSL('Null as value supported if using bulk load copy mode!')
+            throw new ExceptionModel('Null as value supported if using bulk load copy mode!')
 
         checkModel()
 
@@ -462,7 +462,5 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     }
 
     @Override
-    String toString() {
-        super.toString() + "(referencing ${usedObjects?.size()?:0} tables from \"$referenceConnectionName\" connection in \"$referenceSchemaName\" schemata)"
-    }
+    String toString() { "referenceVerticaTables('${dslNameObject?:'unregister'}')" }
 }
