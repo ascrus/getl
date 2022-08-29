@@ -16,7 +16,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Connection implements Cloneable, GetlRepository {
+class Connection implements GetlRepository {
 	/** Create new connection with class of driver and parameters */
 	Connection(Map parameters = null) {
 		registerParameters()

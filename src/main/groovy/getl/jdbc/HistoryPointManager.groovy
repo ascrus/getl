@@ -23,7 +23,7 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
-class HistoryPointManager implements Cloneable, GetlRepository {
+class HistoryPointManager implements GetlRepository {
 	HistoryPointManager() {
 		initParams()
 	}

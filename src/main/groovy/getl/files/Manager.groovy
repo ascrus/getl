@@ -30,7 +30,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @SuppressWarnings('unused')
-abstract class Manager implements Cloneable, GetlRepository {
+abstract class Manager implements GetlRepository {
 	Manager() {
 		registerParameters()
 

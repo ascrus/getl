@@ -1109,4 +1109,9 @@ abstract class FileListProcessing implements GetlRepository {
         if (debugMode)
             logger.finest("Processing \"${file.filepath}/${file.filename}\" [${file.filedate}, ${FileUtils.SizeBytes(file.filesize as Long)}] ...")
     }
+
+    @Override
+    Object clone() {
+        throw new ExceptionDSL('Clone not supported!')
+    }
 }

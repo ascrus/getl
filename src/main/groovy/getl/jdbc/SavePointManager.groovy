@@ -21,7 +21,7 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
-class SavePointManager implements Cloneable, GetlRepository, WithConnection {
+class SavePointManager implements GetlRepository, WithConnection {
 	SavePointManager () {
 		initParams()
 	}

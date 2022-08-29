@@ -21,7 +21,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Sequence implements Cloneable, GetlRepository, WithConnection {
+class Sequence implements GetlRepository, WithConnection {
 	Sequence() {
 		initParams()
 	}

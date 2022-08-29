@@ -19,7 +19,7 @@ import getl.exception.ExceptionGETL
  * Analyze and processing path value class
  * @author Alexsey Konstantinov
  */
-class Path implements Cloneable, GetlRepository {
+class Path implements GetlRepository {
 	Path() {
 		registerMethod()
 	}

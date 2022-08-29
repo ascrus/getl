@@ -298,6 +298,11 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         object.clone() as T
     }
 
+    @Override
+    Object clone() {
+        throw new ExceptionDSL('Clone not supported!')
+    }
+
     /** The name of the collection for storing cloned objects for threads */
     String getNameCloneCollection() { this.getClass().name }
 

@@ -290,4 +290,9 @@ class EMailer implements GetlRepository {
 	/** Current logger */
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
+
+	@Override
+	Object clone() {
+		return new EMailer(params: this.params)
+	}
 }

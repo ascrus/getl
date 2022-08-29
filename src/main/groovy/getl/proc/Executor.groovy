@@ -904,4 +904,9 @@ class Executor implements GetlRepository {
 		if (!res)
 			throw new ExecutorTimeoutException(code.timeoutMessageError())
 	}
+
+	@Override
+	Object clone() {
+		throw new ExceptionDSL('Clone not supported!')
+	}
 }

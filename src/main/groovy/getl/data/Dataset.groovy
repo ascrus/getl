@@ -26,7 +26,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @SuppressWarnings('unused')
-class Dataset implements Cloneable, GetlRepository, WithConnection {
+class Dataset implements GetlRepository, WithConnection {
 	Dataset () {
 		registerParameters()
 		initParams()

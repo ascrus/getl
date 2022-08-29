@@ -22,7 +22,7 @@ import java.util.regex.Pattern
  *
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
-class SQLScripter implements WithConnection, Cloneable, GetlRepository {
+class SQLScripter implements WithConnection, GetlRepository {
 	private String _dslNameObject
 	@Override
 	String getDslNameObject() { _dslNameObject }
