@@ -76,7 +76,7 @@ class CSVDriverTest extends GetlTest {
             row.id = id
             row.name = "row $id"
             row.date = DateUtils.ParseDate('2016-10-15')
-            row.time = new Time(9, 15, 30)
+            row.time = Time.valueOf('09:15:30')
             row.datetime = DateUtils.ParseDateTime('2016-10-16 09:15:30.123')
             row.double = 123456789.12
             row.numeric = new BigDecimal(123456789.12)
@@ -186,7 +186,7 @@ class CSVDriverTest extends GetlTest {
             assertEquals(id, row.id)
             assertEquals("row $id".toString(), row.name)
             assertEquals(DateUtils.ParseDate('2016-10-15'), row.date)
-            assertEquals(new Time(9, 15, 30), row.time)
+            assertEquals(Time.valueOf('09:15:30'), row.time)
             assertEquals(DateUtils.ParseDateTime('2016-10-16 09:15:30.123'), row.datetime)
             assertEquals((123456789.12).doubleValue(), (row.double as Double), 0.toDouble())
             assertEquals(NumericUtils.Round(new BigDecimal(123456789.12), 2), row.numeric)
@@ -378,7 +378,7 @@ class CSVDriverTest extends GetlTest {
 
 		Logs.Finest("Test perfomance for $testName ($performanceRows rows, ${performanceCols+2} cols) ...")
 
-		def c = new CSVConnection(testParams + (Map<String, Object>)([autoSchema: (Object)false]))
+		def c = new CSVConnection(testParams + ([autoSchema: false] as Map<String, Object>))
 		def t = new CSVDataset(connection: c, fileName: 'test_performance')
 
 		t.field << new Field(name: 'Id', type: Field.Type.INTEGER, isKey: true)
