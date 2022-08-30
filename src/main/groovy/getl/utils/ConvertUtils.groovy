@@ -369,7 +369,7 @@ class ConvertUtils {
 				return
 			}
 
-			def val = lexer.script.substring(list[0].first as Integer, (list[list.size() - 1].last as Integer + 1))
+			def val = lexer.script.substring(list[0].first as Integer, ((list[list.size() - 1].last as Integer) + 1))
 			if (val.isInteger())
 				res.add(val.toInteger())
 			else if (val.isLong())
