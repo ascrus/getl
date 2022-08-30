@@ -2,9 +2,12 @@
 .gradle/
 build/
 
-## Idea
+### Idea
 .idea/
 out/
 
 ### Config files for test modules
 tests/
+
+## Eclipse
+bin/
