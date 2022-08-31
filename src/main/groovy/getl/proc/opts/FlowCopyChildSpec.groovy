@@ -18,6 +18,8 @@ class FlowCopyChildSpec extends BaseSpec {
         super.initSpec()
         if (params.datasetParams == null)
             params.datasetParams = new HashMap<String, Object>()
+        if (params.map == null)
+            params.map = new HashMap<String, String>()
     }
 
     /** Dataset for writing */
@@ -59,4 +61,20 @@ class FlowCopyChildSpec extends BaseSpec {
     void setOnInitWrite(Closure value) { saveParamValue('onInit', value) }
     /** Initialization code before processing */
     void initWrite(Closure value) { setOnInitWrite(value) }
+
+    /**
+     * Column mapping<br>
+     * <i>Syntax:</i><br>
+     * destination_field_name: "source_field_name;format=[datetime or boolean format];convert=[true|false]"
+     */
+    Map<String, String> getMap() { params.map as Map<String, String> }
+    /**
+     * Column mapping<br>
+     * <i>Syntax:</i><br>
+     * destination_field_name: "source_field_name;format=[datetime or boolean format];convert=[true|false]"
+     */
+    void setMap(Map<String, String> value) {
+        map.clear()
+        if (value != null) map.putAll(value)
+    }
 }

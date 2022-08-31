@@ -35,7 +35,7 @@ class MapTablesTest extends TestDsl {
 
             embeddedTable('detail', true) {
                 type = localTemporaryTableType
-                field('id') { type = integerFieldType; isNull = false }
+                field('master_id') { type = integerFieldType; isNull = false }
                 field('value') { type = integerFieldType }
                 create()
             }
@@ -55,6 +55,7 @@ class MapTablesTest extends TestDsl {
                 mapTable('#values') {
                     linkTo 'detail'
                     attachToParentDataset 'file', 'values'
+                    map.master_id = 'id'
                 }
             }
 
@@ -63,6 +64,7 @@ class MapTablesTest extends TestDsl {
                     childs(mapTable('#values').destination) {
                         linkSource = arrayDataset('#values')
                         linkField = mapTable('#values').parentLinkFieldName
+                        map = mapTable('#values').map
                     }
                 }
             }
@@ -75,7 +77,7 @@ class MapTablesTest extends TestDsl {
             csvTemp('file').eachRow { r ->
                 assertEquals(1, embeddedTable('master').countRow('id = {id} AND name = \'{name}\'', [id: r.id, name: r.name]))
                 (r.values as List).each { num ->
-                    assertEquals(1, embeddedTable('detail').countRow('id = {id} AND value = {value}', [id: r.id, value: num]))
+                    assertEquals(1, embeddedTable('detail').countRow('master_id = {id} AND value = {value}', [id: r.id, value: num]))
                 }
             }
         }

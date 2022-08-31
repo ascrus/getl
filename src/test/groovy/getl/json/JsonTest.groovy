@@ -69,7 +69,7 @@ class JsonTest extends GetlTest {
                 removeField('values')
             }
             csvTempWithDataset('csv:phones', json('json:phones')) {
-                field('id') { type = integerFieldType }
+                field('parent_id') { type = integerFieldType }
             }
             csvTemp('csv:values', true) {
                 field('id') { type = integerFieldType }
@@ -84,6 +84,8 @@ class JsonTest extends GetlTest {
                 childs(csvTemp('csv:phones')) {
                     linkSource = json('json:phones')
                     linkField = 'phones'
+                    map.'*test_id' = '${source.id}'
+                    map.parent_id = 'id'
                 }
                 childs(csvTemp('csv:values')) {
                     linkSource = arrayDataset('json:values', true) {
@@ -119,9 +121,9 @@ class JsonTest extends GetlTest {
 
             assertEquals(7, csvTemp('csv:phones').countRow())
             csvTemp('csv:phones').eachRow { r ->
-                assertNotNull(r.id)
+                assertNotNull(r.parent_id)
                 assertNotNull(r.phone)
-                assertNotNull(listPhones.get(r.id as Integer).find { it == r.phone })
+                assertNotNull(listPhones.get(r.parent_id as Integer).find { it == r.phone })
             }
 
             assertEquals(9, csvTemp('csv:values').countRow())

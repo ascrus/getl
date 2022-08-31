@@ -63,7 +63,7 @@ class Flow {
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
 				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching', 'statistics', 'processVars', 'saveExprErrors'])
 		methodParams.register('copy.destChild',
-				['dataset', 'datasetParams', 'linkSource', 'linkField', 'process', 'init', 'done'])
+				['dataset', 'datasetParams', 'linkSource', 'linkField', 'process', 'init', 'done', 'map'])
 
 		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
 										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue', 'clear', 'writeSynch',
@@ -215,7 +215,7 @@ class Flow {
 	 */
 	private String generateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull,
 							   Boolean saveOnlyWithValue, Boolean autoConvert,
-							   List<String> notConverted, String cacheName, Map result) {
+							   List<String> notConverted, String cacheName, Dataset parentSource, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -264,8 +264,12 @@ class Flow {
 			else {
 				// Set source map field
 				Field sf = source.fieldByName(mapName.name as String)
-				if (sf == null)
-					throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
+				if (sf == null) {
+					if (parentSource != null)
+						sf = parentSource.fieldByName(mapName.name as String)
+					if (sf == null)
+						throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset \"$source\"!")
+				}
 
 				mn = sf.name.toLowerCase()
 				if (mapName.convert != null)
@@ -278,8 +282,11 @@ class Flow {
 
 			Field s = null
 			// Use field is mapping
-			if (mn != null)
+			if (mn != null) {
 				s = source.fieldByName(mn)
+				if (s == null && parentSource != null)
+					s = parentSource.fieldByName(mn)
+			}
 
 			// Not use
 			if (s == null) {
@@ -379,6 +386,7 @@ class Flow {
 			map_code = params.process as Closure
 
 		String cacheName = params.cacheName
+		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
 
 		Dataset source = params.source as Dataset
 		if (source == null)
@@ -441,6 +449,16 @@ class Flow {
 			if (!dataset.connection.driver.isSupport(Driver.Support.WRITE))
 				throw new ExceptionGETL("The children dataset \"$name\" does not support writing data!")
 
+			def childMap = (CloneUtils.CloneMap(childParams.map as Map)?:[:]) as Map<String, String>
+			CalcMapVarsScript childCalcCode = null
+			String childScriptExpr = null
+			if (!childMap.isEmpty()) {
+				def calcMapScriptCode = new StringBuilder()
+				childCalcCode = GenerationUtils.GenerateCalculateMapClosure(childMap, dslCreator, calcMapScriptCode)
+				if (childCalcCode != null)
+					childScriptExpr = calcMapScriptCode.toString()
+			}
+
 			def linkSource = childParams.linkSource as Dataset
 			def linkField = childParams.linkField as String
 			if (linkField != null) {
@@ -466,8 +484,10 @@ class Flow {
 			def childInit = childParams.onInit as Closure
 			def childDone = childParams.onDone as Closure
 
-			def child = new FlowCopyChild(dataset: dataset, linkSource: linkSource, linkField: linkField?.toLowerCase(), process: process,
-											writeSynch: writeSynch, datasetParams: datasetParams, autoTran: autoTranChild, onInit: childInit, onDone: childDone)
+			def child = new FlowCopyChild(flow: this, flowCacheName: cacheName, dataset: dataset, childName: name, processVars: processVars, map: childMap,
+					linkSource: linkSource, linkField: linkField?.toLowerCase(), process: process,
+					calcCode: childCalcCode, scriptExpr: childScriptExpr, writeSynch: writeSynch, datasetParams: datasetParams,
+					autoTran: autoTranChild, onInit: childInit, onDone: childDone)
 			childs.put(name, child)
 		}
 		def isChilds = (!childs.isEmpty())
@@ -491,8 +511,6 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 
-		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
-
 		Map<String, String> map = CloneUtils.CloneMap(params.map as Map) as Map<String, String>
         CalcMapVarsScript calcCode = null
 		scriptExpr = null
@@ -504,6 +522,7 @@ class Flow {
 		}
 		else
 			map = new HashMap<String, String>()
+
 		List<String> requiredStatistics = (params.statistics != null)?(params.statistics as List<String>)*.toLowerCase():([] as List<String>)
 
 		Map<String, Object> sourceParams
@@ -604,7 +623,7 @@ class Flow {
 			}
 		}
 		
-		Closure auto_map_code
+		Closure autoMapCode
 		Map generateResult = new HashMap()
 		Map<String, String> mapRules = null
 
@@ -612,8 +631,8 @@ class Flow {
 			List<String> result = []
 			if (autoMap) {
 				scriptMap = generateMap(source, writer, mapRules, formats, convertEmptyToNull, copyOnlyWithValue,
-										autoConvert, notConverted, cacheName, generateResult)
-				auto_map_code = generateResult.code as Closure
+										autoConvert, notConverted, cacheName, null, generateResult)
+				autoMapCode = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
 			}
 
@@ -641,6 +660,8 @@ class Flow {
 					if (source.fieldByName(child.linkField) == null && calcCode != null && !calcCode.calcVars.containsKey(child.linkField))
 						throw new ExceptionGETL("In the child dataset \"$name\", the link field \"${child.linkField}\" is specified, " +
 								"which is not in the source \"$source\"!")
+
+					child.mapRules = PrepareMap(child.linkSource, child.writer, child.map, copyOnlyMatching, autoMap, []/*TODO: added exclude parameter*/, source)
 				}
 
 				if (child.onInit != null)
@@ -663,9 +684,25 @@ class Flow {
 				writer.openWriteSynch(destParams)
 
 			childs.each { String name, FlowCopyChild child ->
+				Closure<List<String>> initDestChild = {
+					List<String> fields = []
+					if (autoMap && child.linkSource != null) {
+						Map generateResultChild = new HashMap()
+						child.scriptMap = generateMap(child.linkSource, child.writer, child.mapRules, formats, convertEmptyToNull, copyOnlyWithValue,
+								autoConvert, notConverted, cacheName + '.' + name, source, generateResultChild)
+						child.autoMapCode = generateResultChild.code as Closure
+						fields = generateResultChild.destFields as List<String>
+					}
+
+					return fields
+				}
+
 				def childWriter = child.writer
-				def datasetParams = child.datasetParams
-				if (!writeSynch)  childWriter.openWrite(datasetParams) else childWriter.openWriteSynch(datasetParams)
+				def datasetParams = child.datasetParams + [prepare: initDestChild]
+				if (!writeSynch)
+					childWriter.openWrite(datasetParams)
+				else
+					childWriter.openWriteSynch(datasetParams)
 			}
 			
 			if (saveErrors || saveExprErrors) {
@@ -710,13 +747,13 @@ class Flow {
 					def isError = false
 					def outRow = new HashMap()
 
-					if (auto_map_code != null) {
+					if (autoMapCode != null) {
 						try {
-							auto_map_code.call(inRow, outRow)
+							autoMapCode.call(inRow, outRow)
 						}
 						catch (Exception e) {
 							logger.severe("Column auto mapping error", e)
-							logger.dump(e, 'flow', cacheName?:'none', 'Column mapping:\n' + scriptMap)
+							logger.dump(e, 'Flow', cacheName?:'none', 'Column mapping:\n' + scriptMap)
 							throw e
 						}
 					}
@@ -805,7 +842,7 @@ class Flow {
 
 				if (isExprError) {
 					if (scriptExpr != null)
-						logger.dump(e, 'Flow', 'Copy.Expressions', scriptExpr)
+						logger.dump(e, 'Flow', cacheName?:'none', scriptExpr)
 				}
 				else if (scriptMap != null && !(e instanceof AssertionError) && !(e instanceof FlowProcessException))
 					logger.dump(e, 'Flow', 'Copy', scriptMap)
@@ -946,7 +983,7 @@ class Flow {
 	 * @return mapping result
 	 */
 	static protected Map<String, String> PrepareMap(Dataset source, Dataset dest, Map<String, String> map,
-										  Boolean copyOnlyMatching, Boolean autoMap, List<String> excludeFields) {
+										  Boolean copyOnlyMatching, Boolean autoMap, List<String> excludeFields, Dataset parentSource = null) {
 		def res = new HashMap<String, String>()
 
 		if (autoMap) {
@@ -954,6 +991,16 @@ class Flow {
 				def fn = f.name.toLowerCase()
 				if (!(fn in excludeFields) && dest.fieldByName(fn) != null)
 					res.put(fn, fn)
+			}
+			if (parentSource != null) {
+				parentSource.field.each { f ->
+					if (source.fieldByName(f.name) != null)
+						return
+
+					def fn = f.name.toLowerCase()
+					if (!(fn in excludeFields) && dest.fieldByName(fn) != null)
+						res.put(fn, fn)
+				}
 			}
 		}
 		map.each {k , v ->
