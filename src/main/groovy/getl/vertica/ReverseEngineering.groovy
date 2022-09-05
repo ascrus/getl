@@ -816,7 +816,7 @@ Example:
 			return
 		}
 
-		scriptPath = FileUtils.TransformFilePath(FileUtils.ConvertToDefaultOSPath(scriptPath))
+		scriptPath = FileUtils.TransformFilePath(FileUtils.ConvertToDefaultOSPath(scriptPath), dslCreator)
 		Logs.Info("Write script to \"$scriptPath\" directory")
 		FileUtils.ValidPath(scriptPath)
 

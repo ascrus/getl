@@ -274,7 +274,7 @@ abstract class Manager implements GetlRepository {
 	/** Preparing root path for using */
 	@SuppressWarnings('GrMethodMayBeStatic')
 	String prepareRootPath(String path) {
-		FileUtils.PrepareDirPath(FileUtils.TransformFilePath(path, true), true)
+		FileUtils.PrepareDirPath(FileUtils.TransformFilePath(path, dslCreator), true)
 	}
 
 	/** Set current root path */
@@ -397,7 +397,7 @@ abstract class Manager implements GetlRepository {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { (rootPath != null)?"file:${FileUtils.TransformFilePath(rootPath, false)}":'file' }
+	String getObjectName() { (rootPath != null)?"file:${FileUtils.TransformFilePath(rootPath, false, dslCreator)}":'file' }
 	
 	/** Write errors to log */
 	@JsonIgnore
@@ -694,7 +694,7 @@ abstract class Manager implements GetlRepository {
 		String localDir = currentLocalDir()
 		String localFileName = FileUtils.FileName(filePath)
 		if (localFilePath != null) {
-			localFilePath = FileUtils.TransformFilePath(FileUtils.ConvertToUnixPath(localFilePath))
+			localFilePath = FileUtils.TransformFilePath(FileUtils.ConvertToUnixPath(localFilePath), dslCreator)
 
 			def localPath = FileUtils.RelativePathFromFile(localFilePath, true)
 			if (localPath == '.')
@@ -2574,7 +2574,7 @@ WHERE
 	protected Map<String, String> toStringParams() {
 		def res = new HashMap<String, String>()
 		if (rootPath != null)
-			res.root = FileUtils.TransformFilePath(rootPath, false)
+			res.root = FileUtils.TransformFilePath(rootPath, false, dslCreator)
 
 		return res
 	}

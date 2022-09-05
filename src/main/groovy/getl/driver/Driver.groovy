@@ -179,6 +179,9 @@ abstract class Driver {
 	 * @return list of prepared field
 	 */
 	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
+		if (dataset == null)
+			throw new NullPointerException('Required dataset!')
+
 		if (importParams == null)
 			importParams = new HashMap()
 

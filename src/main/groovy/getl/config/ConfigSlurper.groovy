@@ -111,7 +111,7 @@ class ConfigSlurper extends ConfigManager {
 		params.path = value
 	}
 	/** Full path to the directory for the configuration files */
-	String path() { FileUtils.TransformFilePath(path) }
+	String path() { FileUtils.TransformFilePath(path, dslCreator) }
 
 	/** Use environment section */
 	String getEnvironment() { params.environment as String }
@@ -137,7 +137,7 @@ class ConfigSlurper extends ConfigManager {
 
 	@Override
 	protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>()) {
-		def fp = FileUtils.TransformFilePath(readParams?.path as String)?:this.path()
+		def fp = FileUtils.TransformFilePath(readParams?.path as String, dslCreator)?:this.path()
 		def fn = (readParams?.fileName as String)?:this.fileName
 		def fl = (readParams?.files as List<String>)?:this.files
 		def env = (readParams?.environment as String)?:this.environment?:'prod'
@@ -302,7 +302,7 @@ class ConfigSlurper extends ConfigManager {
 
 	@Override
 	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>()) {
-		def fp = FileUtils.TransformFilePath(saveParams?.path as String)?:this.path()
+		def fp = FileUtils.TransformFilePath(saveParams?.path as String, dslCreator)?:this.path()
 		def fn = (saveParams?.fileName as String)?:this.fileName
 		def cp = (saveParams?.codePage as String)?:this.codePage
 		def useVars = BoolUtils.IsValue(saveParams?.useVars)

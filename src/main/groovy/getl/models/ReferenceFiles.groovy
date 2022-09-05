@@ -192,7 +192,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
                     if (unpackCommand != null) {
                         def cmdOut = new StringBuilder(), cmdErr = new StringBuilder()
-                        def cmdUnpack = FileUtils.TransformFilePath(unpackCommand, false)
+                        def cmdUnpack = FileUtils.TransformFilePath(unpackCommand, false, dslCreator)
                         def cmdText = StringUtils.EvalMacroString(cmdUnpack, modelVars + modelFile.objectVars + [file: fileName])
                         def cmdMan = (!isLocalUnpack)?dest:new FileManager(rootPath: source.localDirectory)
                         if (isLocalUnpack)

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.vertica.opts
 
 import getl.jdbc.opts.CreateSpec
@@ -11,42 +12,31 @@ class VerticaCreateSpec extends CreateSpec {
         if (params.orderBy == null) params.orderBy = [] as List<String>
     }
 
-    /**
-     * Order of columns
-     */
+    /** Order of columns */
     List<String> getOrderBy() { params.orderBy as List<String> }
-    /**
-     * Order of columns
-     */
+    /** Order of columns */
     void setOrderBy(List<String> value) {
         orderBy.clear()
         if (value != null) orderBy.addAll(value)
     }
 
-    /**
-     * Expression for node segmentation
-     */
+    /** Expression for node segmentation */
     String getSegmentedBy() { params.segmentedBy as String}
-    /**
-     * Expression for node segmentation
-     */
+    /** Expression for node segmentation */
     void setSegmentedBy(String value) { saveParamValue('segmentedBy', value) }
 
-    /**
-     * The nodes is unsegmented
-     */
+    /** The nodes is unsegmented */
     Boolean getUnsegmented() { params.unsegmented as Boolean }
-    /**
-     * The nodes is unsegmented
-     */
+    /** The nodes is unsegmented */
     void setUnsegmented(Boolean value) { saveParamValue('unsegmented', value) }
 
-    /**
-     * Expression of table partitioning
-     */
+    /** Expression of table partitioning */
     String getPartitionBy() { params.partitionBy as String}
-    /**
-     * Expression for node segmentation
-     */
+    /** Expression of table partitioning */
     void setPartitionBy(String value) { saveParamValue('partitionBy', value) }
+
+    /** Enabled check primary key */
+    Boolean getCheckPrimaryKey() { params.checkPrimaryKey as Boolean }
+    /** Enabled check primary key */
+    void setCheckPrimaryKey(Boolean value) { saveParamValue('checkPrimaryKey', value) }
 }

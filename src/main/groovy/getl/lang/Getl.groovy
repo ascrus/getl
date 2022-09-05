@@ -473,7 +473,7 @@ Examples:
                         logging.logFileName = StringUtils.EvalMacroString(en.logFileName as String,
                                 [env: env?:'prod', process: procName], false)
                         logFine("Logging the process \"${instance.getClass().name}\" to file " +
-                                "\"${FileUtils.TransformFilePath(logging.logFileName, false)}\"")
+                                "\"${FileUtils.TransformFilePath(logging.logFileName, false, this)}\"")
                     }
 
                     if (en.printStackTraceError != null)
@@ -488,19 +488,19 @@ Examples:
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false)}\"")
+                        logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false, this)}\"")
                     }
 
                     if (en.filesLogPath != null) {
                         fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false)}\"")
+                        logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false, this)}\"")
                     }
 
                     if (en.tempDBLogFileName != null) {
                         tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false)}\"")
+                        logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false, this)}\"")
                     }
 
                     if (en.sqlEchoLevel != null) {
@@ -544,7 +544,7 @@ Examples:
                             autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
 
                         if (en.savingStoryDataset != null) {
-                            def storyDatasetFilePath = new File(FileUtils.TransformFilePath(en.savingStoryDataset as String)).canonicalPath
+                            def storyDatasetFilePath = new File(FileUtils.TransformFilePath(en.savingStoryDataset as String, this)).canonicalPath
                             def storyDatasetFile = new File(storyDatasetFilePath)
                             if (storyDatasetFile.parentFile == null || !storyDatasetFile.parentFile.exists())
                                 throw new ExceptionGETL("Invalid path \"$storyDatasetFilePath\" for \"savingStoryDataset\"!")

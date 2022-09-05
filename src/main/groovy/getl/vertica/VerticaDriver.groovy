@@ -25,7 +25,7 @@ class VerticaDriver extends JDBCDriver {
 	protected void registerParameters() {
 		super.registerParameters()
 
-		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
+		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy', 'checkPrimaryKey'])
 		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
@@ -49,6 +49,7 @@ class VerticaDriver extends JDBCDriver {
 		lengthTextInBytes = true
         addPKFieldsToUpdateStatementFromMerge = true
 
+		sqlExpressions.ddlCreatePrimaryKey = 'PRIMARY KEY ({columns}) {check_pk}'
 		sqlExpressions.ddlCreateView = '{create}{ %temporary%} VIEW{ %ifNotExists%} {name}{ %privileges% SCHEMA PRIVILEGES} AS\n{select}'
 		sqlExpressions.ddlCreateSchema = 'CREATE SCHEMA{ %ifNotExists%} {schema}{ AUTHORIZATION %authorization%}{ DEFAULT %privileges% SCHEMA PRIVILEGES}'
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
@@ -285,8 +286,8 @@ class VerticaDriver extends JDBCDriver {
 		def enforceLength = (!useExternalParser && BoolUtils.IsValue(params.enforceLength, true))
 		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
-		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath as String)
-		String rejectedPath = FileUtils.TransformFilePath(params.rejectedPath as String)
+		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath as String, connection.dslCreator)
+		String rejectedPath = FileUtils.TransformFilePath(params.rejectedPath as String, connection.dslCreator)
 		def rejectMax = params.rejectMax as Long
 		def abortOnError = BoolUtils.IsValue(params.abortOnError, true)
 		String location = params.location as String
@@ -757,6 +758,12 @@ class VerticaDriver extends JDBCDriver {
 		super.prepareCsvTempFile(source, csvFile)
 		if (csvFile.nullAsValue() != null && !csvFile.escaped())
 			csvFile.escaped = true
+	}
+
+	@Override
+	String generatePrimaryKeyDefinition(JDBCDataset dataset, Map params) {
+		def defPrimary = GenerationUtils.SqlKeyFields(dataset, dataset.field, null, null)
+		return sqlExpressionValue('ddlCreatePrimaryKey', [columns: defPrimary.join(","), check_pk: (BoolUtils.IsValue(params.checkPrimaryKey))?'ENABLED':'DISABLED'])
 	}
 
 	/*

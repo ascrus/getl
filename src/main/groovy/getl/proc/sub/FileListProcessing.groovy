@@ -697,7 +697,7 @@ abstract class FileListProcessing implements GetlRepository {
         }
 
         if (source.story != null && cacheFilePath != null) {
-            def cacheFP = FileUtils.TransformFilePath(cacheFilePath)
+            def cacheFP = FileUtils.TransformFilePath(cacheFilePath, getl)
             FileUtils.ValidFilePath(cacheFP)
             cacheConnection = new H2Connection().with {
                 connectDatabase = cacheFP
@@ -760,7 +760,7 @@ abstract class FileListProcessing implements GetlRepository {
         if (source.story != null && !ignoreStory) {
             logger.fine("  table ${source.story.fullTableName} will be used to store file processing history")
             if (cacheFilePath != null)
-                logger.fine("  file \"${FileUtils.TransformFilePath(cacheFilePath)}\" will be used to cache file processing history")
+                logger.fine("  file \"${FileUtils.TransformFilePath(cacheFilePath, false, getl)}\" will be used to cache file processing history")
             if (onlyFromStory)
                 logger.fine("  only files that are present in the processing history will be processed")
             if (processModified)

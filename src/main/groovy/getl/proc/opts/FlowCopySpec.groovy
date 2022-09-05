@@ -321,10 +321,10 @@ class FlowCopySpec extends FlowBaseSpec {
     private Map<String, FlowCopyChildSpec> getChilds() { params._childs as Map<String, FlowCopyChildSpec> }
 
     /** Set child dataset options */
-    void childs(String name, Dataset dataset,
+    FlowCopyChildSpec childs(String name, Dataset dataset,
                 @DelegatesTo(FlowCopyChildSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopyChildSpec'])
-                        Closure cl) {
+                        Closure cl = null) {
         if (name == null)
             throw new NullPointerException('Required name!')
         if (cl == null)
@@ -341,25 +341,27 @@ class FlowCopySpec extends FlowBaseSpec {
 
         runClosure(parent, cl)
         childs.put(name, parent)
+
+        return parent
     }
 
     /** Set child dataset options */
-    void childs(Dataset dataset,
+    FlowCopyChildSpec childs(Dataset dataset,
                 @DelegatesTo(FlowCopyChildSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopyChildSpec'])
-                        Closure cl) {
+                        Closure cl = null) {
         if (dataset == null)
             throw new NullPointerException('Required dataset!')
 
-        childs(dataset.dslNameObject?:StringUtils.RandomStr(), dataset, cl)
+        return childs(dataset.dslNameObject?:StringUtils.RandomStr(), dataset, cl)
     }
 
     /** Children flow dataset */
-    Dataset childs(String name) {
+    FlowCopyChildSpec childs(String name) {
         if (name == null)
             throw new NullPointerException('Required name!')
 
-        return childs.get(name).dataset
+        return childs.get(name)
     }
 
     @Override

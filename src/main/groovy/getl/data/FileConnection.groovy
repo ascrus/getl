@@ -216,7 +216,7 @@ class FileConnection extends Connection {
 			return null
 
 		if (currentPath == null)
-			currentPath = FileUtils.TransformFilePath(path(), true)
+			currentPath = FileUtils.TransformFilePath(path(), dslCreator)
 
 		return currentPath
 	}

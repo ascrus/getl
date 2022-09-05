@@ -154,7 +154,7 @@ class LangSpec extends BaseSpec {
         File mainFile
         Boolean isResource
         if (filePath != null) {
-            filePath = FileUtils.TransformFilePath(filePath)
+            filePath = FileUtils.TransformFilePath(filePath, ownerObject as Getl)
             if (!FileUtils.ExistsFile(filePath))
                 throw new ExceptionDSL("Getl config file on path \"$filePath\" not found!")
 

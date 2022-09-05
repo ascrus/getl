@@ -591,6 +591,7 @@ class Flow {
 				bulkParams.compressed = 'GZIP'
 			if (autoTran)
 				bulkParams.autoCommit = false
+
 			destParams = new HashMap<String, Object>()
 
 			childs.each { String name, FlowCopyChild child ->
@@ -599,7 +600,6 @@ class Flow {
 				childDS.field = dataset.field
 
 				def bulkChildParams = new HashMap<String, Object>()
-				child.bulkParams = bulkChildParams
 				if (child.datasetParams != null)
 					bulkChildParams.putAll(child.datasetParams)
 
@@ -607,6 +607,8 @@ class Flow {
 					bulkChildParams.compressed = 'GZIP'
 				if (child.autoTran)
 					bulkChildParams.autoCommit = false
+
+				child.bulkParams = bulkChildParams
 				child.datasetParams?.clear()
 
 				if (dataset.field.isEmpty())

@@ -3,6 +3,7 @@ package getl.lang.opts
 import getl.config.ConfigSlurper
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.tfs.TFS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
@@ -58,7 +59,7 @@ class FileTextSpec extends BaseSpec {
         if (_filePath != null)
             return _filePath
 
-        def file = new File(FileUtils.TransformFilePath(fileName))
+        def file = new File(FileUtils.TransformFilePath(fileName, ownerObject as Getl))
         if (temporaryFile && file.parent == null)
             _filePath = "${TFS.storage.currentPath()}/$fileName"
         else

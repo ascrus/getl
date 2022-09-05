@@ -41,7 +41,7 @@ class SQLParser {
 
 	@SuppressWarnings('SpellCheckingInspection')
 	private Map<String, String> regexp = [
-			GETL_ECHO: '(?i)^[@]{0,1}ECHO .+',
+			GETL_ECHO: '(?i)^[@]{0,1}ECHO( .+)*$',
 			GETL_IF: '(?i)^[@]{0,1}IF DO',
 			GETL_SET: '(?i)^[@]{0,1}SET .+',
 			GETL_FOR: '(?i)^[@]{0,1}FOR DO',

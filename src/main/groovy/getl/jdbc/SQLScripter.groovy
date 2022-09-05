@@ -145,7 +145,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	 */
 	@Synchronized
 	void loadFile(String fileName, String codePage = 'utf-8') {
-		def fn = FileUtils.ResourceFileName(FileUtils.TransformFilePath(fileName), dslCreator)
+		def fn = FileUtils.ResourceFileName(FileUtils.TransformFilePath(fileName, dslCreator), dslCreator)
 		if (fn == null)
 			throw new ExceptionGETL("Script file \"$fileName\" not found!")
 		def file = new File(fn)

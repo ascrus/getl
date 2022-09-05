@@ -391,4 +391,17 @@ RUN_FILE resource:/jdbc/script.sql
             }
         }
     }
+
+    @Test
+    void testEcho() {
+        Getl.Dsl {
+            embeddedConnection {
+                sql {
+                    vars.var1 = 'test1'
+                    script = 'Echo {var1}'
+                    runSql true
+                }
+            }
+        }
+    }
 }

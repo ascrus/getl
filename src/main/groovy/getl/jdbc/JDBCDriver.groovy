@@ -108,6 +108,7 @@ class JDBCDriver extends Driver {
 				ddlCreateTable: 'CREATE{ %type%} TABLE{ %ifNotExists%} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
 				ddlCreateIndex: 'CREATE{ %unique%}{ %hash%} INDEX{ %ifNotExists%} {indexName} ON {tableName} ({columns})',
 				ddlCreateField: '{column} {type}{ %increment%}{ %not_null%}{ %default%}{ %check%}{ %compute%}',
+				ddlCreatePrimaryKey: 'PRIMARY KEY{ %hash%} ({columns})',
 				ddlDrop: 'DROP {object}{ %ifExists%} {name}',
 				ddlCreateView: '{create}{ %temporary%} VIEW{ %ifNotExists%} {name} AS\n{select}',
 				ddlAutoIncrement: null,
@@ -547,7 +548,7 @@ class JDBCDriver extends Driver {
             }
             else {
                 jdbcClass = Class.forName(drvName, true,
-						FileUtils.ClassLoaderFromPath(FileUtils.ResourceFileName(FileUtils.TransformFilePath(drvPath), con.dslCreator),
+						FileUtils.ClassLoaderFromPath(FileUtils.ResourceFileName(FileUtils.TransformFilePath(drvPath, con.dslCreator), con.dslCreator),
 								this.getClass().classLoader))
 				useLoadedDriver = true
             }
@@ -1129,7 +1130,6 @@ class JDBCDriver extends Driver {
 		def extend = createDatasetExtend(dataset as JDBCDataset, p)
 		
 		def defFields = []
-		def defPrimary = GenerationUtils.SqlKeyFields(dataset as JDBCDataset, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
 				switch (f.type) {
@@ -1184,8 +1184,8 @@ class JDBCDriver extends Driver {
 		}
 		def fields = '\t' + defFields.join(",\n\t")
 		def pk = "" 
-		if (isSupport(Support.PRIMARY_KEY) && defPrimary.size() > 0) {
-			pk = "	PRIMARY KEY " + ((params.hashPrimaryKey != null && params.hashPrimaryKey)?"HASH ":"") + "(" + defPrimary.join(",") + ")"
+		if (isSupport(Support.PRIMARY_KEY) && dataset.field.find { it.isKey } != null) {
+			pk = '  ' + generatePrimaryKeyDefinition(dataset as JDBCDataset, params)
 			fields += ","
 		}
 
@@ -1282,6 +1282,12 @@ class JDBCDriver extends Driver {
 	/** Generate default constraint for field of table */
 	String generateCheckDefinition(Field f) {
 		return "CHECK (${f.checkValue})"
+	}
+
+	/** Generate primary key definition */
+	String generatePrimaryKeyDefinition(JDBCDataset dataset, Map params) {
+		def defPrimary = GenerationUtils.SqlKeyFields(dataset, dataset.field, null, null)
+		return sqlExpressionValue('ddlCreatePrimaryKey', [hash: (BoolUtils.IsValue(params.hashPrimaryKey))?'HASH':null, columns: defPrimary.join(",")])
 	}
 
 	/**
@@ -3202,5 +3208,15 @@ FROM {source} {after_from}'''
 	void restartSequence(String name, Long newValue) {
 		def qp = [name: name, value: newValue]
 		executeCommand(sqlExpressionValue('ddlRestartSequence', qp))
+	}
+
+	@Override
+	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
+		def res = super.prepareImportFields(dataset, importParams)
+		if (dataset instanceof FileDataset) {
+			res.each { field -> field.alias = null }
+		}
+
+		return res
 	}
 }

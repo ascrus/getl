@@ -3,6 +3,8 @@ package getl.models.sub
 
 import getl.lang.sub.ScriptEvents
 import getl.models.Workflows
+import getl.models.opts.WorkflowScriptSpec
+import getl.models.opts.WorkflowSpec
 import getl.utils.sub.BaseUserCode
 
 import java.sql.Timestamp
@@ -41,4 +43,10 @@ class WorkflowUserCode extends BaseUserCode {
 
     /** List of script in model */
     List<String> getModelScripts() { currentModel.listScripts().keySet().toList() }
+
+    /** Model step by name */
+    WorkflowSpec step(String stepName) { currentModel.stepByName(stepName) }
+
+    /** Model script by name */
+    WorkflowScriptSpec script(String scriptName) { currentModel.scriptByName(scriptName) }
 }

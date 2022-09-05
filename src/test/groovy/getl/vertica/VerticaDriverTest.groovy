@@ -447,7 +447,12 @@ LIMIT 1'''
                     field('id') { type = integerFieldType; isKey = true }
                     field('name') { length = 50; isNull = false }
                     field('value') { type = numericFieldType; length = 12; precision = 2 }
-                    create(ifNotExists: true)
+                    createOpts {
+                        ifNotExists = true
+                        checkPrimaryKey = true
+                    }
+                    drop(ifExists: true)
+                    create()
                     etl.rowsTo {
                         writeRow {add ->
                             add id: 1, name: 'test', value: 123.45

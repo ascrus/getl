@@ -1392,12 +1392,26 @@ class FileUtils {
 
 	/**
 	 * Transform path based on OS environment variables
-	 * @param path Original file path
+	 * @param path original file path
 	 * @param errorWhenUndefined throw error if no variables found from the path
-	 * @return Transformed path
+	 * @param getl current Getl instance
+	 * @return transformed path
 	 */
-	static String TransformFilePath(String path, Boolean errorWhenUndefined = true) {
-		return StringUtils.EvalMacroString(path, ['#TEMPDIR': SystemTempDir()] + Config.SystemProps(), errorWhenUndefined)
+	static String TransformFilePath(String path, Boolean errorWhenUndefined = true, Getl getl = null) {
+		def p = ['#TEMPDIR': SystemTempDir()] + Config.SystemProps()
+		if (getl != null && getl.repositoryStorageManager.storagePath != null)
+			p.put('#REPOSITORY', getl.repositoryStorageManager.storagePath())
+		return StringUtils.EvalMacroString(path, p, errorWhenUndefined)
+	}
+
+	/**
+	 * Transform path based on OS environment variables
+	 * @param path original file path
+	 * @param getl current Getl instance
+	 * @return transformed path
+	 */
+	static String TransformFilePath(String path, Getl getl) {
+		return TransformFilePath(path, true, getl)
 	}
 
 	/**
