@@ -944,76 +944,113 @@ class FileUtils {
 
 		return p.exitValue()
 	}
-	
+
 	/**
-	 * Compress directories and files by path to zip file
-	 * @param zipName
-	 * @param path
+	 * Compress directories and files by path to zip file<br><br>
+	 * Zip parameters:
+	 * <ul>
+	 *     <li>String password</li>
+	 *     <li>String compressionMethod</li>
+	 *     <li>String compressionLevel</li>
+	 *     <li>Boolean encryptFiles</li>
+	 *     <li>String encryptionMethod</li>
+	 *     <li>String aesKeyStrength</li>
+	 *     <li>String charsetFileName</li>
+	 *     <li>String rootDir</li>
+	 * </ul>
+	 *
+	 * @param zipFilePath zip file path
+	 * @param sourcePath source files path
+	 * @param params zip parameters
 	 */
-	static void CompressToZip(String zipName, String path, Map params = null) {
-		CompressToZip(zipName, path, params, null)
+	static void CompressToZip(String zipFilePath, String sourcePath, Map params = null) {
+		CompressToZip(zipFilePath, sourcePath, params, null)
 	}
 
     /**
      * Compress directories and files by path to zip file
-     * @param zipName
-     * @param path
-     * @param validMask
+	 * @param zipFilePath zip file path
+	 * @param sourcePath source files path
+	 * @param checkFileName code for checking the inclusion of files in the archive
      */
-    static void CompressToZip(String zipName, String path, Closure validFile) {
-        CompressToZip(zipName, path, null, validFile)
+    static void CompressToZip(String zipFilePath, String sourcePath, Closure checkFileName) {
+        CompressToZip(zipFilePath, sourcePath, null, checkFileName)
     }
+
+	static private final ParamMethodValidator CompressToZipParams = new ParamMethodValidator().tap {
+		register('CompressToZip', ['password', 'compressionMethod', 'compressionLevel', 'encryptFiles', 'encryptionMethod',
+						  'aesKeyStrength', 'charsetFileName', 'rootDir'])
+	}
 	
 	/**
-	 * Compress directories and files by path to zip file
-	 * @param zipName
-	 * @param path
-     * @param params
-	 * @param validMask
+	 * Compress directories and files by path to zip file<br><br>
+	 * Zip parameters:
+	 * <ul>
+	 *     <li>String password</li>
+	 *     <li>String compressionMethod</li>
+	 *     <li>String compressionLevel</li>
+	 *     <li>Boolean encryptFiles</li>
+	 *     <li>String encryptionMethod</li>
+	 *     <li>String aesKeyStrength</li>
+	 *     <li>String charsetFileName</li>
+	 *     <li>String rootDir</li>
+	 * </ul>
+	 *
+	 * @param zipFilePath zip file path
+	 * @param sourcePath source files path
+     * @param params zip parameters
+	 * @param checkFileName code for checking the inclusion of files in the archive
 	 */
-	static void CompressToZip(String zipName, String path, Map params,
+	static void CompressToZip(String zipFilePath, String sourcePath, Map params,
 							  @ClosureParams(value = SimpleType, options = ['java.io.File', 'java.lang.String'])
-									  Closure validFile) {
-		zipName = TransformFilePath(zipName)
-		path = TransformFilePath(path)
+									  Closure checkFileName) {
+		zipFilePath = TransformFilePath(zipFilePath)
+		sourcePath = TransformFilePath(sourcePath)
 
 		if (params == null)
 			params = new HashMap()
+		else
+			CompressToZipParams.validation('CompressToZip', params)
 
-		zipName = new File(zipName).canonicalPath
-		def password = params.password as String
-		ZipFile zipFile = (password != null)?new ZipFile(zipName, password.toCharArray()):new ZipFile(zipName)
-
+		zipFilePath = new File(zipFilePath).canonicalPath
+		def password = params.password?.toString()
+		ZipFile zipFile = (password != null)?new ZipFile(zipFilePath, password.toCharArray()):new ZipFile(zipFilePath)
 
 		ZipParameters parameters = new ZipParameters()
 		parameters.setCompressionMethod((params.compressionMethod != null)?(CompressionMethod.valueOf(params.compressionMethod as String)):CompressionMethod.DEFLATE)
 		parameters.setCompressionLevel((params.compressionLevel != null)?(CompressionLevel.valueOf(params.compressionLevel as String)):CompressionLevel.NORMAL)
-        if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles as Boolean)
+        if (params.encryptFiles != null) parameters.setEncryptFiles(BoolUtils.IsValue(params.encryptFiles))
         if (params.encryptionMethod != null) parameters.setEncryptionMethod(EncryptionMethod.valueOf(params.encryptionMethod as String))
         if (params.aesKeyStrength != null) parameters.setAesKeyStrength(AesKeyStrength.valueOf(params.aesKeyStrength.toString()))
 		if (params.charsetFileName != null) zipFile.charset = Charset.forName(params.charsetFileName as String)
 
 		String fileMask
-		if (new File(path).directory) {
+		if (new File(sourcePath).directory) {
 			fileMask = '*'
-			path += (File.separator + fileMask)
+			sourcePath += (File.separator + fileMask)
 		}
 		else
-			fileMask = FileName(path)
+			fileMask = FileName(sourcePath)
 
-		String filePath = PathFromFile(path)
+		String filePath = PathFromFile(sourcePath)
 		
 		Path p = new Path(mask: fileMask)
 
 		def filter = { File pathFile, String name ->
-			def accept = p.match(name) //name.matches(p.maskPath)
-			if (accept && validFile != null) accept = (validFile(pathFile, name) == true)
+			def accept = p.match(name)
+			if (accept && checkFileName != null) accept = (checkFileName(pathFile, name) == true)
 			
 			return accept
 		}
-		
+
+		if (params.rootDir != null)
+			parameters.rootFolderNameInZip = params.rootDir.toString()
+
 		new File(filePath).listFiles(new Filter(filter)).each { File f ->
-			if (f.directory) zipFile.addFolder(f, parameters) else zipFile.addFile(f, parameters)
+			if (f.directory)
+				zipFile.addFolder(f, parameters)
+			else
+				zipFile.addFile(f, parameters)
 		}
 	}
 

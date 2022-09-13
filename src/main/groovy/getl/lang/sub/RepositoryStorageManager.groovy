@@ -102,6 +102,7 @@ class RepositoryStorageManager {
     private Dataset savingStoryDataset
     /** History of saving objects to files */
     Dataset getSavingStoryDataset() { savingStoryDataset }
+    /** History of saving objects to files */
     void setSavingStoryDataset(Dataset value) {
         if (value != null && !(value instanceof TableDataset || value instanceof CSVDataset))
             throw new ExceptionDSL('It is allowed to use JDBC tables or CSV files to store the history of saving objects!')
@@ -169,6 +170,58 @@ class RepositoryStorageManager {
 
     /** Decrypt text */
     protected String decryptText(String text) { StringUtils.Decrypt(text, new String(storagePassword) ) }
+
+    /** Repository libraries path */
+    private String librariesDirName
+    /** Repository libraries path */
+    String getLibrariesDirName() { librariesDirName }
+    /** Repository libraries path */
+    void setLibrariesDirName(String value) { librariesDirName = value }
+
+    /** Class loader for used libraries */
+    private GroovyClassLoader librariesClassLoader
+    /** Class loader for used libraries */
+    GroovyClassLoader getLibrariesClassLoader() { librariesClassLoader }
+    /** Build libraries class loader */
+    void buildLibrariesClassLoader() {
+        librariesClassLoader = null
+        if (librariesDirName == null)
+            return
+
+        def repPath = storagePath()
+        def libDir = new File(repPath + '/' + librariesDirName)
+        if (!libDir.exists()) {
+            if (!dslCreator.unitTestMode)
+                dslCreator.logWarn("Libraries directory \"$librariesDirName\" not found from repository path \"$repPath\"!")
+            return
+        }
+
+        if (repPath != null && libDir.exists() && libDir.directory) {
+            librariesClassLoader = new GroovyClassLoader(dslCreator.getClass().classLoader)
+            librariesClassLoader.addClasspath(libDir.path)
+            libDir.listFiles(new FileFilter() {
+                @Override
+                boolean accept(File file) {
+                    return file.file && (FileUtils.FileExtension(file.name).toLowerCase() in ['zip', 'jar'])
+                }
+            }).each { file ->
+                dslCreator.logFinest("Attaching library \"${file.name}\" from repository ...")
+                librariesClassLoader.addURL(file.toURI().toURL())
+
+                def cl = new GroovyClassLoader(Getl.classLoader)
+                cl.addURL(file.toURI().toURL())
+                def confFile = FileUtils.FileFromResources('getl-library.conf', null, cl)
+                if (confFile != null) {
+                    def confContent = ConfigSlurper.LoadConfigFile(confFile, 'utf-8', null, null, dslCreator)
+                    def initClasses = confContent.init_classes as List<String>
+                    initClasses?.each { className ->
+                        dslCreator.logFinest("Loading class \"$className\" from library \"${file.name}\" ...")
+                        librariesClassLoader.loadClass(className, false, false, true)
+                    }
+                }
+            }
+        }
+    }
 
     /** Create and register repositories */
     protected void initRepositories() {

@@ -346,8 +346,7 @@ Examples:
 
                 if (className == null)
                     eng.setGetlSystemParameter('workflow', workflowName?:FileUtils.FilenameWithoutExtension(FileUtils.FileName(workflowFileName)))
-                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>, false,
-                        loadProperties)
+                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>, false, loadProperties)
                 if (className != null)
                     eng.logInfo("### Start script ${eng.getClass().name}")
                 else if (workflowFileName != null)
@@ -553,6 +552,12 @@ Examples:
                                     fieldDelimiter: ',', codePage: 'utf-8', escaped: false)
                             savingStoryDataset = csvDataset
                             logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
+                        }
+
+                        if (en.libs != null) {
+                            librariesDirName = en.libs as String
+                            logFine("Using libraries from repository directory \"$librariesDirName\"")
+                            buildLibrariesClassLoader()
                         }
                     }
                 }

@@ -1725,8 +1725,10 @@ sb << """
 			bind.setVariable(key, val)
 		}
 
-		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind,
-				CompilerConfiguration.DEFAULT)
+		if (owner != null && classLoader == null)
+			classLoader = owner.repositoryStorageManager.librariesClassLoader
+
+		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind, CompilerConfiguration.DEFAULT)
 
 		def res
 		try {

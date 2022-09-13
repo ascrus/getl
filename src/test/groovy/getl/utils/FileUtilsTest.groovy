@@ -252,19 +252,37 @@ println time() + 'finish' '''
         def file = new File(fileName)
         file.deleteOnExit()
         file.text = text
+
         new File(zipName).deleteOnExit()
-        FileUtils.CompressToZip(zipName, "${TFS.systemPath}/zip.*.txt", [compressionMethod: 'DEFLATE', compressionLevel: 'MAXIMUM',
-                                                    encryptFiles: true, encryptionMethod: 'AES',
-                                                    aesKeyStrength: 'KEY_STRENGTH_256', password: psw])
+        FileUtils.CompressToZip(zipName, "${TFS.systemPath}/zip.*.txt",
+                [compressionMethod: 'DEFLATE', compressionLevel: 'MAXIMUM', encryptFiles: true, encryptionMethod: 'AES',
+                 aesKeyStrength: 'KEY_STRENGTH_256', password: psw])
 
         assertTrue(FileUtils.ExistsFile(zipName))
         assertTrue(FileUtils.DeleteFile(fileName))
 
+        def extFileName = "${TFS.systemPath}/zip.files/zip.${FileUtils.UniqueFileName()}.txt"
+        FileUtils.ValidFilePath(extFileName, true)
+        def extFile = new File(extFileName)
+        extFile.deleteOnExit()
+        extFile.text = text
+        FileUtils.CompressToZip(zipName, "${TFS.systemPath}/zip.files/zip.*.txt",
+                [compressionMethod: 'DEFLATE', compressionLevel: 'MAXIMUM', encryptFiles: true, encryptionMethod: 'AES',
+                 aesKeyStrength: 'KEY_STRENGTH_256', password: psw, rootDir: 'zip.files'])
+        assertTrue(FileUtils.DeleteFile(extFileName))
+
         FileUtils.UnzipFile(zipName, TFS.systemPath, psw)
-        assertTrue(FileUtils.ExistsFile(fileName))
-        assertEquals(text, new File(fileName).text)
-        assertTrue(FileUtils.DeleteFile(zipName))
-        assertTrue(FileUtils.DeleteFile(fileName))
+        try {
+            assertTrue(FileUtils.ExistsFile(fileName))
+            assertEquals(text, new File(fileName).text)
+            assertTrue(FileUtils.ExistsFile(extFileName))
+            assertEquals(text, new File(extFileName).text)
+        }
+        finally {
+            FileUtils.DeleteFile(zipName)
+            FileUtils.DeleteFile(fileName)
+            FileUtils.DeleteFile(extFileName)
+        }
 
         def zipPath = TFS.systemPath + '/test-zip'
         FileUtils.UnzipFile('resource:/reference/zip/test.zip', zipPath, null, 'cp866')

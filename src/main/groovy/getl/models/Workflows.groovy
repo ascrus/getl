@@ -345,14 +345,14 @@ class Workflows extends BaseModel<WorkflowSpec> {
      * Start workflow processes
      * @param addVars variable for execution steps over step variables
      * @param userClassLoader class loader for running user script
-     * @param scriptClassLoader class loader for running specified script (closure parameter is passed the name of the class)
      * @return number of steps successfully completed
      */
     Integer execute(Map<String, Object> addVars = null, List<String> include_steps = null, List<String> exclude_steps = null,
-                    URLClassLoader userClassLoader = null,
-                    @ClosureParams(value = SimpleType, options = ['java.lang.String'])
-                            Closure<URLClassLoader> scriptClassLoader = null) {
-        dslCreator.logFinest("Execute workflow [\"$dslNameObject\"] model ...")
+                    URLClassLoader userClassLoader = null) {
+        dslCreator.logFinest("Executing workflow [\"$dslNameObject\"] model ...")
+
+        if (userClassLoader == null && dslCreator != null)
+            userClassLoader = dslCreator.repositoryStorageManager.librariesClassLoader
 
         addVars = addVars?:new HashMap<String, Object>()
         generateUserCode(userClassLoader, addVars)
@@ -364,7 +364,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
         def res = 0
         usedSteps.each { node ->
             try {
-                res = +stepExecute(node, addVars, including, excluding, scriptClassLoader)
+                res = +stepExecute(node, addVars, including, excluding, userClassLoader)
             }
             catch (Throwable e) {
                 dslCreator.logError("Error execution step \"${node.stepName}\"", e)
@@ -475,9 +475,7 @@ return $className"""
     }
 
     /** Run workflow step */
-    private Integer stepExecute(WorkflowSpec node, Map addVars, List<Path> include_steps, List<Path> exclude_steps,
-                                @ClosureParams(value = SimpleType, options = ['java.lang.String'])
-                                        Closure<URLClassLoader> scriptClassLoader,
+    private Integer stepExecute(WorkflowSpec node, Map addVars, List<Path> include_steps, List<Path> exclude_steps, URLClassLoader userClassLoader,
                                 String parentStep = null) {
         def res = 0
         def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
@@ -488,7 +486,7 @@ return $className"""
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
                 try {
-                    res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                    res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable e) {
                     dslCreator.logError("Error execution step \"${subNode.stepName}\"", e)
@@ -538,10 +536,7 @@ return $className"""
             node.scripts.each { scriptName, scriptParams ->
                 def className = scriptParams.className as String
 
-                URLClassLoader classLoader = null
-                if (scriptClassLoader != null)
-                    classLoader = scriptClassLoader.call(className)
-                def runClass = classForExecute(className, classLoader, node.stepName)
+                def runClass = classForExecute(className, userClassLoader, node.stepName)
                 if (runClass == null)
                     throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
 
@@ -695,7 +690,7 @@ return $className"""
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
                 try {
-                    res += stepExecute(subNode, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                    res += stepExecute(subNode, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable e) {
                     dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
@@ -707,7 +702,7 @@ return $className"""
             def errStep = node.nested.find { it.operation == errorOperation }
             if (errStep != null) {
                 try {
-                    stepExecute(errStep, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, scriptClassLoader, stepLabel)
+                    stepExecute(errStep, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable err) {
                     dslCreator.logError("Error execution step \"${errStep.stepName}\"!", err)
