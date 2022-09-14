@@ -201,6 +201,8 @@ Examples:
 
         if (vars != null && !vars.isEmpty())
             _fillFieldFromVars(this, vars, true, true)
+
+        setGetlSystemParameter('runMode', 'shell')
     }
 
     /**
@@ -344,6 +346,7 @@ Examples:
                     }
                 }
 
+                eng.setGetlSystemParameter('runMode', 'init')
                 if (className == null)
                     eng.setGetlSystemParameter('workflow', workflowName?:FileUtils.FilenameWithoutExtension(FileUtils.FileName(workflowFileName)))
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>, false, loadProperties)
@@ -357,9 +360,12 @@ Examples:
 
                 def isJobError = false
                 try {
-                    if (className != null)
+                    if (className != null) {
+                        eng.setGetlSystemParameter('runMode', 'class')
                         eng.runGroovyInstance(eng, true, eng.configuration.manager.vars)
+                    }
                     else if (workflowFileName != null) {
+                        eng.setGetlSystemParameter('runMode', 'workflow')
                         def workflow = eng.models.workflow((workflowName != null)?
                                 "##${workflowName.replace(':', '_')}##":'##workflow##', true)
                         eng.repositoryStorageManager {
@@ -367,8 +373,10 @@ Examples:
                         }
                         workflow.execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
                     }
-                    else
+                    else {
+                        eng.setGetlSystemParameter('runMode', 'workflow')
                         eng.models.workflow(workflowName).execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
+                    }
                 }
                 catch (AbortDsl e) {
                     if (e.typeCode == AbortDsl.STOP_APP) {
@@ -387,6 +395,7 @@ Examples:
                     throw e
                 }
                 finally {
+                    eng.setGetlSystemParameter('runMode', 'stop')
                     eng.repositoryStorageManager.clearRepositories()
 
                     if (className != null) {
@@ -667,6 +676,25 @@ Examples:
                     "created ${options.projectConfigParams.year?:DateUtils.PartOfDate('YEAR', new Date()).toString()} " +
                     "by \"${options.projectConfigParams.company?:'My company'}\"")
         }
+
+        InitServices.each { code ->
+            code.call(this)
+        }
+    }
+
+    /** List of initialization service */
+    static private final InitServices = [] as List<Closure>
+    /** Add service code on initialization Getl instance */
+    static void InitServiceAdd(@ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
+        if (cl == null)
+            throw new NullPointerException('Need closure code!')
+        if (_getl == null || _getl.getGetlSystemParameter('runMode') == 'init') {
+            if (InitServices.indexOf(cl) != -1)
+                throw new ExceptionGETL('Duplicate init service code!')
+            InitServices.add(cl)
+        }
+        else if (_getl != null)
+            cl.call(_getl)
     }
 
     /** Quit DSL Application */
