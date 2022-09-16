@@ -27,6 +27,7 @@ import getl.postgresql.PostgreSQLTable
 import getl.proc.sub.ExecutorListElement
 import getl.salesforce.SalesForceDataset
 import getl.salesforce.SalesForceQueryDataset
+import getl.sap.HanaTable
 import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.tfs.TFSDataset
@@ -54,6 +55,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String EXCELDATASET = ExcelDataset.name
     static public final String FIREBIRDTABLE = FirebirdTable.name
     static public final String H2TABLE = H2Table.name
+    static public final String HANATABLE = HanaTable.name
     static public final String HIVETABLE = HiveTable.name
     static public final String IMPALATABLE = ImpalaTable.name
     static public final String TABLEDATASET = TableDataset.name
@@ -77,14 +79,14 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed dataset classes */
     static public final List<String> LISTDATASETS = [
-        CSVDATASET, CSVTEMPDATASET, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
+        CSVDATASET, CSVTEMPDATASET, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
         SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET, ARRAYDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
     static public List<String> LISTJDBCTABLES = [
-        DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
+        DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
         NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE, VIEWDATASET
     ]
 

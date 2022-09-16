@@ -66,7 +66,7 @@ end;'''
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX,
+				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.START_TRANSACTION] -
 				[Support.SELECT_WITHOUT_FROM, Support.BOOLEAN]
 	}
@@ -94,15 +94,16 @@ end;'''
 	else {
 		oracle.sql.BLOB blob = con.createBlob() as oracle.sql.BLOB
 		def stream = blob.getBinaryOutputStream()
-		stream.write(value)
-		stream.close()
+		try {
+		  stream.write(value)
+		}
+		finally {
+		  stream.close()
+		}
 		stat.setBlob(paramNum, blob)
 	}
 }"""
     }
-	
-	/*@Override
-	Boolean blobReadAsObject() { return false }*/
 	
 	@Override
 	String textMethodWrite(String methodName) {

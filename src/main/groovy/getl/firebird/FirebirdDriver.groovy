@@ -1,5 +1,6 @@
 package getl.firebird
 
+import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
@@ -43,7 +44,7 @@ class FirebirdDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-            [Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.INDEX, Support.TIME, Support.DATE, Support.BOOLEAN, Support.AUTO_INCREMENT] -
+            [Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.TIME, Support.DATE, Support.BOOLEAN, Support.AUTO_INCREMENT] -
             [/*Support.DEFAULT_VALUE, Support.COMPUTE_FIELD, */Support.DATABASE, Support.SCHEMA, Support.SELECT_WITHOUT_FROM]
     }
 
@@ -83,5 +84,5 @@ class FirebirdDriver extends JDBCDriver {
     }
 
     @Override
-    Boolean blobReadAsObject() { return false }
+    Boolean blobReadAsObject(Field field = null) { return false }
 }

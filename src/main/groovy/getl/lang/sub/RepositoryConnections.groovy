@@ -21,6 +21,7 @@ import getl.netsuite.NetsuiteConnection
 import getl.oracle.OracleConnection
 import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
+import getl.sap.HanaConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.transform.ArrayDatasetConnection
@@ -43,6 +44,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String EXCELCONNECTION = ExcelConnection.name
     static public final String FIREBIRDCONNECTION = FirebirdConnection.name
     static public final String H2CONNECTION = H2Connection.name
+    static public final String HANACONNECTION = HanaConnection.name
     static public final String HIVECONNECTION = HiveConnection.name
     static public final String IMPALACONNECTION = ImpalaConnection.name
     static public final String JDBCCONNECTION = JDBCConnection.name
@@ -64,14 +66,14 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     /** List of allowed connection classes */
     static public final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, DBFCONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
-        H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
+        H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
         MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
         VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION, ARRAYDATASETCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */
     static public final List<String> LISTJDBCCONNECTIONS = [
-        DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION,
+        DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION,
         JDBCCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
         POSTGRESQLCONNECTION, VERTICACONNECTION
     ]

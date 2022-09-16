@@ -47,7 +47,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Support.START_TRANSACTION,
-				 Driver.Support.SEQUENCE, Driver.Support.CLOB, Driver.Support.INDEX,
+				 Driver.Support.SEQUENCE, Driver.Support.CLOB, Driver.Support.INDEX, Support.INDEXFORTEMPTABLE,
 				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
 				 Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Driver.Support.AUTO_INCREMENT,
@@ -137,19 +137,18 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	Boolean blobReadAsObject () { return false }
+	Boolean blobReadAsObject(Field field = null) { return false }
 
 	@Override
-	@CompileStatic
-	String blobMethodWrite (String methodName) {
+	String blobMethodWrite(String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
 	}
 	else {
-    	def stream = new ByteArrayInputStream(value)
-		stat.setBinaryStream(paramNum, stream)
-		stream.close()
+    	try (def stream = new ByteArrayInputStream(value)) {
+		  stat.setBinaryStream(paramNum, stream)
+		}
 	}
 }"""
 	}

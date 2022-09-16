@@ -2034,7 +2034,7 @@ sb << """
 						sb << "	outRow.put('$fName', _getl_temp_var_${i})"
 					break
 				case Field.blobFieldType:
-					if (driver.blobReadAsObject()) {
+					if (driver.blobReadAsObject(f)) {
 						sb << "	outRow.put('$fName', (_getl_temp_var_${i} as java.sql.Blob).getBytes((long)1, (int)((_getl_temp_var_${i} as java.sql.Blob).length())))"
 					}
 					else {

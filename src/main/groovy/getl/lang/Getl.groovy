@@ -32,6 +32,8 @@ import getl.postgresql.*
 import getl.proc.*
 import getl.proc.sub.*
 import getl.salesforce.*
+import getl.sap.HanaConnection
+import getl.sap.HanaTable
 import getl.stat.*
 import getl.test.GetlTest
 import getl.tfs.*
@@ -3551,6 +3553,63 @@ Examples:
     HiveTable hiveTable(@DelegatesTo(HiveTable)
                         @ClosureParams(value = SimpleType, options = ['getl.hive.HiveTable']) Closure cl) {
         hiveTable(null, false, cl)
+    }
+
+    /** Hana connection */
+    HanaConnection hanaConnection(String name, Boolean registration,
+                                  @DelegatesTo(HanaConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.sap.HanaConnection']) Closure cl = null) {
+        def parent = registerConnection(RepositoryConnections.HANACONNECTION, name, registration) as HanaConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Hana connection */
+    HanaConnection hanaConnection(String name,
+                                  @DelegatesTo(HanaConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.sap.HanaConnection']) Closure cl = null) {
+        hanaConnection(name, false, cl)
+    }
+
+    /** Hana connection */
+    HanaConnection hanaConnection(@DelegatesTo(HanaConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.sap.HanaConnection']) Closure cl) {
+        hanaConnection(null, false, cl)
+    }
+
+    /** Hana current connection */
+    HanaConnection hanaConnection() {
+        defaultJdbcConnection(RepositoryDatasets.HANATABLE) as HanaConnection
+    }
+
+    /** Use default Hana connection for new datasets */
+    HanaConnection useHanaConnection(HanaConnection connection) {
+        useJdbcConnection(RepositoryDatasets.HANATABLE, connection) as HanaConnection
+    }
+
+    /** Hana table */
+    HanaTable hanaTable(String name, Boolean registration,
+                        @DelegatesTo(HanaTable)
+                        @ClosureParams(value = SimpleType, options = ['getl.sap.HanaTable']) Closure cl = null) {
+        def parent = registerDataset(null, RepositoryDatasets.HANATABLE, name, registration,
+                defaultJdbcConnection(RepositoryDatasets.HANATABLE), HanaConnection, cl) as HanaTable
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Hana table */
+    HanaTable hanaTable(String name,
+                        @DelegatesTo(HanaTable)
+                        @ClosureParams(value = SimpleType, options = ['getl.sap.HanaTable']) Closure cl = null) {
+        hanaTable(name, false, cl)
+    }
+
+    /** Hana table */
+    HanaTable hanaTable(@DelegatesTo(HanaTable)
+                        @ClosureParams(value = SimpleType, options = ['getl.sap.HanaTable']) Closure cl) {
+        hanaTable(null, false, cl)
     }
 
     /** Impala connection */

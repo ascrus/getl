@@ -452,7 +452,7 @@ class VerticaDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
 	@Override
-	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
+	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		if (params.limit != null && ConvertUtils.Object2Long(params.limit) > 0) {
 			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "LIMIT ${params.limit}"
@@ -473,7 +473,7 @@ class VerticaDriver extends JDBCDriver {
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	void prepareField (Field field) {
+	void prepareField(Field field) {
 		super.prepareField(field)
 
 		if (field.type == Field.Type.ARRAY) {
@@ -501,7 +501,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	Boolean blobReadAsObject () { return false }
+	Boolean blobReadAsObject (Field field = null) { return false }
 
 	@Override
 	String blobMethodWrite (String methodName) {

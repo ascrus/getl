@@ -151,7 +151,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Script for write array of bytes to serial blob object
 	 */
-	String blobMethodWrite (String methodName) {
+	String blobMethodWrite(String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -165,7 +165,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Blob field return value as Blob interface
 	 */
-	Boolean blobReadAsObject() { return true }
+	Boolean blobReadAsObject(Field field = null) { return true }
 
 	/**
 	 * Timestamp with timezone field return value as Timestamp class
@@ -482,13 +482,20 @@ class JDBCDriver extends Driver {
 		JDBCConnection con = jdbcConnection
 		String conParams = ""
 		
-		Map prop = new HashMap()
+		def prop = [:] as Map<String, Object>
 		prop.putAll(connectProperty)
-		if (con.connectProperty != null) prop.putAll(con.connectProperty)
+
+		if (con.connectProperty != null)
+			prop.putAll(con.connectProperty)
+
 		if (!prop.isEmpty()) {
-			List<String> listParams = []
-			prop.each { k, v ->
-				listParams << "${k}=${v}".toString()
+			def listParams = [] as List<String>
+			prop.each { name, value ->
+				if (value != null) {
+					def v = (FileUtils.IsResourceFileName(value.toString(), true)) ?
+							FileUtils.TransformFilePath(value.toString(), false, con.dslCreator):value
+					listParams.add("${name}=${v}".toString())
+				}
 			}
 			conParams = connectionParamBegin + listParams.join(connectionParamJoin) + (connectionParamFinish?:'')
 		}
@@ -1045,12 +1052,18 @@ class JDBCDriver extends Driver {
 			saveToHistory("-- ROLLBACK (active ${con.tranCount} transaction)")
 		}
 	}
-	
+
+	/** Need commit after DDL operation */
 	protected Boolean commitDDL
+	/** DDL operator running in transaction */
 	protected Boolean transactionalDDL
+	/** Truncate table running in transaction */
 	protected Boolean transactionalTruncate
+	/** Allow expression for bulk load */
 	protected Boolean allowExpressions
+	/** String lengths are in bytes, not characters */
 	protected Boolean lengthTextInBytes
+	/** The default schema is the name of the connected database */
 	protected Boolean defaultSchemaFromConnectDatabase
 
 	/** Case named object (NONE, LOWER, UPPER) */
@@ -1060,17 +1073,30 @@ class JDBCDriver extends Driver {
 	/** Case retrieve objects (NONE, LOWER, UPPER) */
 	protected String caseRetrieveObject
 
+	/** Default database name */
 	protected String defaultDBName
+	/** Default schema name */
 	protected String defaultSchemaName
+	/** Temporary schema name */
 	protected String tempSchemaName
+	/** Reading fields of local temporary tables is supported */
 	protected Boolean supportLocalTemporaryRetrieveFields
+
+	/** Global table definition keyword */
 	protected String globalTemporaryTablePrefix
+	/** Local table definition keyword */
 	protected String localTemporaryTablePrefix
+	/** Memory table definition keyword */
 	protected String memoryTablePrefix
+	/** External table definition keyword */
 	protected String externalTablePrefix
+
+	/** Rule for defining identifier names that do not require quotes */
 	protected String ruleNameNotQuote
+	/** List of keywords that cannot be used as an identifier name without quotes */
 	protected List<String> ruleQuotedWords
 
+	/** Reading fields of local temporary tables is supported */
 	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
 	/** Name dual system table */
@@ -1207,7 +1233,10 @@ class JDBCDriver extends Driver {
 			executeCommand(sqlCodeCT, p)
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
-				if (!isSupport(Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
+				if (!isSupport(Support.INDEX))
+					throw new ExceptionGETL("Driver not support indexes!")
+				if (tableType in [JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType] && !isSupport(Support.INDEXFORTEMPTABLE))
+					throw new ExceptionGETL("Driver not support indexes for temporary tables!")
 				(params.indexes as Map<String, Map>).each { name, value ->
 					def idxCols = []
 					def orderFields = GenerationUtils.PrepareSortFields(value.columns as List<String>)
@@ -2834,7 +2863,7 @@ $sql
 	@Synchronized
 	protected void createSequence(String name, Boolean ifNotExists, SequenceCreateSpec opts) {
 		def qp = [name: name]
-		if (ifNotExists)
+		if (ifNotExists && isSupport(Support.CREATESEQUENCEIFNOTEXISTS))
 			qp.ifNotExists = 'IF NOT EXISTS'
 
 		createSequenceAttrs(opts, qp)
@@ -2863,7 +2892,7 @@ $sql
 	@Synchronized
 	protected void dropSequence(String name, Boolean ifExists) {
 		def qp = [name: name]
-		if (ifExists)
+		if (ifExists && isSupport(Support.DROPSEQUENCEIFEXISTS))
 			qp.ifExists = 'IF EXISTS'
 
 		executeCommand(sqlExpressionValue('ddlDropSequence', qp))

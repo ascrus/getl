@@ -79,13 +79,13 @@ class ImpalaDriver extends JDBCDriver {
     }
 
     @Override
-    String defaultConnectURL () {
+    String defaultConnectURL() {
         return 'jdbc:impala://{host}/{database}'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
-    Map<String, Map<String, Object>> getSqlType () {
+    Map<String, Map<String, Object>> getSqlType() {
         def res = super.getSqlType()
         res.STRING.name = 'string'
         res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER

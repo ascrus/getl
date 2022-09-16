@@ -149,7 +149,13 @@ abstract class JDBCDriverProto extends GetlTest {
         sequence.tap {
             useConnection con
             name = 'getl_test_sequence'
-            dropSequence(true)
+            try {
+                dropSequence(true)
+            }
+            catch (Exception e) {
+                if (con.driver.isSupport(Driver.Support.DROPSEQUENCEIFEXISTS))
+                    throw e
+            }
             cache = 10
             createSequence(true) {
                 incrementBy = 10
@@ -166,12 +172,12 @@ abstract class JDBCDriverProto extends GetlTest {
         }
         def tempTable = con.newDataset() as TableDataset
         tempTable.tap {
-            tableName = '_getl_local_temp_test'
+            tableName = '#_getl_local_temp_test'
             type = JDBCDataset.Type.LOCAL_TEMPORARY
         }
 
         tempTable.field = fields
-        if (con.driver.isSupport(Driver.Support.INDEX)) {
+        if (con.driver.isSupport(Driver.Support.INDEXFORTEMPTABLE)) {
             tempTable.create(indexes: [_getl_local_temp_test_idx_1: [columns: ['id2', 'name']]])
         }
         else {
@@ -200,7 +206,7 @@ abstract class JDBCDriverProto extends GetlTest {
         }
         tempTable.field = fields
         tempTable.drop(ifExists: true)
-        if (con.driver.isSupport(Driver.Support.INDEX)) {
+        if (con.driver.isSupport(Driver.Support.INDEXFORTEMPTABLE)) {
             tempTable.create(indexes: [_getl_global_temp_test_idx_1: [columns: ['id2', 'name']]])
         }
         else {
@@ -818,6 +824,7 @@ IF ('{support_update}' = 'true') DO {
                     onCommit = true
                 }
                 schemaName = null
+                tableName = '#' + tableName
             }
 
             tableName = tableName + '_clone'

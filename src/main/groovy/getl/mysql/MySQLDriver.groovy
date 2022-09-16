@@ -40,7 +40,7 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Support.LOCAL_TEMPORARY, Support.BLOB, Support.CLOB, Support.INDEX, Support.START_TRANSACTION,
+				[Support.LOCAL_TEMPORARY, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.START_TRANSACTION,
 				 Support.TIME, Support.DATE, Support.BOOLEAN, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST] -
 				[Support.SELECT_WITHOUT_FROM/*, Support.CHECK_FIELD*/] /* TODO : Valid CHECK on new version! */
@@ -81,7 +81,7 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	Boolean blobReadAsObject () { return false }
+	Boolean blobReadAsObject (Field field = null) { return false }
 
 	@Override
 	String blobMethodWrite (String methodName) {
@@ -90,9 +90,9 @@ class MySQLDriver extends JDBCDriver {
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
 	}
 	else {
-		def stream = new ByteArrayInputStream(value)
-		stat.setBinaryStream(paramNum, stream, value.length)
-		stream.close()
+		try (def stream = new ByteArrayInputStream(value)) {
+		  stat.setBinaryStream(paramNum, stream, value.length)
+		}
 	}
 }"""
 	}

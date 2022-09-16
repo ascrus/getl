@@ -49,7 +49,7 @@ class H2Driver extends JDBCDriver {
 	List<Support> supported() {
 		return super.supported() +
 				[Support.GLOBAL_TEMPORARY, Support.LOCAL_TEMPORARY, Support.MEMORY,
-				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX,
+				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
 				 Support.UUID, Support.TIME, Support.DATE, Support.TIMESTAMP_WITH_TIMEZONE,
 				 Support.BOOLEAN, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.AUTO_INCREMENT/*,
@@ -82,7 +82,7 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
-	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
+	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		def p = MapUtils.Copy(params)
 		def tableName = p.tableName
 		if (tableName != null) {
