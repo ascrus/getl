@@ -65,7 +65,7 @@ class QueryDataset extends JDBCDataset {
 	 * @return script text
 	 */
 	String readFile(String filePath, String codePage = null) {
-		def file = new File(FileUtils.ResourceFileName(filePath, dslCreator))
+		def file = new File(FileUtils.TransformFilePath(filePath, dslCreator))
 		if (!file.exists())
 			throw new ExceptionGETL("Script file \"$filePath\" not found!")
 		return file.getText(codePage?:scriptFileCodePage?:'utf-8')

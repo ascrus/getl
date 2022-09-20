@@ -66,11 +66,11 @@ class JDBCDriver extends Driver {
 		transactionalTruncate = false
 		allowExpressions = false
 		lengthTextInBytes = false
+		defaultBatchSize = 500L
 
 		caseObjectName = 'NONE'
 		caseQuotedName = false
 		caseRetrieveObject = 'NONE'
-		supportLocalTemporaryRetrieveFields = true
 		globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
 		localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 		memoryTablePrefix = 'MEMORY'
@@ -86,6 +86,11 @@ class JDBCDriver extends Driver {
 		tablePrefix = '"'
 		defaultSchemaFromConnectDatabase = false
 		ruleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
+
+		sqlExpressionSqlDateFormat = 'yyyy-MM-dd'
+		sqlExpressionSqlTimeFormat = 'HH:mm:ss.SSS'
+		sqlExpressionSqlTimestampFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
+		sqlExpressionDateFormat = 'yyyy-MM-dd HH:mm:ss'
 
 		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP',
 						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY', 'USER', 'ROLE',
@@ -104,6 +109,7 @@ class JDBCDriver extends Driver {
 				now: 'NOW()',
 				sequenceNext: 'SELECT NextVal(\'{value}\') AS id;',
 				sysDualTable: null,
+				changeSessionProperty: null,
 
 				ddlCreateTable: 'CREATE{ %type%} TABLE{ %ifNotExists%} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
 				ddlCreateIndex: 'CREATE{ %unique%}{ %hash%} INDEX{ %ifNotExists%} {indexName} ON {tableName} ({columns})',
@@ -145,7 +151,8 @@ class JDBCDriver extends Driver {
 
 	@Override
 	List<Operation> operations() {
-		[RETRIEVEFIELDS, READ_METADATA, INSERT, UPDATE, DELETE, TRUNCATE, CREATE, DROP, CREATE_SCHEMA, EXECUTE, CREATE_VIEW]
+		[RETRIEVEFIELDS, RETRIEVELOCALTEMPORARYFIELDS, RETRIEVEQUERYFIELDS, READ_METADATA,
+		 INSERT, UPDATE, DELETE, TRUNCATE, CREATE, DROP, CREATE_SCHEMA, EXECUTE, CREATE_VIEW]
 	}
 	
 	/**
@@ -478,31 +485,38 @@ class JDBCDriver extends Driver {
 		return url
 	}
 
-	String buildConnectParams () {
+	/** Parameters for url connection string */
+	protected Map<String, Object> connectionParams() {
+		def res = [:] as Map<String, Object>
+		res.putAll(connectProperty)
+
+		JDBCConnection con = jdbcConnection
+		if (con.connectProperty != null)
+			res.putAll(con.connectProperty)
+
+		return res
+	}
+
+	String buildConnectParams() {
 		JDBCConnection con = jdbcConnection
 		String conParams = ""
-		
-		def prop = [:] as Map<String, Object>
-		prop.putAll(connectProperty)
 
-		if (con.connectProperty != null)
-			prop.putAll(con.connectProperty)
-
+		def prop = connectionParams()
 		if (!prop.isEmpty()) {
 			def listParams = [] as List<String>
 			prop.each { name, value ->
 				if (value != null) {
-					def v = (FileUtils.IsResourceFileName(value.toString(), true)) ?
-							FileUtils.TransformFilePath(value.toString(), false, con.dslCreator):value
-					listParams.add("${name}=${v}".toString())
+					def v = (FileUtils.IsResourceFileName(value.toString(), true))?
+							FileUtils.ConvertToUnixPath(FileUtils.ResourceFileName(value.toString(), con.dslCreator)):value.toString()
+					listParams.add("${name}=${evalSqlParameters(v, con.attributes(), false)}".toString())
 				}
 			}
 			conParams = connectionParamBegin + listParams.join(connectionParamJoin) + (connectionParamFinish?:'')
 		}
-		
+
 		return conParams
 	}
-	
+
 	@Synchronized
 	Sql newSql(Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
@@ -555,33 +569,24 @@ class JDBCDriver extends Driver {
             }
             else {
                 jdbcClass = Class.forName(drvName, true,
-						FileUtils.ClassLoaderFromPath(FileUtils.ResourceFileName(FileUtils.TransformFilePath(drvPath, con.dslCreator), con.dslCreator),
+						FileUtils.ClassLoaderFromPath(FileUtils.TransformFilePath(drvPath, con.dslCreator),
 								this.getClass().classLoader))
 				useLoadedDriver = true
             }
 
 			def loginTimeout = con.loginTimeout?:30
-			def url = null
-			Map server
+
+			def url = buildConnectURL()
+			if (url == null)
+				throw new ExceptionGETL("Required \"connectURL\" for connect to server")
+			url = url + conParams
+
 			def notConnected = true
 			while (notConnected) {
-				if (server != null) {
-					if (server."host" != null) con.connectHost = server."host"
-					if (server."database" != null) con.connectDatabase = server."database"
-				}
-
-				url = buildConnectURL()
-				if (url == null)
-					throw new ExceptionGETL("Required \"connectURL\" for connect to server")
-				url = url + conParams
-
 				sql = newSql(jdbcClass, url, login, password, drvName, loginTimeout)
 				notConnected = false
 			}
 			con.sysParams.currentConnectURL = url
-			if (server != null) /* TODO: Removing balancer server */
-				con.sysParams.balancerServer = server
-
 			sql.getConnection().setAutoCommit(con.autoCommit())
 			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
 			sql.withStatement{ stmt -> 
@@ -614,17 +619,13 @@ class JDBCDriver extends Driver {
 	}
 
     /**
-     * Sql query by change session property value
-     */
-    protected String getChangeSessionPropertyQuery() { return null }
-
-    /**
      * Change session property value
      * @param name
      * @param value
      */
     void changeSessionProperty(String name, def value) {
-        if (changeSessionPropertyQuery == null)
+		def sql = sqlExpression('changeSessionProperty')
+        if (sql == null)
 			throw new ExceptionGETL("Current driver not allowed change session property value")
 		if (name == null)
 			throw new ExceptionGETL("Required value from \"name\" parameter!")
@@ -632,7 +633,7 @@ class JDBCDriver extends Driver {
 			return
 
         try {
-            jdbcConnection.executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
+            jdbcConnection.executeCommand(command: evalSqlParameters(sql, [name: name, value: value]))
         }
         catch (Exception e) {
             connection.logger.severe("Error change session property \"$name\" to value \"$value\"")
@@ -854,8 +855,7 @@ class JDBCDriver extends Driver {
 		def ds = dataset as TableDataset
 
 		if (READ_METADATA in operations()) {
-			if (ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType] &&
-					!supportLocalTemporaryRetrieveFields)
+			if (ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType] && !isOperation(RETRIEVELOCALTEMPORARYFIELDS))
 				throw new ExceptionGETL('The driver does not support getting a list of fields in the local temporary table!')
 
 			def names = prepareForRetrieveFields(ds)
@@ -902,25 +902,20 @@ class JDBCDriver extends Driver {
 			}
 
 			if (ds.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType]) {
-				rs = readPrimaryKey(names)
+				def pk = readPrimaryKey(names)
 				def ord = 0
-				try {
-					while (rs.next()) {
-						def n = prepareObjectName(rs.getString("COLUMN_NAME"))
-						Field pf = res.find { Field f ->
-							(f.name.toLowerCase() == n.toLowerCase())
-						}
-
-						if (pf == null)
-							throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(ds)}]")
-
-						ord++
-						pf.isKey = true
-						pf.ordKey = ord
+				pk.each {  colName ->
+					def n = prepareObjectName(colName)
+					Field pf = res.find { Field f ->
+						(f.name.toLowerCase() == n.toLowerCase())
 					}
-				}
-				finally {
-					rs.close()
+
+					if (pf == null)
+						throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(ds)}]")
+
+					ord++
+					pf.isKey = true
+					pf.ordKey = ord
 				}
 			}
 		}
@@ -932,8 +927,14 @@ class JDBCDriver extends Driver {
 	}
 
 	/** Read primary key for table */
-	protected ResultSet readPrimaryKey(Map<String, String> names) {
-		return sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
+	protected List<String> readPrimaryKey(Map<String, String> names) {
+		def res = [] as List<String>
+		try (def rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)) {
+			while (rs.next())
+				res.add(rs.getString("COLUMN_NAME"))
+		}
+
+		return res
 	}
 
 	/** Read fields from query */
@@ -945,15 +946,20 @@ class JDBCDriver extends Driver {
 
 		saveToHistory("-- READ METADATA FROM QUERY:\n$sql")
 
-		def stat = sqlConnect.connection.prepareStatement(sql)
 		List<Field> res = null
-		try {
-			def meta = stat.metaData
-			res = meta2Fields(meta, false)
+
+		if (isOperation(RETRIEVEQUERYFIELDS)) {
+			def stat = sqlConnect.connection.prepareStatement(sql)
+			try {
+				def meta = stat.metaData
+				res = meta2Fields(meta, false)
+			}
+			finally {
+				stat.close()
+			}
 		}
-		finally {
-			stat.close()
-		}
+		else
+			throw new ExceptionGETL("${getClass().name} not support retrieve fields from query!")
 
 		return res
 	}
@@ -1079,8 +1085,6 @@ class JDBCDriver extends Driver {
 	protected String defaultSchemaName
 	/** Temporary schema name */
 	protected String tempSchemaName
-	/** Reading fields of local temporary tables is supported */
-	protected Boolean supportLocalTemporaryRetrieveFields
 
 	/** Global table definition keyword */
 	protected String globalTemporaryTablePrefix
@@ -1095,9 +1099,6 @@ class JDBCDriver extends Driver {
 	protected String ruleNameNotQuote
 	/** List of keywords that cannot be used as an identifier name without quotes */
 	protected List<String> ruleQuotedWords
-
-	/** Reading fields of local temporary tables is supported */
-	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
 	/** Name dual system table */
 	String getSysDualTable() { sqlExpressionValue('sysDualTable') }
@@ -1155,7 +1156,7 @@ class JDBCDriver extends Driver {
 		def p = MapUtils.CleanMap(params, ['ifNotExists', 'indexes', 'hashPrimaryKey', 'useNativeDBType'])
 		def extend = createDatasetExtend(dataset as JDBCDataset, p)
 		
-		def defFields = []
+		def defFields = [] as List<String>
 		dataset.field.each { Field f ->
 			try {
 				switch (f.type) {
@@ -1165,35 +1166,35 @@ class JDBCDriver extends Driver {
 						break
 					case Field.Type.DATE:
 						if (!isSupport(Support.DATE))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")!")
 						break
 					case Field.Type.TIME:
 						if (!isSupport(Support.TIME))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")!")
 						break
 					case Field.Type.DATETIME:
 						if (!isSupport(Support.TIMESTAMP))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support datetime fields (field \"${f.name}\")!")
 						break
 					case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						if (!isSupport(Support.TIMESTAMP_WITH_TIMEZONE))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support timestamp with timezone fields (field \"${f.name}\")!")
 						break
 					case Field.Type.BLOB:
 						if (!isSupport(Support.BLOB))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")!")
 						break
 					case Field.Type.TEXT:
 						if (!isSupport(Support.CLOB))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support text fields (field \"${f.name}\")!")
 						break
 					case Field.Type.UUID:
 						if (!isSupport(Support.UUID))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support uuid fields (field \"${f.name}\")!")
 						break
 					case Field.Type.ARRAY:
 						if (!isSupport(Support.ARRAY))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new ExceptionGETL("Driver not support array fields (field \"${f.name}\")!")
 						break
 				}
 
@@ -1201,7 +1202,7 @@ class JDBCDriver extends Driver {
 				if (s == null)
 					return
 
-				defFields << s
+				defFields.add(s)
 			}
 			catch (Exception e) {
 				connection.logger.severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\"", e)
@@ -1286,6 +1287,8 @@ class JDBCDriver extends Driver {
 		fp.type = type2sqlType(f, useNativeDBType)
 		if (isSupport(Support.PRIMARY_KEY) && !f.isNull)
 			fp.not_null =  'NOT NULL'
+		else
+			fp.not_null = 'NULL'
 		if (isSupport(Support.AUTO_INCREMENT) && f.isAutoincrement)
 			fp.increment = sqlExpressionValue('ddlAutoIncrement')
 		if (isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)
@@ -1644,7 +1647,7 @@ class JDBCDriver extends Driver {
 			def where = params.where as String
 			if (where != null) {
 				try {
-					where = StringUtils.EvalMacroString(where, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
+					where = evalSqlParameters(where, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
 				}
 				catch (Exception e) {
 					dataset.logger.severe("Error compiling \"where\" statement for table \"$dataset\"", e)
@@ -1679,7 +1682,7 @@ class JDBCDriver extends Driver {
 
 		String res
 		try {
-			res = StringUtils.EvalMacroString(query, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
+			res = evalSqlParameters(query, dataset.queryParams() + ((params.queryParams as Map)?:new HashMap()), checkVars)
 		}
 		catch (Exception e) {
 			dataset.logger.severe("Error compiling SQL script for dataset \"$dataset\"", e)
@@ -1974,7 +1977,7 @@ $sql
 			params = new HashMap()
 		
 		if (params.queryParams != null)
-			command = StringUtils.EvalMacroString(command, params.queryParams as Map, false)
+			command = evalSqlParameters(command, params.queryParams as Map, false)
 
 		saveToHistory((params.historyText as String)?:command)
 
@@ -2273,7 +2276,7 @@ $sql
 			return null
 
 		def qp = dataset.queryParams() + ((params.queryParams as Map)?:new HashMap<String, Object>())
-		return StringUtils.EvalMacroString(where, qp, true)
+		return evalSqlParameters(where, qp, true)
 	}
 
 	/**
@@ -2287,9 +2290,7 @@ $sql
 		return res
 	}
 
-	/**
-	 * SQL delete statement pattern
-	 */
+	/** SQL delete statement pattern */
 	protected String syntaxDeleteStatement(JDBCDataset dataset, Map params){
 		def res = 'DELETE FROM {table} WHERE ({keys})'
 		if (params.where != null)
@@ -2297,6 +2298,9 @@ $sql
 
 		return res
 	}
+
+	/** Default batch size buffer for write operations */
+	protected Long defaultBatchSize
 
 	@Override
 	@Synchronized('operationLock')
@@ -2334,7 +2338,7 @@ $sql
 				break
 		}
 
-		def batchSize = (!isSupport(Support.BATCH)?1:((params.batchSize != null)?ConvertUtils.Object2Long(params.batchSize):500L))
+		def batchSize = (!isSupport(Support.BATCH)?1:((params.batchSize != null)?ConvertUtils.Object2Long(params.batchSize):defaultBatchSize))
 		if (params.onSaveBatch != null)
 			wp.onSaveBatch = params.onSaveBatch as Closure
 		
@@ -2717,8 +2721,7 @@ $sql
 		p."values" = insertValues.join(", ")
 		p."keys" = keys.join(", ")
 		
-//		return StringUtils.SetValueString(sql, p)
-		return StringUtils.EvalMacroString(sql, p, false)
+		return evalSqlParameters(sql, p, false)
 	}
 
 	/**
@@ -2809,13 +2812,13 @@ $sql
 	Long deleteRows(TableDataset dataset, Map procParams) {
 		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
 		if (where != null)
-			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams() + ((procParams.queryParams as Map)?:new HashMap()))))
+			where = ('WHERE ' + evalSqlParameters(where, (dataset.queryParams() + ((procParams.queryParams as Map)?:new HashMap()))))
 		else where = ''
 		def hints = deleteRowsHint(dataset, procParams)?:new HashMap()
 		def afterDelete = (hints.afterDelete)?:''
 		def afterTable = (hints.afterTable)?:''
 		def afterWhere = (hints.afterWhere)?:''
-		def sql = StringUtils.EvalMacroString(deleteRowsPattern(),
+		def sql = evalSqlParameters(deleteRowsPattern(),
 				[afterDelete: afterDelete, table: dataset.fullTableName, afterTable: afterTable,
 				 where: where, afterWhere: afterWhere])
 
@@ -2904,7 +2907,7 @@ $sql
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
 		where = where?:(table.readDirective.where)
 		if (where != null && where != '')
-			sql += " WHERE " + StringUtils.EvalMacroString(where, table.queryParams() + (procParams?:new HashMap()))
+			sql += " WHERE " + evalSqlParameters(where, table.queryParams() + (procParams?:new HashMap()))
 
 		saveToHistory(sql)
 
@@ -2943,7 +2946,7 @@ FROM {source} {after_from}'''
 
 		if (source.readOpts.where != null) {
 			sql += '\nWHERE {where}'
-			qParams.where = StringUtils.EvalMacroString(source.readOpts.where, source.queryParams())
+			qParams.where = evalSqlParameters(source.readOpts.where, source.queryParams())
 		}
 		source.currentJDBCConnection.currentJDBCDriver.prepareCopyTableSource(source, qParams)
 		dest.currentJDBCConnection.currentJDBCDriver.prepareCopyTableDestination(dest, qParams)
@@ -3149,7 +3152,7 @@ FROM {source} {after_from}'''
 		def select = createParams.select as String
 		if (select == null)
 			throw new ExceptionGETL("It is required to specify sql select for view in the \"select\" parameter!")
-		res.select = StringUtils.EvalMacroString(select, dataset.queryParams())
+		res.select = evalSqlParameters(select, dataset.queryParams())
 
 		return res
 	}
@@ -3165,12 +3168,42 @@ FROM {source} {after_from}'''
 		return sqlExpressions.get(name)
 	}
 
+	/** Format sql date values for evaluate sql expression */
+	protected String sqlExpressionSqlDateFormat
+	/** Format sql time values for evaluate sql expression */
+	protected String sqlExpressionSqlTimeFormat
+	/** Format sql timestamp values for evaluate sql expression */
+	protected String sqlExpressionSqlTimestampFormat
+	/** Format standart date values for evaluate sql expression */
+	protected String sqlExpressionDateFormat
+
+	/**
+	 * Evaluate text with SQL parameters
+	 * @param value text
+	 * @param vars variables values
+	 * @param errorWhenUndefined error when variable not found
+	 * @return prepared text
+	 */
+	String evalSqlParameters(String value, Map<String, Object> vars, Boolean errorWhenUndefined = true) {
+		def res = StringUtils.EvalMacroString(value, vars?:[:], errorWhenUndefined) { varValue ->
+			if (varValue instanceof java.sql.Date)
+				varValue = DateUtils.FormatDate(sqlExpressionSqlDateFormat, varValue as Date)
+			else if (varValue instanceof Time)
+				varValue = DateUtils.FormatDate(sqlExpressionSqlTimeFormat, varValue as Date)
+			else if (varValue instanceof Timestamp)
+				varValue = DateUtils.FormatDate(sqlExpressionSqlTimestampFormat, varValue as Date)
+			else if (varValue instanceof Date)
+				varValue = DateUtils.FormatDate(sqlExpressionDateFormat, varValue as Date)
+
+			return varValue
+		}
+
+		return res
+	}
+
 	/** Value from sql expression by name */
 	String sqlExpressionValue(String name, Map<String, Object> extParams = new HashMap<String, Object>()) {
-		def expr = sqlExpression(name)
-		if (extParams == null)
-			extParams = new HashMap<String, Object>()
-		return StringUtils.EvalMacroString(expr, sqlExpressions + (extParams?:new HashMap<String, Object>()))
+		return evalSqlParameters(sqlExpression(name), sqlExpressions + (extParams?:new HashMap<String, Object>()), true)
 	}
 
 	/**

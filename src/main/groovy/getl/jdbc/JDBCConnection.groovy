@@ -73,7 +73,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		methodParams.register('Super', [
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'sessionProperty', 'schemaName', 'driverName', 'driverPath', 'connectHost',
-				'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput',
+				'connectDatabase', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput',
 				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation', 'extensionForSqlScripts'])
 		methodParams.register('createSchema', ['ifNotExists'])
 		methodParams.register('dropSchema', ['ifExists'])
@@ -394,6 +394,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Return datasets list by parameters
 	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type, retrieveInfo)
 	 * @param filter user filter code
+	 * @return list of dataset
 	 */
 	@SuppressWarnings('GroovyFallthrough')
 	List<TableDataset> retrieveDatasets(Map params,
@@ -448,9 +449,10 @@ class JDBCConnection extends Connection implements UserLogins {
 
 		return result
 	}
-	
+
 	/**
 	 * Return datasets list
+	 * @return list of dataset
 	 */
 	List<TableDataset> retrieveDatasets() {
 		retrieveDatasets(new HashMap(), null)

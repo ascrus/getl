@@ -21,7 +21,7 @@ class H2Driver extends JDBCDriver {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
-		methodParams.register("createDataset", ["transactional", "not_persistent"])
+		methodParams.register('createDataset', ['transactional', 'not_persistent'])
 		methodParams.register('bulkLoadFile', ['expression'])
 		methodParams.register('dropSchema', ['cascade'])
 	}
@@ -43,6 +43,7 @@ class H2Driver extends JDBCDriver {
 
 		sqlExpressions.ddlAutoIncrement = 'AUTO_INCREMENT'
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
+		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 	}
 
 	@Override
@@ -100,10 +101,10 @@ class H2Driver extends JDBCDriver {
 
 	@Override
 	protected String createDatasetExtend(JDBCDataset dataset, Map params) {
-		String result = ""
+		String result = ''
 		def temporary = (dataset as JDBCDataset).isTemporaryTable
-		if (BoolUtils.IsValue(params."not_persistent")) result += "NOT PERSISTENT "
-		if (temporary && BoolUtils.IsValue(params.transactional)) result += "TRANSACTIONAL "
+		if (BoolUtils.IsValue(params."not_persistent")) result += 'NOT PERSISTENT '
+		if (temporary && BoolUtils.IsValue(params.transactional)) result += 'TRANSACTIONAL '
 
 		return result
 	}
@@ -187,9 +188,6 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParams}')
 		
 		return res
 	}
-
-    @Override
-    protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
 	@Override
 	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields, List<String> statFields) {

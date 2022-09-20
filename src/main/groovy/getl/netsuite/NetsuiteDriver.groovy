@@ -83,17 +83,20 @@ class NetsuiteDriver extends JDBCDriver {
 		NetsuiteConnection con = connection as NetsuiteConnection
 
 		if (url.indexOf('serverDataSource') != -1) {
-			if (con.serverDataSource == null) throw new ExceptionGETL('Need set property "serverDataSource"')
+			if (con.serverDataSource == null)
+				throw new ExceptionGETL('Need set property "serverDataSource"')
 			url = url.replace("{serverDataSource}", con.serverDataSource)
 		}
 
 		if (url.indexOf('ciphersuites') != -1) {
-			if (con.ciphersuites == null) throw new ExceptionGETL('Need set property "ciphersuites"')
+			if (con.ciphersuites == null)
+				throw new ExceptionGETL('Need set property "ciphersuites"')
 			url = url.replace("{ciphersuites}", con.ciphersuites)
 		}
 
 		if (url.indexOf('accountId') != -1) {
-			if (con.accountId == null) throw new ExceptionGETL('Need set property "accountId"')
+			if (con.accountId == null)
+				throw new ExceptionGETL('Need set property "accountId"')
 			url = url.replace("{accountId}", String.valueOf(con.accountId))
 		}
 

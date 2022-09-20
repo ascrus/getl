@@ -29,11 +29,11 @@ class MySQLDriver extends JDBCDriver {
 		fieldPrefix = '`'
 
         localTemporaryTablePrefix = 'TEMPORARY'
-		supportLocalTemporaryRetrieveFields = false
 		defaultSchemaFromConnectDatabase = true
 
 		sqlExpressions.convertTextToTimestamp = 'CAST(\'{value}\' AS datetime)'
 		sqlExpressions.sysDualTable = 'DUAL'
+		sqlExpressions.changeSessionProperty = 'SET {name} = {value}'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -46,13 +46,11 @@ class MySQLDriver extends JDBCDriver {
 				[Support.SELECT_WITHOUT_FROM/*, Support.CHECK_FIELD*/] /* TODO : Valid CHECK on new version! */
 	}
 
-	/*@SuppressWarnings("UnnecessaryQualifiedReference")
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
-        return super.operations() +
-                [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
-				 Driver.Operation.CREATE]
-	}*/
+        return super.operations() - [Driver.Operation.RETRIEVELOCALTEMPORARYFIELDS]
+	}
 
 	@Override
 	protected Map getConnectProperty() {
@@ -64,9 +62,6 @@ class MySQLDriver extends JDBCDriver {
 	String defaultConnectURL () {
 		return 'jdbc:mysql://{host}/{database}'
 	}
-
-	@Override
-	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
@@ -114,7 +109,7 @@ class MySQLDriver extends JDBCDriver {
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	void prepareField (Field field) {
+	void prepareField(Field field) {
 		super.prepareField(field)
 
 		if (field.type == Field.blobFieldType) {
@@ -164,16 +159,15 @@ class MySQLDriver extends JDBCDriver {
 		return res
 	}
 
-	/*@Override
-	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
-		def names = super.prepareForRetrieveFields(dataset)
-		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
-		return names
-	}*/
-
 	@Override
-	protected ResultSet readPrimaryKey(Map<String, String> names) {
-		return sqlConnect.connection.metaData.getPrimaryKeys(names.dbName?:names.schemaName, names.schemaName, names.tableName)
+	protected List<String> readPrimaryKey(Map<String, String> names) {
+		def res = [] as List<String>
+		try (def rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName?:names.schemaName, names.schemaName, names.tableName)) {
+			while (rs.next())
+				res.add(rs.getString("COLUMN_NAME"))
+		}
+
+		return res
 	}
 
 	@Override

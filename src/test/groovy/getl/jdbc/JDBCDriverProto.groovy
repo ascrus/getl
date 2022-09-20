@@ -184,7 +184,7 @@ abstract class JDBCDriverProto extends GetlTest {
             tempTable.create()
         }
 
-        if (tempTable.currentJDBCConnection.currentJDBCDriver.supportLocalTemporaryRetrieveFields) {
+        if (tempTable.currentJDBCConnection.currentJDBCDriver.isOperation(Driver.Operation.RETRIEVELOCALTEMPORARYFIELDS)) {
             tempTable.field = null
             tempTable.retrieveFields()
             assertEquals(fields.collect { it.name.toLowerCase() }, tempTable.field.collect { it.name.toLowerCase() })
@@ -454,13 +454,17 @@ abstract class JDBCDriverProto extends GetlTest {
 
     protected void validCount() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName(descriptionName)} IS NOT NULL")
-        q.retrieveFields()
-        assertEquals(1, q.field.size())
-        assertEquals(['COUNT_ROWS'], q.fieldNames*.toUpperCase())
+        if (q.connection.driver.isOperation(Driver.Operation.RETRIEVEQUERYFIELDS)) {
+            q.retrieveFields()
+            assertEquals(1, q.field.size())
+            assertEquals(['COUNT_ROWS'], q.fieldNames*.toUpperCase())
+        }
         def rows = q.rows()
         assertEquals(1, rows.size())
         def cr = rows[0].count_rows as Long
         assertEquals(countRows, cr)
+        assertEquals(1, q.field.size())
+        assertEquals(['COUNT_ROWS'], q.fieldNames*.toUpperCase())
     }
 
     protected void deleteData() {
@@ -979,6 +983,7 @@ IF ('{support_update}' = 'true') DO {
         def date = DateUtils.ParseSQLTimestamp('2021-12-31 23:59:59.000')
         new QueryDataset().tap {
             useConnection con
+            println con.expressionString2Timestamp(date)
             query = "SELECT ${con.expressionString2Timestamp(date)} AS dt{ FROM %dual%}"
             queryParams.dual = con.sysDualTable
             eachRow { row ->

@@ -23,6 +23,7 @@ class DB2Driver extends JDBCDriver {
 		connectionParamFinish = ';'
 
 		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
+		sqlExpressions.changeSessionProperty = 'SET {name} = {value}'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -60,7 +61,4 @@ class DB2Driver extends JDBCDriver {
 			field.getMethod = '{field}.getString()'
 		} 
 	}
-
-	@Override
-	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
 }

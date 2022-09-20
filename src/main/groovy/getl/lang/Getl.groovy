@@ -1,6 +1,8 @@
 package getl.lang
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.clickhouse.ClickHouseConnection
+import getl.clickhouse.ClickHouseTable
 import getl.config.*
 import getl.csv.*
 import getl.data.*
@@ -642,7 +644,7 @@ Examples:
                     if (en.configFileName != null) {
                         def configFileName = en.configFileName as String
                         def m = ConfigSlurper.LoadConfigFile(
-                                file: new File(FileUtils.ResourceFileName(configFileName, this)),
+                                file: new File(FileUtils.TransformFilePath(configFileName, this)),
                                 codePage: 'utf-8', configVars: configVars, owner: this)
                         projectConfigParams.putAll(m)
                     }
@@ -1100,7 +1102,7 @@ Examples:
      * @return text from file
      */
     String textFromFile(String fileName, String codePage = 'UTF-8') {
-        def path = FileUtils.ResourceFileName(fileName, this)
+        def path = FileUtils.TransformFilePath(fileName, this)
         def file = new File(path)
         if (!file.exists())
             throw new ExceptionDSL("File $fileName not found!")
@@ -3438,6 +3440,63 @@ Examples:
     H2Table h2Table(@DelegatesTo(H2Table)
                     @ClosureParams(value = SimpleType, options = ['getl.h2.H2Table']) Closure cl) {
         h2Table(null, false, cl)
+    }
+
+    /** ClickHouse connection */
+    ClickHouseConnection clickhouseConnection(String name, Boolean registration,
+                                              @DelegatesTo(ClickHouseConnection)
+                                              @ClosureParams(value = SimpleType, options = ['getl.clickhouse.ClickHouseConnection']) Closure cl = null) {
+        def parent = registerConnection(RepositoryConnections.CLICKHOUSECONNECTION, name, registration) as ClickHouseConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** ClickHouse connection */
+    ClickHouseConnection clickhouseConnection(String name,
+                                              @DelegatesTo(ClickHouseConnection)
+                                              @ClosureParams(value = SimpleType, options = ['getl.clickhouse.ClickHouseConnection']) Closure cl = null) {
+        clickhouseConnection(name, false, cl)
+    }
+
+    /** ClickHouse connection */
+    ClickHouseConnection clickhouseConnection(@DelegatesTo(ClickHouseConnection)
+                                              @ClosureParams(value = SimpleType, options = ['getl.clickhouse.ClickHouseConnection']) Closure cl) {
+        clickhouseConnection(null, false, cl)
+    }
+
+    /** ClickHouse current connection */
+    ClickHouseConnection clickhouseConnection() {
+        defaultJdbcConnection(RepositoryDatasets.CLICKHOUSETABLE) as ClickHouseConnection
+    }
+
+    /** Use default ClickHouse connection for new datasets */
+    ClickHouseConnection useClickHouseConnection(ClickHouseConnection connection) {
+        useJdbcConnection(RepositoryDatasets.CLICKHOUSETABLE, connection) as ClickHouseConnection
+    }
+
+    /** ClickHouse table */
+    ClickHouseTable clickhouseTable(String name, Boolean registration,
+                                    @DelegatesTo(ClickHouseTable)
+                                    @ClosureParams(value = SimpleType, options = ['getl.clickhouse.ClickHouseTable']) Closure cl = null) {
+        def parent = registerDataset(null, RepositoryDatasets.CLICKHOUSETABLE, name, registration,
+                defaultJdbcConnection(RepositoryDatasets.CLICKHOUSETABLE), ClickHouseConnection, cl) as ClickHouseTable
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** ClickHouse table */
+    ClickHouseTable clickhouseTable(String name,
+                                    @DelegatesTo(ClickHouseTable)
+                                    @ClosureParams(value = SimpleType, options = ['getl.clickhouse.ClickHouseTable']) Closure cl = null) {
+        clickhouseTable(name, false, cl)
+    }
+
+    /** ClickHouse table */
+    ClickHouseTable clickhouseTable(@DelegatesTo(ClickHouseTable)
+                                    @ClosureParams(value = SimpleType, options = ['getl.clickhouse.ClickHouseTable']) Closure cl) {
+        clickhouseTable(null, false, cl)
     }
 
     /** DB2 connection */

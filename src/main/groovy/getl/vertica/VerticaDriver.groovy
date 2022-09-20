@@ -48,11 +48,13 @@ class VerticaDriver extends JDBCDriver {
 		allowExpressions = true
 		lengthTextInBytes = true
         addPKFieldsToUpdateStatementFromMerge = true
+		defaultBatchSize = 10000L
 
 		sqlExpressions.ddlCreatePrimaryKey = 'PRIMARY KEY ({columns}) {check_pk}'
 		sqlExpressions.ddlCreateView = '{create}{ %temporary%} VIEW{ %ifNotExists%} {name}{ %privileges% SCHEMA PRIVILEGES} AS\n{select}'
 		sqlExpressions.ddlCreateSchema = 'CREATE SCHEMA{ %ifNotExists%} {schema}{ AUTHORIZATION %authorization%}{ DEFAULT %privileges% SCHEMA PRIVILEGES}'
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
+		sqlExpressions.changeSessionProperty = 'SET {name} TO {value}'
 	}
 
     @Override
@@ -447,9 +449,6 @@ class VerticaDriver extends JDBCDriver {
   WHEN NOT MATCHED THEN INSERT ({fields})
     VALUES ({values})'''
 	}
-
-	@Override
-	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
 	@Override
 	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {

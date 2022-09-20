@@ -54,7 +54,7 @@ class ConfigSpec extends BaseSpec {
      * @param codePage code page file
      */
     void load(String fileName, String environment = null, String codePage = null) {
-        manager.loadConfig([fileName: FileUtils.ResourceFileName(fileName, ownerObject as Getl), codePage: codePage,
+        manager.loadConfig([fileName: FileUtils.TransformFilePath(fileName, ownerObject as Getl), codePage: codePage,
                            environment: environment])
     }
 
@@ -75,7 +75,7 @@ class ConfigSpec extends BaseSpec {
      * @param secretKey encode key string
      */
     void loadEncrypt(String fileName, String environment = null, String secretKey = null) {
-        def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName, ownerObject as Getl), secretKey, environment?:manager.environment?:'all')
+        def data = ConfigStores.LoadSection(FileUtils.TransformFilePath(fileName, ownerObject as Getl), secretKey, environment?:manager.environment?:'all')
         manager.mergeConfig(data)
     }
 

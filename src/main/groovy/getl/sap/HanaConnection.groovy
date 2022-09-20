@@ -34,6 +34,7 @@ class HanaConnection extends JDBCConnection {
     protected void initParams() {
         super.initParams()
 
-        connectProperty.deferredPrepare = true
+        if (connectProperty.deferredPrepare == null)
+            connectProperty.deferredPrepare = true
     }
 }

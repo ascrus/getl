@@ -44,6 +44,7 @@ class MSSQLDriver extends JDBCDriver {
 		sqlExpressions.now = 'GETDATE()'
 		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
 		sqlExpressions.ddlStartTran = 'BEGIN TRANSACTION'
+		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 
 		ruleQuotedWords.add('DOUBLE')
 	}
@@ -131,9 +132,6 @@ class MSSQLDriver extends JDBCDriver {
 		
 		return res
 	}
-
-	@Override
-	protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override

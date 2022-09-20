@@ -37,7 +37,7 @@ class OracleDriver extends JDBCDriver {
 		sqlExpressions.now = 'LOCALTIMESTAMP'
 		sqlExpressions.sequenceNext = 'SELECT {value}.nextval id FROM dual'
 		sqlExpressions.sysDualTable = 'DUAL'
-
+		sqlExpressions.changeSessionProperty = 'ALTER SESSION SET {name} = \'{value}\''
 		sqlExpressions.ddlCreateSequence = '''declare count_seq number; if_not_exists varchar(20) := '{%ifNotExists%}';
 begin
     if (if_not_exists = 'IF NOT EXISTS') then
@@ -278,9 +278,6 @@ end;'''
 		return 'jdbc:oracle:thin:@{host}:{database}'
 	}
 
-	@Override
-	protected String getChangeSessionPropertyQuery() { return 'ALTER SESSION SET {name} = \'{value}\'' }
-
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
@@ -310,15 +307,18 @@ end;'''
         JDBCConnection con = jdbcConnection
 
         def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
-        if (url == null) return null
+        if (url == null)
+			return null
 
         if (url.indexOf('{host}') != -1) {
-            if (con.connectHost == null) throw new ExceptionGETL('Need set property "connectHost"')
+            if (con.connectHost == null)
+				throw new ExceptionGETL('Need set property "connectHost"')
             def host = (con.connectHost.indexOf(':') == -1)?(con.connectHost + ':1521'):con.connectHost
             url = url.replace("{host}", host)
         }
         if (url.indexOf('{database}') != -1) {
-            if (con.connectDatabase == null) throw new ExceptionGETL('Need set property "connectDatabase"')
+            if (con.connectDatabase == null)
+				throw new ExceptionGETL('Need set property "connectDatabase"')
             url = url.replace("{database}", con.connectDatabase)
         }
 

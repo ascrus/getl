@@ -138,7 +138,7 @@ abstract class ConfigManager {
             def l = [] as List<String>
             (readParams.files as List).each {
                 if (it instanceof String)
-                    l << FileUtils.ResourceFileName(it as String)
+                    l << FileUtils.TransformFilePath(it as String, dslCreator)
                 else
                     l << it.toString()
             }
@@ -146,7 +146,7 @@ abstract class ConfigManager {
         }
 
         if (readParams.fileName != null && readParams.fileName instanceof String) {
-            readParams.fileName = FileUtils.ResourceFileName(readParams.fileName as String)
+            readParams.fileName = FileUtils.TransformFilePath(readParams.fileName as String, dslCreator)
         }
 
         loadContent(readParams)

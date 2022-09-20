@@ -1063,7 +1063,7 @@ class FileUtils {
 	 * @param getl Dsl instance
 	 */
 	static void UnzipFile(String fileName, String targetDirectory, String password = null, String charsetFileName = null, Getl getl = null) {
-		def file = new File(ResourceFileName(TransformFilePath(fileName), getl))
+		def file = new File(TransformFilePath(fileName, getl))
 		if (!file.exists())
 			throw new ExceptionGETL("Zip file \"$fileName\" not found!")
 
@@ -1428,13 +1428,24 @@ class FileUtils {
 	}
 
 	/**
-	 * Transform path based on OS environment variables
+	 * Transform path based on OS environment variables or resource/repository directories
 	 * @param path original file path
 	 * @param errorWhenUndefined throw error if no variables found from the path
+	 * @param useResource allow used resource and repository files path
 	 * @param getl current Getl instance
 	 * @return transformed path
 	 */
-	static String TransformFilePath(String path, Boolean errorWhenUndefined = true, Getl getl = null) {
+	static String TransformFilePath(String path, Boolean errorWhenUndefined = true, Boolean useResource = true, Getl getl = null) {
+		if (path == null)
+			return null
+
+		if (useResource) {
+			if (getl != null && IsRepositoryFileName(path))
+				return ResourceFileName(path, getl)
+			if (IsResourceFileName(path, false))
+				return ResourceFileName(path)
+		}
+
 		def p = ['#TEMPDIR': SystemTempDir()] + Config.SystemProps()
 		if (getl != null && getl.repositoryStorageManager.storagePath != null)
 			p.put('#REPOSITORY', getl.repositoryStorageManager.storagePath())
@@ -1449,6 +1460,17 @@ class FileUtils {
 	 */
 	static String TransformFilePath(String path, Getl getl) {
 		return TransformFilePath(path, true, getl)
+	}
+
+	/**
+	 * Transform path based on OS environment variables or resource/repository directories
+	 * @param path original file path
+	 * @param errorWhenUndefined throw error if no variables found from the path
+	 * @param getl current Getl instance
+	 * @return transformed path
+	 */
+	static String TransformFilePath(String path, Boolean errorWhenUndefined, Getl getl) {
+		return TransformFilePath(path, errorWhenUndefined, true, getl)
 	}
 
 	/**

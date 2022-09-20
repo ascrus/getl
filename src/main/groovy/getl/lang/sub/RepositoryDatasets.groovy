@@ -1,5 +1,6 @@
 package getl.lang.sub
 
+import getl.clickhouse.ClickHouseTable
 import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Dataset
@@ -50,6 +51,7 @@ import groovy.transform.stc.SimpleType
 class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String CSVDATASET = CSVDataset.name
     static public final String CSVTEMPDATASET = TFSDataset.name
+    static public final String CLICKHOUSETABLE = ClickHouseTable.name
     static public final String DB2TABLE = DB2Table.name
     static public final String DBFDATASET = DBFDataset.name
     static public final String EXCELDATASET = ExcelDataset.name
@@ -79,15 +81,15 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed dataset classes */
     static public final List<String> LISTDATASETS = [
-        CSVDATASET, CSVTEMPDATASET, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
+        CSVDATASET, CSVTEMPDATASET, CLICKHOUSETABLE, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
         SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET, ARRAYDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
     static public List<String> LISTJDBCTABLES = [
-        DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
-        NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE, VIEWDATASET
+            CLICKHOUSETABLE, DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
+            NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE, VIEWDATASET
     ]
 
     /** List of allowed file dataset classes */

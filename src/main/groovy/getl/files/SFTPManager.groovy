@@ -155,7 +155,7 @@ class SFTPManager extends Manager implements UserLogins {
 		String h = "Open session $sessionID: host $server:$port, login $login"
 		client.identityRepository.removeAll()
 		if (identityFile != null) {
-			def f = new File(FileUtils.ResourceFileName(identityFile, dslCreator))
+			def f = new File(FileUtils.TransformFilePath(identityFile, dslCreator))
 			if (!f.exists())
 				throw new ExceptionGETL("RSA file \"$f\" not found from source \"$this\"!")
 

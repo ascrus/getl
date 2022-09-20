@@ -1908,15 +1908,19 @@ class Dataset implements GetlRepository, WithConnection {
 	 * @param compared compared fields
 	 * @param softComparison compare for compatibility of storing values in fields
 	 * @param compareExpressions compare default, check and compute expressions
+	 * @param compareLength compare field length
 	 * @return comparison result (field name: comparison status)
 	 */
-	Map<String, EqualFieldStatus> compareFields(List<Field> compared, Boolean softComparison = false, Boolean compareExpressions = true) {
+	Map<String, EqualFieldStatus> compareFields(List<Field> compared, Boolean softComparison = false, Boolean compareExpressions = true,
+												Boolean compareLength = true) {
 		def res = new HashMap<String, EqualFieldStatus>()
+		def curDriver = connection?.driver
 		compared.each { field ->
 			def curField = fieldByName(field.name)
 			if (curField == null)
 				res.put(field.name, EqualFieldStatus.DELETED)
-			else if (!curField.compare(field, softComparison, compareExpressions))
+			else if (!curField.compare(field, softComparison, compareExpressions,
+					compareLength && (curDriver != null)?curDriver.allowCompareLength(this, curField, field):true))
 				res.put(field.name, EqualFieldStatus.CHANGED)
 		}
 

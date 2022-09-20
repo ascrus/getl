@@ -1,6 +1,7 @@
 package getl.sap
 
 import getl.data.Field
+import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
 
@@ -17,10 +18,10 @@ class HanaDriver extends JDBCDriver {
 
         caseObjectName = 'UPPER'
         caseRetrieveObject = 'UPPER'
-        supportLocalTemporaryRetrieveFields = false
 
         sqlExpressions.sysDualTable = 'dummy'
         sqlExpressions.sequenceNext = 'SELECT {value}.NEXTVAL AS id FROM DUMMY'
+        sqlExpressions.changeSessionProperty = 'SET TEMPORARY OPTION {name} = {value}'
     }
 
     @Override
@@ -30,7 +31,6 @@ class HanaDriver extends JDBCDriver {
         res.UUID.name = 'uniqueidentifier'
         res.BLOB.name = 'VARBINARY'
         res.BLOB.defaultLength = 5000
-        //res.BLOB.useLength = sqlTypeUse.NEVER
         res.TEXT.useLength = sqlTypeUse.NEVER
 
         return res
@@ -40,14 +40,14 @@ class HanaDriver extends JDBCDriver {
     List<Support> supported() {
         return super.supported() +
                 [Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.TIME, Support.DATE,
-                 Support.BOOLEAN, Support.COMPUTE_FIELD, Support.INDEX/*, Support.ARRAY*/] - [Support.CHECK_FIELD, Support.SELECT_WITHOUT_FROM]
+                 Support.BOOLEAN, Support.COMPUTE_FIELD, Support.INDEX] - [Support.CHECK_FIELD, Support.SELECT_WITHOUT_FROM]
     }
 
-    /*@SuppressWarnings("UnnecessaryQualifiedReference")
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() {
-        return super.operations() + [Driver.Operation.BULKLOAD]
-    }*/
+        return super.operations() - [Driver.Operation.RETRIEVELOCALTEMPORARYFIELDS]
+    }
 
     @Override
     String defaultConnectURL () {
@@ -64,9 +64,6 @@ class HanaDriver extends JDBCDriver {
 
         return res
     }
-
-    @Override
-    protected String getChangeSessionPropertyQuery() { return 'SET TEMPORARY OPTION {name} = {value}' }
 
     @Override
     String generateComputeDefinition(Field f) { "GENERATED ALWAYS AS (${f.compute})" }

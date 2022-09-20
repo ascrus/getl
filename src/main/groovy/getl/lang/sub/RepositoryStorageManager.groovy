@@ -698,7 +698,7 @@ class RepositoryStorageManager {
 
                             String fileName
                             if (isResourceStoragePath) {
-                                fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
+                                fileName = FileUtils.TransformFilePath(storagePath + repFilePath + '/' +
                                         ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, this.dslCreator)
                             } else {
                                 fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +

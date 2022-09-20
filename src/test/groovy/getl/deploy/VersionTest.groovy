@@ -11,7 +11,7 @@ class VersionTest extends GetlTest {
         assertNotNull(Version.instance.version)
         assertNotNull(Version.instance.versionNum)
         assertNotNull(Version.instance.years)
-        assertTrue(Version.instance.IsCompatibility(4.1400))
+        assertTrue(Version.instance.IsCompatibility(4.1600))
         assertFalse(Version.instance.IsCompatibility(4.0000))
         Version.instance.sayInfo(true)
     }

@@ -1,6 +1,7 @@
 //file:noinspection unused
 package getl.lang.sub
 
+import getl.clickhouse.ClickHouseConnection
 import getl.csv.CSVConnection
 import getl.data.Connection
 import getl.db2.DB2Connection
@@ -39,6 +40,7 @@ import groovy.transform.InheritConstructors
 class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String CSVCONNECTION = CSVConnection.name
     static public final String CSVTEMPCONNECTION = TFS.name
+    static public final String CLICKHOUSECONNECTION = ClickHouseConnection.name
     static public final String DB2CONNECTION = DB2Connection.name
     static public final String DBFCONNECTION = DBFConnection.name
     static public final String EXCELCONNECTION = ExcelConnection.name
@@ -65,7 +67,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed connection classes */
     static public final List<String> LISTCONNECTIONS = [
-        CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, DBFCONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
+        CSVCONNECTION, CSVTEMPCONNECTION, CLICKHOUSECONNECTION, DB2CONNECTION, DBFCONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
         MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
         VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION, ARRAYDATASETCONNECTION
@@ -73,9 +75,9 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed jdbc connection classes */
     static public final List<String> LISTJDBCCONNECTIONS = [
-        DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION,
-        JDBCCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
-        POSTGRESQLCONNECTION, VERTICACONNECTION
+            CLICKHOUSECONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION,
+            JDBCCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
+            POSTGRESQLCONNECTION, VERTICACONNECTION
     ]
 
     /** List of allowed other connection classes */

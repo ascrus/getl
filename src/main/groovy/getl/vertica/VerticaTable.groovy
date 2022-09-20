@@ -399,7 +399,6 @@ class VerticaTable extends TableDataset {
     @Override
     void retrieveOpts() {
         super.retrieveOpts()
-        validTableName()
 
         new QueryDataset().tap {
             useConnection this.currentJDBCConnection
@@ -410,7 +409,7 @@ class VerticaTable extends TableDataset {
             query = 'SELECT partition_expression FROM v_catalog.tables WHERE {where}'
             def rows = rows()
             if (!rows.isEmpty()) {
-                def part = rows[0].partition_expression
+                def part = rows[0].partition_expression as String
                 this.createOpts.partitionBy = (part != '')?part:null
             }
         }

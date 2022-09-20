@@ -1,3 +1,5 @@
+//file:noinspection GrMethodMayBeStatic
+//file:noinspection unused
 package getl.driver
 
 import getl.csv.CSVDataset
@@ -47,7 +49,8 @@ abstract class Driver {
 
 	@SuppressWarnings('SpellCheckingInspection')
     static enum Operation {
-		CREATE, DROP, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE,
+		CREATE, DROP, BULKLOAD, EXECUTE, INSERT, UPDATE, DELETE, MERGE,
+		RETRIEVEFIELDS, RETRIEVELOCALTEMPORARYFIELDS, RETRIEVEQUERYFIELDS,
 		READ_METADATA, TRUNCATE, CREATE_SCHEMA, CREATE_VIEW
 	}
 
@@ -138,7 +141,7 @@ abstract class Driver {
 	 * @return
 	 */
 	String fullFileNameSchema(Dataset dataset) {
-		FileUtils.ResourceFileName(dataset.schemaFileName, dataset.dslCreator)
+		FileUtils.TransformFilePath(dataset.schemaFileName, dataset.dslCreator)
 	}
 
 	/**
@@ -217,4 +220,7 @@ abstract class Driver {
 
 		return res
 	}
+
+	/** Allowed comparing length between two fields */
+	Boolean allowCompareLength(Dataset sourceDataset, Field source, Field destination) { true }
 }

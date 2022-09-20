@@ -503,9 +503,14 @@ class Field implements Serializable, Cloneable {
 		return compare(other as Field)
 	}
 
-	/** Compare from field */
+	/**
+	 * Compare from another field
+	 * @param softComparison compare for compatibility of storing values in fields (default false)
+	 * @param compareExpressions compare default, check and compute expressions (default true)
+	 * @param compareLength compare field length (default true)
+	 */
 	@SuppressWarnings('GroovyFallthrough')
-	boolean compare(Field o, Boolean softComparison = false, Boolean compareExpressions = true) {
+	boolean compare(Field o, Boolean softComparison = false, Boolean compareExpressions = true, Boolean compareLength = true) {
 		if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
 
 		if (this.type != o.type) {
@@ -541,24 +546,24 @@ class Field implements Serializable, Cloneable {
 				return false
 			if (this.isAutoincrement != o.isAutoincrement)
 				return false
-			if (AllowLength(this) && (this.length ?: -1) != (o.length ?: -1))
+			if (compareLength && AllowLength(this) && (this.length ?: -1) != (o.length ?: -1))
 				return false
-			if (AllowPrecision(this) && (this.precision ?: -1) != (o.precision ?: -1))
+			if (compareLength && AllowPrecision(this) && (this.precision ?: -1) != (o.precision ?: -1))
 				return false
 		}
 		else {
 			if (BoolUtils.IsValue(this.isNull) && !BoolUtils.IsValue(o.isNull))
 				return false
-			if (!BoolUtils.IsValue(this.isKey) && BoolUtils.IsValue(o.isKey))
+			/*if (!BoolUtils.IsValue(this.isKey) && BoolUtils.IsValue(o.isKey))
+				return false*/
+			if (compareLength && AllowLength(this) && (this.length ?: -1) > (o.length ?: -1))
 				return false
-			if (AllowLength(this) && (this.length ?: -1) > (o.length ?: -1))
-				return false
-			if (AllowPrecision(this) && (this.precision ?: -1) > (o.precision ?: -1))
+			if (compareLength && AllowPrecision(this) && (this.precision ?: -1) > (o.precision ?: -1))
 				return false
 		}
 		if (this.isPartition != o.isPartition)
 			return false
-		if (this.arrayType != o.arrayType)
+		if (this.type == arrayFieldType && this.arrayType != o.arrayType)
 			return false
 		if (this.isReadOnly != o.isReadOnly)
 			return false
