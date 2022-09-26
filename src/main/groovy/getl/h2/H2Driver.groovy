@@ -42,8 +42,10 @@ class H2Driver extends JDBCDriver {
 //		supportLocalTemporaryRetrieveFields = false
 
 		sqlExpressions.ddlAutoIncrement = 'AUTO_INCREMENT'
-		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
+		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{ %cascade%}'
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
+		sqlExpressions.escapedText = 'STRINGDECODE(\'{text}\')'
+		ruleEscapedText.put('\'', '\'\'')
 	}
 
 	@Override

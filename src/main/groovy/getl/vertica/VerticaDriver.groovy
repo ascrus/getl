@@ -53,8 +53,9 @@ class VerticaDriver extends JDBCDriver {
 		sqlExpressions.ddlCreatePrimaryKey = 'PRIMARY KEY ({columns}) {check_pk}'
 		sqlExpressions.ddlCreateView = '{create}{ %temporary%} VIEW{ %ifNotExists%} {name}{ %privileges% SCHEMA PRIVILEGES} AS\n{select}'
 		sqlExpressions.ddlCreateSchema = 'CREATE SCHEMA{ %ifNotExists%} {schema}{ AUTHORIZATION %authorization%}{ DEFAULT %privileges% SCHEMA PRIVILEGES}'
-		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{%cascade%}'
+		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{ %cascade%}'
 		sqlExpressions.changeSessionProperty = 'SET {name} TO {value}'
+		sqlExpressions.escapedText = 'E\'{text}\''
 	}
 
     @Override

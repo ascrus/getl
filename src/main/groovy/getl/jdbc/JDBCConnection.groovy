@@ -706,4 +706,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Name dual system table */
 	@JsonIgnore
 	String getSysDualTable() { currentJDBCDriver.sysDualTable }
+
+	/** Escape text value from using in sql scripts as constants */
+	String escapedText(String value) { currentJDBCDriver.escapedText(value) }
 }

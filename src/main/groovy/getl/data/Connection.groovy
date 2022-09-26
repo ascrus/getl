@@ -418,15 +418,19 @@ class Connection implements GetlRepository {
 			params = new HashMap()
 		methodParams.validation("retrieveObjects", params,
 				[driver.methodParams.params("retrieveObjects")])
+
+		def res = [] as List<Object>
 		
 		tryConnect()
 		try {
-			driver.retrieveObjects(params, filter)
+			res = driver.retrieveObjects(params, filter)
 		}
 		catch (Exception e) {
 			logger.severe("Error read objects list from server \"$objectName\"", e)
 			throw e
 		}
+
+		return res
 	}
 	
 	/** Is connected to source */

@@ -47,6 +47,7 @@ class MSSQLDriver extends JDBCDriver {
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 
 		ruleQuotedWords.add('DOUBLE')
+		ruleEscapedText.put('\'', '\'\'')
 	}
 
 	@Override

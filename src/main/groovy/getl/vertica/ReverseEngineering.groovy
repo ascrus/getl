@@ -155,7 +155,7 @@ ORDER BY Lower(name);
 
 -- Get roles
 CREATE LOCAL TEMPORARY TABLE getl_roles ON COMMIT PRESERVE ROWS AS
-SELECT name
+SELECT *
 FROM ${sqlObjects.roles.table}
 WHERE 
 	${sqlObjects.roles.where}
@@ -163,7 +163,7 @@ ORDER BY Lower(name);
 
 -- Get users
 CREATE LOCAL TEMPORARY TABLE getl_users ON COMMIT PRESERVE ROWS AS
-SELECT user_name, resource_pool, memory_cap_kb, temp_space_cap_kb, run_time_cap, all_roles, default_roles, search_path
+SELECT *
 FROM ${sqlObjects.users.table}
 WHERE 
 	${sqlObjects.users.where}
@@ -171,7 +171,7 @@ ORDER BY Lower(user_name);
 
 -- Get schemas
 CREATE LOCAL TEMPORARY TABLE getl_schemas ON COMMIT PRESERVE ROWS AS
-SELECT schema_name, schema_owner, defaultinheritprivileges
+SELECT *
 FROM ${sqlObjects.schemas.table}
 WHERE 
 	${sqlObjects.schemas.where}
@@ -185,28 +185,28 @@ WHERE
 ORDER BY sequence_schema, sequence_name;
 
 CREATE LOCAL TEMPORARY TABLE getl_tables ON COMMIT PRESERVE ROWS AS
-SELECT table_schema, table_name, owner_name, is_temp_table
+SELECT *
 FROM ${sqlObjects.tables.table}
 WHERE 
 	${sqlObjects.tables.where}
 ORDER BY Lower(table_schema), Lower(table_name);
 
 CREATE LOCAL TEMPORARY TABLE getl_views ON COMMIT PRESERVE ROWS AS
-SELECT table_schema, table_name, owner_name, table_id::numeric(38, 0)
+SELECT *
 FROM ${sqlObjects.views.table}
 WHERE 
 	${sqlObjects.views.where}
 ORDER BY Lower(table_schema), Lower(table_name);
 
 CREATE LOCAL TEMPORARY TABLE getl_sql_functions ON COMMIT PRESERVE ROWS AS
-SELECT schema_name, function_name, owner
+SELECT *
 FROM ${sqlObjects.sql_functions.table}
 WHERE 
 	${sqlObjects.sql_functions.where}
 ORDER BY schema_name, function_name;
 
 CREATE LOCAL TEMPORARY TABLE getl_grants ON COMMIT PRESERVE ROWS AS
-SELECT grantor, privileges_description, object_type, object_schema, object_name, grantee, f.function_argument_type
+SELECT *
 FROM ${sqlObjects.grants.table}
 WHERE 
 	${sqlObjects.grants.where}

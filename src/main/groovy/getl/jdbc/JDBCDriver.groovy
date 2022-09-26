@@ -86,6 +86,7 @@ class JDBCDriver extends Driver {
 		tablePrefix = '"'
 		defaultSchemaFromConnectDatabase = false
 		ruleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
+		ruleEscapedText = ['\\': '\\\\', '\n': '\\n', '\'': '\\\'']
 
 		sqlExpressionSqlDateFormat = 'yyyy-MM-dd'
 		sqlExpressionSqlTimeFormat = 'HH:mm:ss.SSS'
@@ -110,6 +111,7 @@ class JDBCDriver extends Driver {
 				sequenceNext: 'SELECT NextVal(\'{value}\') AS id;',
 				sysDualTable: null,
 				changeSessionProperty: null,
+				escapedText: '\'{text}\'',
 
 				ddlCreateTable: 'CREATE{ %type%} TABLE{ %ifNotExists%} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
 				ddlCreateIndex: 'CREATE{ %unique%}{ %hash%} INDEX{ %ifNotExists%} {indexName} ON {tableName} ({columns})',
@@ -791,7 +793,7 @@ class JDBCDriver extends Driver {
 		if (params.type != null)
 			types = (params.type as List<String>).toArray(new String[0])
 		else
-			types = ['TABLE', 'GLOBAL TEMPORARY', 'VIEW'] as String[]
+			types = ['TABLE', 'GLOBAL TEMPORARY', 'VIEW', 'SYSTEM TABLE', 'LOCAL TEMPORARY'] as String[]
 
 		List<Map> tables = []
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)
@@ -3280,5 +3282,16 @@ FROM {source} {after_from}'''
 		}
 
 		return res
+	}
+
+	/** Escape string rules */
+	protected Map<String, String> ruleEscapedText
+
+	/** Escape string value */
+	String escapedText(String value) {
+		if (value == null)
+			return 'null'
+
+		return sqlExpressionValue('escapedText', [text: StringUtils.ReplaceMany(value, ruleEscapedText)])
 	}
 }

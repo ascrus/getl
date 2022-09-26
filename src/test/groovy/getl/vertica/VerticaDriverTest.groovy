@@ -427,12 +427,12 @@ LIMIT 1'''
             def path = "${TFS.systemPath}/reverse"
             new File(path).deleteOnExit()
             try {
-                this.con.useLogin 'dbadmin'
+                this.con.switchToNewLogin('dbadmin')
                 con.sqlHistoryFile = "$path/commands.sql"
                 new ReverseEngineering(connectionVertica: this.con as VerticaConnection, scriptPath: path).reverse()
             }
             finally {
-                this.con.useLogin 'developer'
+                this.con.switchToPreviousLogin()
                 FileUtils.DeleteFolder(path)
             }
         }

@@ -96,8 +96,8 @@ class StringUtils {
 
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
-		value = value.replace('\\\\', '\u0001')
-				.replace('\\{', '\u0002').replace('\\}', '\u0003').replace('\\$', '\u0004')
+		value = value.replace('~\\~', '\u0001')
+				.replace('~{~', '\u0002').replace('~}~', '\u0003').replace('~$~', '\u0004')
 
 		def matcher = EvalMacroStringPattern1.matcher(value)
 
@@ -397,9 +397,13 @@ class StringUtils {
 	 * @return modified text
 	 */
 	static String ReplaceMany(String value, Map replaceValues, Pattern pattern = null) {
-		if (value == null) return null
-		if (pattern == null) pattern = SearchManyPattern(replaceValues)
+		if (value == null)
+			return null
+
+		if (pattern == null)
+			pattern = SearchManyPattern(replaceValues)
 		def matcher = pattern.matcher(value)
+
 		def sb = new StringBuilder()
 		def pos = 0
 		while (matcher.find()) {

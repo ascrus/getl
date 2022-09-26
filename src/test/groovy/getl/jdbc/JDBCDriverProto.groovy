@@ -1058,4 +1058,16 @@ IF ('{support_update}' = 'true') DO {
         }
         assertEquals(1, c)
     }
+
+    @Test
+    void testEscapedText() {
+        def testText = 'test\'test\'test\ntest"test"test\\\t'
+        new SQLScripter().tap {
+            useConnection con
+            vars.text = con.escapedText(testText)
+            vars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
+            exec(true, 'SET SELECT {text} AS result{ %from%};')
+            assertEquals(testText, vars.result)
+        }
+    }
 }
