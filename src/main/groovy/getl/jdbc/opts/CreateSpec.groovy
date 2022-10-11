@@ -48,7 +48,9 @@ class CreateSpec extends BaseSpec {
             def par = new HashMap<String, Object>()
             indexParams.each { name, param ->
                 if (name == 'columns') {
-                    if (!(param instanceof List)) {
+                    if (param == null)
+                        param = [] as List<String>
+                    else if (!(param instanceof List)) {
                         if (param instanceof String)
                             param = (param as String).split('\\|').toList()
                         else
