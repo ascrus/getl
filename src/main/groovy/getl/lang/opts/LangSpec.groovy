@@ -54,6 +54,11 @@ class LangSpec extends BaseSpec {
     /** The level of fixation in the log of process profiling records */
     void setProcessTimeLevelLog(Level value) { saveParamValue('processTimeLevelLog', value) }
 
+    /** Log SQL scripter commands */
+    Boolean getSqlScripterDebug() { BoolUtils.IsValue(params.sqlScripterDebug, false) }
+    /** Log SQL scripter commands */
+    void setSqlScripterDebug(Boolean value) { saveParamValue('sqlScripterDebug', value) }
+
     /** Use the multithreading connection model */
     Boolean getUseThreadModelCloning() { BoolUtils.IsValue(params.useThreadModelCloning, true) }
     /** Use the multithreading connection model */

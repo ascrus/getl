@@ -33,6 +33,7 @@ class H2Driver extends JDBCDriver {
 		commitDDL = false
 		allowExpressions = true
 		caseObjectName = "UPPER"
+		caseRetrieveObject = "UPPER"
 		caseQuotedName = true
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"

@@ -23,7 +23,6 @@ import getl.utils.*
 import java.sql.Time
 import java.sql.Timestamp
 import java.sql.Types
-
 import static getl.driver.Driver.Operation.*
 
 /**
@@ -101,6 +100,7 @@ class JDBCDriver extends Driver {
 						   'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'WITH',
 						   'INSERT', 'UPDATE', 'SET', 'DELETE', 'MERGE'] as List<String>
 		this.sqlType.each { name, par ->
+			//noinspection RegExpSimplifiable
 			def words = (par.name as String).toUpperCase().split('[ ]')
 			ruleQuotedWords.addAll(words)
 		}
@@ -849,6 +849,33 @@ class JDBCDriver extends Driver {
 		return names
 	}
 
+	static private final List<String> metadataBadChars = ['\n', '\r', '\t', '\'', '%']
+
+	/** Prepare object name for using in JDBC metadata function */
+	String prepareObjectNameForMetaFunc(String objectName) {
+		if (objectName == null)
+			return null
+
+		def c = metadataBadChars + [fieldPrefix, tablePrefix]
+		if (fieldEndPrefix != null)
+			c.add(fieldEndPrefix)
+		if (tableEndPrefix != null)
+			c.add(tableEndPrefix)
+
+		c.unique(true)
+		def p = [] as List<Integer>
+		c.each {
+			def i = objectName.indexOf(it)
+			if (i > -1)
+				p.add(i)
+		}
+
+		if (!p.isEmpty())
+			objectName = objectName.substring(0, p.min()) + '%'
+
+		return objectName
+	}
+
 	/** Read fields from table or view */
 	protected List<Field> tableFields(Dataset dataset) {
 		validTableName(dataset as TableDataset)
@@ -861,12 +888,20 @@ class JDBCDriver extends Driver {
 				throw new ExceptionGETL('The driver does not support getting a list of fields in the local temporary table!')
 
 			def names = prepareForRetrieveFields(ds)
+			def schemaName = names.schemaName
+			def tabName = names.tableName
 
-			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${names.tableName}]")
-			ResultSet rs = sqlConnect.connection.metaData.getColumns(names.dbName, names.schemaName, names.tableName, null)
-
+			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${tabName.replace('\n', '\\n')}]")
+			ResultSet rs = sqlConnect.connection.metaData.getColumns(names.dbName, prepareObjectNameForMetaFunc(schemaName), prepareObjectNameForMetaFunc(tabName), null)
 			try {
+				def sn = schemaName.toLowerCase()
+				def tn = tabName.toLowerCase()
 				while (rs.next()) {
+					if (rs.getString('TABLE_SCHEM')?.toLowerCase() != sn)
+						continue
+					if (rs.getString('TABLE_NAME')?.toLowerCase() != tn)
+						continue
+
 					Field f = new Field()
 
 					f.name = prepareObjectName(rs.getString("COLUMN_NAME"))
@@ -930,10 +965,18 @@ class JDBCDriver extends Driver {
 
 	/** Read primary key for table */
 	protected List<String> readPrimaryKey(Map<String, String> names) {
+		def schemaName = names.schemaName
+		def tabName = names.tableName
+
+		def sn = schemaName.toLowerCase()
+		def tn = tabName.toLowerCase()
+
 		def res = [] as List<String>
-		try (def rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)) {
+		try (def rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, prepareObjectNameForMetaFunc(schemaName),
+				prepareObjectNameForMetaFunc(tabName))) {
 			while (rs.next())
-				res.add(rs.getString("COLUMN_NAME"))
+				if (rs.getString('TABLE_SCHEM')?.toLowerCase() == sn && rs.getString('TABLE_NAME')?.toLowerCase() == tn)
+					res.add(rs.getString("COLUMN_NAME"))
 		}
 
 		return res
@@ -3176,7 +3219,7 @@ FROM {source} {after_from}'''
 	protected String sqlExpressionSqlTimeFormat
 	/** Format sql timestamp values for evaluate sql expression */
 	protected String sqlExpressionSqlTimestampFormat
-	/** Format standart date values for evaluate sql expression */
+	/** Format standard date values for evaluate sql expression */
 	protected String sqlExpressionDateFormat
 
 	/**

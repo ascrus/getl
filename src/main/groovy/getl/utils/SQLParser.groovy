@@ -40,30 +40,31 @@ class SQLParser {
 	Lexer getLexer() { lexer }
 
 	@SuppressWarnings('SpellCheckingInspection')
-	private Map<String, String> regexp = [
-			GETL_ECHO: '(?i)^[@]{0,1}ECHO( .+)*$',
-			GETL_IF: '(?i)^[@]{0,1}IF DO',
-			GETL_SET: '(?i)^[@]{0,1}SET .+',
-			GETL_FOR: '(?i)^[@]{0,1}FOR DO',
-			GETL_COMMAND: '(?i)^[@]{0,1}COMMAND',
-			GETL_EXIT: '(?i)^[@]{0,1}EXIT',
-			GETL_ERROR: '(?i)^[@]{0,1}ERROR .+',
-			GETL_LOAD_POINT: '(?i)^[@]{0,1}LOAD[_]POINT .+ TO .+',
-			GETL_SAVE_POINT: '(?i)^[@]{0,1}SAVE[_]POINT .+ FROM .+',
-			GETL_RUN_FILE: '(?i)^[@]{0,1}RUN[_]FILE( .+){0,1}',
-			GETL_SWITCH_LOGIN: '(?i)^[@]{0,1}SWITCH[_]LOGIN .+',
-	        INSERT: '(?i)^INSERT INTO .*',
-			UPDATE: '(?i)^UPDATE (.+ ){0,1}SET .+',
-			DELETE: '(?i)^DELETE FROM .*',
-			MERGE: '(?i)^MERGE INTO .*',
-			TRUNCATE: '(?i)^TRUNCATE TABLE .*',
-			START_TRANSACTION: '(?i)^(START\\s+|BEGIN\\s+)?TRAN(SACTION)?$',
-			COMMIT: '^COMMIT',
-			ROLLBACK: '^ROLLBACK',
-			CREATE: '(?i)^CREATE (\\w+[ ]){0,2}(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*',
-			ALTER: '(?i)^ALTER (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*',
-			DROP: '(?i)^DROP (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*',
-			SELECT: '(?i)^(WITH)?.*SELECT(?!(.+ INTO ){1}).* FROM .*'
+	private Map<String, List<String>> regexp = [
+			GETL_ECHO: ['(?i)^[@]{0,1}ECHO( .+)*$'],
+			GETL_IF: ['(?i)^[@]{0,1}IF DO'],
+			GETL_SET: ['(?i)^[@]{0,1}SET .+'],
+			GETL_FOR: ['(?i)^[@]{0,1}FOR DO'],
+			GETL_COMMAND: ['(?i)^[@]{0,1}COMMAND'],
+			GETL_EXIT: ['(?i)^[@]{0,1}EXIT'],
+			GETL_ERROR: ['(?i)^[@]{0,1}ERROR .+'],
+			GETL_LOAD_POINT: ['(?i)^[@]{0,1}LOAD[_]POINT .+ TO .+'],
+			GETL_SAVE_POINT: ['(?i)^[@]{0,1}SAVE[_]POINT .+ FROM .+'],
+			GETL_RUN_FILE: ['(?i)^[@]{0,1}RUN[_]FILE( .+){0,1}'],
+			GETL_SWITCH_LOGIN: ['(?i)^[@]{0,1}SWITCH[_]LOGIN .+'],
+	        INSERT: ['(?i)^INSERT INTO .*'],
+			UPDATE: ['(?i)^UPDATE (.+ ){0,1}SET .+'],
+			DELETE: ['(?i)^DELETE FROM .*'],
+			MERGE: ['(?i)^MERGE INTO .*'],
+			TRUNCATE: ['(?i)^TRUNCATE TABLE .*'],
+			START_TRANSACTION: ['(?i)^(START\\s+|BEGIN\\s+)?TRAN(SACTION)?$'],
+			COMMIT: ['^COMMIT'],
+			ROLLBACK: ['^ROLLBACK'],
+			CREATE: ['(?i)^CREATE (\\w+[ ]){0,2}(TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*'],
+			ALTER: ['(?i)^ALTER (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*'],
+			DROP: ['(?i)^DROP (TABLE|VIEW|PROCEDURE|FUNCTION|SCHEMA|PROJECTION|INDEX) .*'],
+			//SELECT: '(?i)^(WITH)?.*SELECT(?!(.+ INTO ){1}).* FROM .*',
+			SELECT: ['^WITH .+ AS .+', '^SELECT (?!(.+ INTO ){1}).*']
 	]
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
@@ -78,13 +79,17 @@ class SQLParser {
 		StatementType res = null
 		def worlds = Lexer.KeyWords(tokens)
 		for (item in regexp) {
-			if (worlds.matches(item.value)) {
-				res = StatementType.valueOf(item.key)
-				break
+			for (expr in item.value) {
+				if (worlds.matches(expr)) {
+					res = StatementType.valueOf(item.key)
+					break
+				}
 			}
+			if (res != null)
+				break
 		}
 
-		if (res == null) {
+		if (res == null && tokens.size() == 1) {
 			if ((tokens[0].type as Lexer.TokenType) == Lexer.TokenType.SINGLE_COMMENT)
 				res = StatementType.SINGLE_COMMENT
 			else if ((tokens[0].type as Lexer.TokenType) == Lexer.TokenType.COMMENT)

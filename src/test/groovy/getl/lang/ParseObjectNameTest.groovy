@@ -64,4 +64,10 @@ class ParseObjectNameTest extends GetlDslTest {
             assertEquals('group:*', parseName('group:').searchMask())
         }
     }
+
+    @Test
+    void testConvertObjectName() {
+        assertEquals('test_hex2F_123', ParseObjectName.toObjectName('test/123'))
+        assertEquals('test__newline_123__hex27_a_hex27_', ParseObjectName.toObjectName('test_\n123_\'a\''))
+    }
 }

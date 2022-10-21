@@ -628,8 +628,15 @@ Examples:
                         if (en.debug != null) {
                             processTimeDebug = BoolUtils.IsValue(en.debug)
                             if (processTimeDebug && processTimeTracing)
-                                logFine("Profiling the start of process commands")
+                                logFine('Profiling the start of process commands')
                         }
+                    }
+                }
+                procs.sqlscripter = { Map<String, Object> en ->
+                    if (en.debug != null) {
+                        sqlScripterDebug = BoolUtils.IsValue(en.debug)
+                        if (sqlScripterDebug)
+                            logFine('Enabled logging SQL scripter commands')
                     }
                 }
                 procs.project = { Map<String, Object> en ->
@@ -5004,6 +5011,7 @@ Examples:
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl = null) {
         def parent = new SQLScripter()
         parent.dslCreator = this
+        parent.debugMode = BoolUtils.IsValue(options.sqlScripterDebug)
         def owner = DetectClosureDelegate(cl, true)
 
         if (connection != null)

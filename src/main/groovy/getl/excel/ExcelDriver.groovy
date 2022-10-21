@@ -55,15 +55,14 @@ class ExcelDriver extends FileDriver {
         throw new ExceptionGETL('Not support this features!')
     }
 
-    @Override
+    /*@Override
     List<Field> fields(Dataset dataset) {
-        if (!BoolUtils.IsValue([(dataset as ExcelDataset).header,
-                                (dataset.connection as ExcelConnection).header, true])) {
+        if (!(dataset as ExcelDataset).header()) {
             throw new ExceptionGETL('Not support this features with no field header!')
         }
         dataset.rows(limit: 1)
         return dataset.field
-    }
+    }*/
 
     @Override
     @CompileStatic
@@ -221,7 +220,8 @@ class ExcelDriver extends FileDriver {
     @CompileStatic
     static private Object getCellValue(Cell cell, FileDataset dataset, Field field, DateTimeFormatter formatDate, DateTimeFormatter formatTime,
                                        DateTimeFormatter formatDateTime, String formatBoolean, DecimalFormat df) {
-        if (cell.cellType == CellType.BLANK) return null
+        if (cell.cellType in [CellType.BLANK, CellType.ERROR, CellType._NONE])
+            return null
 
 		def res = null
         def fieldType = field.type
@@ -320,7 +320,8 @@ class ExcelDriver extends FileDriver {
 
                 break
             case Field.Type.STRING:
-                switch (cell.cellType) {
+                res = cell.stringCellValue
+                /*switch (cell.cellType) {
                     case CellType.STRING: case CellType.FORMULA:
                         res = cell.stringCellValue
                         break
@@ -332,7 +333,7 @@ class ExcelDriver extends FileDriver {
                         break
                     default:
                         throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with string!")
-                }
+                }*/
 
                 break
             default:

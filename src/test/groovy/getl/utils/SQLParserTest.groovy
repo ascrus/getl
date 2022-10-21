@@ -2,6 +2,7 @@ package getl.utils
 
 import getl.lang.Getl
 import getl.test.GetlTest
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -345,5 +346,19 @@ DROP TABLE public.test_delete_table2;
                 exec sql
             }
         }
+    }
+
+    @Test
+    void testExportCommand() {
+        def sql = '''/*:count_rows*/
+EXPORT TO VERTICA db.SCHEMA."Таблица один"
+  ("Поле 1", "Поле 2") 
+AS 
+  SELECT "Поле 1", "Поле 2" 
+  FROM "Таблица один" tab
+;'''
+        def sp = new SQLParser(sql)
+        def st = sp.statementType()
+        assertNull(st)
     }
 }

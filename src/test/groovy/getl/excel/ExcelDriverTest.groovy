@@ -127,12 +127,40 @@ class ExcelDriverTest extends GetlTest {
                 header = true
                 formatBoolean = 'ГРУЖ|ПОРОЖ'
 
-                schemaFileName = 'tests/excel/report.schema'
-                loadDatasetMetadata()
-
+                loadDatasetMetadataFromSlurper(new File('tests/excel/report.schema'))
                 eachRow {  row ->
                     //println row
                     assertNotNull(row."период")
+                }
+            }
+        }
+    }
+
+    @Test
+    void testError() {
+        if (!FileUtils.ExistsFile('tests/excel/with_errors.xlsx'))
+            return
+
+        Getl.Dsl {
+            excel {
+                useConnection excelConnection { it.path = 'tests/excel' }
+                it.fileName = 'with_errors.xlsx'
+                header = true
+                formatBoolean = '1|0'
+
+                field('f1')
+                field('f2')
+                field('f3')
+                field('f4')
+                field('f5')
+                field('f6')
+                field('f7')
+                field('f8') { type = integerFieldType }
+                field('f9') { type = booleanFieldType }
+
+                eachRow {  row ->
+                    //println row
+                    assertNotNull(row.f1)
                 }
             }
         }

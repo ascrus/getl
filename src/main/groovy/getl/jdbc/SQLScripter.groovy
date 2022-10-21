@@ -151,6 +151,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def file = new File(fn)
 		if (!file.exists())
 			throw new ExceptionGETL("Script file \"$fileName\" not found!")
+		if (debugMode)
+			logger.finest("Loading script from file \"$file\" ...")
 		setScript(file.getText(codePage?:'utf-8'))
 	}
 
@@ -175,6 +177,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def file = FileUtils.FileFromResources(fileName, paths)
 		if (file == null)
 			throw new ExceptionGETL("Script file \"$fileName\" not found in resource!")
+		if (debugMode)
+			logger.finest("Loaded script from resource \"$fileName\" ...")
 		setScript(file.getText(codePage?:'utf-8'))
 	}
 
@@ -190,7 +194,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 			def str = lastSql
 			if (StringUtils.RightStr(value, 1) != ';')
 				str += ';'
-			println str
+			logger.finest("Running script:\n$str")
 		}
 	}
 
@@ -215,6 +219,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def point = m[0][1] as String
 		def varName = m[0][2] as String
 
+		if (debugMode)
+			logger.finest("Loading point \"$point\" to \"$varName\" variable ...")
+
 		def pm = dslCreator.historypoint(point)
 		if (pm.isExists())
 			vars.put(varName, pm.lastValue(true))
@@ -237,6 +244,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (value == null)
 			throw new ExceptionGETL("SQLScripter: variable \"$varName\" has null value for SAVE_POINT statement!")
 
+		if (debugMode)
+			logger.finest("Saving \"$varName\" variable to point \"$point\" ...")
 		def pm = dslCreator.historypoint(point)
 		if (!pm.exists)
 			pm.create(false)
@@ -252,6 +261,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 		if (!FileUtils.IsResourceFileName(posParam, true) && !FileUtils.ExistsFile(posParam))
 			throw new ExceptionGETL("Script file \"$posParam\" not found and cannot be running!")
+
+		if (debugMode)
+			logger.finest("Running file \"$posParam\" ...")
 
 		SQLScripter ns = new SQLScripter(connection: connection, logEcho: logEcho, debugMode: debugMode,
 				vars: vars, extVars: extVars, dslCreator: dslCreator)
@@ -274,11 +286,15 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
 		if (posParam.length() == 0)
 			throw new ExceptionGETL('Required login from command SWITCH_LOGIN!')
+		if (debugMode)
+			logger.finest("Switching to login \"$posParam\" ...")
 		connection.useLogin(posParam)
 	}
 
 	/*** Do update command */
 	private void doDML(SQLParser parser) {
+		if (debugMode)
+			logger.finest('Executing DML operator ...')
 		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
 		def rc = connection.executeCommand(command: lastSql)
 		if (rc > 0)
@@ -294,6 +310,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 	/*** Do update command */
 	private void doDDL(SQLParser parser) {
+		if (debugMode)
+			logger.finest('Executing DDL operator ...')
 		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
 		connection.executeCommand(command: lastSql)
 
@@ -303,14 +321,25 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 	/*** Do other script */
 	private void doOther(SQLParser parser) {
+		if (debugMode)
+			logger.finest('Executing other operator ...')
 		if (!parser.scripts(true).isEmpty()) {
 			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
-			connection.executeCommand(command: lastSql)
+
+			def scriptLabel = detectScriptVariable(parser)
+			def rc = connection.executeCommand(command: lastSql)
+			if (scriptLabel != null) {
+				vars.put(scriptLabel, rc)
+				if (rc > 0)
+					rowCount += rc
+			}
 		}
 	}
 	
 	/** Do select command */
 	private void doSelect(SQLParser parser) {
+		if (debugMode)
+			logger.finest('Executing SELECT operator ...')
 		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
 		QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
 		def rows = ds.rows()
@@ -327,6 +356,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def matcher = setOperatorPattern.matcher(parser.lexer.scriptBuild(ignoreComments: true))
 		if (!matcher)
 			throw new ExceptionGETL("Invalid SET statement: ${parser.lexer.script}")
+
+		if (debugMode)
+			logger.finest('Executing SET operator ...')
 
 		def setScript = matcher.group(1)
 		setLastSql(StringUtils.EvalMacroString(setScript, allVars).trim())
@@ -363,6 +395,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (listDo.isEmpty())
 			throw new ExceptionGETL("No script specified for FOR statement: $parseScript")
 
+		if (debugMode)
+			logger.finest('Executing FOR operator ...')
+
 		def queryText = parseScript.substring(listHeader[0].first as Integer, (listHeader[listHeader.size() - 1].last as Integer) + 1)
 		setLastSql(StringUtils.EvalMacroString(queryText, allVars).trim())
 		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1).trim()
@@ -395,6 +430,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 				rowCount += ns.rowCount
 			}
 		}
+
+		if (debugMode)
+			logger.finest('Executed FOR operator complete.')
 	}
 	
 	/*** Execute command if condition is true */
@@ -416,6 +454,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def listDo = tokenDo.list as List<Map>
 		if (listDo.isEmpty())
 			throw new ExceptionGETL("No script specified for IF statement: $parseScript")
+
+		if (debugMode)
+			logger.finest('Executing IF operator ...')
 
 		def queryText = parseScript.substring(listHeader[0].first as Integer, (listHeader[listHeader.size() - 1].last as Integer) + 1)
 		def sc = 'SELECT 1'
@@ -450,6 +491,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 				rowCount += ns.rowCount
 			}
 		}
+
+		if (debugMode)
+			logger.finest('Executed IF operator complete.')
 	}
 
 	/** Calc block commands without parsing */
@@ -465,6 +509,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1)
 
+		if (debugMode)
+			logger.finest('Calling block code ...')
+
 		setLastSql(StringUtils.EvalMacroString(bodyText, allVars).trim())
 		def rc = connection.executeCommand(command: lastSql)
 		if (rc > 0)
@@ -475,6 +522,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 			lastSql += ';'
 		}
 		historyCommands.append('\n')
+
+		if (debugMode)
+			logger.finest('Called block code complete')
 	}
 
 	/** Logging echo message */
@@ -490,6 +540,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def posText = (tokenHeader.first as Integer) + 5
 		if (posText < parseScript.length() - 1)
 			text = parseScript.substring(posText).trim().trim()
+
+		if (debugMode)
+			logger.finest('Echo ...')
 
 		if (text != null && text.length() > 0)
 			logger.write(logEcho, StringUtils.UnescapeJava(StringUtils.EvalMacroString(text, allVars)))
@@ -507,6 +560,9 @@ class SQLScripter implements WithConnection, GetlRepository {
 		def posText = tokenHeader.last as Integer + 2
 		if (posText < parseScript.length() - 1)
 			text = parseScript.substring(posText).trim()
+
+		if (debugMode)
+			logger.finest('Throw error ...')
 
 		throw new ExceptionSQLScripter("SQLScripter: found error ${StringUtils.EvalMacroString(text, allVars)}!")
 	}

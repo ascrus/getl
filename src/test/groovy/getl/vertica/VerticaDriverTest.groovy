@@ -628,4 +628,21 @@ LIMIT 1'''
             }
         }
     }
+
+    @Test
+    void testBadTableNameFields() {
+        Getl.Dsl {
+            verticaTable {
+                useConnection (con as VerticaConnection)
+                schemaName = 'public'
+                tableName = "test_\n123_'a'"
+                retrieveFields()
+                assertEquals(2, field.size())
+                assertNotNull(fieldByName('id'))
+                assertTrue(fieldByName('id').isKey)
+                assertNotNull(fieldByName('name\ntest'))
+                assertEquals(50, fieldByName('name\ntest').length)
+            }
+        }
+    }
 }

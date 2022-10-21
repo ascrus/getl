@@ -3,6 +3,8 @@ package getl.lang.sub
 
 import getl.exception.ExceptionDSL
 import getl.utils.BoolUtils
+import getl.utils.StringUtils
+
 import java.util.regex.Pattern
 
 /**
@@ -50,6 +52,9 @@ class ParseObjectName {
     static Boolean validObjectName(String objectName, Boolean inGroup = true, Boolean isMaskName = false) {
         if (objectName == null)
             return null
+
+        if (objectName.indexOf('\n') > -1 || objectName.indexOf('\t') > -1 || objectName.indexOf('\r') > -1)
+            return false
 
         Boolean res
         if (isMaskName)
@@ -235,6 +240,27 @@ class ParseObjectName {
     /** Convert group name to path */
     String toPath() {
         return _groupName?.replace('.', '/')
+    }
+
+    /** Convert string value to object name */
+    static String toObjectName(String value) {
+        value = value.replace('\n', '_newline_').replace('\r', '_return_').replace('\t', '_tab_')
+        def pattern = com.google.re2j.Pattern.compile('([' + incorrectChars + '])+')
+        def matcher = pattern.matcher(value)
+        def sb = new StringBuilder()
+        def pos = 0
+        while (matcher.find()) {
+            sb.append(value, pos, matcher.start())
+            pos = matcher.end()
+            def c = matcher.group(1) as String
+            sb.append('_')
+            sb.append('hex' + StringUtils.RawToHex(c.getBytes()))
+            sb.append('_')
+        }
+        if (pos < value.length())
+            sb.append(value, pos, value.length())
+
+        return sb.toString()
     }
 
     /**

@@ -229,4 +229,14 @@ class BaseUserCode extends Getl {
     static List text2List(String text, String fieldDelimited = ';') {
         return TransformUtils.ListFromColumn(text, fieldDelimited)
     }
+
+    /** Return default value if specified value is null */
+    static Object isNull(def value, def defaultValue) {
+        return value?:defaultValue
+    }
+
+    /** Return null if value equals specified value */
+    static Object nullIf(def value, def nullValue) {
+        return (value != nullValue)?value:null
+    }
 }

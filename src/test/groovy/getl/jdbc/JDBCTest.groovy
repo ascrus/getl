@@ -8,6 +8,7 @@ import getl.utils.GenerationUtils
 import getl.utils.SQLParser
 import getl.utils.SynchronizeObject
 import groovy.transform.InheritConstructors
+import org.junit.Ignore
 import org.junit.Test
 
 @InheritConstructors
@@ -34,27 +35,27 @@ class JDBCTest extends GetlTest {
                         added id1: 1, id2: DateUtils.ParseDateTime('2019-12-31 23:59:59.000'), name: 'test', value: 123.45
                     }
                 }
-                assertNull(field('id1').typeName)
-                assertTrue(field('id1').isKey)
+                assertNull(fieldByName('id1').typeName)
+                assertTrue(fieldByName('id1').isKey)
                 assertEquals(1, field('id1').ordKey)
-                assertTrue(field('id2').isKey)
-                assertEquals(2, field('id2').ordKey)
+                assertTrue(fieldByName('id2').isKey)
+                assertEquals(2, fieldByName('id2').ordKey)
 
                 eachRow {
                     assertNotNull(it.id1)
                 }
-                assertEquals('INTEGER', field('id1').typeName)
-                assertTrue(field('id1').isKey)
-                assertEquals(1, field('id1').ordKey)
-                assertTrue(field('id2').isKey)
-                assertEquals(2, field('id2').ordKey)
+                assertEquals('INTEGER', fieldByName('id1').typeName)
+                assertTrue(fieldByName('id1').isKey)
+                assertEquals(1, fieldByName('id1').ordKey)
+                assertTrue(fieldByName('id2').isKey)
+                assertEquals(2, fieldByName('id2').ordKey)
 
                 retrieveFields()
-                assertEquals('INTEGER', field('id1').typeName)
-                assertTrue(field('id1').isKey)
-                assertEquals(1, field('id1').ordKey)
-                assertTrue(field('id2').isKey)
-                assertEquals(2, field('id2').ordKey)
+                assertEquals('INTEGER', fieldByName('id1').typeName)
+                assertTrue(fieldByName('id1').isKey)
+                assertEquals(1, fieldByName('id1').ordKey)
+                assertTrue(fieldByName('id2').isKey)
+                assertEquals(2, fieldByName('id2').ordKey)
 
                 assertEquals([1], fieldValues('id1'))
 
@@ -401,6 +402,23 @@ RUN_FILE resource:/jdbc/script.sql
                     script = 'Echo {var1}'
                     runSql true
                 }
+            }
+        }
+    }
+
+    @Test
+    @Ignore
+    void test1() {
+        Getl.Dsl {
+            sql {
+                useConnection embeddedConnection()
+                exec '''/*:count_rows*/
+EXPORT TO VERTICA db.SCHEMA."Таблица один"
+  ("Поле1", "Поле2") 
+AS 
+  SELECT "Поле1", "Поле2" 
+  FROM "Таблица один" tab
+;'''
             }
         }
     }
