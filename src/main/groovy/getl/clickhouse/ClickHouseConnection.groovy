@@ -2,7 +2,7 @@ package getl.clickhouse
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import getl.utils.FileUtils
@@ -47,7 +47,7 @@ class ClickHouseConnection extends JDBCConnection {
     /** Verify or not certificate: none (don't verify), strict (verify) */
     void setSslMode(String value) {
         if (value != null && value.toUpperCase() in ['NONE', 'STRICT'])
-            throw new ExceptionGETL("Invalid ssl mode \"$value\", allowed NONE or STRICT")
+            throw new ConnectionError(this, '#clickhouse.invalid_ssl_mode', [mode: value])
 
         params.sslMode = value
     }

@@ -2,7 +2,7 @@ package getl.hive
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
@@ -49,7 +49,7 @@ class HiveConnection extends JDBCConnection {
                 break
             default:
                 if (driverName == null)
-                    throw new ExceptionGETL('Need set vendor name from Hive connection or driver name!')
+                    throw new ConnectionError(this, 'not set "vendor" and "driverName"')
         }
     }
 
@@ -66,7 +66,7 @@ class HiveConnection extends JDBCConnection {
                 case 'cloudera':
                     break
                 default:
-                    throw new ExceptionGETL("Unknown Hive vendor \"$value\"")
+                    throw new ConnectionError(this, 'invalid vendor "{vendor}"', [vendor: value])
 
             }
         }

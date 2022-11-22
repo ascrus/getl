@@ -5,7 +5,8 @@ import getl.config.ConfigSlurper
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
-import getl.exception.ExceptionDSL
+import getl.exception.DatasetError
+import getl.exception.DslError
 import getl.files.FileManager
 import getl.files.Manager
 import getl.files.ResourceManager
@@ -53,6 +54,7 @@ class RepositoryStorageManager {
         storagePath = value
         isResourceStoragePath = FileUtils.IsResourceFileName(value, false)
         currentStoragePath = null
+        dslCreator._onChangeRepositoryPath()
     }
 
     /** Absolute storage path for repository files */
@@ -105,7 +107,7 @@ class RepositoryStorageManager {
     /** History of saving objects to files */
     void setSavingStoryDataset(Dataset value) {
         if (value != null && !(value instanceof TableDataset || value instanceof CSVDataset))
-            throw new ExceptionDSL('It is allowed to use JDBC tables or CSV files to store the history of saving objects!')
+            throw new DslError(dslCreator, '#dsl.repository.invalid_story_dataset')
 
         if (value != null)
             checkSavingStoryDataset(value)
@@ -120,7 +122,7 @@ class RepositoryStorageManager {
             if (table.field.isEmpty() && table.exists) {
                 table.retrieveFields()
                 if (table.field.isEmpty())
-                    throw new ExceptionDSL("Failed to read the list of fields for \"$value\"!")
+                    throw new DatasetError(value, '#dataset.fail_read_fields')
             }
         }
 
@@ -130,11 +132,11 @@ class RepositoryStorageManager {
         savingStoryFields.each { needField ->
             def dsField = value.fieldByName(needField.name)
             if (dsField == null)
-                throw new ExceptionDSL("The field \"${needField.name}\" was not found in the dataset of the write history of objects \"$value\"!")
+                throw new DatasetError(value, '#dataset.field_not_found', [field: needField.name])
             if (needField.type != dsField.type)
-                throw new ExceptionDSL("The type for field \"${needField.name}\" in dataset \"$value\" must be \"${needField.type}\"!")
+                throw new DatasetError(value, '#dataset.field_type_not_compatible', [field: needField.name, type: needField.type.toString()])
             if (needField.length != null && dsField.length < needField.length)
-                throw new ExceptionDSL("The length of the field \"${needField.name}\" in the dataset \"$value\" must be at least ${needField.length} characters long!")
+                throw new DatasetError(value, '#dataset.field_length_not_compatible', [field: needField.name, length: needField.length])
         }
     }
 
@@ -210,7 +212,7 @@ class RepositoryStorageManager {
 
                 def cl = new GroovyClassLoader(Getl.classLoader)
                 cl.addURL(file.toURI().toURL())
-                def confFile = FileUtils.FileFromResources('getl-library.conf', null, cl)
+                def confFile = FileUtils.FileFromResources('/getl-library.conf', null, cl)
                 if (confFile != null) {
                     def confContent = ConfigSlurper.LoadConfigFile(confFile, 'utf-8', null, null, dslCreator)
                     def initClasses = confContent.init_classes as List<String>
@@ -256,9 +258,10 @@ class RepositoryStorageManager {
     @Synchronized("synchRepository")
     void registerRepository(String name, RepositoryObjects repository, Integer priority = null) {
         if (_listRepositories.containsKey(name))
-            throw new ExceptionDSL("Repository \"$name\" already registering!")
+            throw new DslError(dslCreator, '#dsl.repository.already_register', [repository: name])
 
-        if (priority == null) priority = _listRepositories.size() + 1
+        if (priority == null)
+            priority = _listRepositories.size() + 1
 
         repository.setDslNameObject(name)
         repository.setDslCreator(dslCreator)
@@ -269,7 +272,7 @@ class RepositoryStorageManager {
     /** Register repository in list */
     void registerRepository(Class<RepositoryObjects> classRepository, Integer priority = null) {
         if (classRepository == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'classRepository', detail: 'registerRepository'])
 
         def parent = classRepository.getConstructor().newInstance()
         registerRepository(classRepository.name, parent, priority)
@@ -282,10 +285,10 @@ class RepositoryStorageManager {
      */
     RepositoryObjects repository(String name) {
         if (name == null)
-            throw new ExceptionDSL('Required repository name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'name', detail: 'repository'])
         def rep = _listRepositories.get(name)
         if (rep == null)
-            throw new ExceptionDSL("Repository \"$name\" not found!")
+            throw new DslError(dslCreator, '#dsl.repository.not_found', [repository: name])
 
         return rep
     }
@@ -297,7 +300,7 @@ class RepositoryStorageManager {
      */
     RepositoryObjects repository(Class<RepositoryObjects> repositoryClass) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'repository'])
 
         return repository(repositoryClass.name)
     }
@@ -332,10 +335,10 @@ class RepositoryStorageManager {
     /** Repository storage path */
     String repositoryStoragePath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'repositoryStoragePath'])
 
         if (storagePath == null)
-            throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
+            throw new DslError(dslCreator, '#dsl.repository.non_path')
 
         def rootPath = storagePath()
         def subDir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
@@ -347,10 +350,10 @@ class RepositoryStorageManager {
     /** Repository directory path */
     String repositoryPath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'repositoryPath'])
 
         if (storagePath == null)
-            throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
+            throw new DslError(dslCreator, '#dsl.repository.non_path')
 
         def rootPath = (isResourceStoragePath)?'':storagePath()
         def subDir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
@@ -374,7 +377,7 @@ class RepositoryStorageManager {
      */
     Integer saveRepository(String repositoryName, String mask = null, String env = null, Date changeTime = null) {
         if (isResourceStoragePath)
-            throw new ExceptionDSL('Cannot be saved to the resource directory!')
+            throw new DslError(dslCreator, '#dsl.repository.deny_path_resource')
 
         def res = 0
         def repository = repository(repositoryName)
@@ -402,7 +405,7 @@ class RepositoryStorageManager {
      */
     Integer saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Date changeTime = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'saveRepository'])
 
         saveRepository(repositoryClass.name, mask, env, changeTime)
     }
@@ -417,11 +420,11 @@ class RepositoryStorageManager {
      */
     protected Boolean saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env, Date changeTime = null) {
         if (isResourceStoragePath)
-            throw new ExceptionDSL('Cannot be saved to the resource directory!')
+            throw new DslError(dslCreator, '#dsl.repository.deny_path_resource')
 
         def obj = repository.find(objName.name)
         if (obj == null)
-            throw new ExceptionDSL("Object \"${objName.name}\" not found in repository \"${repository.getClass().name}\"!")
+            throw new DslError(dslCreator, '#dsl.object.not_found', [repname: objName.name, repository: repository.getClass().name])
 
         if (changeTime != null && obj.dslRegistrationTime != null && obj.dslRegistrationTime < changeTime)
             return false
@@ -435,8 +438,7 @@ class RepositoryStorageManager {
                 trimMap: true, smartWrite: true, owner: dslCreator)
 
         if (!file.exists())
-            throw new ExceptionDSL("Error saving object \"${objName.name}\" from repository " +
-                                    "\"${repository.getClass().name}\" to file \"$file\"!")
+            throw new DslError(dslCreator, '#dsl.repository.fail_save_object', [repname: objName.name, repository: repository.getClass().name, file: file.path])
 
         saveToStoryDataset(repository.getClass().name, objName.name, env, changeTime)
 
@@ -476,8 +478,8 @@ class RepositoryStorageManager {
                 trimMap: true, smartWrite: true, owner: dslCreator)
 
         if (!file.exists())
-            throw new ExceptionDSL("Error saving object \"${obj.dslNameObject?:'noname'}\" from repository " +
-                    "\"${repository.getClass().name}\" to file \"$file\"!")
+            throw new DslError(dslCreator, '#dsl.repository.fail_save_object',
+                    [repname: obj.dslNameObject?:'noname', repository: repository.getClass().name, file: file.path])
     }
 
     /**
@@ -500,7 +502,7 @@ class RepositoryStorageManager {
      */
     void saveObject(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'saveObject'])
 
         saveObject(repositoryClass.name, name, env)
     }
@@ -528,7 +530,7 @@ class RepositoryStorageManager {
     static Map<String, String> ObjectNameFromFileName(String fileName, Boolean useEnv) {
         def res = ((useEnv)?objectNamePathEnv.analyzeFile(fileName):objectNamePath.analyzeFile(fileName)) as Map<String, String>
         if (res.isEmpty())
-            throw new ExceptionDSL("Invalid repository configuration file name \"$fileName\"!")
+            throw new DslError('#dsl.repository.invalid_object_file', [file: fileName])
 
         return res
     }
@@ -606,7 +608,7 @@ class RepositoryStorageManager {
      */
     void removeRepositoryFiles(Class<RepositoryObjects> repositoryClass, String env = null, String group = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'removeRepositoryFiles'])
 
         removeRepositoryFiles(repositoryClass.name, env, group)
     }
@@ -624,7 +626,7 @@ class RepositoryStorageManager {
         files?.eachRow { row ->
             def filePath = "$repFilePath/${row.filepath}/${row.filename}"
             if (!FileUtils.DeleteFile(filePath))
-                throw new ExceptionDSL("Unable to delete file \"$filePath\" in repository!")
+                throw new DslError(dslCreator, '#io.file.fail_delete', [file: filePath, detail: "repository \"$repository\", environment \"$env\""])
         }
 
         if (group != null) {
@@ -686,14 +688,17 @@ class RepositoryStorageManager {
                         def groupName = (fileAttr.filepath != '.') ? (fileAttr.filepath as String).replace('/', '.').toLowerCase() : null
                         def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
                         if (isEnvConfig && objectName.env != env)
-                            throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
+                            throw new DslError(dslCreator, '#dsl.repository.invalid_file_env',
+                                    [file: "${fileAttr.filepath}/${fileAttr.filename}", fileEnv: objectName.env, env: env])
                         def name = new ParseObjectName(groupName, objectName.name as String, true).name
                         if (maskPath == null || maskPath.match(name)) {
                             def isExists = (name in existsObject)
                             if (isExists) {
-                                if (ignoreExists) return
-                                throw new ExceptionDSL("Object \"$name\" from file \"${fileAttr.filepath}/${fileAttr.filename}\"" +
-                                        " is already registered in repository \"${repository.getClass().name}\"!")
+                                if (ignoreExists)
+                                    return
+
+                                throw new DslError(dslCreator, '#dsl.object.already_register_by_file',
+                                        [file: "${fileAttr.filepath}/${fileAttr.filename}", repname: name, className: repository.getClass().name])
                             }
 
                             String fileName
@@ -743,7 +748,7 @@ class RepositoryStorageManager {
      */
     Integer loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'loadRepository'])
 
         loadRepository(repositoryClass.name, mask, env)
     }
@@ -765,8 +770,9 @@ class RepositoryStorageManager {
         if (file == null || !file.exists()) {
             if (!validExist)
                 return null
-            throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
-                    "repository \"${repository.getClass().name}\": file ${(isResourceStoragePath)?' in resource':'"' + file + '"'} was not found!")
+
+            throw new DslError(dslCreator, (!isResourceStoragePath)?'#dsl.repository.fail_load_object_from_file':'#dsl.repository.fail_load_object_from_resource',
+                    [file: (!isResourceStoragePath)?file.path:file.name, repname: name, className: repository.getClass().name])
         }
 
         GetlRepository obj = null
@@ -776,7 +782,7 @@ class RepositoryStorageManager {
             if (register) {
                 obj = repository.find(name, false)
                 if (obj != null && !overloading)
-                    throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")
+                    throw new DslError(dslCreator, '#dsl.repository.fail_reload_object', [repname: name, className: repository.getClass().name, file: file.path])
             }
             def isExists = (obj != null)
             obj = repository.importConfig(objParams, obj, name)
@@ -811,13 +817,13 @@ class RepositoryStorageManager {
      */
     void readObjectFromFile(RepositoryObjects repository, String fileName, String env, GetlRepository obj) {
         if (repository == null)
-            throw new ExceptionDSL("Required repository!")
+            throw new DslError(dslCreator, '#params.required', [param: 'repository', detail: 'readObjectFromFile'])
         if (fileName == null)
-            throw new ExceptionDSL("Required file name!")
+            throw new DslError(dslCreator, '#params.required', [param: 'fileName', detail: 'readObjectFromFile'])
 
         def file = new File(fileName)
         if (!file.exists())
-            throw new ExceptionDSL("File \"$fileName\" was not found to load the object!")
+            throw new DslError(dslCreator, '#io.file.not_found', [type: 'Object', file: file.path])
 
         def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8', environment: env,
                 configVars: this.dslCreator.configVars, owner: dslCreator)
@@ -879,7 +885,7 @@ class RepositoryStorageManager {
      */
     GetlRepository loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false, Boolean register = true) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'loadObject'])
 
         loadObject(repositoryClass.name, name, env, overloading, register)
     }
@@ -891,7 +897,7 @@ class RepositoryStorageManager {
     @Synchronized("synchRepository")
     Boolean removeStorage(String repositoryName, String env = null) {
         if (isResourceStoragePath)
-            throw new ExceptionDSL('Cannot delete the resource directory!')
+            throw new DslError(dslCreator, '#dsl.repository.fail_delete_resource', [className: repositoryName])
 
         if (env != null || envDirs.isEmpty())
             FileUtils.DeleteFolder(repositoryPath(repository(repositoryName), env), true)
@@ -909,7 +915,7 @@ class RepositoryStorageManager {
      */
     Boolean removeStorage(Class<RepositoryObjects> repositoryClass, String env = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'removeStorage'])
 
         removeStorage(repositoryClass.name, env)
     }
@@ -974,7 +980,7 @@ class RepositoryStorageManager {
      */
     String objectFilePath(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'objectFilePath'])
 
         objectFilePathInStorage(repository(repositoryClass.name), ParseObjectName.Parse(name, false), env)
     }
@@ -999,7 +1005,7 @@ class RepositoryStorageManager {
      */
     File objectFile(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'objectFile'])
 
         return new File(objectFilePath(repositoryClass, name, env))
     }
@@ -1015,7 +1021,7 @@ class RepositoryStorageManager {
     void renameObject(Class<RepositoryObjects> repositoryClass, String name, String newName, Boolean saveToStorage = false,
                       List<String> envs = null) {
         if (repositoryClass == null)
-            throw new ExceptionDSL('Required repository class name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'renameObject'])
 
         renameObject(repositoryClass.name, name, newName, saveToStorage, envs)
     }
@@ -1030,14 +1036,15 @@ class RepositoryStorageManager {
      */
     void renameObject(String repositoryClassName, String name, String newName, Boolean saveToStorage = false,
                       List<String> envs = null) {
-        if (isResourceStoragePath)
-            throw new ExceptionDSL('Renaming is not supported for staged repositories in resource files!')
         if (name == null)
-            throw new ExceptionDSL('Required object name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'name', detail: 'renameObject'])
         if (newName == null)
-            throw new ExceptionDSL('Required new object name!')
+            throw new DslError(dslCreator, '#params.required', [param: 'newName', detail: 'renameObject'])
         if (name == newName)
             return
+
+        if (isResourceStoragePath)
+            throw new DslError(dslCreator, '#dsl.repository.fail_rename_resource', [repname: name, className: repositoryClassName])
 
         def repName = dslCreator.repObjectName(name)
         def repNewName = dslCreator.repObjectName(newName)
@@ -1045,10 +1052,10 @@ class RepositoryStorageManager {
         def rep = repository(repositoryClassName)
         def obj = rep.find(repName, true)
         if (obj == null)
-            throw new ExceptionDSL("Object \"$name\" not found in repository \"$repositoryClassName\"!")
+            throw new DslError(dslCreator, '#dsl.object.not_found', [repname: name, repository: repositoryClassName])
 
         if (rep.find(repNewName, true))
-            throw new ExceptionDSL("Object \"$newName\" already exists in repository \"$repositoryClassName\"!")
+            throw new DslError(dslCreator, '#dsl.repository.fail_rename_exists', [repname: newName, origName: name, className: repositoryClassName])
 
         synchronized (rep.synchObjects) {
             try {
@@ -1059,7 +1066,7 @@ class RepositoryStorageManager {
                             def objNewFile = objectFile(repositoryClassName, repNewName, env)
                             FileUtils.ValidFilePath(objNewFile)
                             if (!objFile.renameTo(objNewFile))
-                                throw new ExceptionDSL("Failed to rename for object \"$name\" file \"$objFile\" to file \"$objNewFile\"!")
+                                throw new DslError(dslCreator, '#io.file.fail_rename', [path: objFile.path, dir: objNewFile.path, detail: name])
                         }
                     }
                     renameFile.call(dslCreator.configuration.environment)

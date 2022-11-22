@@ -1,17 +1,20 @@
+//file:noinspection unused
 package getl.lang.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.exception.ExceptionDSL
+import getl.exception.DatasetError
+import getl.exception.DslError
 import getl.jdbc.TableDataset
 import getl.lang.Getl
-import getl.lang.sub.RepositoryDatasets
 import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
+import getl.utils.Logs
 import getl.utils.MapUtils
+import getl.utils.Messages
 import groovy.transform.InheritConstructors
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
@@ -33,11 +36,11 @@ class LangSpec extends BaseSpec {
         if (params.countThreadsLoadRepository == null)
             saveParamValue('countThreadsLoadRepository', 16)
         if (params.defaultEmbeddedConnection == null)
-            params.defaultEmbeddedConnection = new TDS(dslCreator: dslCreator, connectDatabase: TDS.storageDatabaseName)
+            params.defaultEmbeddedConnection = new TDS(dslCreator: getl, connectDatabase: TDS.storageDatabaseName)
     }
 
     /** Getl owner */
-    private Getl getDslCreator() { ownerObject as Getl }
+    private Getl getGetl() { ownerObject as Getl }
 
     /** Fixing the execution time of processes in the log */
     Boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing, false) }
@@ -85,19 +88,19 @@ class LangSpec extends BaseSpec {
     void setProcessControlDataset(Dataset value) {
         if (value != null) {
             if (!(value instanceof TableDataset || value instanceof CSVDataset))
-                throw new ExceptionDSL('To control the operation of processes, a dataset with types "table" or "csv" can be used!')
+                throw new DslError(getl, '#dsl.invalid_control_dataset', [className: value.getClass().name])
 
             def name = value.fieldByName('name')
             if (name == null)
-                throw new ExceptionDSL('Required field "name"!')
+                throw new DatasetError(value, '#dataset.field_not_found', [field: 'name'])
             if (name.type != Field.stringFieldType)
-                throw new ExceptionDSL('Field "name" must be of string type"!')
+                throw new DatasetError(value, '#dataset.field_type_required', [field: 'name', type: 'STRING'])
 
             def enabled = value.fieldByName('enabled')
             if (enabled == null)
-                throw new ExceptionDSL('Required field "enabled"!')
+                throw new DatasetError(value, '#dataset.field_not_found', [field: 'enabled'])
             if (!(enabled.type in [Field.stringFieldType, Field.integerFieldType, Field.bigintFieldType, Field.booleanFieldType]))
-                throw new ExceptionDSL('Field "name" must be of string, integer or boolean type"!')
+                throw new DatasetError(value, '#dataset.field_type_required', [field: 'enabled', type: 'BOOLEAN'])
         }
 
         saveParamValue('processControlDataset', value)
@@ -161,35 +164,35 @@ class LangSpec extends BaseSpec {
         if (filePath != null) {
             filePath = FileUtils.TransformFilePath(filePath, ownerObject as Getl)
             if (!FileUtils.ExistsFile(filePath))
-                throw new ExceptionDSL("Getl config file on path \"$filePath\" not found!")
+                throw new DslError(getl, '#io.file.not_found', [type: 'Repository Config', path: filePath])
 
             mainFile = new File(filePath)
             isResource = false
-            dslCreator.logConfig("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+            Logs.Config(getl, '#dsl.config.loading', [path: mainFile.canonicalPath])
         }
         else if (FileUtils.ExistsFile('./getl-properties.conf')) {
             mainFile = new File('./getl-properties.conf')
             isResource = false
-            dslCreator.logConfig("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+            Logs.Config(getl, '#dsl.config.loading', [path: mainFile.canonicalPath])
         }
         else {
             mainFile = FileUtils.FileFromResources('/getl-properties.conf')
             isResource = true
-            dslCreator.logConfig("Loading configuration from \"resource:/getl-properties.conf\" ...")
+            Logs.Config(getl, '#dsl.config.loading', [path: 'resource:/getl-properties.conf'])
         }
 
-        if (mainFile == null && BoolUtils.IsValue(dslCreator.getGetlSystemParameter('groovyConsole')) && FileUtils.ExistsFile('./resources/getl-properties.conf')) {
+        if (mainFile == null && BoolUtils.IsValue(getl.getGetlSystemParameter('groovyConsole')) && FileUtils.ExistsFile('./resources/getl-properties.conf')) {
             mainFile = new File('./resources/getl-properties.conf')
-            dslCreator.repositoryStorageManager.otherResourcePaths.add(new File('./resources').canonicalPath)
+            getl.repositoryStorageManager.otherResourcePaths.add(new File('./resources').canonicalPath)
             isResource = false
-            dslCreator.logConfig("Loading configuration from \"${mainFile.canonicalPath}\" ...")
+            Logs.Config(getl, '#dsl.config.loading', [path: mainFile.canonicalPath])
         }
 
         if (mainFile == null)
             return mainFile
 
         def mainConfig = ConfigSlurper.LoadConfigFile(file: mainFile, codePage: 'utf-8',
-                environment: env, configVars: dslCreator.configVars, owner: dslCreator)
+                environment: env, configVars: getl.configVars, owner: getl)
         getlConfigProperties.putAll(mainConfig)
 
         File childFile
@@ -202,12 +205,12 @@ class LangSpec extends BaseSpec {
             return mainFile
 
         if (isResource)
-            dslCreator.logConfig("Loading extended configuration from \"resource:/getl-properties-ext.conf\" ...")
+            Logs.Config(getl, '#dsl.config.loading', [path: 'resource:/getl-properties-ext.conf', second: 'extended'])
         else
-            dslCreator.logConfig("Loading extended configuration from \"${childFile.canonicalPath}\" ...")
+            Logs.Config(getl, '#dsl.config.loading', [path: childFile.canonicalPath, second: 'extended'])
 
         def childConfig = ConfigSlurper.LoadConfigFile(file: childFile, codePage: 'utf-8',
-                environment: env, configVars: dslCreator.configVars, owner: dslCreator)
+                environment: env, configVars: getl.configVars, owner: getl)
         MapUtils.MergeMap(getlConfigProperties, childConfig, true, false)
 
         return mainFile
@@ -219,10 +222,20 @@ class LangSpec extends BaseSpec {
     @SuppressWarnings('GrMethodMayBeStatic')
     void setCountThreadsLoadRepository(Integer value) {
         if ((value?:0) < 1  )
-            throw new ExceptionDSL('The "countThreadsLoadRepository" parameter must be greater than zero!')
+            throw new DslError(getl, '#params.great_zero', [param: 'countThreadsLoadRepository', value: value])
     }
 
     /** Default embedded database connection */
     @JsonIgnore
     TDS getDefaultEmbeddedConnection() { params.defaultEmbeddedConnection as TDS }
+
+    /** Current message language */
+    @SuppressWarnings('GrMethodMayBeStatic')
+    String getLanguage() { Messages.manager.lang }
+    /** Current message language */
+    @SuppressWarnings('GrMethodMayBeStatic')
+    void setLanguage(String value) {
+        Messages.manager.lang = value
+        getl._onChangeLanguage()
+    }
 }

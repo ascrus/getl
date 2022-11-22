@@ -1,7 +1,10 @@
 package getl.jdbc.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.data.Dataset
+import getl.exception.DatasetError
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 
@@ -56,12 +59,12 @@ class WriteSpec extends BaseSpec {
      */
     void setOperation(String value) {
         if (value == null || value.trim().length() == 0)
-            throw new ExceptionGETL('The operation must have one of the following values: INSERT, UPDATE, DELETE AND MERGE!')
+            throw new RequiredParameterError(ownerObject as Dataset, 'operation')
 
         value = value.trim().toUpperCase()
 
         if (!(value in ['INSERT', 'UPDATE', 'DELETE', 'MERGE']))
-            throw new ExceptionGETL("Unknown operation \"$operation\", the operation must have one of the following values: INSERT, UPDATE, DELETE AND MERGE!")
+            throw new DatasetError(ownerObject as Dataset, '#jdbc.invalid_write_oper')
 
         saveParamValue('operation', value)
     }
@@ -70,7 +73,8 @@ class WriteSpec extends BaseSpec {
     Long getBatchSize() { params.batchSize as Long }
     /** Batch size packet */
     void setBatchSize(Long value) {
-        if (value != null && value <= 0) throw new ExceptionGETL('Batch size must have value greater zero!')
+        if (value != null && value <= 0)
+            throw new IncorrectParameterError(ownerObject as Dataset, '#params.great_zero', 'batchSize')
         saveParamValue('batchSize', value)
     }
 

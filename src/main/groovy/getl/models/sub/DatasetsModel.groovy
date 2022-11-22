@@ -13,6 +13,7 @@ import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
 import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -131,16 +132,24 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         }
     }
 
-    @Override
-    void checkModel(Boolean checkObjects = true) {
+    private final Object synchModel = synchObjects
+
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    protected void checkModel(Boolean checkObjects = true, Closure cl = null) {
         if (modelConnectionName == null)
             throw new ExceptionModel("The model connection is not specified!")
 
-        super.checkModel(checkObjects)
+        super.checkModel(checkObjects, cl)
     }
 
+    @Synchronized('synchModel')
     @Override
-    void checkObject(BaseSpec obj) {
+    protected void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         def node = obj as DatasetSpec
 
@@ -200,6 +209,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
                     "needed set parent dataset for model table \"${node.datasetName}\"!")
     }
 
+    @Synchronized('synchModel')
     protected checkDataset(Dataset ds) {
         if (ds == null)
             return
@@ -238,6 +248,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * @param ds checking dataset
      * @param connectionName the name of the connection used for the dataset
      */
+    @Synchronized('synchModel')
     protected void checkModelDataset(Dataset ds, String connectionName = null) {
         if (ds == null)
             throw new ExceptionModel('No dataset specified!')

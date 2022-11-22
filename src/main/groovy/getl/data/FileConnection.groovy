@@ -3,8 +3,8 @@ package getl.data
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileDatasetRetrieveObjectsSpec
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
+import getl.exception.RequiredParameterError
 import getl.files.FileManager
 import getl.lang.Getl
 import getl.utils.*
@@ -69,7 +69,7 @@ class FileConnection extends Connection {
 		if (value != null) {
 			value = value.trim()
 			if (value.length() == 0)
-				throw new ExceptionGETL('Path can not be empty!')
+				throw new RequiredParameterError(this, 'path')
 			def unixName = FileUtils.ConvertToUnixPath(value)
 			if (unixName.split('/').size() > 1 && unixName[unixName.length() - 1] == '/')
 				value = value.substring(0, value.length() - 1)

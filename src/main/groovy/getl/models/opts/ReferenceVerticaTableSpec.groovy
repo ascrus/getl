@@ -3,8 +3,9 @@ package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionModel
+import getl.exception.DatasetError
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.models.ReferenceVerticaTables
@@ -97,7 +98,8 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
             return
         }
         if (value.dslNameObject == null)
-            throw new ExceptionModel("The dataset \"$value\" must be registered in the repository!")
+            throw new DatasetError(value, '#dsl.object.not_register')
+
         params.sourceDatasetName = value.dslNameObject
     }
 
@@ -136,9 +138,9 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     Boolean copyFromDataset(Boolean onlyForEmpty = true, Dataset source = null, Boolean bulkLoad = false, String nullAsValue = null) {
         bulkLoad = BoolUtils.IsValue(bulkLoad)
         if (source == null && bulkLoad)
-            throw new ExceptionDSL('Required source dataset for bulk loading!')
+            throw new RequiredParameterError(ownerDatasetsModel, 'source', 'copyFromDataset')
         if (!bulkLoad && nullAsValue != null)
-            throw new ExceptionDSL('Null as value supported if using bulk load copy mode!')
+            throw new ModelError(ownerDatasetsModel, '#dsl.model.reference_vertica_tables.invalid_null_value')
 
         def destTable = referenceTable as VerticaTable
 
@@ -239,12 +241,11 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
             copyType = etlCopyType
         copyType = copyType.toUpperCase()
         if (!(copyType in [etlCopyType, bulkloadCopyType, exportToVerticaCopyType]))
-            throw new ExceptionDSL("Unknown copy type \"$copyType\", allowed: $etlCopyType, $bulkloadCopyType or $exportToVerticaCopyType")
+            throw new ModelError(ownerDatasetsModel, '#dsl.model.reference_vertica_tables.invalid_copy_type', [type: copyType])
 
         def sourceTable = workTable.cloneDataset(externalConnection) as VerticaTable
         if (!sourceTable.exists)
-            throw new ExceptionModel("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
-                    "source table $sourceTable not found in Vertica cluster!")
+            throw new DatasetError(sourceTable, '#jdbc.table.not_found', [table: sourceTable.fullTableName])
 
         if (copyType != exportToVerticaCopyType) {
             return copyFromDataset(onlyForEmpty, sourceTable, copyType == bulkloadCopyType, nullAsValue)
@@ -287,7 +288,7 @@ ORDER BY ordinal_position'''
             eachRow { row -> cols << '"' + (row.column_name as String) + '"' }
         }
         if (cols.isEmpty())
-            throw new ExceptionModel("No columns found for table \"$sourceTable\" in model ${ownerReferenceVerticaTableModel.repositoryModelName}!")
+            throw new DatasetError(sourceTable, '#dataset.fail_read_columns', [table: sourceTable.fullTableName])
 
         def p = new HashMap()
         p.putAll(ownerReferenceVerticaTableModel.modelVars)
@@ -391,10 +392,9 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
 
             def destRows = destTable.countRow()
             if (sourceRows != destRows)
-                throw new ExceptionModel("The number of copied rows is ${StringUtils.WithGroupSeparator(destRows)} " +
-                        "table ${destTable.fullTableName} and does not match the number of source " +
-                        "rows ${StringUtils.WithGroupSeparator(sourceRows)} reference table \"$datasetName\" " +
-                        "in model ${ownerReferenceVerticaTableModel.repositoryModelName}!")
+                throw new ModelError(ownerModel, '#dsl.model.reference_vertica_tables.fail_fill',
+                        [source_rows: StringUtils.WithGroupSeparator(sourceRows), source_table: sourceTable.fullTableName,
+                         dest_rows: StringUtils.WithGroupSeparator(destRows), dest_table: destTable.fullTableName])
 
             if (notPartitions)
                 ownerModel.dslCreator.logInfo("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +

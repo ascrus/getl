@@ -1,6 +1,6 @@
 package getl.files.opts
 
-import getl.exception.ExceptionGETL
+import getl.exception.RequiredParameterError
 import getl.files.Manager
 import getl.lang.opts.BaseSpec
 
@@ -12,7 +12,8 @@ class ManagerProcessSpec extends BaseSpec {
     ManagerProcessSpec(Manager owner) {
         super(owner)
         if (owner == null)
-            throw new ExceptionGETL('Owner required!')
+            throw new RequiredParameterError('owner')
+
         this.manager = owner
     }
 

@@ -18,6 +18,13 @@ class DatasetSpec extends BaseSpec {
         setDatasetName(tableName)
     }
 
+    @Override
+    protected void initSpec() {
+        super.initSpec()
+        if (params.scripts == null)
+            params.scripts = [:] as Map<String, String>
+    }
+
     /** Owner processing model */
     protected DatasetsModel getOwnerDatasetsModel() { ownerModel as DatasetsModel }
 
@@ -182,4 +189,13 @@ class DatasetSpec extends BaseSpec {
 
     @Override
     String toString() { datasetName }
+
+    /** Extended scripts */
+    Map<String, String> getScripts() { params.scripts as Map<String, String>}
+    /** Extended scripts */
+    void setScripts(Map<String, String> value) {
+        scripts.clear()
+        if (value != null)
+            scripts.putAll(value)
+    }
 }

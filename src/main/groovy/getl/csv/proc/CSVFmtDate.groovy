@@ -1,5 +1,6 @@
 package getl.csv.proc
 
+import getl.exception.RequiredParameterError
 import groovy.transform.CompileStatic
 import java.text.SimpleDateFormat
 import org.supercsv.cellprocessor.CellProcessorAdaptor
@@ -39,7 +40,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	
 	static private void checkPreconditions(String dateFormat, String localeStr) {
 		if( dateFormat == null ) {
-			throw new NullPointerException("dateFormat should not be null")
+			throw new RequiredParameterError("dateFormat")
 		}
 		
 		StringUtils.NewLocale(localeStr)

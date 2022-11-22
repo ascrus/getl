@@ -3,9 +3,9 @@ package getl.exception
 import groovy.transform.InheritConstructors
 
 /**
- * DSL GETL exception
+ * IO errors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ExceptionDSL extends Throwable {
+class IOFilesError extends ExceptionGETL {
 }

@@ -1,12 +1,13 @@
 package getl.exception
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
- * Exception SQL scripter
+ * Configuration error
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
-class ExceptionSQLScripter extends ExceptionGETL {
+@CompileStatic
+class ConfigError extends ExceptionGETL {
 }

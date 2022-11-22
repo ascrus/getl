@@ -286,4 +286,43 @@ class MapUtilsTest extends GetlTest {
         MapUtils.EmptyValue2Null(m)
         assertEquals([a: 1, b: null, c: [1, null, 3], d: [a: 1, b: null, c: [1, null, 3]]], m)
     }
+
+    @Test
+    void testProcessSections() {
+        def s1 = null
+        def s2 = null
+        def s3 = null
+        def code = [
+                s1: { Map node -> s1 = node.value },
+                s2: { Map node -> s2 = node.value },
+                s3: { Map node -> s3 = node.value }
+        ]
+        def map = [s1: [value: 1], s2: [value: 2], s3: [value: 3]] as Map
+        MapUtils.ProcessSections(map, code)
+        assertEquals(1, s1)
+        assertEquals(2, s2)
+        assertEquals(3, s3)
+
+        s1 = null; s2 = null; s3 = null
+        def c = 0
+        code = [
+                s1: { Map node -> s1 = node.value; c = 1 },
+                s2: { Map node -> s2 = node.value; c = 2 },
+                s3: { Map node -> s3 = node.value; c = 3 }
+        ]
+        MapUtils.ProcessSections(map, code, ['s3', 's2'])
+        assertEquals(1, s1)
+        assertEquals(2, s2)
+        assertEquals(3, s3)
+        assertEquals(1, c)
+
+        map.s2 = 100
+        shouldFail { MapUtils.ProcessSections(map, code) }
+    }
+
+    @Test
+    void testRemovePaths() {
+        def m = [a1: 1, a2: 2, b1: 1, b2: 2, c1: 1, c2: 2]
+        assertEquals([b1: 1, c1: 1], MapUtils.RemovePath(m, [new Path('a*'), new Path('*2')]))
+    }
 }

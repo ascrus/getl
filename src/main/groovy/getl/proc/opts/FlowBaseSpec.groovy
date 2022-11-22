@@ -1,5 +1,6 @@
 package getl.proc.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
@@ -15,19 +16,30 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FlowBaseSpec extends BaseSpec {
+    @Override
+    protected void initSpec() {
+        super.initSpec()
+
+        if (params.processVars == null)
+            params.processVars = new HashMap<String, Object>()
+    }
+
     /** Last count row */
     private Long countRow = 0
     /** Last count row */
+    @JsonIgnore
     Long getCountRow() { countRow }
 
     /** Dataset of error rows*/
     private TFSDataset errorsDataset
     /** Dataset of error rows*/
+    @JsonIgnore
     TFSDataset getErrorsDataset() { errorsDataset }
 
     /** Process row generate code */
     private String processRowScript
     /** Process row generate code */
+    @JsonIgnore
     String getProcessRowScript() { processRowScript }
 
     /** Need process code for run */
@@ -38,6 +50,15 @@ class FlowBaseSpec extends BaseSpec {
     /** Closure code process row */
     void setOnProcess(Closure value) { saveParamValue('process', value) }
 
+    /** Expression processing variables */
+    Map<String, Object> getProcessVars() { params.processVars as Map<String, Object> }
+    /** Expression processing variables */
+    void setProcessVars(Map<String, Object> value) {
+        processVars.clear()
+        if (value != null && !value.isEmpty())
+            processVars.putAll(value)
+    }
+
     /** List of fields for which you want to collect statistics */
     List<String> getRequiredStatistics() { params.statistics as List<String> }
     /** List of fields for which you want to collect statistics */
@@ -46,10 +67,12 @@ class FlowBaseSpec extends BaseSpec {
     /** The process worked */
     private Boolean isProcessed = false
     /** The process worked */
+    @JsonIgnore
     Boolean getIsProcessed() { isProcessed }
 
     private final Map<String, FieldStatistic> statistics = new HashMap<String, FieldStatistic>()
     /** Processed fields statistics */
+    @JsonIgnore
     Map<String, FieldStatistic> getStatistics() { statistics }
 
     /**

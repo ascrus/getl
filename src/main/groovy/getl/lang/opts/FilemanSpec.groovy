@@ -1,6 +1,6 @@
 package getl.lang.opts
 
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
 import getl.files.Manager
 import getl.lang.Getl
 import getl.proc.FileCleaner
@@ -29,9 +29,9 @@ class FilemanSpec extends BaseSpec {
                       @DelegatesTo(FileCopier)
                           @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
         if (source == null)
-            throw new ExceptionDSL('Required source file manager!')
+            throw new DslError(getl,'#params.required', [param: 'source', detail: 'fileman.copier'])
         if (destinations == null && destinations.isEmpty())
-            throw new ExceptionDSL('Required destination file manager!')
+            throw new DslError(getl,'#params.required', [param: 'destinations', detail: 'fileman.copier'])
 
         def parent = new FileCopier()
         parent.dslCreator = getl
@@ -76,7 +76,7 @@ class FilemanSpec extends BaseSpec {
                         @DelegatesTo(FileCleaner)
                             @ClosureParams(value = SimpleType, options = ['getl.proc.FileCleaner']) Closure cl) {
         if (source == null)
-            throw new ExceptionDSL('Required source file manager!')
+            throw new DslError(getl,'#params.required', [param: 'source', detail: 'fileman.cleaner'])
 
         def parent = new FileCleaner()
         parent.dslCreator = getl
@@ -108,7 +108,7 @@ class FilemanSpec extends BaseSpec {
                               @DelegatesTo(FileProcessing)
                                   @ClosureParams(value = SimpleType, options = ['getl.proc.FileProcessing']) Closure cl) {
         if (source == null)
-            throw new ExceptionDSL('Required source file manager!')
+            throw new DslError(getl,'#params.required', [param: 'source', detail: 'fileman.processing'])
 
         def parent = new FileProcessing()
         parent.dslCreator = getl

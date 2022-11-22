@@ -1,5 +1,6 @@
 package getl.csv.proc
 
+import getl.exception.RequiredParameterError
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import org.supercsv.cellprocessor.CellProcessorAdaptor
@@ -20,9 +21,9 @@ class CSVParseArray extends  CellProcessorAdaptor{
         super()
 
         if (openBracket == null)
-            throw new NullPointerException('Required open bracket parameter!')
+            throw new RequiredParameterError('openBracket')
         if (closeBracket == null)
-            throw new NullPointerException('Required close bracket parameter!')
+            throw new RequiredParameterError('closeBracket')
 
         if (openBracket != '[' || closeBracket != ']') {
             this.openBracket = openBracket

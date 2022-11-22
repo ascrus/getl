@@ -2,12 +2,13 @@
 package getl.lang.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
+import getl.exception.InternalError
 import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
 import getl.utils.BoolUtils
+import getl.utils.Logs
 import getl.utils.Path
-import getl.utils.StringUtils
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -90,7 +91,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                             Closure<Boolean> filter = null) {
         (classes as List<String>)?.each {
             if (!(it in listClasses))
-                throw new ExceptionDSL("\"$it\" is not a supported class for $typeObject!")
+                throw new DslError(dslCreator, '#dsl.invalid_object_class', [className: it, type: typeObject])
         }
 
         _dslCreator.repositoryStorageManager.with {
@@ -172,7 +173,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     String find(T obj) {
         if (obj == null)
-            throw new NullPointerException('Required object!')
+            throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'find'])
 
         def repName = obj.dslNameObject
         if (repName == null)
@@ -200,7 +201,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     T find(String name, Boolean findInStorage = true) {
         if (name == null)
-            throw new NullPointerException('Required name object!')
+            throw new DslError(dslCreator, '#params.required', [param: 'name', detail: 'find'])
 
         T obj
         def repName = _dslCreator.repObjectName(name)
@@ -216,7 +217,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                         try {
                             obj = repositoryStorageManager.loadObject(repClass, repName) as T
                         }
-                        catch (ExceptionDSL ignored) {
+                        catch (DslError ignored) {
                         }
                     }
 
@@ -233,7 +234,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     protected void initRegisteredObject(T obj) {
         if (obj == null)
-            throw new NullPointerException('Required object!')
+            throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'initRegisteredObject'])
     }
 
     /**
@@ -245,11 +246,11 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true, Boolean encryptPasswords = true) {
         if (obj == null)
-            throw new NullPointerException('Required object!')
+            throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'registerObject'])
 
         def className = obj.getClass().name
         if (!(className in listClasses))
-            throw new ExceptionDSL("Unknown class $className for $typeObject!")
+            throw new DslError(dslCreator, '#dsl.invalid_object_class', [type: typeObject, className: className])
 
         if (name == null) {
             creator.repositoryStorageManager.runWithLoadMode(!encryptPasswords) { obj.dslCreator = creator }
@@ -263,7 +264,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             if (validExist) {
                 def exObj = objects.get(repName)
                 if (exObj != null)
-                    throw new ExceptionDSL("\"$name\" already registered as class \"${exObj.getClass().name}\" for \"$typeObject\"!")
+                    throw new DslError(dslCreator, '#dsl.object.already_register_by_name', [type: typeObject, repname: name, className: exObj.getClass().name])
             }
 
             obj.dslNameObject = repName
@@ -288,19 +289,19 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
     /**
      * Clone object
-     * @param object cloned object
+     * @param obj cloned object
      * @return new instance object
      */
-    protected T cloneObject(T object) {
-        if (object == null)
-            throw new NullPointerException('Required object!')
+    protected T cloneObject(T obj) {
+        if (obj == null)
+            throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'cloneObject'])
 
-        object.clone() as T
+        obj.clone() as T
     }
 
     @Override
     Object clone() {
-        throw new ExceptionDSL('Clone not supported!')
+        throw new InternalError('Clone not supported')
     }
 
     /** The name of the collection for storing cloned objects for threads */
@@ -336,10 +337,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         registration = BoolUtils.IsValue(registration)
 
         if (className == null && registration)
-            throw new ExceptionDSL('Class name cannot be null!')
+            throw new DslError(dslCreator, '#params.required', [param: 'className', detail: 'register'])
 
         if (className != null && !(className in listClasses))
-            throw new ExceptionDSL("$className class is not supported for ${typeObject}!")
+            throw new DslError(dslCreator, '#dsl.invalid_object_class', [type: typeObject, className: className])
 
         if (name == null) {
             def obj = createObject(className)
@@ -373,8 +374,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                         try {
                             obj = repositoryStorageManager.loadObject(repClass, repName) as T
                         }
-                        catch (ExceptionDSL e) {
-                            dslCreator.logError("\"$name\" is not registered for $typeObject", e)
+                        catch (DslError e) {
+                            Logs.Severe(dslCreator, '#dsl.object.not_found', [repName: name, repository: typeObject])
                             throw e
                         }
                     }
@@ -385,10 +386,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
             if (obj == null) {
                 if (registration && isThread && !isTemporary)
-                    throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")
+                    throw new DslError(dslCreator, '#dsl.deny_threads_register', [repname: name, type: typeObject])
 
                 if (!registration && _dslCreator.options.validRegisterObjects)
-                    throw new ExceptionDSL("\"$name\" is not registered for $typeObject!")
+                    throw new DslError(dslCreator, '#dsl.object.not_found', [type: typeObject, repname: name])
 
                 obj = createObject(className)
                 obj.dslNameObject = repName
@@ -398,10 +399,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 initRegisteredObject(obj)
             } else {
                 if (registration)
-                    throw new ExceptionDSL("\"$name\" already registered as class \"${obj.getClass().name}\" for $typeObject!")
+                    throw new DslError(dslCreator, '#dsl.object.already_register_by_name', [type: typeObject, repname: name, className: obj.getClass().name])
                 else {
                     if (className != null && obj.getClass().name != className)
-                        throw new ExceptionDSL("The requested \"$name\" of the class \"$className\" is already registered as class \"${obj.getClass().name}\" for $typeObject!")
+                        throw new DslError(dslCreator, '#dsl.object.already_register_by_class', [type: typeObject, repname: name, className: obj.getClass().name])
                 }
             }
         }
@@ -439,7 +440,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     /** Process object before unregister */
     protected void processUnregisteringObject(T obj) {
         if (obj == null)
-            throw new NullPointerException('Required object!')
+            throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'processUnregisteringObject'])
     }
 
     /**
@@ -488,7 +489,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     void processObjects(String mask, List<String> classes, Boolean loadFromStorage,
                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
-            throw new NullPointerException('Required closure code!')
+            throw new DslError(dslCreator, '#params.required', [param: 'closure code', detail: 'processObjects'])
 
         def list = list(mask, classes, loadFromStorage).sort(true) { it.toLowerCase() }
         list.each { name ->

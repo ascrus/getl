@@ -3,11 +3,10 @@ package getl.h2
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.Connection
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.h2.opts.*
 import getl.jdbc.*
 import getl.jdbc.opts.*
-import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -22,7 +21,7 @@ class H2Table extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof H2Connection))
-            throw new ExceptionGETL('Connection to H2Connection class is allowed!')
+            throw new DatasetError(this, 'H2Connection connection only allowed')
 
         super.setConnection(value)
     }

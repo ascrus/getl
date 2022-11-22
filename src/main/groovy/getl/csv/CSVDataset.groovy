@@ -6,7 +6,7 @@ import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
 import getl.data.Connection
 import getl.data.FileDataset
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -123,7 +123,7 @@ class CSVDataset extends FileDataset {
 	void setPresetMode(String value) {
 		if (value != null) {
 			if ((!CSVConnection.PresetModes.containsKey(value)))
-				throw new ExceptionGETL("Preset \"$value\" not defined!")
+				throw new DatasetError(this, '#csv.invalid_preset', [preset: value])
 		}
 
 		params.presetMode = value
@@ -175,7 +175,7 @@ class CSVDataset extends FileDataset {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof CSVConnection))
-			throw new ExceptionGETL('Connection to CSVConnection class is allowed!')
+			throw new DatasetError(this, '#dataset.invalid_connection', [className: CSVConnection.name])
 
 		super.setConnection(value)
 	}

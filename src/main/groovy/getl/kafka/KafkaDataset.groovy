@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.Field
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.kafka.opts.KafkaReadSpec
 import getl.utils.BoolUtils
 import groovy.transform.CompileStatic
@@ -28,7 +28,7 @@ class KafkaDataset extends Dataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof KafkaConnection))
-            throw new ExceptionGETL('Only class KafkaConnection connections are permitted!')
+            throw new DatasetError(this, '#dataset.invalid_connection', [className: KafkaConnection.name])
 
         super.setConnection(value)
     }

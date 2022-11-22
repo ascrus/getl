@@ -25,6 +25,7 @@ import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.DatasetError
 import getl.exception.ExceptionGETL
 import getl.tfs.TFS
 import getl.tfs.TFSDataset
@@ -372,7 +373,7 @@ class SalesForceDriver extends Driver {
                 tfsDatasetList.add(tDataset)
             }
         } catch (e) {
-            throw new ExceptionGETL(e)
+            throw new DatasetError(dataset, 'SalesForceError', e)
         } finally {
             closeJob(bulkConnection, job.getId())
         }

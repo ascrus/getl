@@ -1,6 +1,8 @@
 package getl.config
 
-import getl.exception.ExceptionGETL
+import getl.exception.IOFilesError
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.utils.*
 import groovy.json.JsonBuilder
@@ -28,10 +30,11 @@ class ConfigFiles extends ConfigManager {
         Map config = initParams.config as Map<String, Object>
         if (config.path != null) {
             this.path = config.path
-            if (!(new File(this.path).exists())) throw new ExceptionGETL("Can not find config path \"${this.path}\"")
-            logger.config("config: set path ${this.path}")
+            if (!(new File(this.path()).exists()))
+                throw new IOFilesError('#io.file.not_found', [path: this.path(), type: 'Config'])
+            logger.config("config: set path ${this.path()}")
         }
-        def configPath = (this.path != null)?"${this.path}${File.separator}":""
+        def configPath = (this.path != null)?"${this.path()}${File.separator}":""
         if (config.filename != null) {
             def fn = config.filename as String
             if (fn.indexOf(";") == -1) {
@@ -41,7 +44,8 @@ class ConfigFiles extends ConfigManager {
             else {
                 def fs = fn.split(";")
                 fs.each {
-                    if (!(new File(configPath + it).exists())) throw new ExceptionGETL("Can not find config file \"${it}\"")
+                    if (!(new File(configPath + it).exists()))
+                        throw new IOFilesError('#io.file.not_found', [path: it, type: 'Config'])
                 }
                 this.files = []
                 this.files.addAll(fs)
@@ -54,15 +58,20 @@ class ConfigFiles extends ConfigManager {
 	String getPath() { params.path as String }
     /** Path for configuration files */
     void setPath(String value) {
-        if (value.trim() == '') throw new ExceptionGETL('The path can not have empty value')
+        if (value?.trim() == '')
+            throw new IncorrectParameterError('#params.empty', 'path')
         params.path = value?.trim()
     }
+
+    /** Full path to the directory for the configuration files */
+    String path() { FileUtils.TransformFilePath(path, dslCreator) }
 
 	/** Configuration file name */
 	String getFileName() { params.fileName as String}
     /** Configuration file name */
     void setFileName(String value) {
-        if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
+        if (value.trim() == '')
+            throw new IncorrectParameterError('#params.empty', 'fileName')
         params.fileName = value?.trim()
     }
 
@@ -72,7 +81,7 @@ class ConfigFiles extends ConfigManager {
     void setFiles(List<String> value) {
         value.each {
             if (it == null || it.trim() == '') {
-                throw new ExceptionGETL('The file name can not have empty value')
+                throw new IncorrectParameterError('#params.empty', 'files')
             }
         }
 
@@ -89,7 +98,8 @@ class ConfigFiles extends ConfigManager {
 	String getCodePage() { (params.codePage as String)?:'UTF-8' }
     /** Configuration files code page */
     void setCodePage(String value) {
-        if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
+        if (value.trim() == '')
+            throw new IncorrectParameterError('#params.empty', 'codePage')
         params.codePage = value
     }
 
@@ -104,11 +114,11 @@ class ConfigFiles extends ConfigManager {
     }
 
     /** Full file path to the current config file */
-    String getFullName () { fullConfigName(path, this.fileName) }
+    String getFullName () { fullConfigName(path(), this.fileName) }
 
 	@Override
     protected void loadContent(Map<String, Object> readParams = new HashMap<String, Object>()) {
-        def fp = (readParams?.path as String)?:this.path
+        def fp = (readParams?.path as String)?:this.path()
         def fn = (readParams?.fileName as String)?:this.fileName
         def fl = (ListUtils.ToList(readParams?.files) as List<String>)?:this.files
         def cp = (readParams?.codePage as String)?:this.codePage
@@ -159,7 +169,7 @@ class ConfigFiles extends ConfigManager {
     @NamedVariant
 	static Map<String, Object> LoadConfigFile(File file, String codePage = 'utf-8', Getl owner = null) {
 		if (!file.exists())
-            throw new ExceptionGETL("Config file \"$file\" not found")
+            throw new IOFilesError('#io.file.not_found', [path: file.path, type: 'Config'])
 
         def data = null
         if (codePage == null)
@@ -184,11 +194,12 @@ class ConfigFiles extends ConfigManager {
 
     @Override
     void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>()) {
-        def fp = (saveParams?.path as String)?:this.path
+        def fp = (saveParams?.path as String)?:this.path()
         def fn = (saveParams?.fileName as String)?:this.fileName
         def cp = (saveParams?.codePage as String)?:this.codePage
 
-        if (fn == null) throw new ExceptionGETL('Required parameter "fileName"')
+        if (fn == null)
+            throw new RequiredParameterError('fileName', 'saveConfig')
 
         def rp = FileUtils.RelativePathFromFile(fn)
         if (rp == '.') {

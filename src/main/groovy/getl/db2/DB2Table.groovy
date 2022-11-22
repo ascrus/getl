@@ -2,7 +2,7 @@ package getl.db2
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.jdbc.*
 import groovy.transform.InheritConstructors
 
@@ -16,7 +16,7 @@ class DB2Table extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof DB2Connection))
-            throw new ExceptionGETL('Connection to DB2Connection class is allowed!')
+            throw new DatasetError(this, '#dataset.invalid_connection', [className: DB2Connection.name])
 
         super.setConnection(value)
     }

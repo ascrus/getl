@@ -2,7 +2,8 @@ package getl.data.sub
 
 import getl.data.Dataset
 import getl.data.Field
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
+import getl.exception.RequiredParameterError
 
 import java.util.function.Predicate
 
@@ -14,7 +15,8 @@ class FieldList extends ArrayList<Field> {
     FieldList(Dataset ownerDataset) {
         super()
         if (ownerDataset == null)
-            throw new NullPointerException('Required "owner" parameter value!')
+            throw new RequiredParameterError('ownerDataset')
+
         this.ownerDataset = ownerDataset
     }
 
@@ -28,7 +30,7 @@ class FieldList extends ArrayList<Field> {
 
     void checkChange() {
         if (!allowChange)
-            throw new ExceptionGETL("Dataset \"$ownerDataset\" does not allow changing the field set!")
+            throw new DatasetError(ownerDataset, '#dataset.deny_fields_change')
     }
 
     @Override
@@ -87,7 +89,8 @@ class FieldList extends ArrayList<Field> {
 
     void setFields(List<Field> value) {
         if (!allowChange && size() > 0 && (value == null || value.size() != size()))
-            throw new ExceptionGETL("The list of dataset \"$ownerDataset\" fields should contain only ${size()} fields!")
+            throw new DatasetError(ownerDataset, '#dataset.fields_incorrect_count_params', [
+                    countFieldDataset: size(), countFieldParam: value?.size()?:0])
 
         super.clear()
         value?.each { Field f ->

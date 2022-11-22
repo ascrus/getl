@@ -1,6 +1,6 @@
 package getl.lang.sub
 
-import getl.exception.ExceptionGETL
+import getl.exception.RequiredParameterError
 import groovy.transform.CompileStatic
 
 /**
@@ -11,7 +11,7 @@ import groovy.transform.CompileStatic
 class StorageLogins extends HashMap<String, String> {
     StorageLogins(LoginManager manager) {
         if (manager == null)
-            throw new ExceptionGETL('Required login manager object!')
+            throw new RequiredParameterError('manager', 'StorageLogins')
 
         this.manager = manager
     }

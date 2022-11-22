@@ -3,6 +3,7 @@ package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
+import getl.exception.RequiredParameterError
 import getl.utils.*
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -276,42 +277,42 @@ class Field implements Serializable, Cloneable {
 	
 	/**
 	 * Parse map to field
-	 * @param mf
+	 * @param map
 	 * @return
 	 */
-	static Field ParseMap(Map mf) {
-		if (mf == null)
-			throw new ExceptionGETL("Can not parse null Map to fields")
+	static Field ParseMap(Map map) {
+		if (map == null)
+			throw new RequiredParameterError('map', 'ParseMap')
 
-		def name = mf.name as String
+		def name = map.name as String
 		if (name == null || (name as String).length() == 0)
-			throw new ExceptionGETL("Required field name: ${mf}")
+			throw new RequiredParameterError('map.name', 'ParseMap')
 
-		def typeStr = StringUtils.NullIsEmpty(mf.type as String)
+		def typeStr = StringUtils.NullIsEmpty(map.type as String)
 		def type = (typeStr != null)? Type.valueOf(typeStr): Type.STRING
-		def typeName = StringUtils.NullIsEmpty(mf.typeName as String)
-		def columnClassName = StringUtils.NullIsEmpty(mf.columnClassName as String)
-		def isNull = BoolUtils.IsValue(mf.isNull,true)
-		def length = NumericUtils.Obj2Integer(mf.length)
-		def precision = NumericUtils.Obj2Integer(mf.precision)
-		def isKey = BoolUtils.IsValue(mf.isKey, false)
-		def ordKey = NumericUtils.Obj2Integer(mf.ordKey)
-		def isPartition = BoolUtils.IsValue(mf.isPartition, false)
-		def ordPartition = NumericUtils.Obj2Integer(mf.ordPartition)
-		def isAutoincrement = BoolUtils.IsValue(mf.isAutoincrement, false)
-		def isReadOnly = BoolUtils.IsValue(mf.isReadOnly, false)
-		def arrayType = StringUtils.NullIsEmpty(mf.arrayType as String)
-		def defaultValue = StringUtils.NullIsEmpty(mf.defaultValue as String)
-		def compute = StringUtils.NullIsEmpty(mf.compute as String)
-		def checkValue = StringUtils.NullIsEmpty(mf.checkValue as String)
-		def minValue = (mf.minValue instanceof String && (mf.minValue as String).length() == 0)?null:mf.minValue
-		def maxValue = (mf.maxValue instanceof String && (mf.maxValue as String).length() == 0)?null:mf.maxValue
-		def format = StringUtils.NullIsEmpty(mf.format as String)
-		def alias = StringUtils.NullIsEmpty(mf.alias as String)
-		def trim = BoolUtils.IsValue(mf.trim,false)
-		def decimalSeparator = StringUtils.NullIsEmpty(mf.decimalSeparator as String)
-		def description = StringUtils.NullIsEmpty(mf.description as String)
-		def extended = mf.extended as Map<String, Object>
+		def typeName = StringUtils.NullIsEmpty(map.typeName as String)
+		def columnClassName = StringUtils.NullIsEmpty(map.columnClassName as String)
+		def isNull = BoolUtils.IsValue(map.isNull,true)
+		def length = NumericUtils.Obj2Integer(map.length)
+		def precision = NumericUtils.Obj2Integer(map.precision)
+		def isKey = BoolUtils.IsValue(map.isKey, false)
+		def ordKey = NumericUtils.Obj2Integer(map.ordKey)
+		def isPartition = BoolUtils.IsValue(map.isPartition, false)
+		def ordPartition = NumericUtils.Obj2Integer(map.ordPartition)
+		def isAutoincrement = BoolUtils.IsValue(map.isAutoincrement, false)
+		def isReadOnly = BoolUtils.IsValue(map.isReadOnly, false)
+		def arrayType = StringUtils.NullIsEmpty(map.arrayType as String)
+		def defaultValue = StringUtils.NullIsEmpty(map.defaultValue as String)
+		def compute = StringUtils.NullIsEmpty(map.compute as String)
+		def checkValue = StringUtils.NullIsEmpty(map.checkValue as String)
+		def minValue = (map.minValue instanceof String && (map.minValue as String).length() == 0)?null:map.minValue
+		def maxValue = (map.maxValue instanceof String && (map.maxValue as String).length() == 0)?null:map.maxValue
+		def format = StringUtils.NullIsEmpty(map.format as String)
+		def alias = StringUtils.NullIsEmpty(map.alias as String)
+		def trim = BoolUtils.IsValue(map.trim,false)
+		def decimalSeparator = StringUtils.NullIsEmpty(map.decimalSeparator as String)
+		def description = StringUtils.NullIsEmpty(map.description as String)
+		def extended = map.extended as Map<String, Object>
 
 		def res = new Field(
 					name: name, type: type, typeName: typeName, columnClassName: columnClassName, isNull: isNull, length: length, precision: precision,

@@ -145,7 +145,8 @@ class Path implements GetlRepository {
 	}
 
 	/** Logger */
-	private getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Parameters validator */
 	private ParamMethodValidator methodParams = new ParamMethodValidator()

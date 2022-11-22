@@ -1,8 +1,8 @@
 package getl.config
 
 import com.typesafe.config.ConfigFactory
-import getl.exception.ExceptionGETL
 import com.typesafe.config.Config as TypeSafeConfig
+import getl.exception.NotSupportError
 import groovy.transform.InheritConstructors
 
 /**
@@ -33,7 +33,7 @@ class ConfigTypesafe extends ConfigManager {
 
 	@Override
 	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = new HashMap<String, Object>()) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError('saveConfig')
 	}
 
 	@Override

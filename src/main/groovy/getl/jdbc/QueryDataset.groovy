@@ -1,10 +1,9 @@
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.IOFilesError
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
-import getl.utils.StringUtils
 
 /**
  * Query dataset class
@@ -67,7 +66,7 @@ class QueryDataset extends JDBCDataset {
 	String readFile(String filePath, String codePage = null) {
 		def file = new File(FileUtils.TransformFilePath(filePath, dslCreator))
 		if (!file.exists())
-			throw new ExceptionGETL("Script file \"$filePath\" not found!")
+			throw new IOFilesError(this, '#io.file.not_found', [path: filePath, type: 'SQL'])
 		return file.getText(codePage?:scriptFileCodePage?:'utf-8')
 	}
 

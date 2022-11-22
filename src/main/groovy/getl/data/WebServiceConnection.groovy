@@ -2,12 +2,16 @@ package getl.data
 
 import getl.driver.Driver
 import getl.driver.WebServiceDriver
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
+import getl.lang.Getl
+import getl.lang.sub.LoginManager
+import getl.lang.sub.StorageLogins
+import getl.lang.sub.UserLogins
 import getl.utils.CloneUtils
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
-class WebServiceConnection extends FileConnection {
+class WebServiceConnection extends FileConnection implements UserLogins {
     @Override
     protected Class<Driver> driverClass() { WebServiceDriver }
 
@@ -16,7 +20,8 @@ class WebServiceConnection extends FileConnection {
         super.registerParameters()
 
         methodParams.register('Super', ['webUrl', 'webParams', 'webVars', 'webConnectTimeout',
-                                        'webReadTimeout', 'webRequestMethod', 'autoCaptureFromWeb'])
+                                        'webReadTimeout', 'webRequestMethod', 'autoCaptureFromWeb',
+                                        'login', 'password', 'storedLogins', 'authType'])
     }
 
     @Override
@@ -25,6 +30,9 @@ class WebServiceConnection extends FileConnection {
 
         params.webParams = new HashMap<String, Object>()
         params.webVars = new HashMap<String, Object>()
+
+        loginManager = new LoginManager(this)
+        params.storedLogins = new StorageLogins(loginManager)
     }
 
     /** Url connection */
@@ -72,7 +80,7 @@ class WebServiceConnection extends FileConnection {
     /** Request method (GET or POST) */
     void setWebRequestMethod(String value) {
         if (value != null && !(value in [WEBREQUESTMETHODGET, WEBREQUESTMETHODPOST]))
-            throw new ExceptionGETL("Unknown request method \"$value\", allowed GET or POST!")
+            throw new ConnectionError(this, '#web_files.invalid_request', [request: value])
 
         params.webRequestMethod = value
     }
@@ -84,4 +92,80 @@ class WebServiceConnection extends FileConnection {
 
     @Override
     Map<String, Object> attributes() { super.attributes() + webVars }
+
+    /** Logins manager */
+    private LoginManager loginManager
+
+    /** Logins manager */
+    LoginManager webLoginManager() { loginManager }
+
+    @Override
+    String getLogin() { params.login as String }
+    @Override
+    void setLogin(String value) { params.login = value }
+
+    @Override
+    String getPassword() { params.password as String }
+    @Override
+    void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
+
+    @Override
+    Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
+    @Override
+    void setStoredLogins(Map<String, String> value) {
+        storedLogins.clear()
+        if (value != null) storedLogins.putAll(value)
+    }
+
+    @Override
+    void useLogin(String user) {
+        loginManager.useLogin(user)
+    }
+
+    @Override
+    void switchToNewLogin(String user) {
+        loginManager.switchToNewLogin(user)
+    }
+
+    @Override
+    void switchToPreviousLogin() {
+        loginManager.switchToPreviousLogin()
+    }
+
+    /** Authentication type */
+    String getAuthType() { params.authType as String }
+    /** Authentication type */
+    void setAuthType(String value) {
+        if (value != null) {
+            value = value.toUpperCase()
+            if (!(value in ['BASIC', 'NTLM']))
+                throw new ConnectionError(this, '#utils.web.invalid_authentication_type', [type: value])
+        }
+        params.authType = value
+    }
+
+    @Override
+    protected List<String> ignoreCloneClasses() { [StorageLogins.name] }
+
+    @Override
+    protected void afterClone(Connection original) {
+        super.afterClone(original)
+
+        def o = original as WebServiceConnection
+        def passwords = o.loginManager.decryptObject()
+        loginManager.encryptObject(passwords)
+    }
+
+    @Override
+    void useDslCreator(Getl value) {
+        def passwords = loginManager.decryptObject()
+        super.useDslCreator(value)
+        loginManager.encryptObject(passwords)
+    }
+
+    @Override
+    protected void onLoadConfig(Map configSection) {
+        super.onLoadConfig(configSection)
+        loginManager.encryptObject()
+    }
 }

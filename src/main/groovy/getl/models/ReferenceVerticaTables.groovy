@@ -3,8 +3,8 @@ package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionModel
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
@@ -16,6 +16,7 @@ import getl.utils.StringUtils
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -86,8 +87,9 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                                                  @DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                      Closure cl = null) {
-        if (!(dslCreator.dataset(tableName) instanceof VerticaTable))
-            throw new ExceptionModel('Vertica table is required!')
+        def ds = dslCreator.dataset(tableName)
+        if (!(ds instanceof VerticaTable))
+            throw new ModelError(this, '#dsl.invalid_instance_object', [type: 'verticaTable', name: tableName])
 
         dataset(tableName, cl) as ReferenceVerticaTableSpec
     }
@@ -102,7 +104,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                                     Closure cl) {
         def owner = DetectClosureDelegate(cl, true)
         if (!(owner instanceof VerticaTable))
-            throw new ExceptionModel('Vertica table is required!')
+            throw new ModelError(this, '#dsl.invalid_code_owner', [type: 'verticaTable'])
 
         return referenceFromTable((owner as VerticaTable).dslNameObject, cl)
     }
@@ -119,24 +121,34 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         addDatasets(mask: maskName, code: cl, filter: { String name -> dslCreator.dataset(name) instanceof VerticaTable })
     }
 
-    @Override
-    void checkModel(Boolean checkObjects = true) {
+    private final Object synchModel = synchObjects
+
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    void checkModel(Boolean checkObjects = true,
+                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec']) Closure checkNodeCode = null) {
         if (!dslCreator.unitTestMode)
-            throw new ExceptionModel("Working with model \"$this\" is allowed only in unit test mode!")
-        super.checkModel(checkObjects)
+            throw new ModelError(this, '#dsl.object.non_unit_test_mode')
+
+        super.checkModel(checkObjects, checkNodeCode)
     }
 
+    @Synchronized('synchModel')
     @Override
     protected void checkModelDataset(Dataset ds, String connectionName = null) {
         super.checkModelDataset(ds, connectionName)
 
         def dsn = ds.dslNameObject
         if (!(ds instanceof VerticaTable))
-            throw new ExceptionModel("Table \"$dsn\" [$ds] is not a Vertica table!")
+            throw new ModelError(this, '#dsl.invalid_instance_object', [type: 'verticaTable', name: dsn])
 
         def vtb = ds as VerticaTable
         if (vtb.schemaName().toLowerCase() == referenceSchemaName.toLowerCase())
-            throw new ExceptionModel("The schema of table \"$dsn\" [$ds] cannot be a model schema!")
+            throw new ModelError(this, '#dsl.model.reference_vertica_tables.invalid_schema', [schema: referenceSchemaName, table: dsn])
     }
 
     /**
@@ -170,7 +182,9 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
                 def rows = rows()
                 if (rows.size() != 1)
-                    throw new ExceptionModel("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
+                    throw new ModelError(this, '#dsl.model.reference_vertica_tables.invalid_user',
+                            [connection: referenceConnectionName, user: currentJDBCConnection.login])
+
                 def roles = rows[0].roles as String
                 if (roles != null && roles != '') {
                     roles.split(',').each {
@@ -239,15 +253,16 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     Integer copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, String copyType = etlCopyType, String nullAsValue = null,
                             List<String> include = null, List<String> exclude = null) {
         if (externalConnection == null)
-            throw new NullPointerException('Required external connection!')
+            throw new RequiredParameterError(this, 'externalConnection', 'copyFromVertica')
+
         onlyForEmpty = BoolUtils.IsValue(onlyForEmpty, true)
         if (copyType == null)
             copyType = etlCopyType
         copyType = copyType.toUpperCase()
         if (!(copyType in [etlCopyType, bulkloadCopyType, exportToVerticaCopyType]))
-            throw new ExceptionModel("Unknown copy type \"$copyType\", allowed: $etlCopyType, $bulkloadCopyType or $exportToVerticaCopyType")
+            throw new ModelError(this, '#dsl.model.reference_vertica_tables.invalid_copy_type', [type: copyType])
         if (copyType != bulkloadCopyType && nullAsValue != null)
-            throw new ExceptionModel('Null as value supported if using bulk load copy mode!')
+            throw new ModelError(this, '#dsl.model.reference_vertica_tables.invalid_null_value')
 
         checkModel()
 

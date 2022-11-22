@@ -5,6 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.*
 import getl.data.*
 import getl.driver.Driver
+import getl.exception.DatasetError
+import getl.exception.IOFilesError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.files.*
 import getl.jdbc.opts.*
 import getl.lang.Getl
@@ -125,7 +129,7 @@ class TableDataset extends JDBCDataset {
 	/** Check table name */
 	void validTableName() {
 		if (tableName == null)
-			throw new ExceptionGETL("Table name is not specified!")
+			throw new RequiredParameterError(this, 'tableName')
 	}
 
 	/** Valid exist table */
@@ -134,7 +138,7 @@ class TableDataset extends JDBCDataset {
 		validConnection()
 
 		if (!currentJDBCConnection.currentJDBCDriver.isTable(this))
-			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
+			throw new DatasetError(this, '#jdbc.table.only')
 
 		validTableName()
 		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName(), schemaName: schemaName(),
@@ -172,7 +176,7 @@ class TableDataset extends JDBCDataset {
 	Map findKey(Map procParams) {
 		def keys = getFieldKeys()
 		if (keys.isEmpty())
-			throw new ExceptionGETL("Required key fields")
+			throw new DatasetError(this, '#dataset.non_key_fields')
 		procParams = procParams?:new HashMap()
 		def r = rows(procParams + [onlyFields: keys, limit: 1])
 		if (r.isEmpty())
@@ -366,16 +370,16 @@ class TableDataset extends JDBCDataset {
 		validConnection()
 		validTableName()
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
-			throw new ExceptionGETL("Driver not supported bulk load file!")
+			throw new NotSupportError(this, 'bulk load file')
 
 		Getl getl = dslCreator?:Getl.GetlInstance()
 
 		if (source == null)
-			throw new ExceptionGETL("It is required to specify a CSV dataset to load into the table!")
+			throw new RequiredParameterError(this, 'source', 'bulkLoadFile')
 
 		def sourceConnection = source.currentCsvConnection
 		if (sourceConnection == null)
-			throw new ExceptionGETL("It is required to specify connection for CSV dataset to load into the table!")
+			throw new RequiredParameterError(this, 'source.connection', 'bulkLoadFile')
 
         def fullTableName = GetlDatasetObjectName(this)
 
@@ -394,38 +398,38 @@ class TableDataset extends JDBCDataset {
 			files = [source.fileNameWithExt()]
 
 		if (files == null)
-			throw new ExceptionGETL('Required to specify the names of the uploaded files in "files"!')
+			throw new DatasetError(this, '#jdbc.table.bulkload_files_not_set')
 
 		if (!(files instanceof List || files instanceof String || files instanceof GString || files instanceof Path))
-			throw new ExceptionGETL('For option "files" you can specify a string type, a list of strings or a Path object!')
+			throw new DatasetError(this, '#jdbc.table.bulkload_invalid_files')
 
 		def remoteLoad = BoolUtils.IsValue(parent.remoteLoad)
 
 		def loadAsPackage = BoolUtils.IsValue(parent.loadAsPackage, parent.remoteLoad)
 		if (loadAsPackage && !(connection.driver.isSupport(Driver.Support.BULKLOADMANYFILES)))
-			throw new ExceptionGETL('The server does not support multiple file bulk loading, you need to turn off the parameter "loadAsPackage"!')
+			throw new NotSupportError(this, 'bulk load many files')
 
 		def saveFilePath = parent.saveFilePath
 		def removeFile = BoolUtils.IsValue(parent.removeFile)
 
 		if (remoteLoad) {
 			if (saveFilePath != null)
-				throw new ExceptionGETL('File move is not supported for remote load!')
+				throw new DatasetError(this, '#jdbc.table.bulkload_remote_load_file_copy')
 			if (removeFile)
-				throw new ExceptionGETL('File remove is not supported for remote load!')
+				throw new DatasetError(this, '#jdbc.table.bulkload_remote_load_file_delete')
 			if (parent.onPrepareFileList != null || parent.onBeforeBulkLoadFile != null || parent.onBeforeBulkLoadPackageFiles != null ||
 					parent.onAfterBulkLoadFile != null || parent.onAfterBulkLoadPackageFiles != null)
-				throw new ExceptionGETL('Prepare files code not supported for remote load!')
+				throw new DatasetError(this, '#jdbc.table.bulkload_remote_code')
 			if (!loadAsPackage)
-				throw new ExceptionGETL('Required load package mode for remote load!')
+				throw new DatasetError(this, '#jdbc.table.bulkload_remote_package_need')
 		}
 
 		String path = sourceConnection.currentPath()
 		if (!remoteLoad) {
 			if (path == null)
-				throw new ExceptionGETL("It is required to specify connection path for CSV dataset to load into the table!")
+				throw new RequiredParameterError(sourceConnection, 'path', 'bulkLoadFile')
 			if (!FileUtils.ExistsFile(path, true))
-				throw new ExceptionGETL("Directory \"path\" not found!")
+				throw new IOFilesError(this, '#io.dir.not_found', [path: path])
 		}
 
 		List<Field> csvFields
@@ -436,18 +440,17 @@ class TableDataset extends JDBCDataset {
 				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && sourceConnection.path != null) {
 					def schemaFileWithPath = "${sourceConnection.currentPath()}/$schemaFile"
 					if (!FileUtils.ExistsFile(schemaFileWithPath))
-						throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
+						throw new IOFilesError(this, '#io.file.not_found', [type: 'Schema', path: schemaFileName])
 
 					schemaFile = schemaFileWithPath
 				}
-				else {
-					throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
-				}
+				else
+					throw new IOFilesError(this, '#io.file.not_found', [type: 'Schema', path: schemaFileName])
 			}
 
 			csvFields = source.loadFieldsFromFile(schemaFile)
 			if (csvFields.isEmpty())
-				throw new ExceptionGETL("Fields description not found for schema file \"${parent.schemaFileName}\"!")
+				throw new DatasetError(this, '#jdbc.table.schema_fields_not_found', [path: parent.schemaFileName])
 		}
 
 		def orderProcess = parent.orderProcess as List<String>
@@ -465,9 +468,9 @@ class TableDataset extends JDBCDataset {
 
 		if (remoteLoad) {
 			if (!(files instanceof String || files instanceof GString))
-				throw new ExceptionGETL('For remote download, you can set in "files" only the text of the file mask!')
+				throw new DatasetError(this, '#jdbc.table.bulkload_remote_files_list_deny')
 			if (parent.storyDataset != null)
-				throw new ExceptionGETL('Story table is not supported for remote file bulk load on cluster nodes!')
+				throw new DatasetError(this, '#jdbc.table.bulkload_remote_story_deny')
 		}
 		else if (files instanceof String || files instanceof GString) {
 			def fn = (files as Object).toString()
@@ -647,7 +650,7 @@ class TableDataset extends JDBCDataset {
 							}
 							else if (removeFile) {
 								if (!FileUtils.DeleteFile(fileName))
-									throw new ExceptionGETL("Cannot delete file \"$fileName\" (${FileUtils.SizeBytes(tSize)})!")
+									throw new IOFilesError(this, '#io.file.fail_delete', [path: fileName, detail: FileUtils.SizeBytes(tSize)])
 							}
 						}
 
@@ -731,7 +734,7 @@ class TableDataset extends JDBCDataset {
 								FileUtils.CopyToDir(fileName, storePath)
 						} else if (removeFile) {
 							if (!FileUtils.DeleteFile(fileName))
-								throw new ExceptionGETL("Cannot delete file \"${fileName}\"!")
+								throw new IOFilesError(this, '#io.file.fail_delete', [path: fileName])
 						}
 					}
 				}
@@ -744,7 +747,7 @@ class TableDataset extends JDBCDataset {
 							FileUtils.CopyToDir(schemaFile, saveFilePath)
 					} else if (removeFile) {
 						if (!FileUtils.DeleteFile(schemaFile))
-							throw new ExceptionGETL("Cannot delete file \"$schemaFile\"!")
+							throw new IOFilesError(this, '#io.file.fail_delete', [path: schemaFile])
 					}
 				}
 			}
@@ -836,7 +839,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	List<Map<String, Object>> select(String query, Map qParams = null) {
 		if (query == null)
-			throw new ExceptionGETL('Required query parameter!')
+			throw new RequiredParameterError(this, 'query', 'select')
 
 		def ds = new QueryDataset(connection: connection, query: query,
 				queryParams: queryParams() + [table: fullTableName] + (qParams?:new HashMap<String, Object>()))

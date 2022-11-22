@@ -1,7 +1,7 @@
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.RequiredParameterError
 import groovy.transform.InheritConstructors
 import getl.data.*
 import getl.utils.*
@@ -96,7 +96,7 @@ class JDBCDataset extends Dataset {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
-			throw new ExceptionGETL('Required jdbc connection!')
+			throw new RequiredParameterError(this, 'value')
 
 		super.setConnection(value)
 	}

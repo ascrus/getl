@@ -1,7 +1,7 @@
 package getl.config
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.proc.Job
 import getl.utils.FileUtils
@@ -38,7 +38,7 @@ abstract class ConfigManager {
     /** Evaluate variables where load configuration */
     void setEvalVars(Boolean value) {
         if (value == null)
-            throw new ExceptionGETL("Required value!")
+            throw new RequiredParameterError('evalVars')
         evalVars = value
     }
 
@@ -72,7 +72,7 @@ abstract class ConfigManager {
     @Synchronized
     void setVars(Map value) {
         if (value == null)
-            throw new ExceptionGETL('Null "value" detected!')
+            throw new RequiredParameterError('vars')
 
         def v = content.vars as Map<String, Object>
         if (v == null) {
@@ -229,7 +229,7 @@ abstract class ConfigManager {
     @Synchronized
     void mergeConfig(Map data) {
         if (data == null)
-            throw new ExceptionGETL('Null "data" detected!')
+            throw new RequiredParameterError('data', 'mergeConfig')
 
         Map<String, Object> currentVars = vars
         if (data.vars != null)

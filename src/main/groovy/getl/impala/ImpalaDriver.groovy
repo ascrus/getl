@@ -5,7 +5,11 @@ import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.DatasetError
 import getl.exception.ExceptionGETL
+import getl.exception.IOFilesError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.files.FileManager
 import getl.files.HDFSManager
 import getl.jdbc.JDBCDataset
@@ -14,6 +18,7 @@ import getl.jdbc.TableDataset
 import getl.proc.Flow
 import getl.tfs.TFS
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import getl.utils.ListUtils
 import getl.utils.MapUtils
@@ -152,7 +157,8 @@ class ImpalaDriver extends JDBCDriver {
             sb << "STORED AS ${params.storedAs}\n"
 
         if (params.serdeproperties != null) {
-            if (!(params.serdeproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "serdeproperties"')
+            if (!(params.serdeproperties instanceof Map))
+                throw new RequiredParameterError(dataset, 'serdeproperties', 'create')
             def serdeproperties = params.serdeproperties as Map
             if (!serdeproperties.isEmpty()) {
                 def props = [] as List<String>
@@ -169,8 +175,7 @@ class ImpalaDriver extends JDBCDriver {
             sb << "LOCATION '${params.location}'\n"
 
         if (params.tblproperties != null) {
-            if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
-            def tblproperties = params.tblproperties as Map
+            def tblproperties = ConvertUtils.Object2Map(params.tblproperties)
             if (!tblproperties.isEmpty()) {
                 def props = [] as List<String>
                 tblproperties.each { k, v ->
@@ -255,7 +260,7 @@ class ImpalaDriver extends JDBCDriver {
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
         if (source.nullAsValue() != null) /* TODO: Проверить, что действительно не поддерживает nullAsValue */
-            throw new ExceptionGETL("Connection ${dest.connection} not support \"nullAsValue\" in bulk load files!")
+            throw new NotSupportError(dest, null, 'nullAsValue', 'bulkLoadFile')
 
         def table = dest as TableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
@@ -273,15 +278,15 @@ class ImpalaDriver extends JDBCDriver {
         expression.each { String fieldName, expr ->
             def f = table.fieldByName(fieldName)
             if (f == null)
-                throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter for \"${table.objectFullName}\" dataset!")
+                throw new DatasetError(dest, '#dataset.field_not_found', [field: fieldName, detail: 'expression'])
         }
 
         if (hdfsHost == null)
-            throw new ExceptionGETL('Required parameter "hdfsHost"')
+            throw new RequiredParameterError(dest, 'hdfsHost', 'bulkLoadFile')
         if (hdfsLogin == null)
-            throw new ExceptionGETL('Required parameter "hdfsLogin"')
+            throw new RequiredParameterError(dest, 'hdfsLogin', 'bulkLoadFile')
         if (hdfsDir == null)
-            throw new ExceptionGETL('Required parameter "hdfsDir"')
+            throw new RequiredParameterError(dest, 'hdfsDir', 'bulkLoadFile')
 
         List<String> files = []
         if (bulkParams.files != null && !(bulkParams.files as List).isEmpty()) {
@@ -375,7 +380,7 @@ class ImpalaDriver extends JDBCDriver {
         files.each { fileName ->
             def file = new File(fileName)
             if (!file.exists())
-                throw new ExceptionGETL("File $fileName not found!")
+                throw new IOFilesError(dest, '#io.file.not_found', [file: fileName])
 
             csvCon.path = file.parent
             csvFile.fileName = file.name

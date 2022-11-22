@@ -2,7 +2,8 @@ package getl.driver
 
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.exception.ExceptionGETL
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import groovy.transform.InheritConstructors
 
 /**
@@ -37,13 +38,13 @@ abstract class VirtualDatasetDriver extends Driver {
 
 	@Override
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError('retrieveObjects')
 	}
 	
 	protected static Dataset getDestination(Dataset dataset) {
 		def ds = dataset.params.dest as Dataset
 		if (ds == null)
-			throw new ExceptionGETL("Required set param \"dest\" with dataset")
+			throw new RequiredParameterError(dataset, 'dest', 'dataset')
 		
 		return ds
 	}
@@ -51,64 +52,62 @@ abstract class VirtualDatasetDriver extends Driver {
 	@Override
 
 	List<Field> fields(Dataset dataset) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'fields')
 	}
 
 	@Override
-
 	void startTran(Boolean useSqlOperator = false) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'startTran')
 	}
 
 	@Override
 
 	void commitTran(Boolean useSqlOperator = false) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'commitTran')
 	}
 
 	@Override
 
 	void rollbackTran(Boolean useSqlOperator = false) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'rollbackTran')
 	}
 
 	@Override
 
 	void createDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'createDataset')
 	}
 
 	@Override
 
 	void dropDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'dropDataset')
 	}
 
 	@Override
-
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'eachRow')
 	}
 	
 	@Override
 
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'bulkLoadFile')
 	}
 
 	@Override
 
 	void clearDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'clearDataset')
 	}
 
 	@Override
 	Long executeCommand(String command, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'executeCommand')
 	}
 
 	@Override
 	Long getSequence(String sequenceName) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'sequence')
 	}
 }

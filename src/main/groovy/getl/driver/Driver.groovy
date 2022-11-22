@@ -4,6 +4,7 @@ package getl.driver
 
 import getl.csv.CSVDataset
 import getl.data.*
+import getl.exception.RequiredParameterError
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.ParamMethodValidator
@@ -182,7 +183,7 @@ abstract class Driver {
 	 */
 	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
 		if (dataset == null)
-			throw new NullPointerException('Required dataset!')
+			throw new RequiredParameterError('dataset', 'prepareImportFields')
 
 		if (importParams == null)
 			importParams = new HashMap()

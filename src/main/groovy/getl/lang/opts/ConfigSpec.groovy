@@ -2,7 +2,7 @@ package getl.lang.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.*
-import getl.exception.ExceptionDSL
+import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -14,6 +14,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ConfigSpec extends BaseSpec {
+    /** Getl owner */
+    private Getl getGetl() { ownerObject as Getl }
+
     @Override
     protected void initSpec() {
         super.initSpec()
@@ -123,7 +126,7 @@ class ConfigSpec extends BaseSpec {
     void readFields(String section, Boolean validExist = true) {
         def vars = manager.findSection(section)
         if (vars == null)
-            throw new ExceptionDSL("Configuration section \"$section\" not found!")
+            throw new ExceptionGETL('#config.section_not_found', [section: section])
         if (vars.isEmpty())
             return
 

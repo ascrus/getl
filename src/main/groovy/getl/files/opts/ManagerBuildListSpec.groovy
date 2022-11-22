@@ -1,7 +1,9 @@
+//file:noinspection unused
 package getl.files.opts
 
 import getl.data.Field
-import getl.exception.ExceptionGETL
+import getl.exception.IncorrectParameterError
+import getl.files.Manager
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.utils.Path
@@ -22,6 +24,8 @@ class ManagerBuildListSpec extends BaseSpec {
         if (params.fileListSortOrder == null)
             params.fileListSortOrder = [] as List<String>
     }
+
+    protected Manager getManager() { ownerObject as Manager }
 
     /** File search mask */
     String getMaskFile() { params.maskFile as String }
@@ -92,7 +96,8 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Limit on the number of processed directories (default none) */
     void setDirectoryLimit(Integer value) {
         if (value != null && value <= 0)
-            throw new ExceptionGETL('directoryLimit value must be greater than zero!')
+            throw new IncorrectParameterError(manager, '#params.great_zero', 'directoryLimit')
+
         saveParamValue('limitDirs', value)
     }
 
@@ -101,7 +106,8 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Limit the number of files */
     void setCountFiles(Integer value) {
         if (value != null && value <= 0)
-            throw new ExceptionGETL('countFiles value must be greater than zero!')
+            throw new IncorrectParameterError(manager, '#params.great_zero', 'countFiles')
+
         saveParamValue('limitCountFiles', value)
     }
 
@@ -110,7 +116,8 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Limit the size of files */
     void setSizeFiles(Integer value) {
         if (value != null && value <= 0)
-            throw new ExceptionGETL('sizeFiles value must be greater than zero!')
+            throw new IncorrectParameterError(manager, '#params.great_zero', 'sizeFiles')
+
         saveParamValue('limitSizeFiles', value)
     }
 

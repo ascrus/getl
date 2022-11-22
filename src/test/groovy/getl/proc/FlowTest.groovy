@@ -151,7 +151,7 @@ class FlowTest extends GetlDslTest {
             def flow = etl.copyRows(table1, table2) {
                 clear = true
                 copyOnlyMatching = true
-                filter { row -> (row.id >= 1 && row.id <= 10) }
+                filter { row, vars -> (row.id >= 1 && row.id <= 10) }
                 requiredStatistics = ['ID']
             }
             assertEquals(10, table2.countRow())

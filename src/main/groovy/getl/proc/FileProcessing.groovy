@@ -2,7 +2,7 @@
 package getl.proc
 
 import getl.data.Field
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionFileProcessing
 import getl.exception.ExceptionGETL
@@ -638,7 +638,7 @@ class FileProcessing extends FileListProcessing {
                                         logger.exception(e, 'FileListProcessing', "${file.filepath}/${file.filename}")
                                         throw e
                                     }
-                                    catch (ExceptionDSL e) {
+                                    catch (DslError e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
                                         logger.severe("Critical Dsl error on processing file \"${file.filepath}/${file.filename}\": $msg")
                                         setError(onProcessFile, e)

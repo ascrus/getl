@@ -1,10 +1,11 @@
 //file:noinspection RegExpRedundantEscape
 package getl.lang.sub
 
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.utils.BoolUtils
 import getl.utils.StringUtils
-
 import java.util.regex.Pattern
 
 /**
@@ -102,16 +103,16 @@ class ParseObjectName {
 
         value = value.trim().toLowerCase()
         if (value.length() == 0)
-            throw new ExceptionDSL('The naming value cannot be empty!')
+            throw new RequiredParameterError('name', 'ParseObjectName')
 
         def i = value.indexOf(':')
         if (i > -1) {
             if (i == 0)
-                throw new ExceptionDSL("Invalid name \"$value\"")
+                throw new DslError('#invalid_object_name', [repname: value])
 
             _groupName = value.substring(0, i).trim()
             if (_groupName[0] == '#')
-                throw new ExceptionDSL('The group name cannot begin with the character "#" in object \"$value\"!')
+                throw new DslError('#dsl.invalid_group_name_temp_deny', [group: _groupName, repname: value])
 
             if (i < value.length() - 1) {
                 _objectName = value.substring(i + 1).trim()
@@ -126,10 +127,10 @@ class ParseObjectName {
         }
 
         if (_groupName != null && _checkName && !validGroupName(_groupName, _isMaskName))
-            throw new ExceptionDSL("Incorrect characters in group name \"$_groupName\"")
+            throw new DslError('#dsl.invalid_group_name_chars', [group: _groupName, repname: value])
 
         if (_objectName != null && _checkName && !validObjectName(_objectName, (_groupName != null), _isMaskName))
-            throw new ExceptionDSL("Incorrect characters in object name \"$_objectName\"")
+            throw new DslError('#dsl.invalid_object_name_chars', [objname: _objectName, repname: value])
 
         _name = ((_groupName != null)?(_groupName + ':'):'') + ((_objectName != null)?_objectName:'')
     }
@@ -141,15 +142,15 @@ class ParseObjectName {
     /** Group name */
     void setGroupName(String value) {
         if (_objectName != null && _objectName[0] == '#')
-            throw new ExceptionDSL("It is not permitted to assign a group \"$value\" to temporary object \"$_name\"!")
+            throw new DslError('#dsl.deny_group_for_temp_object', [group: value, repname: _name])
 
         value = value?.trim()?.toLowerCase()
         if (value != null && value.length() == 0)
-            throw new ExceptionDSL('The group naming value cannot be empty!')
+            throw new IncorrectParameterError('#params.empty', 'groupName', 'ParseObjectName')
         if (value != null && value[0] == '#')
-            throw new ExceptionDSL("The group name \"$value\" cannot begin with the character \"#\"!")
+            throw new DslError('#dsl.invalid_group_name_temp_deny', [group: value, repname: _name])
         if (value != null && _checkName && !validGroupName(value, _isMaskName))
-            throw new ExceptionDSL("Incorrect characters in group name \"$value\"")
+            throw new DslError('#dsl.invalid_group_name_chars', [group: value, repname: _name])
 
         if (value == null) {
             _name = _objectName
@@ -169,16 +170,16 @@ class ParseObjectName {
     void setObjectName(String value) {
         value = value?.trim()?.toLowerCase()
         if (value != null && value.length() == 0)
-            throw new ExceptionDSL('The object naming value cannot be empty!')
+            throw new RequiredParameterError('objectName', 'ParseObjectName')
 
         if (value != null && _checkName && !validObjectName(value, (_groupName != null), _isMaskName))
-            throw new ExceptionDSL("Incorrect characters in object name \"$value\"")
+            throw new DslError('#dsl.invalid_object_name_chars', [objname: value, repname: _name])
 
         if (value == null) {
             _name = null
         } else if (_groupName != null) {
             if (value[0] == '#')
-                throw new ExceptionDSL("It is not permitted to assign a temporary name \"$value\" to an object that has a group name \"$_groupName\"!")
+                throw new DslError('#dsl.deny_temp_object_for_group', [objname: value, group: _groupName])
             _name = _groupName + ':' + value
         } else {
             _name = value
@@ -284,7 +285,7 @@ class ParseObjectName {
         if (groupName == null)
             return null
         if (groupName.indexOf(':') > -1)
-            throw new ExceptionDSL('The group name should not contain the object name!')
+            throw new DslError('#dsl.invalid_group_name_without', [group: groupName])
         def s = groupName.split('[.]')
         def name = s[s.length - 1]
         if (s.length > 1)

@@ -127,7 +127,7 @@ class BaseSpec implements Cloneable {
     /** Import options from map */
     void importFromMap(Map<String, Object> importParams) {
         if (importParams == null)
-            throw new ExceptionGETL('Required "importParams" value!')
+            throw new ExceptionGETL('#params.required', [param: 'importParams', detail: 'importFromMap'])
 
         def c = MapUtils.Copy(importParams, ignoreImportKeys(importParams)) as Map<String, Object>
         MapUtils.MergeMap(params, c, true, true)
@@ -163,7 +163,8 @@ class BaseSpec implements Cloneable {
         if (_savedOptions.isEmpty()) {
             if (!throwIfNotExist)
                 return
-            throw new ExceptionGETL("No saved options for ${getClass().name} object available!")
+
+            throw new ExceptionGETL('#options.non_saved', [className: getClass().name])
         }
 
         clearOptions()
@@ -179,7 +180,8 @@ class BaseSpec implements Cloneable {
         if (_savedOptions.isEmpty()) {
             if (!throwIfNotExist)
                 return
-            throw new ExceptionGETL("No saved options for ${getClass().name} object available!")
+
+            throw new ExceptionGETL('#options.non_saved', [className: getClass().name])
         }
 
         clearOptions()

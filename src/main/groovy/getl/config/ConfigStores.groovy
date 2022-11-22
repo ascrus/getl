@@ -1,6 +1,8 @@
 package getl.config
 
-import getl.exception.ExceptionGETL
+import getl.exception.IOFilesError
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.utils.FileUtils
 import getl.utils.MapUtils
 import groovy.json.JsonSlurper
@@ -46,7 +48,8 @@ class ConfigStores extends ConfigManager {
      * @param value
      */
     void setFileName (String value) {
-        if (value == null || value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
+        if (value == null || value.trim() == '')
+            throw new IncorrectParameterError('#params.empty', 'fileName')
         params.fileName = value.trim()
     }
 
@@ -60,7 +63,8 @@ class ConfigStores extends ConfigManager {
      * @param value
      */
     void setSection (String value) {
-        if (value == null || value.trim() == '') throw new ExceptionGETL('The section name can not have empty value')
+        if (value == null || value.trim() == '')
+            throw new IncorrectParameterError('#params.empty', 'section')
         params.section = value.trim()
     }
 
@@ -68,7 +72,8 @@ class ConfigStores extends ConfigManager {
     String getSecretKey() { (params.secretKey as String) }
     /** Configuration secret key */
     void setSecretKey(String value) {
-        if (value == '') throw new ExceptionGETL('The secret key can not have empty value')
+        if (value == '')
+            throw new IncorrectParameterError('#params.empty', 'secretKey')
         params.secretKey = value
     }
 
@@ -107,16 +112,16 @@ class ConfigStores extends ConfigManager {
      */
     static Map<String, Object> LoadSection(String fileName, String secretKey, String sectionName) {
         if (fileName == null)
-            throw new ExceptionGETL('Required file name!')
+            throw new RequiredParameterError('fileName', 'LoadSection')
 
         if (sectionName == null)
-            throw new ExceptionGETL('Required section name!')
+            throw new RequiredParameterError('sectionName', 'LoadSection')
 
         Map<String, Object> data = new HashMap<String, Object>()
 
         fileName = FileUtils.AddExtension(fileName, 'store')
         if (!FileUtils.ExistsFile(fileName))
-            throw new ExceptionGETL("Can not find store file \"$fileName\"!")
+            throw new IOFilesError('#io.file.not_found', [path: fileName, type: 'Config'])
 
         def store = OpenStore(fileName, secretKey)
         try {
@@ -148,10 +153,10 @@ class ConfigStores extends ConfigManager {
      */
     static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String sectionName) {
         if (fileName == null)
-            throw new ExceptionGETL('Required file name!')
+            throw new RequiredParameterError('fileName', 'SaveSection')
 
         if (sectionName == null)
-            throw new ExceptionGETL('Required section name!')
+            throw new RequiredParameterError('sectionName', 'SaveSection')
 
         def text = MapUtils.ToJson(data)
         def json = new JsonSlurper()

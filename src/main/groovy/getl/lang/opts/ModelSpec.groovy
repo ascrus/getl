@@ -27,7 +27,7 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class ModelSpec extends BaseSpec {
     /** Getl instance */
-    protected Getl getGetl() { _owner as Getl }
+    protected Getl getGetl() { ownerObject as Getl }
 
     /** Return model repository */
     protected RepositoryObjects repository(Class<RepositoryObjects> repositoryClass) {

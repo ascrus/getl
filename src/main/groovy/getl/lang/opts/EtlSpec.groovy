@@ -3,7 +3,8 @@ package getl.lang.opts
 
 import getl.data.Dataset
 import getl.data.Field
-import getl.exception.ExceptionDSL
+import getl.exception.DatasetError
+import getl.exception.DslError
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.opts.FlowCopySpec
@@ -45,9 +46,10 @@ class EtlSpec extends BaseSpec {
                   @DelegatesTo(FlowCopySpec)
                   @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopySpec']) Closure cl = null) {
         if (source == null)
-            throw new ExceptionDSL('Source dataset cannot be null!')
+            throw new DslError(getl,'#params.required', [param: 'source', detail: 'etl.copyRows'])
         if (destination == null)
-            throw new ExceptionDSL('Destination dataset cannot be null!')
+            if (source == null)
+                throw new DslError(getl,'#params.required', [param: 'destination', detail: 'etl.copyRows'])
 
         ProcessTime pt = getGetl().startProcess("Copy rows from \"$source\" to \"$destination\"")
         def parent = new FlowCopySpec(getl)
@@ -83,9 +85,9 @@ class EtlSpec extends BaseSpec {
                 @DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (destination == null)
-            throw new ExceptionDSL('Destination dataset cannot be null!')
+            throw new DslError(getl,'#params.required', [param: 'destination', detail: 'etl.rowsTo'])
         if (cl == null)
-            throw new ExceptionDSL('Required closure code!')
+            throw new DslError(getl,'#params.required', [param: 'closure code', detail: 'etl.rowsTo'])
 
         def pt = getGetl().startProcess("Write rows to \"$destination\"")
         def parent = new FlowWriteSpec(getl)
@@ -104,10 +106,10 @@ class EtlSpec extends BaseSpec {
     FlowWriteSpec rowsTo(@DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (cl == null)
-            throw new ExceptionDSL('Required closure code!')
+            throw new DslError(getl,'#params.required', [param: 'closure code', detail: 'etl.rowsTo'])
         def destination = DetectClosureDelegate(cl, true)
         if (destination == null || !(destination instanceof Dataset))
-            throw new ExceptionDSL('Can not detect destination dataset!')
+            throw new DslError(getl,'#params.required', [param: 'destination', detail: 'etl.rowsTo'])
 
         return rowsTo(destination, cl)
     }
@@ -122,9 +124,9 @@ class EtlSpec extends BaseSpec {
                     @DelegatesTo(FlowWriteManySpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteManySpec']) Closure cl) {
         if (destinations == null || destinations.isEmpty())
-            throw new ExceptionDSL('Destination datasets cannot be null or empty!')
+            throw new DslError(getl,'#params.required', [param: 'destination', detail: 'etl.rowsToMany'])
         if (cl == null)
-            throw new ExceptionDSL('Required closure code!')
+            throw new DslError(getl,'#params.required', [param: 'closure code', detail: 'etl.rowsToMany'])
 
         def destNames = [] as List<String>
         (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString()) }
@@ -160,9 +162,9 @@ class EtlSpec extends BaseSpec {
                      @DelegatesTo(FlowProcessSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (source == null)
-            throw new ExceptionDSL('Source dataset cannot be null!')
+            throw new DslError(getl,'#params.required', [param: 'source', detail: 'etl.rowsProcess'])
         if (cl == null)
-            throw new ExceptionDSL('Required closure code!')
+            throw new DslError(getl,'#params.required', [param: 'closure code', detail: 'etl.rowsProcess'])
         def pt = getGetl().startProcess("Read rows from \"$source\"")
         def parent = new FlowProcessSpec(getl)
         parent.source = source
@@ -179,10 +181,10 @@ class EtlSpec extends BaseSpec {
     FlowProcessSpec rowsProcess(@DelegatesTo(FlowProcessSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (cl == null)
-            throw new ExceptionDSL('Required closure code!')
+            throw new DslError(getl,'#params.required', [param: 'closure code', detail: 'etl.rowsProcess'])
         def source = DetectClosureDelegate(cl, true)
         if (source == null || !(source instanceof Dataset))
-            throw new ExceptionDSL('Can not detect source dataset!')
+            throw new DslError(getl,'#params.required', [param: 'source', detail: 'etl.rowsProcess'])
 
         return rowsProcess(source, cl)
     }
@@ -194,9 +196,9 @@ class EtlSpec extends BaseSpec {
      */
     void addRow(Dataset dataset, Map<String, Object> row) {
         if (dataset == null)
-            throw new ExceptionDSL('Required to specify a dataset for recording!')
+            throw new DslError(getl,'#params.required', [param: 'dataset', detail: 'etl.addRow'])
         if (row == null || row.isEmpty())
-            throw new ExceptionDSL('Required to specify the values of the fields in the added row!')
+            throw new DslError(getl,'#params.required', [param: 'row', detail: 'etl.addRow'])
 
         def pt = getGetl().startProcess("Insert row to $dataset")
         dataset.connection.transaction(true) {
@@ -220,9 +222,9 @@ class EtlSpec extends BaseSpec {
      */
     void updateRow(TableDataset table, Map<String, Object> row) {
         if (table == null)
-            throw new ExceptionDSL('Required to specify a table for recording!')
+            throw new DslError(getl,'#params.required', [param: 'table', detail: 'etl.updateRow'])
         if (row == null || row.isEmpty())
-            throw new ExceptionDSL('Required to specify the values of the fields in the changed row!')
+            throw new DslError(getl,'#params.required', [param: 'row', detail: 'etl.updateRow'])
 
         def pt = getGetl().startProcess("Update row from $table")
         table.connection.transaction(true) {
@@ -231,7 +233,8 @@ class EtlSpec extends BaseSpec {
                 table.write(row)
                 table.doneWrite()
                 if (table.updateRows != 1)
-                    throw new ExceptionDSL("Error changing row in table \"$table\", changed ${table.updateRows} rows, expected 1 row!")
+                    throw new DslError(getl, '#dsl.etl.fail_update_row',
+                            [table: table.dslNameObject?:table.fullTableName, count: getl.Numeric2String(table.updateRows)])
             }
             finally {
                 table.closeWrite()
@@ -248,9 +251,9 @@ class EtlSpec extends BaseSpec {
      */
     void deleteRow(TableDataset table, Map<String, Object> row) {
         if (table == null)
-            throw new ExceptionDSL('Required to specify a table for recording!')
+            throw new DslError(getl,'#params.required', [param: 'table', detail: 'etl.deleteRow'])
         if (row == null || row.isEmpty())
-            throw new ExceptionDSL('Required to specify the values of the fields in the deleted row!')
+            throw new DslError(getl,'#params.required', [param: 'row', detail: 'etl.deleteRow'])
 
         def pt = getGetl().startProcess("Delete row from $table")
         table.connection.transaction(true) {
@@ -259,7 +262,8 @@ class EtlSpec extends BaseSpec {
                 table.write(row)
                 table.doneWrite()
                 if (table.updateRows != 1)
-                    throw new ExceptionDSL("Error deleting row in table \"$table\", deleted ${table.updateRows} rows, expected 1 row!")
+                    throw new DslError(getl, '#dsl.etl.fail_delete_row',
+                            [table: table.dslNameObject?:table.fullTableName, count: getl.Numeric2String(table.updateRows)])
             }
             finally {
                 table.closeWrite()
@@ -277,15 +281,15 @@ class EtlSpec extends BaseSpec {
     @SuppressWarnings('GroovyFallthrough')
     Map<String, Object> findRow(TableDataset table, Map<String, Object> row) {
         if (table == null)
-            throw new ExceptionDSL('Required to specify a table for search!')
+            throw new DslError(getl,'#params.required', [param: 'table', detail: 'etl.findRow'])
         if (row == null || row.isEmpty())
-            throw new ExceptionDSL('Required to specify the values of the fields for the search!')
+            throw new DslError(getl,'#params.required', [param: 'row', detail: 'etl.findRow'])
 
         def find = [] as List<String>
         row.each { name, value ->
             def field = table.fieldByName(name)
             if (field == null)
-                throw new ExceptionDSL("Field \"$name\" was not found in table \"$table\"!")
+                throw new DatasetError(table, 'dataset.field_not_found', [field: name, detail: 'etl.findRow'])
 
             String fn = table.sqlObjectName(field.name)
             String val
@@ -299,7 +303,7 @@ class EtlSpec extends BaseSpec {
                     val = table.currentJDBCConnection.expressionString2Timestamp(value)
                     break
                 case Field.blobFieldType: case Field.arrayFieldType: case Field.objectFieldType:
-                    throw new ExceptionDSL("Field \"$name\" with type \"${field.type}\" is not supported when reading table \"$table\"!")
+                    throw new DslError(getl, '#dsl.etl.fail_find_row_field_type', [field: name, type: field.type, table: table.dslNameObject?:table.fullTableName])
                 default:
                     val = "'${value.toString()}'"
             }
@@ -310,8 +314,8 @@ class EtlSpec extends BaseSpec {
         def pt = getGetl().startProcess("Find row in $table")
         def rows = table.rows(where: find.join(' AND '))
         if (rows.size() > 1)
-            throw new ExceptionDSL("An error occurred while searching for a row by the specified conditions in table \"$table\", " +
-                    "${rows.size()} rows were returned, 1 row was expected.")
+            throw new DslError(getl, '#dsl.etl.fail_find_row',
+                    [table: table.dslNameObject?:table.fullTableName, count: getl.Numeric2String(rows.size())])
         getGetl().finishProcess(pt, rows.size())
 
         return (!rows.isEmpty())?rows[0]:null

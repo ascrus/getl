@@ -1,6 +1,9 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.data.Field
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.utils.sub.ClosureScript
 import groovy.json.JsonBuilder
 import groovy.json.JsonGenerator
@@ -83,7 +86,7 @@ class MapUtils {
 			return null
 
 		if (keys == null)
-			throw new ExceptionGETL('Required key list!')
+			throw new RequiredParameterError('keys', 'MapUtils.RemoveKeys')
 		
 		keys.each {
 			map.remove(it)
@@ -111,6 +114,36 @@ class MapUtils {
 		}
 
 		return RemoveKeys(map, keys)
+	}
+
+	/**
+	 * Remove keys from map
+	 * @param map map
+	 * @param keys deleted keys
+	 * @return modified map
+	 */
+	static Map RemovePath(Map map, List<Path> paths) {
+		if (map == null)
+			return null
+
+		if (paths == null)
+			throw new RequiredParameterError('paths', 'MapUtils.RemovePath')
+
+		def keys = map.keySet().toList()
+		def removeKeys = []
+		keys.each { key ->
+			for (def p in paths) {
+				if (p.match(key.toString())) {
+					removeKeys.add(key)
+					break
+				}
+			}
+		}
+
+		if (removeKeys.isEmpty())
+			return map
+
+		return RemoveKeys(map, removeKeys)
 	}
 
 	/** Delete all keys whose values contain null */
@@ -223,8 +256,8 @@ class MapUtils {
 	 */
 	static void CheckKeys(Map<String, Object> map, List<String> definedKey, Boolean ignoreComments = false) {
 		def u = Unknown(map, definedKey, ignoreComments)
-		if (u.size() != 0)
-			throw new ExceptionGETL("Unknown map keys detected: $u!")
+		if (!u.isEmpty())
+			throw new ExceptionGETL('#map.unknown_keys', [keys: u.join(', ')])
 	}
 	
 	/**
@@ -234,23 +267,40 @@ class MapUtils {
 	 * @return
 	 */
 	@SuppressWarnings("GrReassignedInClosureLocalVar")
-	static Map FindSection (Map content, String section) {
-		if (content == null) return null
+	static Map FindSection (Map content, String section, Boolean throwError = false) {
+		if (content == null)
+			return null
 		
 		String[] sections = section.split("[.]")
 		Map cur = content
 		sections.each {
 			if (cur != null) {
                 if (it == '*') {
-                    def next = cur.get(cur.keySet().toArray()[0])
-                    if (next instanceof Map) cur = next else cur = null
+					def key = cur.keySet().toArray()[0]
+                    def next = cur.get(key)
+                    if (next instanceof Map)
+						cur = next
+					else {
+						if (throwError)
+							throw new IncorrectParameterError('#map.invalid_section_type', 'content',
+									[section: key, className: next.getClass().name, method: 'FindSection'])
+						cur = null
+					}
                 }
                 else if (!cur.containsKey(it)) {
 					cur = null
 				}
 				else {
-                    def next = (cur.get(it))
-                    if (next instanceof Map) cur = next else cur = null
+                    def next = cur.get(it)
+                    if (next instanceof Map)
+						cur = next
+					else {
+						if (throwError)
+							throw new IncorrectParameterError('#map.invalid_section_type', 'content',
+									[section: it, className: next.getClass().name, method: 'FindSection'])
+
+						cur = null
+					}
 				}
 			}
 		}
@@ -361,7 +411,7 @@ class MapUtils {
 			la = [args as String]
 		}
 		else {
-			throw new ExceptionGETL("Invalid arguments for processing")
+			throw new ExceptionGETL('#map.invalid_arguments_type')
 		}
 		Map<String, Object> res = new HashMap<String, Object>()
 		if (args != null) {
@@ -532,7 +582,8 @@ class MapUtils {
 
 	static private void FindKeysProcess(List list, String[] keys, Integer cur, Closure closure) {
 		def key = keys[cur]
-		if (key != '*') throw new ExceptionGETL('Invalid format mask for list item!')
+		if (key != '*')
+			throw new ExceptionGETL('#map.invalid_list_item_format')
 		list.each { item ->
 			if (item instanceof Map) {
 				FindKeysProcess(item as Map<String, Object>, keys, cur + 1, closure)
@@ -582,7 +633,7 @@ class MapUtils {
 				res.putAll(node.attributes() as Map<String, Object>)
 			}
 			catch (Exception e) {
-				Logs.Severe("Error parse attrubutes for xml node: $node")
+				Logs.Severe(Messages.BuildText('#map.fail_parse_node', [node: node]))
 				throw e
 			}
 
@@ -644,7 +695,7 @@ class MapUtils {
 				}
 			}
 			catch (Exception e) {
-				Logs.Severe("Error parse xml node: $node")
+				Logs.Severe(Messages.BuildText('#map.fail_parse_node', [node: node]))
 				throw e
 			}
 		}
@@ -667,7 +718,7 @@ class MapUtils {
 		(map.schema as Map).include?.each { Map includeXsd ->
             String schemaLocation = includeXsd.schemaLocation
             if (schemaLocation == null)
-                throw new ExceptionGETL("Invalid XSD include section: $includeXsd!")
+                throw new ExceptionGETL('#map.invalid_xsd_section', [section: includeXsd])
 
             if (schemaLocation in exclude) return
 
@@ -704,10 +755,10 @@ class MapUtils {
 
 		def reader = { xsdFileName ->
 			def xsdPath = "$path/$xsdFileName".toString()
-			Logs.Config("Read resource xsd file \"$xsdPath\"")
+			Logs.Config(Messages.BuildText('#map.load_resource_xsd_file', [path: xsdPath]))
 			def input = classLoader.getResourceAsStream(xsdPath)
 			if (input == null)
-				throw new ExceptionGETL("Xsd resource \"$xsdPath\" not found!")
+				throw new ExceptionGETL('#map.non_xsd_resource_file', [path: xsdPath])
 
 			return xml.parse(input)
 		}
@@ -718,15 +769,12 @@ class MapUtils {
 	@SuppressWarnings("GrUnresolvedAccess")
 	@CompileDynamic
 	static List<Field> XsdMap2Fields(Map<String, Object> map, String objectTypeName) {
-		if (map == null) 
-            throw new ExceptionGETL('Parameter "map" required!')
-
-        if (map.isEmpty()) 
-            throw new ExceptionGETL('Parameter "map" is empty!')
+		if (map == null || map.isEmpty())
+            throw new RequiredParameterError('map', 'MapUtils.XsdMap2Fields')
 
         def tableFields = FindSection(map, "schema.complexType.${objectTypeName}.*.element") as Map<String, Map>
         if (tableFields == null || tableFields.isEmpty())
-            throw new ExceptionGETL("Invalid or not found the complex type \"$objectTypeName\"!")
+            throw new ExceptionGETL('#map.invalid_xsd_complex_type', [type: objectTypeName])
 
         def fieldList = [] as List<Field>
 
@@ -735,7 +783,7 @@ class MapUtils {
 
             def typeName = fieldParams.type as String
             if (typeName == null)
-                throw new ExceptionGETL("Required type for field \"$fieldName\"")
+                throw new ExceptionGETL('#map.required_xsd_field_type', [field: fieldName])
 
             XsdType2FieldType(map, typeName, field)
 			if (field.type == Field.objectFieldType) {
@@ -754,7 +802,7 @@ class MapUtils {
                     fieldList << field
                 }
                 else {
-                    throw new ExceptionGETL("Unknown XSD description for \"$typeName\" type!")
+                    throw new ExceptionGETL('#map.invalid_xsd_descr_type', [type: typeName])
                 }
 			}
             else {
@@ -771,7 +819,8 @@ class MapUtils {
 	static void XsdType2FieldType(Map<String, Object> map, String typeName, Field field) {
         def res = XsdTypeProcess(map, typeName)
 
-        if (res.typeName == null) throw new ExceptionGETL("Required base name for \"$typeName\" type")
+        if (res.typeName == null)
+			throw new ExceptionGETL('#map.required_xsd_base_name', [type: typeName])
 
         field.typeName = res.typeName
         switch (res.typeName) {
@@ -816,7 +865,7 @@ class MapUtils {
                 field.extended.putAll(res.extended as Map)
                 break
             default:
-                throw new ExceptionGETL("Unknown primitive XSD type \"${res.typeName}\"")
+                throw new ExceptionGETL('#map.unknown_xsd_primitive_type', [type: res.typeName])
         }
     }
 
@@ -824,10 +873,11 @@ class MapUtils {
 	@CompileDynamic
     static private Map<String, Object> XsdTypeProcess(Map<String, Object> map, String typeName) {
         if (typeName == null)
-            throw new ExceptionGETL('Required \"typeName\" parameter!')
+            throw new RequiredParameterError('typeName', 'MapUtils.XsdTypeProcess')
 
         def res = new HashMap<String, Object>()
-        if (typeName.matches('xs.*[:].+')) {
+		//noinspection RegExpSimplifiable
+		if (typeName.matches('xs.*[:].+')) {
             res.typeName = typeName.substring(typeName.indexOf(':') + 1)
         }
         else {
@@ -837,7 +887,7 @@ class MapUtils {
                     def typeParams = (typeContent.union as List)[0] as Map
                     def includeTypes = typeParams.memberTypes as String
                     if (includeTypes == null)
-                        throw new ExceptionGETL("Invalid union operator for \"$typeName\" type!")
+                        throw new ExceptionGETL('#map.invalid_xsd_union_oper', [type: typeName])
 
                     def listTypes = includeTypes.split(' ')
                     listTypes.each { String type ->
@@ -846,7 +896,7 @@ class MapUtils {
                 }
                 else {
                     def typeParams = typeContent.restriction?.get(0) as Map
-                    if (typeParams == null) throw new ExceptionGETL("Invalid simple type \"$typeName\"")
+                    if (typeParams == null) throw new ExceptionGETL('#map.invalid_xsd_simple_type', [type: typeName])
                     def baseType = typeParams.base as String
                     if (baseType != null)
                         res.putAll(XsdTypeProcess(map, baseType))
@@ -881,7 +931,7 @@ class MapUtils {
                 typeContent = map.schema.complexType?."$typeName" as Map
 
                 if (typeContent == null)
-                    throw new ExceptionGETL("Type \"$typeName\" not found!")
+                    throw new ExceptionGETL('#map.non_xsd_type', [type: typeName])
 
                 res.typeName = 'complex'
                 res.extended = typeContent
@@ -999,8 +1049,11 @@ class MapUtils {
 	 * @return
 	 */
 	static Map<String, Object> CompareMap(Map original, Map comparison) {
-		if (original == null || comparison == null)
-			throw new NullPointerException('Parameters cannot be null!')
+		if (original == null)
+			throw new RequiredParameterError('original', 'MapUtils.CompareMap')
+
+		if (comparison == null)
+			throw new RequiredParameterError('comparison', 'MapUtils.CompareMap')
 
 		def res = new HashMap<String, Object>()
 		def empty = new HashMap()
@@ -1074,15 +1127,25 @@ class MapUtils {
 	 * Process map sections
 	 * @param map map data
 	 * @param processes processing code by keys of map sections
+	 * @param orders order process sections
 	 */
-	static void ProcessSections(Map<String, Object> map, Map<String, Closure> processes) {
-		processes.each { key, proc ->
-			def data = FindSection(map, key)
-			if (data != null) {
-				if (!(data instanceof Map))
-					throw new ExceptionGETL("Map type expected for section \"$key\", but type ${data.getClass().name} found!")
+	static void ProcessSections(Map<String, Object> map, Map<String, Closure> processes, List<String> orders = null) {
+		def keys = processes.keySet().toList()
+		if (orders == null)
+			orders = keys
+		else {
+			def unknown = orders - keys
+			if (!unknown.isEmpty())
+				throw new IncorrectParameterError('#map.unknown_sections', 'orders',
+						[sections: unknown.join(', '), method: 'ProcessSections'])
+			orders = orders + (keys - orders)
+		}
+
+		orders.each { key ->
+			def proc = processes.get(key)
+			def data = FindSection(map, key, true)
+			if (data != null)
 				proc.call(data)
-			}
 		}
 	}
 
@@ -1125,7 +1188,7 @@ class MapUtils {
 		def res = new HashMap<String, Object>()
 
 		if (topName == null)
-			throw new ExceptionGETL('It is required to specify the name of the main attribute in "topName"!')
+			throw new RequiredParameterError('topName', 'MapUtils.FindSubNodes')
 
 		def validation = new Path(mask: topName + '.{name}')
 		map.each { k, v ->

@@ -5,9 +5,9 @@ import getl.data.opts.FileReadSpec
 import getl.data.sub.AttachData
 import getl.data.sub.FileWriteOpts
 import getl.driver.FileDriver
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
+import getl.exception.RequiredParameterError
 import getl.utils.FileUtils
-import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -188,7 +188,7 @@ class FileDataset extends Dataset implements AttachData {
 	 */
 	String fullFileName() {
 		if (connection == null)
-			throw new ExceptionGETL("Required connection for dataset \"$objectName\"")
+			throw new RequiredParameterError(this, 'connection', 'fullFileName')
 		FileDriver drv = connection.driver as FileDriver
 		
 		return drv?.fullFileNameDataset(this)
@@ -230,7 +230,7 @@ class FileDataset extends Dataset implements AttachData {
 	File datasetFile() {
 		def fn = fullFileName()
 		if (fn == null)
-			throw new ExceptionGETL("Required file name!")
+			throw new RequiredParameterError(this, 'fileName', 'datasetFile')
 		return new File(fn)
 	}
 	
@@ -256,7 +256,7 @@ class FileDataset extends Dataset implements AttachData {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof FileConnection))
-			throw new ExceptionGETL('The file dataset only supports file connections!')
+			throw new DatasetError(this, '#dataset.invalid_connection', [className: FileConnection.name])
 		super.setConnection(value)
 	}
 	

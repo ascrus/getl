@@ -1,9 +1,10 @@
+//file:noinspection unused
 package getl.hive
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.Connection
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.hive.opts.HiveBulkLoadSpec
 import getl.hive.opts.HiveCreateSpec
 import getl.hive.opts.HiveWriteSpec
@@ -25,7 +26,7 @@ class HiveTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof HiveConnection))
-            throw new ExceptionGETL('Connection to HiveConnection class is allowed!')
+            throw new DatasetError(this, 'HiveConnection connection only allowed')
 
         super.setConnection(value)
     }

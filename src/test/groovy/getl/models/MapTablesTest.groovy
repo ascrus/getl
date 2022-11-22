@@ -1,5 +1,6 @@
 package getl.models
 
+import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.test.TestDsl
 import org.junit.Test
@@ -50,21 +51,33 @@ class MapTablesTest extends TestDsl {
 
                 mapTable('file') {
                     linkTo 'master'
+                    scripts.before = 'DELETE FROM {dest_table}'
                 }
 
                 mapTable('#values') {
                     linkTo 'detail'
                     attachToParentDataset 'file', 'values'
                     map.master_id = 'id'
+                    scripts.before = 'DELETE FROM {dest_table}'
                 }
             }
 
             model.tap {
-                etl.copyRows(mapTable('file').source, mapTable('file').destination) {
-                    childs(mapTable('#values').destination) {
+                etl.copyRows(mapTable('file').source, mapTable('file').destination) { fc ->
+                    fc.beforeWrite {
+                        def sql = mapTable('file').scripts.before
+                        (fc.destination as TableDataset).currentJDBCConnection.executeCommand(sql, [queryParams: [dest_table: fc.destination.objectFullName]])
+                    }
+
+                    childs(mapTable('#values').destination) { cf ->
                         linkSource = arrayDataset('#values')
                         linkField = mapTable('#values').parentLinkFieldName
                         map = mapTable('#values').map
+
+                        cf.prepareChild {
+                            def sql = mapTable('#values').scripts.before
+                            (cf.dataset as TableDataset).currentJDBCConnection.executeCommand(sql, [queryParams: [dest_table: cf.dataset.objectFullName]])
+                        }
                     }
                 }
             }

@@ -2,6 +2,8 @@
 package getl.models.opts
 
 import getl.exception.ExceptionModel
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.lang.sub.ParseObjectName
 import getl.models.Workflows
 import getl.models.sub.BaseSpec
@@ -64,10 +66,10 @@ class WorkflowSpec extends BaseSpec {
     /** Step name */
     void setStepName(String value) {
         if (value == null)
-            throw new ExceptionModel('Required step name!')
+            throw new RequiredParameterError(ownerWorkflow, 'stepName')
 
         if (!ParseObjectName.CheckNameCharacters(value))
-            throw new ExceptionModel('Step name \"$value\" contains invalid characters!')
+            throw new ModelError(ownerWorkflow, '#dsl.model.workflows.invalid_step_name', [step: stepName])
 
         saveParamValue('stepName', value)
     }

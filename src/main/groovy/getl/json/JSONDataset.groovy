@@ -1,7 +1,7 @@
 package getl.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.json.opts.JSONReadSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -26,7 +26,7 @@ class JSONDataset extends StructureFileDataset {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JSONConnection))
-			throw new ExceptionGETL('Only class JSONConnection connections are permitted!')
+			throw new DatasetError(this, '#dataset.invalid_connection', [className: JSONConnection.name])
 
 		super.setConnection(value)
 	}

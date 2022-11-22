@@ -1,7 +1,9 @@
 package getl.lang.sub
 
 import getl.data.Connection
-import getl.exception.ExceptionDSL
+import getl.exception.ConnectionError
+import getl.exception.DslError
+import getl.exception.RequiredParameterError
 import getl.jdbc.Sequence
 import groovy.transform.InheritConstructors
 
@@ -31,11 +33,11 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     Map exportConfig(GetlRepository repObj) {
         def obj = repObj as Sequence
         if (obj.connection == null)
-            throw new ExceptionDSL("No connection specified for sequence \"${obj.dslNameObject}\"!")
+            throw new RequiredParameterError(obj, 'connection', 'RepositorySequence.exportConfig')
         if (obj.connection.dslNameObject == null)
-            throw new ExceptionDSL("Connection for sequence \"${obj.dslNameObject}\" not found in repository!")
+            throw new ConnectionError(obj.connection, '#dsl.object.not_register')
         if (obj.fullName == null)
-            throw new ExceptionDSL("No name specified for sequence \"${obj.dslNameObject}\"!")
+            throw new RequiredParameterError(obj, 'name', 'RepositorySequence.exportConfig')
 
         return obj.params
     }
@@ -48,8 +50,8 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
                 dslCreator.registerConnection(null, connectionName, false, false) as Connection
             }
             catch (Exception e) {
-                dslCreator.logError("Invalid connection \"$connectionName\" for sequence \"$objectName\"", e)
-                throw new ExceptionDSL("Invalid connection \"$connectionName\" for sequence \"$objectName\": ${e.message}")
+                throw new DslError(dslCreator, '#dsl.repository.fail_register_object',
+                        [type: 'sequence', repname: connectionName, detail: "dataset \"$objectName\""], true, e)
             }
         }
 

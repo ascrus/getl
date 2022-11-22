@@ -60,7 +60,25 @@ class FlowCopyChildSpec extends BaseSpec {
     /** Initialization code before processing */
     void setOnInitWrite(Closure value) { saveParamValue('onInit', value) }
     /** Initialization code before processing */
-    void initWrite(Closure value) { setOnInitWrite(value) }
+    void initWrite(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) { setOnInitWrite(value) }
+
+    /** Before process copy rows code */
+    Closure getOnPrepareChild() { params.onInit as Closure }
+    /** Before process copy rows code */
+    void setOnPrepareChild(Closure value) { saveParamValue('onInit', value) }
+    /** Before process copy rows code */
+    void prepareChild(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+        setOnPrepareChild(value)
+    }
+
+    /** After process copy rows code */
+    Closure getOnFinalizingChild() { params.onDone as Closure }
+    /** After process copy rows code */
+    void setOnFinalizingChild(Closure value) { saveParamValue('onDone', value) }
+    /** After process copy rows code */
+    void finalizingChild(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+        setOnFinalizingChild(value)
+    }
 
     /**
      * Column mapping<br>

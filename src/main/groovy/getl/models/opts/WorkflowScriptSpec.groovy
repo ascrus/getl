@@ -1,6 +1,6 @@
 package getl.models.opts
 
-import getl.exception.ExceptionModel
+import getl.exception.RequiredParameterError
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 
@@ -25,8 +25,7 @@ class WorkflowScriptSpec extends BaseSpec {
     /** The class name of the script to run */
     void setClassName(String value) {
         if (value == null)
-            throw new ExceptionModel("The class name of the script being executed in step " +
-                    "\"${ownerWorkflowSpec.stepName}\" is required!")
+            throw new RequiredParameterError(ownerWorkflowSpec.ownerWorkflow, 'className', ownerWorkflowSpec.stepName)
 
         params.className = value
     }

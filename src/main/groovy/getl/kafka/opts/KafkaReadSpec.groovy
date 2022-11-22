@@ -1,7 +1,8 @@
 package getl.kafka.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
+import getl.exception.IncorrectParameterError
 import getl.kafka.KafkaDataset
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
@@ -56,7 +57,7 @@ class KafkaReadSpec extends BaseSpec {
     /** Period in seconds for which you want to receive data (null to receive all data) */
     void setReadDuration(Long value) {
         if (value != null && value <= 0)
-            throw new ExceptionGETL('The value must be greater than zero!')
+            throw new IncorrectParameterError(ownerObject as KafkaDataset, '#params.great_zero', 'readOpts.readDuration')
         saveParamValue('readDuration', value)
     }
 
@@ -65,7 +66,7 @@ class KafkaReadSpec extends BaseSpec {
     /** Read no more than the specified number of rows */
     void setLimit(Integer value) {
         if (value != null && value <= 0)
-            throw new ExceptionGETL('The value must be greater than zero!')
+            throw new IncorrectParameterError(ownerObject as KafkaDataset, '#params.great_zero', 'readOpts.limit')
         saveParamValue('limit', value)
     }
 
@@ -74,7 +75,7 @@ class KafkaReadSpec extends BaseSpec {
     /** Maximum number of records received per call poll (default 10000) */
     void setMaxPollRecords(Integer value) {
         if (value != null && value <= 0)
-            throw new ExceptionGETL('The value must be greater than zero!')
+            throw new IncorrectParameterError(ownerObject as KafkaDataset, '#params.great_zero', 'readOpts.maxPollRecords')
         saveParamValue('maxPollRecords', value)
     }
 
@@ -101,7 +102,7 @@ class KafkaReadSpec extends BaseSpec {
         if (value != null) {
             value = value.toLowerCase()
             if (!(value in [KafkaDataset.offsetForRegisterEarliest, KafkaDataset.offsetForRegisterLatest, KafkaDataset.offsetForRegisterNone]))
-                throw new ExceptionGETL("Invalid value \"$value\" for \"offsetForRegister\" read option for Kafka dataset!")
+                throw new DatasetError(ownerObject as KafkaDataset, '#kafka.invalid_offs_for_register', [value: value])
         }
         saveParamValue('offsetForRegister', value)
     }

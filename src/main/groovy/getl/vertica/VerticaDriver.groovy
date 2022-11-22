@@ -56,6 +56,8 @@ class VerticaDriver extends JDBCDriver {
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{ %cascade%}'
 		sqlExpressions.changeSessionProperty = 'SET {name} TO {value}'
 		sqlExpressions.escapedText = 'E\'{text}\''
+
+		ruleQuotedWords.add('NEW')
 	}
 
     @Override

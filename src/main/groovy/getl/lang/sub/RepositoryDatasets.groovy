@@ -8,8 +8,9 @@ import getl.data.StructureFileDataset
 import getl.db2.DB2Table
 import getl.dbf.DBFDataset
 import getl.excel.ExcelDataset
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
+import getl.exception.DslError
+import getl.exception.RequiredParameterError
 import getl.firebird.FirebirdTable
 import getl.h2.H2Table
 import getl.hive.HiveTable
@@ -34,6 +35,7 @@ import getl.tfs.TFS
 import getl.tfs.TFSDataset
 import getl.transform.ArrayDataset
 import getl.utils.GenerationUtils
+import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.vertica.VerticaTable
 import getl.xml.XMLDataset
@@ -127,7 +129,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     Map exportConfig(GetlRepository repObj) {
         def obj = repObj as Dataset
         if (obj.connection == null)
-            throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
+            throw new RequiredParameterError(obj, 'connection', 'RepositoryDataset.exportConfig')
 
         def res = [dataset: obj.getClass().name] + MapUtils.Copy(obj.params, ['field', 'attributeField']) +
                 GenerationUtils.Fields2Map(obj.field, 'fields')
@@ -136,7 +138,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
         if (obj.connection.dslNameObject == null) {
             if (!(obj instanceof TFSDataset))
-                throw new ExceptionDSL("Connection for dataset \"${obj.dslNameObject}\" must be registered in the repository!")
+                throw new ConnectionError(obj.connection, '#dsl.object.not_register')
         }
         else
             res.connection = obj.connection.dslNameObject
@@ -153,8 +155,8 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
                 con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
             }
             catch (Exception e) {
-                dslCreator.logError("Invalid connection \"$connectionName\" for dataset \"$objectName\"", e)
-                throw new ExceptionDSL("Invalid connection \"$connectionName\" for dataset \"$objectName\": ${e.message}")
+                throw new DslError(dslCreator, '#dsl.repository.fail_register_object',
+                        [type: 'connection', repname: connectionName, detail: "dataset \"$objectName\""], true, e)
             }
         }
 
@@ -164,7 +166,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
         if (con == null) {
             if (!(obj instanceof TFSDataset))
-                throw new ExceptionGETL('No dataset connection specified in configuration!')
+                throw new RequiredParameterError(obj, 'connection', 'RepositoryDataset.importConfig')
             else
                 con = TFS.storage
         }
@@ -190,9 +192,9 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
                                                   @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                    Closure<Boolean> filter = null) {
         if (sourceList == null)
-            throw new ExceptionGETL('Required to specify the value of the source group name!')
+            throw new RequiredParameterError('sourceList', 'RepositoryDatasets.linkDatasets')
         if (destList == null)
-            throw new ExceptionGETL('Required to specify the value of the destination group name!')
+            throw new RequiredParameterError('destList', 'RepositoryDatasets.linkDatasets')
 
         def parse = new ParseObjectName()
 

@@ -4,7 +4,9 @@ package getl.models.opts
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.data.FileDataset
-import getl.exception.ExceptionModel
+import getl.exception.DatasetError
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.models.MapTables
@@ -55,10 +57,10 @@ class MapTableSpec extends DatasetSpec {
         checkGetlInstance()
 
         if (destinationName == null)
-            throw new ExceptionModel("$sourceName: destination name can not be null!")
+            throw new RequiredParameterError(ownerModel, 'destinationName', sourceName)
 
         if (destinationName == sourceName)
-            throw new ExceptionModel("$sourceName: cannot use the same dataset for source and destination!")
+            throw new ModelError(ownerModel, '#dsl.model.map_tables.invalid_dest_some', [table: sourceName])
 
         saveParamValue('destinationName', destinationName)
     }
@@ -67,11 +69,11 @@ class MapTableSpec extends DatasetSpec {
         checkGetlInstance()
 
         if (destinationDataset == null)
-            throw new ExceptionModel("$sourceName: destination can not be null!")
+            throw new RequiredParameterError(ownerModel, 'destinationDataset', sourceName)
 
         def destinationDatasetName = destinationDataset.dslNameObject
         if (destinationDatasetName == null)
-            throw new ExceptionModel("$sourceName: dataset \"$destinationDataset\" must be registered in the repository!")
+            throw new DatasetError(destinationDataset, '#dsl.object.not_register')
 
         linkTo(destinationDatasetName)
     }

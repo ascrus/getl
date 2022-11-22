@@ -2,6 +2,8 @@ package getl.utils
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -27,6 +29,14 @@ class Logs {
 		loggerName = name
 		logger = Logger.getLogger(loggerName)
 		doInit()
+	}
+
+	/** Messages manager */
+	static Messages getMessages() { Messages.manager }
+
+	static {
+		messages.attachResourceFile('getl-logs')
+		messages.attachResourceFile('getl-errors')
 	}
 
 	/** Global instance log */
@@ -930,5 +940,189 @@ class Logs {
 				cl.call()
 			}
 		}
+	}
+
+	/**
+	 * Write error message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 * @param error cause
+	 */
+	static Severe(GetlRepository object, String message, Map vars, Throwable error = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).severe(Messages.BuildText(object, message, vars), error)
+	}
+
+	/**
+	 * Write error message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 * @param error cause
+	 */
+	static Severe(Getl getl, String message, Map vars, Throwable error = null) {
+		(getl.logging?.manager?:Logs.global).severe(Messages.BuildText(message, vars), error)
+	}
+
+	/**
+	 * Write error message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param error cause
+	 */
+	static Severe(GetlRepository object, String message, Throwable error = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).severe(Messages.BuildText(object, message), error)
+	}
+
+	/**
+	 * Write error message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param error cause
+	 */
+	static Severe(Getl getl, String message, Throwable error = null) {
+		(getl.logging?.manager?:Logs.global).severe(Messages.BuildText(message), error)
+	}
+
+	/**
+	 * Write config message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Config(GetlRepository object, String message, Map vars = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).config(Messages.BuildText(object, message, vars))
+	}
+
+	/**
+	 * Write config message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Config(Getl getl, String message, Map vars = null) {
+		(getl.logging?.manager?:Logs.global).config(Messages.BuildText(message, vars))
+	}
+
+	/**
+	 * Write warning message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 * @param err exception
+	 */
+	static Warning(GetlRepository object, String message, Map vars, Throwable err = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).warning(Messages.BuildText(object, message, vars), err)
+	}
+
+	/**
+	 * Write warning message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 * @param err exception
+	 */
+	static Warning(Getl getl, String message, Map vars, Throwable err = null) {
+		(getl.logging?.manager?:Logs.global).warning(Messages.BuildText(message, vars), err)
+	}
+
+	/**
+	 * Write warning message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param err exception
+	 */
+	static Warning(GetlRepository object, String message, Throwable err = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).warning(Messages.BuildText(object, message), err)
+	}
+
+	/**
+	 * Write warning message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param err exception
+	 */
+	static Warning(Getl getl, String message, Throwable err = null) {
+		(getl.logging?.manager?:Logs.global).warning(Messages.BuildText(message), err)
+	}
+
+	/**
+	 * Write finest message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Finest(GetlRepository object, String message, Map vars = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).finest(Messages.BuildText(object, message, vars))
+	}
+
+	/**
+	 * Write finest message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Finest(Getl getl, String message, Map vars = null) {
+		(getl.logging?.manager?:Logs.global).finest(Messages.BuildText(message, vars))
+	}
+
+	/**
+	 * Write finer message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Finer(GetlRepository object, String message, Map vars = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).finer(Messages.BuildText(object, message, vars))
+	}
+
+	/**
+	 * Write finer message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Finer(Getl getl, String message, Map vars = null) {
+		(getl.logging?.manager?:Logs.global).finer(Messages.BuildText(message, vars))
+	}
+
+	/**
+	 * Write fine message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Fine(GetlRepository object, String message, Map vars = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).fine(Messages.BuildText(object, message, vars))
+	}
+
+	/**
+	 * Write fine message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Fine(Getl getl, String message, Map vars = null) {
+		(getl.logging?.manager?:Logs.global).fine(Messages.BuildText(message, vars))
+	}
+
+	/**
+	 * Write info message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Info(GetlRepository object, String message, Map vars = null) {
+		(object.dslCreator?.logging?.manager?:Logs.global).info(Messages.BuildText(object, message, vars))
+	}
+
+	/**
+	 * Write info message to log
+	 * @param object repository object
+	 * @param message message or code with # prefix
+	 * @param vars message variables
+	 */
+	static Info(Getl getl, String message, Map vars = null) {
+		(getl.logging?.manager?:Logs.global).info(Messages.BuildText(message, vars))
 	}
 }

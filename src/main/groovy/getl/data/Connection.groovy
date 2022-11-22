@@ -3,7 +3,12 @@ package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
+import getl.exception.ConfigError
+import getl.exception.ConnectionError
 import getl.exception.ExceptionGETL
+import getl.exception.IncorrectParameterError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.*
@@ -30,17 +35,15 @@ class Connection implements GetlRepository {
 		Class<Driver> connectionDriverClass = driverClass()
 		Class<Driver> driverClass = (parameters.driver as Class<Driver>)?:connectionDriverClass
 		if (driverClass == null)
-			throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
+			throw new RequiredParameterError(this, 'driver')
 
 		//driver = driverClass.newInstance(this) as Driver
 		def driverConstr = driverClass.getConstructor(Connection)
 		if (driverConstr == null)
-			throw new ExceptionGETL("Class ${driverClass.name} has not corrected constructor!")
+			throw new ConnectionError(this, '#connection.invalid_constructor', [className: driverClass.name])
 		driver = driverConstr.newInstance(this) as Driver
 		if (!connectionDriverClass.isInstance(driver))
-			throw new ExceptionGETL("Required ${connectionDriverClass.name} instance class for connection!")
-
-		//this.driver.connection = this
+			throw new ConnectionError(this, '#connection.invalid_class', [className: connectionDriverClass.name])
 
 		def load_config = parameters.config as String
 		if (load_config != null)
@@ -107,17 +110,16 @@ class Connection implements GetlRepository {
 		if (configName != null) {
 			def configParams = Config.FindSection("connections.${configName}")
 			if (configParams == null)
-				throw new ExceptionGETL("Connection \"${configName}\" not found in configuration")
+				throw new ConfigError('#config.section_not_found', [section: configName])
 
 			MapUtils.MergeMap(configParams, params)
 			params = configParams
 		}
 		def connectionClass = params.connection as String
 		if (connectionClass == null)
-			throw new ExceptionGETL("Required parameter \"connection\"")
+			throw new RequiredParameterError('connection', 'CreateConnection')
 
 		MapUtils.RemoveKeys(params, ["connection", "config"])
-		//def con = (Class.forName(connectionClass).newInstance(params)) as Connection
 		def constr = Class.forName(connectionClass).getConstructor([Map].toArray([] as Class[]))
 		def con = constr.newInstance(params) as Connection
 
@@ -156,7 +158,7 @@ class Connection implements GetlRepository {
 	/** Read extended attribute value */
 	Object attribute(String name) {
 		if (name == null)
-			throw new ExceptionGETL('Required "name" parameter!')
+			throw new RequiredParameterError(this, 'name', 'attribute')
 
 		return attributes().get(name)
 	}
@@ -164,7 +166,7 @@ class Connection implements GetlRepository {
 	@Synchronized
 	void saveAttribute(String name, Object value) {
 		if (name == null)
-			throw new ExceptionGETL('Required "name" parameter!')
+			throw new RequiredParameterError(this, 'name', 'attribute')
 
 		attributes.put(name, value)
 	}
@@ -254,13 +256,13 @@ class Connection implements GetlRepository {
 
 		if (cp.isEmpty()) {
 			if (config != internalConfigName())
-				throw new ExceptionGETL("Config section \"connections.${config}\" not found")
+				throw new ConfigError(this, '#config.section_not_found', [section: config])
 		}
 		else {
 			onLoadConfig(cp)
 			validParams()
 
-			logger.config("Load config \"connections\".\"${config}\" for object \"${this.getClass().name}\"")
+			Logs.Config(this, '#config.load_object_from_config', [type: 'connections', section: config])
 		}
 	}
 	
@@ -344,7 +346,7 @@ class Connection implements GetlRepository {
 	/** The number of connection attempts on error (default 1) */
 	void setNumberConnectionAttempts(Integer value) {
 		if (value != null && value < 1)
-			throw new ExceptionGETL('The number of connection attempts must be greater than zero!')
+			throw new IncorrectParameterError(this, '#params.great_zero', 'numberConnectionAttempts')
 		params.numberConnectionAttempts = value
 	}
 
@@ -353,7 +355,7 @@ class Connection implements GetlRepository {
 	/** The timeout seconds of connection attempts on error (default 1) */
 	void setTimeoutConnectionAttempts(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('The timeout of connection attempts must be greater than zero!')
+			throw new IncorrectParameterError(this, '#params.great_zero', 'timeoutConnectionAttempts')
 		params.timeoutConnectionAttempts = value
 	}
 	
@@ -419,7 +421,7 @@ class Connection implements GetlRepository {
 		methodParams.validation("retrieveObjects", params,
 				[driver.methodParams.params("retrieveObjects")])
 
-		def res = [] as List<Object>
+		List<Object> res
 		
 		tryConnect()
 		try {
@@ -445,7 +447,7 @@ class Connection implements GetlRepository {
 			return
 
 		if (!driver.isSupport(Driver.Support.CONNECT))
-			throw new ExceptionGETL("Driver not support connect method")
+			throw new NotSupportError(this, 'connect')
 
 		if (c)
 			connect()
@@ -460,7 +462,7 @@ class Connection implements GetlRepository {
 	/** Connecting to database */
 	void connect() {
 		if (connected)
-			throw new ExceptionGETL('The connection is already established!')
+			throw new ConnectionError(this, '#connection.already_connect')
 
 		def countAttempts = numberConnectionAttempts?:0
 		if (countAttempts <= 0) countAttempts = 1
@@ -481,12 +483,12 @@ class Connection implements GetlRepository {
 				doErrorConnect()
 				attempt++
 				if (attempt >= countAttempts) {
-					logger.severe("Error connecting to server \"$objectName\"", e)
+					Logs.Severe(this, '#connection.fail_connect', e)
 					throw e
 				}
 
 				sleep(timeoutAttempts)
-				logger.warning("Error connecting to server \"$objectName\", attempt number $attempt", e)
+				Logs.Warning(this, '#connection.fail_connect', [attempt: attempt], e)
 			}
 		}
 		doDoneConnect()
@@ -497,14 +499,14 @@ class Connection implements GetlRepository {
 	/** Disconnection from database */
 	void disconnect() {
 		if (!connected)
-			throw new ExceptionGETL('The connection is already disconnected!')
+			throw new ConnectionError(this, '#connection.already_disconnect')
 
 		doBeforeDisconnect()
 		try {
 			driver.disconnect()
 		}
 		catch (Exception e) {
-			logger.severe("Error disconnecting from server \"$objectName\"", e)
+			Logs.Severe(this, '#connection.fail_disconnect', e)
 			doErrorDisconnect()
 			throw e
 		}
@@ -558,7 +560,7 @@ class Connection implements GetlRepository {
 			if (onlyIfSupported)
 				return
 			else
-				throw new ExceptionGETL("Connection does not support transactions!")
+				throw new NotSupportError(this, 'transactions')
 		}
 
 		tryConnect()
@@ -566,7 +568,7 @@ class Connection implements GetlRepository {
 			driver.startTran(useSqlOperator)
 		}
 		catch (Exception e) {
-			logger.severe("Error start transaction on server \"$objectName\"", e)
+			Logs.Severe(this, '#connection.fail_start_tran', e)
 			throw e
 		}
 		tranCount++
@@ -575,7 +577,7 @@ class Connection implements GetlRepository {
 	/** Check that the connection is established */
 	void checkEstablishedConnection() {
 		if (!connected)
-			throw new ExceptionGETL('Connection not established!')
+			throw new ConnectionError(this, '#connection.not_connected')
 	}
 	
 	/**  Commit transaction */
@@ -584,19 +586,19 @@ class Connection implements GetlRepository {
 			if (onlyIfSupported)
 				return
 			else
-				throw new ExceptionGETL("Connection does not support transactions!")
+				throw new NotSupportError(this, 'transactions')
 		}
 
 		checkEstablishedConnection()
 
 		if (!isTran())
-			throw new ExceptionGETL("Not started transaction for commit operation")
+			throw new ConnectionError(this, '#connections.non_tran')
 
 		try {
 			driver.commitTran(useSqlOperator)
 		}
 		catch (Exception e) {
-			logger.severe("Error commit transaction on server \"$objectName\"", e)
+			Logs.Severe(this, '#connection.fail_commit_tran', e)
 			throw e
 		}
 		finally {
@@ -612,19 +614,19 @@ class Connection implements GetlRepository {
 			if (onlyIfSupported)
 				return
 			else
-				throw new ExceptionGETL("Connection does not support transactions!")
+				throw new NotSupportError(this, 'transactions')
 		}
 
 		checkEstablishedConnection()
 
 		if (!isTran())
-			throw new ExceptionGETL("Not started transaction for rollback operation")
+			throw new ConnectionError(this, '#connections.non_tran')
 
 		try {
 			driver.rollbackTran(useSqlOperator)
 		}
 		catch (Exception e) {
-			logger.severe("Error rollback transaction on server \"$objectName\"", e)
+			logger.severe("Error rollback transaction on connection \"$objectName\"", e)
 			throw e
 		}
 		finally {
@@ -640,7 +642,7 @@ class Connection implements GetlRepository {
 	 */
 	Long executeCommand(Map params) {
 		if (!driver.isOperation(Driver.Operation.EXECUTE))
-			throw new ExceptionGETL("Driver not supported execute command")
+			throw new NotSupportError(this, 'execute commands')
 		
 		if (params == null)
 			params = new HashMap()
@@ -648,7 +650,7 @@ class Connection implements GetlRepository {
 		
 		String command = params.command
 		if (command == null)
-			throw new ExceptionGETL("Required parameter \"command\"")
+			throw new RequiredParameterError(this, 'command', 'executeCommand')
 		
 		tryConnect()
 		driver.executeCommand(command, params)
@@ -662,7 +664,7 @@ class Connection implements GetlRepository {
 	String getObjectName() { (driver != null)?driver.getClass().name:null }
 
 	@Override
-	String toString() { objectName }
+	String toString() { dslNameObject?:objectName }
 	
 	/**
 	 * Clone current connection
@@ -701,7 +703,7 @@ class Connection implements GetlRepository {
 	 */
 	void transaction(Boolean onlyIfSupported, Closure cl) {
 		if (!isSupportTran && !onlyIfSupported)
-			throw new ExceptionGETL("Connection \"${toString()}\" does not support transactions!")
+			throw new NotSupportError(this, 'transactions')
 
 		if (!autoCommit())
 			startTran(onlyIfSupported)

@@ -1,6 +1,6 @@
 package getl.lang.sub
 
-import getl.exception.ExceptionDSL
+import getl.exception.RequiredParameterError
 import getl.jdbc.HistoryPointManager
 import groovy.transform.InheritConstructors
 
@@ -30,11 +30,11 @@ class RepositoryHistorypoints extends RepositoryObjects<HistoryPointManager> {
     Map exportConfig(GetlRepository repObj) {
         def obj = repObj as HistoryPointManager
         if (obj.sourceName == null)
-            throw new ExceptionDSL("No source name specified for history point \"${obj.dslNameObject}\"!")
+            throw new RequiredParameterError(obj, 'sourceName', 'RepositoryHistorypoins.exportConfig')
         if (obj.sourceType == null)
-            throw new ExceptionDSL("No source type specified for history point \"${obj.dslNameObject}\"!")
+            throw new RequiredParameterError(obj, 'sourceType', 'RepositoryHistorypoins.exportConfig')
         if (obj.historyTableName == null)
-            throw new ExceptionDSL("No history table name specified for history point \"${obj.dslNameObject}\"!")
+            throw new RequiredParameterError(obj, 'historyTableName', 'RepositoryHistorypoins.exportConfig')
 
         return obj.params
     }

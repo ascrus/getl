@@ -5,12 +5,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.sub.WithConnection
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
+import getl.exception.SequenceError
 import getl.jdbc.opts.SequenceCreateSpec
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.CloneUtils
+import getl.utils.Logs
 import getl.utils.MapUtils
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -99,6 +102,10 @@ class Sequence implements GetlRepository, WithConnection {
 		sysParams.dslRegistrationTime = null
 	}
 
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
+
 	/** Connection */
 	private JDBCConnection localConnection
 
@@ -112,14 +119,14 @@ class Sequence implements GetlRepository, WithConnection {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
-			throw new ExceptionGETL('Only work with JDBC connections is supported!')
+			throw new SequenceError(this, '#jdbc.connection.only')
 
 		useConnection(value as JDBCConnection)
 	}
 	/** Use specified connection */
 	JDBCConnection useConnection(JDBCConnection value) {
 		if (value != null && !value.driver.isSupport(Driver.Support.SEQUENCE))
-			throw new ExceptionGETL("At connection \"$value\" the driver does not support sequence!")
+			throw new NotSupportError(value, 'sequence', 'useConnection')
 
 		if (value != null && dslCreator != null && value.dslCreator != null && value.dslNameObject != null) {
 			params.connection = value.dslNameObject
@@ -140,7 +147,7 @@ class Sequence implements GetlRepository, WithConnection {
 			GetlValidate.IsRegister(this)
 			def con = dslCreator.jdbcConnection(value)
 			if (!con.driver.isSupport(Driver.Support.SEQUENCE))
-				throw new ExceptionGETL("At connection \"$con\" the driver does not support sequence!")
+				throw new NotSupportError(con, 'sequence', 'useConnection')
 			value = con.dslNameObject
 		}
 
@@ -244,7 +251,7 @@ class Sequence implements GetlRepository, WithConnection {
 	/** Check that the connection is specified */
 	private void validConnection() {
 		if (connection == null)
-			throw new ExceptionGETL("Connection required!")
+			throw new RequiredParameterError(this, 'connection')
 	}
 
 	/** Get next sequence value */

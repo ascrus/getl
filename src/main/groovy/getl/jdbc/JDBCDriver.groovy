@@ -1,5 +1,10 @@
 package getl.jdbc
 
+import getl.exception.ConnectionError
+import getl.exception.DatasetError
+import getl.exception.InternalError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.jdbc.opts.SequenceCreateSpec
 import getl.jdbc.sub.BulkLoadMapping
 import getl.jdbc.sub.JDBCProcessException
@@ -23,7 +28,6 @@ import getl.utils.*
 import java.sql.Time
 import java.sql.Timestamp
 import java.sql.Types
-import static getl.driver.Driver.Operation.*
 
 /**
  * JDBC driver class
@@ -92,13 +96,16 @@ class JDBCDriver extends Driver {
 		sqlExpressionSqlTimestampFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
 		sqlExpressionDateFormat = 'yyyy-MM-dd HH:mm:ss'
 
-		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP',
+		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP', 'REPLACE',
 						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY', 'USER', 'ROLE',
+                           'COMMIT', 'ROLLBACK',
 						   'PRIMARY', 'UNIQUE', 'KEY', 'CONSTRAINT', 'DEFAULT', 'CHECK', 'COMPUTE', 'NULL',
 						   'AND', 'OR', 'XOR', 'NOT', 'ON', 'IDENTITY',
 						   'IF', 'EXISTS', 'IN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'FOR', 'CURSOR',
-						   'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'WITH',
-						   'INSERT', 'UPDATE', 'SET', 'DELETE', 'MERGE'] as List<String>
+						   'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'LIMIT', 'OFFSET',
+						   'INSERT', 'INTO', 'VALUES',
+                           'UPDATE', 'SET',
+                           'DELETE', 'MERGE'] as List<String>
 		this.sqlType.each { name, par ->
 			//noinspection RegExpSimplifiable
 			def words = (par.name as String).toUpperCase().split('[ ]')
@@ -153,8 +160,9 @@ class JDBCDriver extends Driver {
 
 	@Override
 	List<Operation> operations() {
-		[RETRIEVEFIELDS, RETRIEVELOCALTEMPORARYFIELDS, RETRIEVEQUERYFIELDS, READ_METADATA,
-		 INSERT, UPDATE, DELETE, TRUNCATE, CREATE, DROP, CREATE_SCHEMA, EXECUTE, CREATE_VIEW]
+		[Operation.RETRIEVEFIELDS, Operation.RETRIEVELOCALTEMPORARYFIELDS, Operation.RETRIEVEQUERYFIELDS, Operation.READ_METADATA,
+		 Operation.INSERT, Operation.UPDATE, Operation.DELETE, Operation.TRUNCATE, Operation.CREATE, Operation.DROP, Operation.CREATE_SCHEMA,
+		 Operation.EXECUTE, Operation.CREATE_VIEW]
 	}
 	
 	/**
@@ -312,7 +320,7 @@ class JDBCDriver extends Driver {
 		field.type = res
 	}
 
-	static Object type2dbType (Field.Type type) {
+	Object type2dbType(Field.Type type) {
 		def result
 		
 		switch (type) {
@@ -365,7 +373,7 @@ class JDBCDriver extends Driver {
 				result = Types.ARRAY
 				break
 			default:
-				throw new ExceptionGETL("Not supported type ${type}")
+				throw new ExceptionGETL(connection, '#dataset.invalid_field_type', [type: type])
 		}
 		
 		result
@@ -406,12 +414,12 @@ class JDBCDriver extends Driver {
 	 */
 	String type2sqlType(Field field, Boolean useNativeDBType) {
 		if (field == null)
-			throw new ExceptionGETL('Required field object')
+			throw new RequiredParameterError(connection, 'field', 'type2sqlType')
 		
 		def type = field.type.toString()
 		def rule = this.sqlType.get(type)
 		if (rule == null)
-			throw new ExceptionGETL("Can not generate type ${field.type}")
+			throw new InternalError(connection, "Unknown generation for type \"$type\"", 'type2sqlType')
 
 		String name
 		if (field.typeName != null && useNativeDBType)
@@ -428,9 +436,9 @@ class JDBCDriver extends Driver {
 		def precision = (length == null)?null:(field.precision?:defaultPrecision)
 		
 		if (useLength == sqlTypeUse.ALWAYS && length == null)
-			throw new ExceptionGETL("Required length by field ${name} for $type type")
+			throw new ConnectionError(connection, '#dataset.field_length_required', [type: type, field: name])
 		if (usePrecision == sqlTypeUse.ALWAYS && precision == null)
-			throw new ExceptionGETL("Required precision by field ${name} for $type type")
+			throw new ConnectionError(connection, '#dataset.field_prec_required', [type: type, field: name])
 		
 		StringBuilder res = new StringBuilder()
 		res << name
@@ -475,12 +483,12 @@ class JDBCDriver extends Driver {
 
 		if (url.indexOf('{host}') != -1) {
             if (con.connectHost == null)
-				throw new ExceptionGETL('Need set property "connectHost"')
+				throw new RequiredParameterError(connection, 'connectHost', 'connect')
             url = url.replace("{host}", con.currentConnectHost())
         }
         if (url.indexOf('{database}') != -1) {
             if (con.connectDatabase == null)
-				throw new ExceptionGETL('Need set property "connectDatabase"')
+				throw new RequiredParameterError(connection, 'connectDatabase', 'connect')
             url = url.replace("{database}", con.currentConnectDatabase())
         }
 
@@ -524,12 +532,15 @@ class JDBCDriver extends Driver {
 		DriverManager.setLoginTimeout(loginTimeout)
 		def javaDriver = driverClass.getConstructor().newInstance() as java.sql.Driver
 		def prop = new Properties()
-		if (login != null) prop.user = login
-		if (password != null) prop.password = password
+		if (login != null)
+			prop.user = login
+		if (password != null)
+			prop.password = password
+
 		def javaCon = javaDriver.connect(url, prop)
-		if (javaCon == null) {
-			throw new ExceptionGETL("Can not create driver \"$drvName\" for \"$url\" URL")
-		}
+		if (javaCon == null)
+			throw new ConnectionError(connection, '#jdbc.connection.fail_connect', [driver: drvName, url: url])
+
 		return new Sql(javaCon)
 	}
 
@@ -562,7 +573,7 @@ class JDBCDriver extends Driver {
 			
 			def drvName = con.params.driverName as String
 			if (drvName == null)
-				throw new ExceptionGETL("Required \"driverName\" for connect to server")
+				throw new RequiredParameterError(connection, 'driverName', 'connect')
 
             def drvPath = con.params.driverPath as String
             if (drvPath == null) {
@@ -580,7 +591,7 @@ class JDBCDriver extends Driver {
 
 			def url = buildConnectURL()
 			if (url == null)
-				throw new ExceptionGETL("Required \"connectURL\" for connect to server")
+				throw new RequiredParameterError(connection, 'connectURL', 'connect')
 			url = url + conParams
 
 			def notConnected = true
@@ -628,9 +639,9 @@ class JDBCDriver extends Driver {
     void changeSessionProperty(String name, def value) {
 		def sql = sqlExpression('changeSessionProperty')
         if (sql == null)
-			throw new ExceptionGETL("Current driver not allowed change session property value")
+			throw new ConnectionError(connection, '#jdbc.connection.deny_change_property')
 		if (name == null)
-			throw new ExceptionGETL("Required value from \"name\" parameter!")
+			throw new RequiredParameterError(connection, 'name', 'changeSessionProperty')
 		if (value == null)
 			return
 
@@ -638,7 +649,7 @@ class JDBCDriver extends Driver {
             jdbcConnection.executeCommand(command: evalSqlParameters(sql, [name: name, value: value]))
         }
         catch (Exception e) {
-            connection.logger.severe("Error change session property \"$name\" to value \"$value\"")
+			Logs.Severe(connection, '#jdbc.connection.fail_change_prop', [name: name, value: value])
             throw e
         }
     }
@@ -684,7 +695,7 @@ class JDBCDriver extends Driver {
 	@Synchronized('operationLock')
 	List<String> retrieveCatalogs(List<String> masks) {
 		if (!isSupport(Support.DATABASE))
-			throw new ExceptionGETL("Databases is not supported for driver \"${getClass().name}\"!")
+			throw new NotSupportError(connection, 'read databases')
 
 		def maskList = [] as List<Path>
 		if (masks != null)
@@ -696,7 +707,7 @@ class JDBCDriver extends Driver {
 		ResultSet rs = sqlConnect.connection.metaData.getCatalogs()
 		try {
 			while (rs.next()) {
-				def catalogName = rs.getString('TABLE_CAT') // prepareObjectName(rs.getString('TABLE_CAT'))
+				def catalogName = rs.getString('TABLE_CAT')
 				if (catalogName != null && useMask) {
 					if (!Path.MatchList(catalogName, maskList))
 						continue
@@ -737,7 +748,7 @@ class JDBCDriver extends Driver {
 	@Synchronized('operationLock')
 	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
 		if (!isSupport(Support.SCHEMA))
-			throw new ExceptionGETL("Schemas is not supported for driver \"${getClass().name}\"!")
+			throw new NotSupportError(connection, 'read schemas')
 
 		def maskList = [] as List<Path>
 		if (masks != null)
@@ -831,7 +842,7 @@ class JDBCDriver extends Driver {
 	 */
 	static validTableName(JDBCDataset dataset) {
 		if (dataset.params.tableName == null)
-			throw new ExceptionGETL("Required table name from dataset")
+			throw new RequiredParameterError(dataset, 'tableName')
 	}
 
 	/** Prepare database, schema and table name for retrieve field operation */
@@ -883,9 +894,9 @@ class JDBCDriver extends Driver {
 		def res = [] as List<Field>
 		def ds = dataset as TableDataset
 
-		if (READ_METADATA in operations()) {
-			if (ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType] && !isOperation(RETRIEVELOCALTEMPORARYFIELDS))
-				throw new ExceptionGETL('The driver does not support getting a list of fields in the local temporary table!')
+		if (Operation.READ_METADATA in operations()) {
+			if (ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType] && !isOperation(Operation.RETRIEVELOCALTEMPORARYFIELDS))
+				throw new NotSupportError(dataset, 'read fields')
 
 			def names = prepareForRetrieveFields(ds)
 			def schemaName = names.schemaName
@@ -948,7 +959,7 @@ class JDBCDriver extends Driver {
 					}
 
 					if (pf == null)
-						throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(ds)}]")
+						throw new DatasetError(ds, '#jdbc.key_field_not_found', [field: n])
 
 					ord++
 					pf.isKey = true
@@ -987,13 +998,13 @@ class JDBCDriver extends Driver {
 		def ds = dataset as QueryDataset
 		def sql = sqlForDataset(ds, new HashMap(), false)
 		if (sql == null)
-			throw new ExceptionGETL('Invalid sql query for dataset!')
+			throw new RequiredParameterError(dataset, 'query')
 
 		saveToHistory("-- READ METADATA FROM QUERY:\n$sql")
 
 		List<Field> res = null
 
-		if (isOperation(RETRIEVEQUERYFIELDS)) {
+		if (isOperation(Operation.RETRIEVEQUERYFIELDS)) {
 			def stat = sqlConnect.connection.prepareStatement(sql)
 			try {
 				def meta = stat.metaData
@@ -1004,7 +1015,7 @@ class JDBCDriver extends Driver {
 			}
 		}
 		else
-			throw new ExceptionGETL("${getClass().name} not support retrieve fields from query!")
+			throw new NotSupportError(connection, 'read fields')
 
 		return res
 	}
@@ -1013,7 +1024,7 @@ class JDBCDriver extends Driver {
 	@Synchronized('operationLock')
 	List<Field> fields(Dataset dataset) {
 		if (!(dataset instanceof TableDataset) && !(dataset instanceof QueryDataset))
-			throw new ExceptionGETL('Listing fields is supported only for TableDataset or QueryDataset objects!')
+			throw new NotSupportError(connection, 'read fields')
 
 		if (dataset.params.onUpdateFields != null)
 			(dataset.params.onUpdateFields as Closure).call(dataset)
@@ -1028,7 +1039,7 @@ class JDBCDriver extends Driver {
 		QueryDataset query = new QueryDataset(connection: table.connection)
 		query.query = "SELECT * FROM ${table.fullNameDataset()} WHERE 0 = 1"
 		if (query.rows().size() > 0)
-			throw new ExceptionGETL("Find bug in \"fieldsTableWithoutMetadata\" method from \"${getClass().name}\" driver!")
+			throw new InternalError(table, 'more than 0 records returned', 'fieldsTableWithoutMetadata')
 		query.field.each { Field f -> f.isReadOnly = false }
 		return query.field
 	}
@@ -1043,7 +1054,7 @@ class JDBCDriver extends Driver {
 			saveToHistory("START TRANSACTION")
 			if (useSqlOperator) {
 				if (!isSupport(Support.START_TRANSACTION))
-					throw new ExceptionGETL("Connect \"$connection\" not support start transaction operator!")
+					throw new NotSupportError(con, 'start transaction')
 
 				executeCommand(sqlExpressionValue('ddlStartTran'))
 			}
@@ -1062,10 +1073,10 @@ class JDBCDriver extends Driver {
 			return
 
 		if (con.autoCommit())
-			throw new ExceptionGETL("Cannot use commit while connection is in auto-commit mode")
+			throw new ConnectionError(connection, '#jdbc.invalid_commit')
 
 		if (con == null)
-			throw new ExceptionGETL("Can not commit from disconnected connection")
+			throw new ConnectionError(connection, '#connection.not_connected')
 
 		if (con.tranCount == 1) {
 			saveToHistory('COMMIT')
@@ -1087,10 +1098,10 @@ class JDBCDriver extends Driver {
 			return
 
 		if (con.autoCommit())
-			throw new ExceptionGETL("Cannot use rollback while connection is in auto-commit mode")
+			throw new ConnectionError(connection, '#jdbc.invalid_rollback')
 
 		if (con == null)
-			throw new ExceptionGETL("Can not rollback from disconnected connection")
+			throw new ConnectionError(connection, '#connection.not_connected')
 
 		if (con.tranCount == 1) {
 			saveToHistory('ROLLBACK')
@@ -1162,28 +1173,28 @@ class JDBCDriver extends Driver {
 		def tableType = (dataset as JDBCDataset).type
 		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
-            throw new ExceptionGETL("Can not create table for type \"${tableType}\"!")
+			throw new NotSupportError(connection, 'create table')
         }
 		String tableTypeName = null
 		switch (tableType) {
 			case JDBCDataset.globalTemporaryTableType:
                 if (!isSupport(Support.GLOBAL_TEMPORARY))
-					throw new ExceptionGETL('Driver not support temporary tables!')
+					throw new NotSupportError(dataset, 'global temporary tables')
 				tableTypeName = globalTemporaryTablePrefix
 				break
 			case JDBCDataset.localTemporaryTableType:
                 if (!isSupport(Support.LOCAL_TEMPORARY))
-					throw new ExceptionGETL('Driver not support temporary tables!')
+					throw new NotSupportError(dataset, 'local temporary tables')
 				tableTypeName = localTemporaryTablePrefix
 				break
 			case JDBCDataset.memoryTable:
                 if (!isSupport(Support.MEMORY))
-					throw new ExceptionGETL('Driver not support memory tables!')
+					throw new NotSupportError(dataset, 'memory temporary tables')
 				tableTypeName = memoryTablePrefix
 				break
 			case JDBCDataset.externalTable:
 				if (!isSupport(Support.EXTERNAL))
-					throw new ExceptionGETL('Driver not support external tables!')
+					throw new NotSupportError(dataset, 'external tables')
 				tableTypeName = externalTablePrefix
 				break
 		}
@@ -1191,7 +1202,7 @@ class JDBCDriver extends Driver {
 		def validExists = BoolUtils.IsValue(params.ifNotExists)
 		if (validExists && !isSupport(Support.CREATEIFNOTEXIST)) {
 			if (!isTable(dataset))
-				throw new ExceptionGETL("Option \"ifNotExists\" is not supported for dataset type \"${dataset.getClass().name}\"!")
+				throw new NotSupportError(dataset, 'create if not exists')
 			if ((dataset as TableDataset).exists)
 				return
 		}
@@ -1207,39 +1218,39 @@ class JDBCDriver extends Driver {
 				switch (f.type) {
 					case Field.Type.BOOLEAN:
 						if (!isSupport(Support.BOOLEAN))
-							throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'boolean fields')
 						break
 					case Field.Type.DATE:
 						if (!isSupport(Support.DATE))
-							throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'date fields')
 						break
 					case Field.Type.TIME:
 						if (!isSupport(Support.TIME))
-							throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'time fields')
 						break
 					case Field.Type.DATETIME:
 						if (!isSupport(Support.TIMESTAMP))
-							throw new ExceptionGETL("Driver not support datetime fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'timestamp fields')
 						break
 					case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						if (!isSupport(Support.TIMESTAMP_WITH_TIMEZONE))
-							throw new ExceptionGETL("Driver not support timestamp with timezone fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'timestamp with timezone fields')
 						break
 					case Field.Type.BLOB:
 						if (!isSupport(Support.BLOB))
-							throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'blob fields')
 						break
 					case Field.Type.TEXT:
 						if (!isSupport(Support.CLOB))
-							throw new ExceptionGETL("Driver not support text fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'clob fields')
 						break
 					case Field.Type.UUID:
 						if (!isSupport(Support.UUID))
-							throw new ExceptionGETL("Driver not support uuid fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'uuid fields')
 						break
 					case Field.Type.ARRAY:
 						if (!isSupport(Support.ARRAY))
-							throw new ExceptionGETL("Driver not support array fields (field \"${f.name}\")!")
+							throw new NotSupportError(dataset, 'array fields')
 						break
 				}
 
@@ -1280,9 +1291,9 @@ class JDBCDriver extends Driver {
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
 				if (!isSupport(Support.INDEX))
-					throw new ExceptionGETL("Driver not support indexes!")
+					throw new NotSupportError(dataset, 'indexes')
 				if (tableType in [JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType] && !isSupport(Support.INDEXFORTEMPTABLE))
-					throw new ExceptionGETL("Driver not support indexes for temporary tables!")
+					throw new NotSupportError(dataset, 'temporary table indexes')
 				(params.indexes as Map<String, Map>).each { name, value ->
 					def idxCols = []
 					def orderFields = GenerationUtils.PrepareSortFields(value.columns as List<String>)
@@ -1565,12 +1576,14 @@ class JDBCDriver extends Driver {
 				((dataset as JDBCDataset).type in [JDBCDataset.viewType, JDBCDataset.localTemporaryViewType])?'VIEW':null
 
 		if (t == null)
-			throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
+			throw new NotSupportError(dataset, 'drop dataset')
 
 		def validExists = BoolUtils.IsValue(params.ifExists)
 		if (validExists && !isSupport(Support.DROPIFEXIST)) {
-			if (!isTable(dataset)) throw new ExceptionGETL("Option \"ifExists\" is not supported for dataset type \"${dataset.getClass().name}\"")
-			if (!(dataset as TableDataset).exists) return
+			if (!isTable(dataset))
+				throw new NotSupportError(dataset, 'drop if exists')
+			if (!(dataset as TableDataset).exists)
+				return
 		}
 
 		def e = (validExists && isSupport(Support.DROPIFEXIST))?'IF EXISTS':''
@@ -1685,7 +1698,7 @@ class JDBCDriver extends Driver {
 			}
 			
 			if (fields.isEmpty())
-				throw new ExceptionGETL("Required fields by dataset $table!")
+				throw new DatasetError(dataset, '#dataset.non_fields')
 			
 			def selectFields = fields.join(",")
 
@@ -1714,7 +1727,7 @@ class JDBCDriver extends Driver {
 		} 
 		else {
 			if (!(dataset instanceof QueryDataset))
-				throw new ExceptionGETL("Not supported JDBC dataset class \"${dataset.getClass().name}\"!")
+				throw new NotSupportError(dataset, 'read rows')
 
 			def qry = dataset as QueryDataset
 			query = qry.query
@@ -1722,7 +1735,7 @@ class JDBCDriver extends Driver {
 				query = qry.readFile(qry.scriptFilePath, qry.scriptFileCodePage)
 			}
 			if (query == null)
-				throw new ExceptionGETL("For dataset \"$dataset\" you need to specify the query text!")
+				throw new RequiredParameterError(dataset, 'query')
 		}
 
 		String res
@@ -1803,7 +1816,7 @@ class JDBCDriver extends Driver {
 		params.putAll([useFields: metaFields])
 		def sql = sqlForDataset(dataset as JDBCDataset, params)
 		if (sql == null)
-			throw new ExceptionGETL('Invalid sql query for dataset!')
+			throw new DatasetError(dataset, '#jdbc.fail_query_build')
 		
 		Map rowCopy
 		Closure copyToMap
@@ -1827,7 +1840,7 @@ class JDBCDriver extends Driver {
 				}
 			}
 			if (fields.isEmpty())
-				throw new ExceptionGETL("Required fields from read dataset")
+				throw new DatasetError(dataset, '#dataset.non_fields')
 
 			if (dataset.sysParams.lastread != null) {
 				def lastRead = dataset.sysParams.lastread as Map
@@ -1954,12 +1967,12 @@ class JDBCDriver extends Driver {
 
 		def truncate = BoolUtils.IsValue(params.truncate, true)
 		if (truncate) {
-			if (!isOperation(TRUNCATE))
-				throw new ExceptionGETL("Driver not supported truncate operation!")
+			if (!isOperation(Operation.TRUNCATE))
+				throw new NotSupportError(dataset, 'truncate')
 		}
 		else {
-			if (!isOperation(DELETE))
-				throw new ExceptionGETL("Driver not supported delete operation!")
+			if (!isOperation(Operation.DELETE))
+				throw new NotSupportError(dataset, 'delete')
 		}
 
 		def autoTran = false
@@ -2107,9 +2120,9 @@ $sql
 	 * @param wp
 	 * @return
 	 */
-	protected Closure generateSetStatement(String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
+	protected Closure generateSetStatement(JDBCDataset dataset, String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
 		if (statFields.isEmpty())
-			throw new ExceptionGETL('Required fields from generate prepared statement')
+			throw new RequiredParameterError(dataset, 'statFields', 'generateSetStatement')
 
 		def countMethod = new BigDecimal(statFields.size() / 100).intValue() + 1
 		def curMethod = 0
@@ -2203,7 +2216,7 @@ $sql
 			}
 		}
 		if (fields.isEmpty())
-			throw new ExceptionGETL("Required fields from write to dataset")
+			throw new DatasetError(dataset, '#dataset.non_fields')
 
 		return fields
 	}
@@ -2219,7 +2232,7 @@ $sql
 	protected Map bulkLoadFilePrepare(CSVDataset source, JDBCDataset dest, Map<String, Object> params, Closure prepareCode) {
 		if (!(dest.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable]) ) {
-			throw new ExceptionGETL("Bulk load support only table and not worked for ${dest.type}")
+			throw new NotSupportError(dest, 'bulk load files')
 		}
 		
 		// List writable fields 
@@ -2233,7 +2246,7 @@ $sql
 		def map = (params.map != null)?(MapUtils.MapToLower(params.map as Map) as Map<String, String>):(new HashMap<String, String>())
 		map.each { destFieldName, sourceFieldName ->
 			if (dest.fieldByName(destFieldName) == null)
-				throw new ExceptionGETL("Unknown field \"$destFieldName\" for destination \"$dest\" in the mapping!")
+				throw new DatasetError(dest, '#dataset.field_not_found', [field: destFieldName, detail: 'bulkLoadFile.map'])
 		}
 		
 		// Allow aliases in map
@@ -2265,7 +2278,7 @@ $sql
 			else if (useExpressions)
 				mapping.add(new BulkLoadMapping(destinationFieldName: destFieldName, expression: expr))
 			else
-				throw new ExceptionGETL("An unsupported expression was specified for field \"$destFieldName\" in destination \"$dest\"!")
+				throw new DatasetError(dest, '#jdbc.invalid_field_expression', [field: destFieldName, detail: 'bulkLoadFile'])
 		}
 
 		// Auto map
@@ -2279,9 +2292,9 @@ $sql
 		}
 
 		if (mapping.find { it.destinationFieldName != null} == null )
-			throw new ExceptionGETL("Failed to build mapping for destination \"$dest\" fields!")
+			throw new InternalError(dest, 'Failed to build mapping', 'loadBulkFile')
 
-		Map res = MapUtils.CleanMap(params, ["autoMap", "map"])
+		Map res = MapUtils.CleanMap(params, ['autoMap', 'map'])
 		res.map = mapping
 
 		/*println '-------'
@@ -2293,7 +2306,7 @@ $sql
 	
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(dest, 'bulkLoadFile')
 	}
 
 	/**
@@ -2358,27 +2371,27 @@ $sql
 		def fn = fullNameDataset(dataset)
 		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
 		if (!(operation in ['INSERT', 'UPDATE', 'DELETE', 'MERGE']))
-			throw new ExceptionGETL("Unknown operation \"$operation\"!")
+			throw new DatasetError(dataset, '#jdbc.invalid_write_oper', [operation: operation])
 
 		switch (operation) {
 			case 'INSERT':
-				if (!(INSERT in operations()))
-					throw new ExceptionGETL('Operation INSERT not support!')
+				if (!(Operation.INSERT in operations()))
+					throw new NotSupportError(dataset, 'insert')
 
 				break
 			case 'UPDATE':
-				if (!(UPDATE in operations()))
-					throw new ExceptionGETL('Operation UPDATE not support!')
+				if (!(Operation.UPDATE in operations()))
+					throw new NotSupportError(dataset, 'update')
 
 				break
 			case 'DELETE':
-				if (!(DELETE in operations()))
-					throw new ExceptionGETL('Operation DELETE not support!')
+				if (!(Operation.DELETE in operations()))
+					throw new NotSupportError(dataset, 'delete')
 
 				break
 			case 'MERGE':
-				if (!(MERGE in operations()))
-					throw new ExceptionGETL('Operation MERGE not support!')
+				if (!(Operation.MERGE in operations()))
+					throw new NotSupportError(dataset, 'merge')
 
 				break
 		}
@@ -2402,7 +2415,7 @@ $sql
 			}
 		}
 		if (updateField.isEmpty())
-			throw new ExceptionGETL("Required fields from $operation operation!")
+			throw new DatasetError(dataset, '#dataset.non_fields')
 		updateField = updateField*.toLowerCase()
 
 		// Order fields
@@ -2431,7 +2444,7 @@ $sql
 					sv << f.name
 				}
 				if (v.isEmpty())
-					throw new ExceptionGETL('Required fields from INSERT operation!')
+					throw new DatasetError(dataset, '#dataset.non_fields')
 
 				if (statInsert.indexOf('{partition}') != -1) {
 					dataset.fieldListPartitions.each { Field f ->
@@ -2440,7 +2453,7 @@ $sql
 						v << '?'
 					}
 					if (p.isEmpty())
-						throw new ExceptionGETL('Required partition key fields from INSERT operation!')
+						throw new DatasetError(dataset, '#dataset.non_key_fields')
 				}
 
 				if (syntaxPartitionLastPosInValues) {
@@ -2480,9 +2493,9 @@ $sql
 				}
 
 				if (v.isEmpty())
-					throw new ExceptionGETL('Required fields from UPDATE operation!!')
+					throw new DatasetError(dataset, '#dataset.non_fields')
 				if (k.isEmpty())
-					throw new ExceptionGETL("Required key fields for UPDATE operation!")
+					throw new DatasetError(dataset, '##dataset.non_key_fields')
 
 				def x = [[sk, statUpdate.indexOf('{keys}')],
 						 [sv, statUpdate.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
@@ -2511,7 +2524,7 @@ $sql
 				}
 				
 				if (k.isEmpty())
-					throw new ExceptionGETL("Required key fields for DELETE operation!")
+					throw new DatasetError(dataset, '##dataset.non_key_fields')
 
 				def x = [[sk, statDelete.indexOf('{keys}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
 
@@ -2529,7 +2542,7 @@ $sql
 				sb << openWriteMergeSql(dataset as JDBCDataset, params, fields, statFields)
 				break
 			default:
-				throw new ExceptionGETL("Not supported operation \"${operation}\"!")
+				throw new DatasetError(dataset, '#jdbc.invalid_write_oper', [operation: operation])
 		}
 		def query = sb.toString()
 		//println query
@@ -2557,7 +2570,7 @@ $sql
 
 		}
 		if (setStatement == null) {
-			setStatement = generateSetStatement(operation, fields, statFields, wp)
+			setStatement = generateSetStatement(dataset as JDBCDataset, operation, fields, statFields, wp)
 			//noinspection SpellCheckingInspection
 			dataset.sysParams.put('lastwrite', [operation: operation, fields: fields, statFields: statFields,
 												setStatement: setStatement, statement: wp.statement])
@@ -2579,7 +2592,7 @@ $sql
 	protected void initOpenWrite(JDBCDataset dataset, Map params, String query) { }
 
 	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields, List<String> statFields) {
-		throw new ExceptionGETL("Driver not supported \"MERGE\" operation")
+		throw new NotSupportError(dataset, 'merge')
 	}
 	
 	protected void validRejects(Dataset dataset, int[] er) {
@@ -2733,9 +2746,11 @@ $sql
 	 * @param procParams
 	 * @return
 	 */
-	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
-		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
-		if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
+	protected String unionDatasetMerge(JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
+		if (!source instanceof TableDataset)
+			throw new DatasetError(source, '#jdbc.need_table', [detail: 'unionDatasetMerge'])
+		if (keyField.isEmpty())
+			throw new DatasetError(target, '#dataset.non_key_fields')
 		
 		String condition = (procParams.condition != null)?" AND ${procParams.condition}":""
 		
@@ -2777,14 +2792,19 @@ $sql
 	 */
 	Long unionDataset(JDBCDataset target, Map procParams) {
 		def source = procParams.source as JDBCDataset
-		if (source == null) throw new ExceptionGETL("Required \"source\" parameter")
-		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")
+		if (source == null)
+			throw new RequiredParameterError(target, 'source', 'unionDataset')
+		if (!source instanceof JDBCDataset)
+			throw new DatasetError(source, '#jdbc.need_table', [detail: 'unionDataset'])
 		
-		if (procParams.operation == null) throw new ExceptionGETL("Required \"operation\" parameter")
+		if (procParams.operation == null)
+			throw new RequiredParameterError(source, 'operation', 'unionDataset')
 		def oper = (procParams.operation as String).toUpperCase()
-		if (!(oper in ["INSERT", "UPDATE", "DELETE", "MERGE"])) throw new ExceptionGETL("Unknown \"$oper\" operation")
+		if (!(oper in ['INSERT', 'UPDATE', 'DELETE', 'MERGE']))
+			throw new DatasetError(target, '#jdbc.invalid_write_oper', [operation: oper])
 		
-		if (target.connection != source.connection) throw new ExceptionGETL("Required one identical the connection by datasets")
+		if (target.connection != source.connection)
+			throw new DatasetError(target, '#jdbc.different_connections', [source: source.dslNameObject?:source.objectFullName])
 		
 		def autoMap = BoolUtils.IsValue(procParams.autoMap, true)
 		def map = (procParams.map as Map)?:new HashMap()
@@ -2794,16 +2814,17 @@ $sql
 		if (target.field.isEmpty())
 			target.retrieveFields()
 		if (target.field.isEmpty())
-			throw new ExceptionGETL("Required fields for dataset")
+			throw new DatasetError(target, '#dataset.non_fields')
 		
 		if (source.field.isEmpty())
 			source.retrieveFields()
 		if (source.field.isEmpty())
-			throw new ExceptionGETL("Required fields for dest dataset")
+			throw new DatasetError(source, '#dataset.non_fields')
 		
 		def mapField = new HashMap()
 		target.field.each { Field field ->
-			if (field.name == null || field.name.length() == 0) throw new ExceptionGETL("Target dataset has fields by empty name")
+			if (field.name == null || field.name.length() == 0)
+				throw new DatasetError(target, '#dataset.invalid_field_name', [detail: 'unionDataset'])
 			
 			// Destination field
 			def targetField = prepareObjectName(field.name, target)
@@ -2828,7 +2849,8 @@ $sql
 				}
 			}
 			
-			if (sourceField == null) throw new ExceptionGETL("Mapping for field \"${field.name}\" not found")
+			if (sourceField == null)
+				throw new DatasetError(source, '#dataset.field_not_found', [field: field.name, detail: 'unionDataset'])
 			
 			mapField."$targetField" = sourceField
 			
@@ -2841,7 +2863,7 @@ $sql
 				sql = unionDatasetMerge(source, target, mapField as Map<String, String>, keyField, procParams)
 				break
 			default:
-				throw new ExceptionGETL("Unknown operation \"${oper}\"")
+				throw new DatasetError(target, '#jdbc.invalid_write_oper', [operation: oper])
 		}
 //		println sql
 		
@@ -3008,26 +3030,28 @@ FROM {source} {after_from}'''
 	 */
 	Long copyTableTo(TableDataset source, TableDataset dest, Map<String, String> map) {
 		if (source == null)
-			throw new ExceptionGETL('It is required to specify the target table in parameter "source"!')
+			throw new RequiredParameterError(source, 'source', 'copyTableTo')
+
+		if (dest == null)
+			throw new RequiredParameterError(source, 'dest', 'copyTableTo')
+
 		source.tap {
 			if (type == tableType && !exists)
-				throw new ExceptionGETL("Table $it does not exist or does not have access rights to it!")
+				throw new DatasetError(it, '#jdbc.table.not_found', [table: fullTableName])
 			if (field.isEmpty()) {
 				retrieveFields()
 				if (field.isEmpty())
-					throw new ExceptionGETL("Unable to get the list of fields for table $it!")
+					throw new DatasetError(it, '#dataset.fail_read_fields', [objectName: fullTableName])
 			}
 		}
 
-		if (dest == null)
-			throw new ExceptionGETL('It is required to specify the target table in parameter "dest"!')
 		dest.tap {
 			if (type == tableType && !exists)
-				throw new ExceptionGETL("Table $it does not exist or does not have access rights to it!")
+				throw new DatasetError(it, '#jdbc.table.not_found', [table: fullTableName])
 			if (field.isEmpty()) {
 				retrieveFields()
 				if (field.isEmpty())
-					throw new ExceptionGETL("Unable to get the list of fields for table $it!")
+					throw new DatasetError(it, '#dataset.fail_read_fields', [objectName: fullTableName])
 			}
 		}
 
@@ -3035,7 +3059,7 @@ FROM {source} {after_from}'''
 		def transRules = new HashMap<String, String>()
 		map.each {fieldName, expr ->
 			if (dest.fieldByName(fieldName) == null)
-				throw new ExceptionGETL("Field \"$fieldName\" not found in table $dest!")
+				throw new DatasetError(dest, '#dataset.field_not_found', [field: fieldName, detail: 'copyTableTo'])
 			transRules.put(fieldName.toLowerCase(), expr)
 		}
 
@@ -3148,9 +3172,9 @@ FROM {source} {after_from}'''
 	@Synchronized
 	void createView(ViewDataset dataset, Map params) {
 		if (!isSupport(Support.VIEW))
-			throw new ExceptionGETL('Driver not support views!')
+			throw new NotSupportError(dataset, 'views')
 		if (!isOperation(Operation.CREATE_VIEW))
-			throw new ExceptionGETL('Driver not support create views!')
+			throw new NotSupportError(dataset, 'create views')
 
 		validTableName(dataset as JDBCDataset)
 
@@ -3183,7 +3207,7 @@ FROM {source} {after_from}'''
 
 		def replace = BoolUtils.IsValue(createParams.replace)
 		if (replace && !allowReplaceView)
-			throw new ExceptionGETL("Option \"replace\" is not supported on the current connection!")
+			throw new NotSupportError(dataset, 'create or replace views')
 
 		res.create = (replace)?createViewTypes[1]:createViewTypes[0]
 
@@ -3196,7 +3220,7 @@ FROM {source} {after_from}'''
 
 		def select = createParams.select as String
 		if (select == null)
-			throw new ExceptionGETL("It is required to specify sql select for view in the \"select\" parameter!")
+			throw new RequiredParameterError(dataset, 'select', 'createView')
 		res.select = evalSqlParameters(select, dataset.queryParams())
 
 		return res
@@ -3208,7 +3232,7 @@ FROM {source} {after_from}'''
 	/** Sql expression by name */
 	String sqlExpression(String name) {
 		if (!sqlExpressions.containsKey(name))
-			throw new ExceptionGETL("Unknown sql expression name \"$name\"!")
+			throw new InternalError(connection, "Invalid sql expression \"$name\"")
 
 		return sqlExpressions.get(name)
 	}

@@ -1,7 +1,8 @@
 package getl.lang.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
+import getl.lang.Getl
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import java.util.logging.*
@@ -14,6 +15,9 @@ import java.util.logging.*
 @InheritConstructors
 @SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 class LogSpec extends BaseSpec {
+    /** Getl owner */
+    private Getl getGetl() { ownerObject as Getl }
+
     @Override
     protected void initSpec() {
         super.initSpec()
@@ -56,7 +60,10 @@ class LogSpec extends BaseSpec {
     /** Log file name */
     String getLogFileName() { manager.logFileName }
     /** Log file name */
-    void setLogFileName(String value) { manager.logFileName = value }
+    void setLogFileName(String value) {
+        manager.logFileName = value
+        getl._onChangeLogFileName()
+    }
 
     /** The level of message logging to a file (default INFO) */
     Level getLogFileLevel() { manager.logFileLevel }
@@ -93,9 +100,9 @@ class LogSpec extends BaseSpec {
      */
     void attachToFileName(String varValue) {
         if (logFileName == null)
-            throw new ExceptionDSL("The file name for the log is not set!")
+            throw new DslError(getl, '#logs.non_filename')
         if (varValue == null)
-            throw new ExceptionDSL("A value is required for the attached variable to the log name!")
+            throw new DslError(getl, '#params.required', [param: 'varValue', detail: 'attachToFileName'])
         def ext = FileUtils.ExtensionWithoutFilename(logFileName)
         if ((ext?:'') != '')
             logFileName = FileUtils.FilenameWithoutExtension(logFileName) + '.' + varValue + '.' + ext

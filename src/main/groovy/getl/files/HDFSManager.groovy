@@ -1,7 +1,10 @@
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.FilemanagerError
+import getl.exception.IOFilesError
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
 import getl.lang.Getl
 import getl.lang.sub.UserLogins
@@ -83,7 +86,8 @@ class HDFSManager extends Manager implements UserLogins {
     /** Replication parameter for root directory */
     void setReplication(Short value) {
         if (value != null && value < 1)
-            throw new ExceptionGETL("The replication parameter cannot be less than 1!")
+            throw new IncorrectParameterError(this, '#params.great_zero', 'replication')
+
         params.replication = value
     }
 
@@ -138,10 +142,13 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     @Synchronized
     protected void doConnect() {
-        if (server == null || port == null)
-            throw new ExceptionGETL("Required server host and port for connect!")
+        if (server == null)
+            throw new RequiredParameterError(this, 'server', 'connect')
+        if (port == null)
+            throw new RequiredParameterError(this, 'port', 'connect')
         if (login == null)
-            throw new ExceptionGETL("Required login for connect!")
+            throw new RequiredParameterError(this, 'login', 'connect')
+
 
         writeScriptHistoryFile("Connect to hdfs $server:$port with login $login from session $sessionID")
 
@@ -172,25 +179,20 @@ class HDFSManager extends Manager implements UserLogins {
     void setCurrentPath(String path) {
         validConnect()
 
-        if (path == _currentPath) return
+        if (path == _currentPath)
+            return
 
-        if (path == null || path == '/') {
-            if (writeErrorsToLog)
-                logger.severe("Invalid path: \"$path\" on source \"$this\"!")
-            throw new ExceptionGETL("Invalid path: \"$path\" on source \"$this\"!")
-        }
+        if (path == null || path == '/')
+            throw new IOFilesError(this, '#io.path.invalid', [path: path], writeErrorsToLog)
+
         path = fullName(path, null)
         def p = new Path(path)
-        if (!client.exists(p)) {
-            if (writeErrorsToLog)
-                logger.severe("Path \"$path\" not found on source \"$this\"!")
-            throw new ExceptionGETL("Path \"$path\" not found on source \"$this\"!")
-        }
-        if (!client.exists(p) || !client.getFileStatus(p).isDirectory()) {
-            if (writeErrorsToLog)
-                logger.severe("Path \"$path\" non directory on source \"$this\"!")
-            throw new ExceptionGETL("Path \"$path\" non directory on source \"$this\"!")
-        }
+        if (!client.exists(p))
+            throw new IOFilesError(this, '#io.dir.not_found', [path: path], writeErrorsToLog)
+
+        if (!client.exists(p) || !client.getFileStatus(p).isDirectory())
+            throw new IOFilesError(this, '#io.dir.not_found', [path: path], writeErrorsToLog)
+
         _currentPath = path
     }
 
@@ -209,7 +211,12 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     class HDFSList extends FileManagerList {
+        HDFSList(HDFSManager owner) {
+            super()
+            this.owner = owner
+        }
         FileStatus[] listFiles
+        private HDFSManager owner
 
         @CompileStatic
         @Override
@@ -238,7 +245,7 @@ class HDFSManager extends Manager implements UserLogins {
                 m.type = Manager.TypeFile.LINK
             }
             else {
-                throw new ExceptionGETL("Unnknown type object ${m.filename}!")
+                throw new FilemanagerError(owner, '#fileman.invalid_object', [path: m.filename])
             }
 
             return m
@@ -269,7 +276,7 @@ class HDFSManager extends Manager implements UserLogins {
     protected FileManagerList doListDir(String maskFiles) {
         validConnect()
 
-        HDFSList res = new HDFSList()
+        HDFSList res = new HDFSList(this)
         if (maskFiles != null)
             res.listFiles = client.listStatus(fullPath(_currentPath, null), new FilterDir(maskFiles))
         else
@@ -282,11 +289,8 @@ class HDFSManager extends Manager implements UserLogins {
     void changeDirectoryUp() {
         validConnect()
 
-        if (_currentPath == currentRootPath) {
-            if (writeErrorsToLog)
-                logger.severe("Can not change directory to up with root directory \"$currentRootPath\" on source \"$this\"!")
-            throw new ExceptionGETL("Can not change directory to up with root directory \"$currentRootPath\" on source \"$this\"!")
-        }
+        if (_currentPath == currentRootPath)
+            throw new FilemanagerError(this, '#fileman.fail_change_dir_up_root', [path: currentRootPath])
 
         String[] l = _currentPath.split('/')
         def n = []

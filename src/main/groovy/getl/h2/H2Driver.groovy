@@ -1,8 +1,8 @@
 //file:noinspection SqlNoDataSourceInspection
 package getl.h2
 
-import static getl.driver.Driver.Support
-import static getl.driver.Driver.Operation
+import getl.driver.Driver
+import getl.exception.DatasetError
 import getl.jdbc.sub.BulkLoadMapping
 import groovy.transform.InheritConstructors
 import getl.csv.*
@@ -49,8 +49,9 @@ class H2Driver extends JDBCDriver {
 		ruleEscapedText.put('\'', '\'\'')
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Override
-	List<Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Support.GLOBAL_TEMPORARY, Support.LOCAL_TEMPORARY, Support.MEMORY,
 				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
@@ -63,7 +64,7 @@ class H2Driver extends JDBCDriver {
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Operation> operations() {
+	List<Driver.Operation> operations() {
 		return super.operations() + [Operation.BULKLOAD, Operation.MERGE]
 	}
 
@@ -115,7 +116,7 @@ class H2Driver extends JDBCDriver {
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		if (source.escaped())
-			throw new ExceptionGETL("Escaped mode not support from bulk load file to dataset \"$dest\"!")
+			throw new DatasetError(source, 'escaped mode not support from bulk load file')
 
 		def table = dest as TableDataset
 		params = bulkLoadFilePrepare(source, table, params, prepareCode)
@@ -252,9 +253,9 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.validCsvTempFile(source, csvFile)
 		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
-			throw new ExceptionGETL('The file must be encoded in utf-8 for batch download!')
+			throw new DatasetError(csvFile, 'file must be encoded in utf-8 for batch download')
 		if (csvFile.isHeader())
-			throw new ExceptionGETL('It is not allowed to use the header in the file for bulk load!')
+			throw new DatasetError(csvFile, 'header not allowed for bulk load')
 	}
 
 	@Override
@@ -263,7 +264,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			return super.type2sqlType(field, useNativeDBType)
 
 		if (field.arrayType == null)
-			throw new ExceptionGETL("It is required to specify the type of the array in \"arrayType\" for field \"${field.name}\"!")
+			throw new ExceptionGETL('Not set "arrayType" for field "{field}"', [field: field.name])
 
 		return "${field.arrayType} array" + (((field.length?:0) > 0)?"[${field.length}]":'')
 	}

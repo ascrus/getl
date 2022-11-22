@@ -1,12 +1,21 @@
 package getl.dbf
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Connection
 import getl.data.FileDataset
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
 class DBFDataset extends FileDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof DBFConnection))
+            throw new DatasetError(this, '#dataset.invalid_connection', [className: DBFConnection.name])
+
+        super.setConnection(value)
+    }
+
     /** Use specified connection */
     DBFConnection useConnection(DBFConnection value) {
         setConnection(value)

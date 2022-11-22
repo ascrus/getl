@@ -1,8 +1,9 @@
 //file:noinspection unused
 package getl.utils
 
-import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
 import javax.crypto.Cipher
@@ -45,7 +46,9 @@ class StringUtils {
 	 */
 	static String SetValueString(String value, Map vars) {
 		vars.each { k, v ->
-			if (v == null) throw new ExceptionGETL("Invalid value null in variable \"$k\"")
+			if (v == null)
+				throw new ExceptionGETL('#strings.invalid_var_value', [var: k])
+
 			value = value.replace('{' + k + '}', v.toString())
 		}
 
@@ -73,6 +76,7 @@ class StringUtils {
 	}
 
 	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[$]?[{]([^}{]+)[}]')
+	@SuppressWarnings('RegExpSimplifiable')
 	static private final Pattern EvalMacroStringPattern2 = Pattern.compile('[%]([^%]+)[%]')
 
 	/**
@@ -90,7 +94,7 @@ class StringUtils {
 			return null
 
 		if (vars == null)
-			throw new ExceptionGETL("Variables can not be null!")
+			throw new RequiredParameterError('vars', 'StringUtils.EvalMacroString')
 
 		vars = MapUtils.MapToLower(vars)
 
@@ -133,10 +137,15 @@ class StringUtils {
 			if (!vars.containsKey(vl) || (varValue instanceof Map)) { /* TODO: why not map? */
 				if (errorWhenUndefined) {
 					if ((varValue instanceof Map))
-						throw new ExceptionGETL("Variable \"$vn\" can not be Map!")
-					else
-						throw new ExceptionGETL("Unknown variable \"$vn\", " +
-								"known vars: ${vars.keySet().toList().sort().join(', ')}")
+						throw new ExceptionGETL('#strings.invalid_var_type_map', [var: vn])
+					else {
+						def known = [] as List<String>
+						vars.keySet().toList().each { key ->
+							if (!key.matches('java[.].+') && !key.matches('sun[.].+'))
+								known.add(key)
+						}
+						throw new ExceptionGETL('#strings.unknown_var', [var: vn, known_vars: known.sort().join(', ')])
+					}
 				}
 
 				sb.append(varName)
@@ -223,6 +232,7 @@ class StringUtils {
 			return s
 
 		def l = s.trim().substring(0, maxLength)
+		//noinspection RegExpSimplifiable
 		def m = l =~ /.+([ ]|[-]|[,]|[.]|[\/]|[\\])/
 		if (m.size() == 0)
 			return l
@@ -242,7 +252,7 @@ class StringUtils {
 			return null
 
 		if (countLines < 1)
-			throw new IllegalArgumentException('Count must great zero!')
+			throw new IncorrectParameterError('#params.great_zero', 'countLines')
 
 		String res
 
@@ -270,7 +280,7 @@ class StringUtils {
 	static String FormatException(String text, Throwable e) {
 		String str = null
 		if (e != null)
-			str = (e instanceof ExceptionGETL || e instanceof ExceptionDSL)?e.message:CutStrByLines(e.message, 5, 1024)
+			str = (e instanceof ExceptionGETL)?e.message:CutStrByLines(e.message, 5, 1024)
 		return text + ((e != null)?": <${e.getClass().name}> $str":'')
 	}
 	
@@ -630,6 +640,7 @@ class StringUtils {
 	 * @return script without comments
 	 */
 	static String RemoveSQLComments(String sql) {
+		//noinspection RegExpSimplifiable
 		def p = Pattern.compile('--.*|[/][*][\\s\\S]*?[*][/]', Pattern.MULTILINE) // "--.*|\\/\\*[\\s\\S]*?\\*\\/"
 		def m = p.matcher(sql)
 		return m.replaceAll('').trim()
@@ -641,8 +652,10 @@ class StringUtils {
 	 * @return script without comments
 	 */
 	static String RemoveSQLCommentsWithoutHints(String sql) {
+		//noinspection RegExpSimplifiable
 		def p = Pattern.compile('--.*|[/][*][\\s\\S]*?[*][/]', Pattern.MULTILINE) // "--.*|\\/\\*[\\s\\S]*?\\*\\/"
 		def m = p.matcher(sql)
+		//noinspection RegExpSimplifiable
 		def fm = '[/][*]\\s*([+]|[:])+.*' // '\\/\\*\\s*[\\+|\\:]+.*'
 
 		def sb = new StringBuffer()
@@ -662,6 +675,7 @@ class StringUtils {
 	 * @return
 	 */
 	static Integer DetectStartSQLCommand(String sql) {
+		//noinspection RegExpSimplifiable
 		def p = Pattern.compile('--.*|[/]\\*[\\s\\S]*?\\*[/]', Pattern.MULTILINE) // "--.*|\\/\\*[\\s\\S]*?\\*\\/"
 		def m = p.matcher(sql)
 		def le = -1
@@ -718,7 +732,7 @@ class StringUtils {
 		for (Integer i = 0; i < size; i++) {
 			def s = l[i].trim()
 			if (s.length() == 0)
-				throw new ExceptionGETL("Invalid identificator object name \"$value\"!")
+				throw new ExceptionGETL('#invalid_object_name', [name: value])
 
 			if (quote) {
 				def b = '', e = ''
@@ -732,7 +746,7 @@ class StringUtils {
 					def ei = s.indexOf('[')
 					if (ei > -1) {
 						if (ei == 0)
-							throw new ExceptionGETL("Invalid identificator object name \"$value\"!")
+							throw new ExceptionGETL('#string.invalid_object_name', [name: value])
 						e = s.substring(ei)
 						s = s.substring(0, ei)
 					}
@@ -762,7 +776,7 @@ class StringUtils {
 			return null
 
 		if (password == null || password.length() < 16 || password.length() > 32)
-			throw new ExceptionGETL('Password must be between 16 and 32 characters!')
+			throw new ExceptionGETL('#string.invalid_password_length')
 
 		def l = password.length()
 		if ((l % 8) != 0) {
@@ -790,7 +804,7 @@ class StringUtils {
 			return null
 
 		if (password == null || password.length() < 16 || password.length() > 32)
-			throw new ExceptionGETL('Password must be between 16 and 32 characters!')
+			throw new ExceptionGETL('#string.invalid_password_length')
 
 		def l = password.length()
 		if ((l % 8) != 0) {

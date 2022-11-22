@@ -8,7 +8,9 @@ import getl.data.*
 import getl.driver.Driver
 import getl.csv.CSVDataset
 import getl.driver.FileDriver
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
+import getl.exception.IOFilesError
+import getl.exception.NotSupportError
 import getl.utils.*
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -52,17 +54,8 @@ class ExcelDriver extends FileDriver {
 
     @Override
     List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'retrieveObjects')
     }
-
-    /*@Override
-    List<Field> fields(Dataset dataset) {
-        if (!(dataset as ExcelDataset).header()) {
-            throw new ExceptionGETL('Not support this features with no field header!')
-        }
-        dataset.rows(limit: 1)
-        return dataset.field
-    }*/
 
     @Override
     @CompileStatic
@@ -72,17 +65,17 @@ class ExcelDriver extends FileDriver {
         String fullPath = FileUtils.TransformFilePath(dataset.fullFileName(), dataset.dslCreator)
 
         if (!fileName)
-            throw new ExceptionGETL('Required "fileName" parameter with Excel dataset!')
+            throw new DatasetError(dataset, '#dataset.non_filename')
 
         dataset.currentExcelConnection.validPath()
 
         if (!FileUtils.ExistsFile(fullPath))
-            throw new ExceptionGETL("Excel file \"${fullPath}\" doesn't exists!")
+            throw new IOFilesError(dataset, '#io.file.not_found', [path: fullPath, type: 'Excel'])
 
         def header = dataset.header()
 
         if (dataset.field.isEmpty())
-            throw new ExceptionGETL("Required fields description with $dataset!")
+            throw new DatasetError(dataset, '#dataset.non_fields')
 		
         def offsetRows = (dataset.offsetRows?:0) + ((header)?1:0)
         def offsetCells = (dataset.offsetCells?:0).shortValue()
@@ -114,12 +107,12 @@ class ExcelDriver extends FileDriver {
         if (prepareCode != null)
             prepareCode([])
 
-        def workbook = getWorkbookType(fullPath, dataset.rowCacheSize(), dataset.bufferSize())
+        def workbook = getWorkbookType(fullPath, dataset)
         Sheet sheet
         try {
             if (dataset.listName != null) {
                 if (workbook.getSheetIndex(dataset.listName) == -1)
-                    throw new ExceptionGETL("List \"${dataset.listName}\" not found in $dataset!")
+                    throw new DatasetError(dataset, '#excel.invalid_sheet_list', [list: dataset.listName])
 
                 sheet = workbook.getSheet(dataset.listName)
                 dataset.listNumber = workbook.getSheetIndex(dataset.listName)
@@ -127,14 +120,14 @@ class ExcelDriver extends FileDriver {
             else {
                 def num = dataset.listNumber?:0
                 if (workbook.getNumberOfSheets() < num)
-                    throw new ExceptionGETL("List number $num not found in $dataset!")
+                    throw new DatasetError(dataset, '#excel.invalid_sheet_num', [number: dataset.listNumber])
 
                 sheet = workbook.getSheetAt(num) as Sheet
                 dataset.listName = workbook.getSheetName(num)
             }
 
             if (sheet == null)
-                throw new ExceptionGETL("Specified workbook list not found in $dataset!")
+                throw new DatasetError(dataset, '#excel.non_sheet')
 
             def limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.limit]) as Integer
 
@@ -225,6 +218,7 @@ class ExcelDriver extends FileDriver {
 
 		def res = null
         def fieldType = field.type
+        def notCompatible = '#excel.cell_type_not_compatible'
 
         switch (fieldType) {
             case Field.Type.BIGINT:
@@ -233,7 +227,7 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = (cell.stringCellValue.toBigInteger())
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with bigint!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'bigint'])
 
                 break
             case Field.Type.BOOLEAN:
@@ -262,7 +256,7 @@ class ExcelDriver extends FileDriver {
                     }
                 }
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with boolean!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'boolean'])
 
                 break
             case Field.Type.DATE:
@@ -271,7 +265,7 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = DateUtils.ParseSQLDate(formatDate, cell.stringCellValue, false)
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with date!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'date'])
 
                 break
             case Field.Type.DATETIME:
@@ -280,7 +274,7 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = DateUtils.ParseSQLDate(formatDateTime, cell.stringCellValue, false)
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with datetime!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'datetime'])
 
                 break
             case Field.Type.TIME:
@@ -289,7 +283,7 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = DateUtils.ParseSQLDate(formatTime, cell.stringCellValue, false)
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with time!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'time'])
 
                 break
             case Field.Type.DOUBLE:
@@ -298,7 +292,7 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = df.parse(cell.stringCellValue).toDouble()
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with double!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'double'])
 
                 break
             case Field.Type.INTEGER:
@@ -307,7 +301,7 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = (cell.stringCellValue.toInteger())
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with integer!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'integer'])
 
                 break
             case Field.Type.NUMERIC:
@@ -316,42 +310,32 @@ class ExcelDriver extends FileDriver {
                 else if (cell.cellType == CellType.STRING)
                     res = df.parse(cell.stringCellValue).toBigDecimal()
                 else
-                    throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with numeric!")
+                    throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'numeric'])
 
                 break
             case Field.Type.STRING:
                 res = cell.stringCellValue
-                /*switch (cell.cellType) {
-                    case CellType.STRING: case CellType.FORMULA:
-                        res = cell.stringCellValue
-                        break
-                    case CellType.NUMERIC:
-                        res = cell.numericCellValue.toString()
-                        break
-                    case CellType.BOOLEAN:
-                        res = cell.booleanCellValue.toString()
-                        break
-                    default:
-                        throw new ExceptionGETL("Cell type ${cell.cellType} not compatible with string!")
-                }*/
 
                 break
             default:
-                throw new ExceptionGETL('Field type $fieldType not supported!')
+                throw new DatasetError(dataset, '#dataset.invalid_field_type', [type: fieldType, field: field.name])
         }
 
 		return res
     }
 
     /** Create work book manager */
-    static protected Workbook getWorkbookType(String fileName, Integer rowCacheSize = null, Integer bufferSize = null) {
+    static protected Workbook getWorkbookType(String fileName, ExcelDataset dataset) {
         def ext = FileUtils.FileExtension(fileName).toLowerCase()
         def file = new File(fileName)
         if (!file.exists())
-            throw new ExceptionGETL("File \"$fileName\" doesn't exists!")
+            throw new IOFilesError(dataset, '#io.file.not_found', [path: fileName, type: 'Excel'])
 
         if (!(ext in ['xls', 'xlsx']))
-            throw new ExceptionGETL("\"$ext\" extension for file \"$fileName\" is not available. Please, use 'xls' or 'xlsx' types!")
+            throw new DatasetError(dataset, '#excel.invalid_extension', [extension: ext, path: fileName])
+
+        def rowCacheSize = dataset.rowCacheSize()
+        def bufferSize = dataset.bufferSize()
 
         def is = new FileInputStream(file)
 
@@ -362,13 +346,12 @@ class ExcelDriver extends FileDriver {
                         .rowCacheSize(rowCacheSize?:100)
                         .bufferSize(bufferSize?:4096)
                         .open(is)
-                //res = new XSSFWorkbook(OPCPackage.open(is))
                 break
             case {fileName.endsWith(ext) && ext == 'xls'}:
                 res = new HSSFWorkbook(new POIFSFileSystem(is), false)
                 break
             default:
-                throw new ExceptionGETL("Unknown extension of Excel file \"$fileName\"!")
+                throw new DatasetError(dataset, '#excel.invalid_extension', [extension: ext, path: fileName])
         }
 
         return res
@@ -376,72 +359,72 @@ class ExcelDriver extends FileDriver {
 
     @Override
     void doneWrite(Dataset dataset) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'doneWrite')
     }
 
     @Override
     void closeWrite(Dataset dataset) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'closeWrite')
     }
 
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'bulkLoadFile')
     }
 
     @Override
     void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'openWrite')
     }
 
     @Override
     void write(Dataset dataset, Map row) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'write')
     }
 
     @Override
     Long executeCommand(String command, Map params) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'executeCommand')
     }
 
     @Override
     Long getSequence(String sequenceName) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'sequence')
     }
 
     @Override
     void clearDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'clearDataset')
     }
 
     @Override
     void createDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'createDataset')
     }
 
     @Override
     void startTran(Boolean useSqlOperator = false) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'startTran')
     }
 
     @Override
     void commitTran(Boolean useSqlOperator = false) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'commitTran')
     }
 
     @Override
     void rollbackTran(Boolean useSqlOperator = false) {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'rollbackTran')
     }
 
     @Override
     void connect() {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'connect')
     }
 
     @Override
     void disconnect() {
-        throw new ExceptionGETL('Not support this features!')
+        throw new NotSupportError(connection, 'disconnect')
     }
 
     @Override

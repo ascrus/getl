@@ -5,8 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.driver.Driver
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
+import getl.exception.DatasetError
+import getl.exception.DslError
+import getl.exception.IncorrectParameterError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
 import getl.lang.sub.ParseObjectName
@@ -267,7 +271,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Fetch size records for read query */
 	void setFetchSize(Integer value) {
 		if (value != null && value < 0)
-			throw new ExceptionGETL('The fetch size must be equal or greater than zero!')
+			throw new IncorrectParameterError(this, '#params.great_equal_zero', 'fetchSize', value.toString())
 
 		params.fetchSize = value
 	}
@@ -277,7 +281,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Set login timeout for connection driver (in seconds) */
 	void setLoginTimeout(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('The login timeout must be greater than zero!')
+			throw new IncorrectParameterError(this, '#params.great_zero', 'loginTimeout', value.toString())
 		params.loginTimeout = value
 	}
 
@@ -286,7 +290,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Set statement timeout for connection driver (in seconds) */
 	void setQueryTimeout(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('The query timeout must be greater than zero!')
+			throw new IncorrectParameterError(this, '#params.great_zero', 'queryTimeout', value.toString())
 		params.queryTimeout = value
 	}
 	
@@ -311,13 +315,14 @@ class JDBCConnection extends Connection implements UserLogins {
 	 */
 	List<TableDataset> retrieveDatasets(@DelegatesTo(RetrieveDatasetsSpec)
 										@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.RetrieveDatasetsSpec'])
-												Closure cl) {
+												Closure code) {
 		tryConnect()
 
-		if (cl == null)
-			throw new ExceptionGETL('Option code not specified!')
+		if (code == null)
+			throw new RequiredParameterError('code', 'retrieveDatasets')
+
 		def p = new RetrieveDatasetsSpec(this)
-		p.runClosure(cl)
+		p.runClosure(code)
 
 		retrieveDatasets(p.params)
 	}
@@ -431,7 +436,7 @@ class JDBCConnection extends Connection implements UserLogins {
 					d.type = JDBCDataset.systemTable
 					break
 				default:
-					throw new ExceptionGETL("Not support dataset type \"${row.type}\"")
+					throw new ConnectionError(this, '#jdbc.connection.invalid_dataset_type', [type: row.type])
 			}
 			d.connection = this
 			d.tap {
@@ -535,9 +540,11 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Build connection host
 	 */
 	static String BuildConnectHost(String hostName, Integer portNumber) {
-		if (hostName == null) throw new ExceptionGETL("Required value for \"hostName\" parameter")
+		if (hostName == null)
+			throw new RequiredParameterError('hostName', 'BuildConnectHost')
 		def res = hostName
-		if (portNumber != null) res += ":$portNumber"
+		if (portNumber != null)
+			res += ":$portNumber"
 		
 		return res
 	}
@@ -580,19 +587,19 @@ class JDBCConnection extends Connection implements UserLogins {
 	void addTablesToRepository(List<TableDataset> tables, String groupName = null, Boolean skipExists = false) {
 		def getl = dslCreator
 		if (getl == null)
-			throw new ExceptionDSL('The connection was not created from the Getl instance!')
+			throw new DslError(this, '#dsl.owner_required')
 
 		def connectionClassName = this.getClass().name
 		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
-			throw new ExceptionDSL("Connection type \"$connectionClassName\" is not supported!")
+			throw new DslError(this, '#dsl.invalid_connection', [className: connectionClassName])
 
 		tables.each { tbl ->
 			def tableClassName = tbl.getClass().name
 			if (!(tableClassName in RepositoryDatasets.LISTJDBCTABLES))
-				throw new ExceptionDSL("Table type \"$tableClassName\" is not supported!")
+				throw new DslError(this, '#dsl.invalid_jdbc_dataset', [className: tableClassName])
 
 			if (tbl.tableName == null)
-				throw new ExceptionDSL('The table does not have a name!')
+				throw new DatasetError(tbl, '#jdbc.table.non_table_name')
 			def repName = ((groupName != null)?(groupName + ':'):'') + tbl.tableName
 
 			if (skipExists && getl.findDataset(repName) != null)
@@ -601,7 +608,7 @@ class JDBCConnection extends Connection implements UserLogins {
 			if (tbl.field.isEmpty())
 				tbl.retrieveFields()
 			if (tbl.field.isEmpty())
-				throw new ExceptionDSL("Fields are not defined for table $tbl!")
+				throw new DatasetError(tbl, '#dataset.non_fields')
 
 			getl.registerDatasetObject(tbl, repName, true)
 		}
@@ -640,7 +647,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 */
 	Long executeCommand(String command, Map execParams = new HashMap()) {
 		if (!driver.isOperation(Driver.Operation.EXECUTE))
-			throw new ExceptionGETL("Connection $this not support executed scripts!")
+			throw new NotSupportError(this, 'executeCommand')
 		executeCommand((execParams?:new HashMap()) + [command: command])
 	}
 
@@ -658,7 +665,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	void setTransactionIsolation(Integer value) {
 		if (!(value in [transactionIsolationNone, transactionIsolationReadCommitted, transactionIsolationReadUncommitted,
 						transactionIsolationRepeatableRead, transactionIsolationSerializable]))
-			throw new ExceptionGETL("Unknown isolation level \"$value\"!")
+			throw new ConnectionError(this, '#jdbc.connection.invalid_isolation_level', [level: value])
 
 		params.transactionIsolation = value
 
@@ -679,7 +686,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 */
 	void createSchema(String schemaName, Map<String, Object> createParams = null) {
 		if (!driver.isOperation(Driver.Operation.CREATE_SCHEMA))
-			throw new ExceptionGETL('The driver does not support creating schemas in the database!')
+			throw new NotSupportError(this, 'createSchema')
 
 		methodParams.validation('createSchema', createParams, [driver.methodParams.params('createSchema')])
 		currentJDBCDriver.createSchema(schemaName, createParams)
@@ -692,7 +699,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 */
 	void dropSchema(String schemaName, Map<String, Object> dropParams = null) {
 		if (!driver.isOperation(Driver.Operation.CREATE_SCHEMA))
-			throw new ExceptionGETL('The driver does not support dropping schemas in the database!')
+			throw new NotSupportError(this, 'dropSchema')
 
 		methodParams.validation('dropSchema', dropParams, [driver.methodParams.params('dropSchema')])
 		currentJDBCDriver.dropSchema(schemaName, dropParams)

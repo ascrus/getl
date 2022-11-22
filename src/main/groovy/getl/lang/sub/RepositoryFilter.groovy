@@ -1,7 +1,8 @@
 package getl.lang.sub
 
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
+import getl.exception.DslError
+import getl.exception.RequiredParameterError
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.proc.sub.ExecutorThread
 import groovy.transform.InheritConstructors
@@ -13,6 +14,9 @@ import groovy.transform.Synchronized
  */
 @InheritConstructors
 class RepositoryFilter extends BaseSpec {
+    /** Getl instance */
+    protected Getl getGetl() { ownerObject as Getl }
+
     /** Specified filter when searching for objects */
     @Synchronized
     String getFilteringGroup() { params.filteringGroup as String }
@@ -20,15 +24,13 @@ class RepositoryFilter extends BaseSpec {
     @Synchronized
     void setFilteringGroup(String group) {
         if (group == null || group.trim().length() == 0)
-            throw new ExceptionGETL('Required "group" value!')
+            throw new RequiredParameterError('group', 'filter')
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
+            throw new DslError(getl, '#dsl.deny_threads_filter', [group: group])
 
         def value = ParseObjectName.Parse(group, null, false)
         if (value.groupName == null)
-            throw new ExceptionDSL("Invalid group name \"$group\"!")
-        /*if (value.name[0] == '#')
-            throw new ExceptionDSL('The group name cannot begin with the character "#"!')*/
+            throw new DslError(getl, '#dsl.object.need_group_name', [repname: group])
 
         saveParamValue('filteringGroup', value.groupName)
     }

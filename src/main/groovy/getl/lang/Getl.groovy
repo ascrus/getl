@@ -137,7 +137,7 @@ Examples:
      */
     static void Application(Class scriptClass, def args) {
         if (!Getl.isAssignableFrom(scriptClass))
-            throw new ExceptionDSL("Class $scriptClass is not Getl script!")
+            throw new DslError('#dsl.invalid_class', [className: scriptClass.name])
 
         if (!(args instanceof List)) {
             if (args instanceof String[])
@@ -145,7 +145,7 @@ Examples:
             else if (args instanceof String || args instanceof GString)
                 args = [(args as Object).toString()] as List<String>
             else
-                throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
+                throw new DslError('#dsl.invalid_instance_args', [className: args.getClass().name])
         }
 
         def runclass = scriptClass.name
@@ -281,22 +281,22 @@ Examples:
                 workflowFileName = jobArgs.workflowfile as String
                 if (jobArgs.include_steps != null) {
                     if (workflowName == null)
-                        throw new ExceptionDSL("Parameter \"include_steps\" can only be used for workflow!")
+                        throw new DslError('#dsl.invalid_job_start_parameter', [param: 'include_steps'])
                     workflow_include_steps = ConvertUtils.String2List(jobArgs.include_steps as String)
                 }
                 if (jobArgs.exclude_steps != null) {
                     if (workflowName == null)
-                        throw new ExceptionDSL("Parameter \"exclude_steps\" can only be used for workflow!")
+                        throw new DslError('#dsl.invalid_job_start_parameter', [parameter: 'exclude_steps'])
                     workflow_exclude_steps = ConvertUtils.String2List(jobArgs.exclude_steps as String)
                 }
 
                 loadProperties = BoolUtils.IsValue(jobArgs.loadproperties, true)
 
                 if (className == null && workflowName == null && workflowFileName == null)
-                    throw new ExceptionDSL('Required argument "runclass" or "workflow" or  "workflowfile"!')
+                    throw new DslError('#dsl.non_main_operator')
 
                 if (className != null && (workflowName != null || workflowFileName != null))
-                    throw new ExceptionDSL('Only "runclass" or "workflow" arguments can be specified!')
+                    throw new DslError('#dsl.invalid_main_operator')
 
                 if (className != null) {
                     try {
@@ -308,7 +308,7 @@ Examples:
                     }
 
                     if (!Getl.isAssignableFrom(runClass))
-                        throw new ExceptionDSL("Class \"${runClass.name}\" is not assignable from Getl class!")
+                        throw new DslError('#dsl.invalid_class')
                 }
                 else {
                     runClass = launcher?:Getl
@@ -341,7 +341,7 @@ Examples:
                     try {
                         def initClass = Class.forName(initClassName)
                         if (!Script.isAssignableFrom(initClass))
-                            throw new ExceptionDSL("Class \"$initClassName\" is not inherited from class \"Script\"!")
+                            throw new DslError('#dsl.invalid_script', [className: initClassName])
                         initClasses << (initClass as Class<Script>)
                     }
                     catch (Throwable e) {
@@ -534,19 +534,6 @@ Examples:
                             logFine('Repository encryption mode: enabled')
                         }
 
-                        if (en.path != null) {
-                            def sp = en.path as String
-                            if (sp == '.')
-                                storagePath = configFilePath
-                            else //noinspection RegExpSimplifiable
-                            if (sp.matches('[.][/].+'))
-                                storagePath = configFilePath + sp.substring(1)
-                            else
-                                storagePath = sp
-                            autoLoadFromStorage = true
-                            logFine("Path to repository objects: ${storagePath()}")
-                        }
-
                         if (en.autoLoadFromStorage != null)
                             autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
                         else
@@ -559,12 +546,26 @@ Examples:
                             def storyDatasetFilePath = new File(FileUtils.TransformFilePath(en.savingStoryDataset as String, this)).canonicalPath
                             def storyDatasetFile = new File(storyDatasetFilePath)
                             if (storyDatasetFile.parentFile == null || !storyDatasetFile.parentFile.exists())
-                                throw new ExceptionGETL("Invalid path \"$storyDatasetFilePath\" for \"savingStoryDataset\"!")
+                                throw new DslError(this, '#dsl.invalid_story_path', [path: storyDatasetFile.parent])
                             def csvCon = new CSVConnection(dslCreator: this, path: storyDatasetFile.parent)
                             def csvDataset = new CSVDataset(dslCreator: this, connection: csvCon, fileName: storyDatasetFile.name, header: true,
                                     fieldDelimiter: ',', codePage: 'utf-8', escaped: false)
                             savingStoryDataset = csvDataset
                             logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
+                        }
+
+                        if (en.path != null) {
+                            def sp = en.path as String
+                            if (sp == '.')
+                                it.storagePath = configFilePath
+                            else //noinspection RegExpSimplifiable
+                            if (sp.matches('[.][/].+'))
+                                it.storagePath = configFilePath + sp.substring(1)
+                            else
+                                it.storagePath = sp
+
+                            autoLoadFromStorage = true
+                            logFine("Path to repository objects: ${storagePath()}")
                         }
 
                         if (en.libs != null) {
@@ -575,12 +576,19 @@ Examples:
                     }
                 }
                 procs.engine = { Map<String, Object> en ->
+                    if (en.language != null)
+                        language = en.language as String
+                    else
+                        _onChangeLanguage()
+
+                    logFine("Using \"$language\" language in messages and errors")
+
                     def ic = en.initClass as String
                     if (ic != null) {
                         try {
                             def initClass = Class.forName(ic)
                             if (!Script.isAssignableFrom(initClass))
-                                throw new ExceptionDSL("Class \"$ic\" is not inherited from class \"Script\"!")
+                                throw new DslError(this, '#dsl.invalid_script', [className: ic])
                             initClasses << (initClass as Class<Script>)
                             logFine("Initialization class \"$ic\" is used")
                         }
@@ -646,7 +654,7 @@ Examples:
                             notFounds << env
                     }
                     if (!notFounds.isEmpty())
-                        throw new ExceptionDSL("The following OS environment variables required to run were not found: ${notFounds.join(', ')}")
+                        throw new DslError(this, '#dsl.env_vars_not_found', [variables: notFounds.join(', ')])
 
                     if (en.configFileName != null) {
                         def configFileName = en.configFileName as String
@@ -656,10 +664,23 @@ Examples:
                         projectConfigParams.putAll(m)
                     }
                 }
-                MapUtils.ProcessSections(getlConfigProperties, procs)
+
+                if (getlConfigProperties.engine == null)
+                    getlConfigProperties.engine = [:]
+
+                MapUtils.ProcessSections(getlConfigProperties, procs, ['engine', 'logging', 'project', 'repository', 'profile'])
             }
         }
     }
+
+    /** Language change handling event */
+    void _onChangeLanguage() { }
+
+    /** Log file name change handling event */
+    void _onChangeLogFileName() { }
+
+    /** Log file name change handling event */
+    void _onChangeRepositoryPath() { }
 
     void _initGetlProperties(List<Class<Script>> listInitClass = null, Map<String, Object> extProp,
                              Boolean startAsGroovy = false, Boolean loadProperties = true, String unitClassName = null) {
@@ -698,10 +719,10 @@ Examples:
     /** Add service code on initialization Getl instance */
     static void InitServiceAdd(@ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         if (cl == null)
-            throw new NullPointerException('Need closure code!')
+            throw new DslError('#params.required', [param: 'closure code', detail: 'InitServiceAdd'])
         if (_getl == null || _getl.getGetlSystemParameter('runMode') == 'init') {
             if (InitServices.indexOf(cl) != -1)
-                throw new ExceptionGETL('Duplicate init service code!')
+                throw new DslError('#dsl.duplicate_service')
             InitServices.add(cl)
         }
         else if (_getl != null)
@@ -757,7 +778,7 @@ Examples:
             if (processName == null)
                 processName = getGetlMainClassName()?:this.getClass().name
             if (processName == null)
-                throw new ExceptionDSL('Required name for the process being checked!')
+                throw new DslError(this, '#params.required', [param: 'processName', detail: 'allowProcess'])
 
             if (_langOpts.processControlDataset instanceof TableDataset) {
                 def table = (_langOpts.processControlDataset as TableDataset).cloneDatasetConnection() as TableDataset
@@ -789,9 +810,9 @@ Examples:
 
             if (!res) {
                 if (!throwError)
-                    logWarn("A flag was found to stop the process \"$processName\"!")
+                    Logs.Warning(this, '#dsl.need_abort_work', [process: processName])
                 else
-                    throw new ExceptionDSL("A flag was found to stop the process \"$processName\"!")
+                    throw new DslError(this, '#dsl.need_abort_work', [process: processName])
             }
         }
 
@@ -877,7 +898,7 @@ Examples:
     /** Set current Getl instance */
     static void GetlSetInstance(Getl instance) {
         if (instance == null)
-            throw new ExceptionDSL('Instance can not be null!')
+            throw new DslError('#params.required', [param: 'instance', detail: 'GetlSetInstance'])
 
         instance.setGetlSystemParameter('mainInstance', instance)
         instance._setGetlInstance()
@@ -897,7 +918,7 @@ Examples:
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         if (_getl != null) {
             if (!_getl._getlInstance)
-                throw new ExceptionDSL('Cannot be called during Getl object initialization!')
+                throw new DslError(_getl, '#dsl.deny_dsl_when_init')
         }
         else {
             GetlSetInstance(new Getl())
@@ -945,7 +966,7 @@ Examples:
     @Synchronized
     void setUnitTestMode(Boolean value) {
         if (value == true && configuration.environment == 'prod')
-            throw new ExceptionGETL('It is not allowed to enable unit testing mode for prod environment!')
+            throw new DslError(this, '#dsl.deny_unittest_on_prod!')
         setGetlSystemParameter('unitTestMode', value)
     }
     /** Enable unit test mode */
@@ -1065,9 +1086,9 @@ Examples:
     @Synchronized('_repositoryFilter')
     void forGroup(String group) {
         if (group == null || group.trim().length() == 0)
-            throw new ExceptionDSL('Filter group required!')
+            throw new DslError(this, '#params.required', [param: group, detail: 'forGroup'])
         if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
+            throw new DslError(this, '#dsl.deny_filter_group_threads')
 
         _repositoryFilter.filteringGroup = group.trim().toLowerCase()
     }
@@ -1076,7 +1097,7 @@ Examples:
     @Synchronized('_repositoryFilter')
     void clearGroupFilter() {
         if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
+            throw new DslError(this, '#dsl.deny_filter_group_threads')
 
         _repositoryFilter.clearGroupFilter()
     }
@@ -1085,7 +1106,7 @@ Examples:
     String repObjectName(String name, Boolean needObjectName = true) {
         def names = _repositoryFilter.parseName(name, false)
         if (needObjectName && names.objectName == null)
-            throw new ExceptionDSL("Invalid object name \"$name\"!")
+            throw new DslError(this, '#dsl.invalid_object_name_format', [repname: name])
 
         return names.name
     }
@@ -1111,10 +1132,8 @@ Examples:
     String textFromFile(String fileName, String codePage = 'UTF-8') {
         def path = FileUtils.TransformFilePath(fileName, this)
         def file = new File(path)
-        if (!file.exists())
-            throw new ExceptionDSL("File $fileName not found!")
-        if (!file.isFile())
-            throw new ExceptionDSL("File $fileName not file!")
+        if (!file.exists() || !file.isFile())
+            throw new DslError(this, "#io.file.not_found", [path: fileName, type: 'Text'])
 
         return file.getText(codePage ?: 'UTF-8')
     }
@@ -1453,9 +1472,9 @@ Examples:
                                            @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                    Closure<Boolean> filter = null) {
         if (sourceGroup == null)
-            throw new ExceptionDSL('Required to specify the value of the source group name!')
+            throw new DslError(this, '#params.required', [param: 'sourceGroup', detail: 'linkDatasets'])
         if (destGroup == null)
-            throw new ExceptionDSL('Required to specify the value of the destination group name!')
+            throw new DslError(this, '#params.required', [param: 'destGroup', detail: 'linkDatasets'])
 
         linkDatasets(listDatasets(sourceGroup + ':*'), listDatasets(destGroup + ':*'), filter)
     }
@@ -1517,9 +1536,9 @@ Examples:
     /** Set default connection for use in datasets */
     protected void setDefaultConnection(String datasetClassName, Dataset ds) {
         if (datasetClassName == null)
-            throw new ExceptionDSL('Dataset class name cannot be null!')
+            throw new DslError(this, '#params.required', [param: 'datasetClassName', detail: 'setDefaultConnection'])
         if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listClasses))
-            throw new ExceptionDSL("$datasetClassName is not dataset class!")
+            throw new DslError(this, '#dsl.invalid_dataset', [className: datasetClassName])
 
         if (ds instanceof JDBCDataset) {
             def con = defaultJdbcConnection(datasetClassName)
@@ -1562,7 +1581,7 @@ Examples:
             res = lastJdbcDefaultConnection
         else {
             if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listJdbcClasses))
-                throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
+                throw new DslError(this, '#dsl.invalid_jdbc_dataset', [className: datasetClassName])
 
             synchronized (_lockLastJDBCDefaultConnection) {
                 res = _defaultJDBCConnection.get(datasetClassName)
@@ -1587,13 +1606,10 @@ Examples:
 
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
-        /*if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')*/
-
         synchronized (_lockLastJDBCDefaultConnection) {
             if (datasetClassName != null) {
                 if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listJdbcClasses))
-                    throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
+                    throw new DslError(this, '#dsl.invalid_jdbc_dataset', [className: datasetClassName])
                 _defaultJDBCConnection.put(datasetClassName, value)
             }
             setLastJdbcDefaultConnection(value)
@@ -1631,7 +1647,7 @@ Examples:
                 res = lastFileDefaultConnection
             else {
                 if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listFileClasses))
-                    throw new ExceptionDSL("$datasetClassName is not file dataset class!")
+                    throw new DslError(this, '#dsl.invalid_file_dataset', [className: datasetClassName])
 
                 res = _defaultFileConnection.get(datasetClassName)
             }
@@ -1653,13 +1669,10 @@ Examples:
 
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
-        /*if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')*/
-
         synchronized (_lockLastFileDefaultConnection) {
             if (datasetClassName != null) {
                 if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listFileClasses))
-                    throw new ExceptionDSL("$datasetClassName is not file dataset class!")
+                    throw new DslError(this, '#dsl.invalid_file_dataset', [className: datasetClassName])
 
                 _defaultFileConnection.put(datasetClassName, value)
             }
@@ -1698,7 +1711,7 @@ Examples:
                 res = lastOtherDefaultConnection
             else {
                 if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listOtherClasses))
-                    throw new ExceptionDSL("$datasetClassName is not dataset class!")
+                    throw new DslError(this, '#dsl.invalid_other_dataset', [className: datasetClassName])
 
                 res = _defaultOtherConnection.get(datasetClassName)
             }
@@ -1720,13 +1733,10 @@ Examples:
 
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
-        /*if (IsCurrentProcessInThread(true))
-            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')*/
-
         synchronized (_lockLastOtherDefaultConnection) {
             if (datasetClassName != null) {
                 if (!(datasetClassName in (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listOtherClasses))
-                    throw new ExceptionDSL("$datasetClassName is not dataset class!")
+                    throw new DslError(this, '#dsl.invalid_other_dataset', [className: datasetClassName])
 
                 _defaultOtherConnection.put(datasetClassName, value)
             }
@@ -2286,7 +2296,7 @@ Examples:
     Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
         def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
-            throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
+            throw new DslError(this, '#config.section_not_found', [section: configSection])
 
         return runGroovyScriptFile(fileName, runOnce, sectParams)
     }
@@ -2543,7 +2553,7 @@ Examples:
     Map<String, Object> runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
         def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
-            throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
+            throw new DslError(this, '#config.section_not_found', [section: configSection])
 
         return runGroovyClass(groovyClass, runOnce, sectParams)
     }
@@ -2772,7 +2782,7 @@ Examples:
             MetaProperty prop = script.hasProperty(key as String)
             if (prop == null) {
                 if (validExist)
-                    throw new ExceptionDSL("Field \"$key\" not defined in script!")
+                    throw new DslError(this, '#dsl.invalid_script_property', [prop: key])
                 else
                     return
             }
@@ -2850,12 +2860,12 @@ Examples:
                                 else if (value.length() == 23)
                                     value = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', value, false)
                                 else
-                                    throw new ExceptionGETL("Incomprehensible date string \"$value\"!")
+                                    throw new DslError(this, '#dsl.invalid_date_format', [value: value])
                             }
                             else if (value instanceof Number)
                                 value = new Date((value as Number).longValue())
                             else
-                                throw new ExceptionGETL("It is not possible to convert the value \"$value\" into a date!")
+                                throw new DslError(this, '#dsl.invalid_convert_num_to_date', [value: value])
                         }
 
                         break
@@ -2868,12 +2878,12 @@ Examples:
                                 else if (value.length() == 12)
                                     value = DateUtils.ParseSQLTime('HH:mm:ss.SSS', value, false)
                                 else
-                                    throw new ExceptionGETL("Incomprehensible time string \"$value\"!")
+                                    throw new DslError(this, '#dsl.invalid_time_format', [value: value])
                             }
                             else if (value instanceof Number)
                                 value = new Time((value as Number).longValue())
                             else
-                                throw new ExceptionGETL("It is not possible to convert the value \"$value\" into a time!")
+                                throw new DslError(this, '#dsl.invalid_convert_num_to_time', [value: value])
                         }
 
                         break
@@ -2900,7 +2910,7 @@ Examples:
                             if (value instanceof String || value instanceof GString)
                                 value = new Path((value as Object).toString())
                             else
-                                throw new ExceptionGETL("It is not possible to convert the value \"${value as Object}\" into a path!")
+                                throw new DslError(this, '#dsl.invalid_convert_path', [value: value])
                         }
 
                         break
@@ -3005,25 +3015,25 @@ Examples:
     void logWrite(Level level, String message) { logging.manager.write(level, message) }
 
     /** Write message as level the INFO to log */
-    void logInfo(def msg) { logging.manager.info(msg?.toString()) }
+    void logInfo(Object msg) { logging.manager.info(msg?.toString()) }
 
     /** Write message as level the WARNING to log */
-    void logWarn(def msg, Throwable e = null) { logging.manager.warning(msg?.toString(), e) }
+    void logWarn(Object msg, Throwable e = null) { logging.manager.warning(msg?.toString(), e) }
 
     /** Write message as level the SEVERE to log */
-    void logError(def msg, Throwable e = null) { logging.manager.severe(msg?.toString(), e) }
+    void logError(Object msg, Throwable e = null) { logging.manager.severe(msg?.toString(), e) }
 
     /** Write message as level the FINE to log */
-    void logFine(def msg) { logging.manager.fine(msg?.toString()) }
+    void logFine(Object msg) { logging.manager.fine(msg?.toString()) }
 
     /** Write message as level the FINER to log */
-    void logFiner(def msg) { logging.manager.finer(msg?.toString()) }
+    void logFiner(Object msg) { logging.manager.finer(msg?.toString()) }
 
     /** Write message as level the FINEST to log */
-    void logFinest(def msg) { logging.manager.finest(msg?.toString()) }
+    void logFinest(Object msg) { logging.manager.finest(msg?.toString()) }
 
     /** Write message as level the CONFIG to log */
-    void logConfig(def msg) { logging.manager.config(msg?.toString()) }
+    void logConfig(Object msg) { logging.manager.config(msg?.toString()) }
 
     /** System temporary directory */
     static String getSystemTempPath() { TFS.systemPath }
@@ -3127,7 +3137,7 @@ Examples:
                           @DelegatesTo(Connection)
                           @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
         if (name == null)
-            throw new ExceptionDSL('Need connection name value!')
+            throw new DslError(this, '#params.required', [param: 'name', detail: 'connection'])
 
         def parent = registerConnection(null, name, false) as Connection
         runClosure(parent, cl)
@@ -3142,7 +3152,7 @@ Examples:
      */
     Connection cloneConnection(Connection con) {
         if (con == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'connection', detail: 'cloneConnection'])
         return con.cloneConnection(null, this)
     }
 
@@ -3173,11 +3183,11 @@ Examples:
                     @DelegatesTo(Dataset)
                     @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
         if (name == null)
-            throw new ExceptionDSL('Need table name value!')
+            throw new DslError(this, '#params.required', [param: 'name', detail: 'dataset'])
 
         def obj = findDataset(name)
         if (obj == null)
-            throw new ExceptionDSL("Dataset \"$name\" not found!")
+            throw new DslError(this, '#dsl.object.not_found', [type: 'Dataset', repname: name])
 
         def parent = registerDataset(null, obj.getClass().name, name)
         runClosure(parent, cl)
@@ -3192,7 +3202,7 @@ Examples:
      */
     Dataset cloneDataset(Dataset dataset) {
         if (dataset == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'dataset', detail: 'cloneDataset'])
 
         return dataset.cloneDataset(null, null, this)
     }
@@ -3205,7 +3215,7 @@ Examples:
      */
     Dataset cloneDataset(Dataset dataset, Connection con) {
         if (dataset == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'dataset', detail: 'cloneDataset'])
 
         return dataset.cloneDataset(con, null, this)
     }
@@ -3218,7 +3228,7 @@ Examples:
      */
     Dataset cloneDataset(Dataset dataset, Boolean cloneConnection) {
         if (dataset == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'dataset', detail: 'cloneDataset'])
 
         return (cloneConnection)?dataset.cloneDatasetConnection(null, this):
                 dataset.cloneDataset(null, null, this)
@@ -3270,11 +3280,11 @@ Examples:
                                   @DelegatesTo(JDBCConnection)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
         if (name == null)
-            throw new ExceptionDSL('Need connection name value!')
+            throw new DslError(this, '#params.required', [param: 'name', detail: 'jdbcConnection'])
 
         def parent = registerConnection(null, name, false) as Connection
         if (!(parent instanceof JDBCConnection))
-            throw new ExceptionDSL("$name is not jdbc connection!")
+            throw new DslError(this, '#dsl.invalid_instance_object', [name: name, type: 'JDBC connection'])
 
         runClosure(parent, cl)
 
@@ -3291,13 +3301,13 @@ Examples:
                            @DelegatesTo(TableDataset)
                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
         if (name == null)
-            throw new ExceptionDSL('Need table name value!')
+            throw new DslError(this, '#params.required', [param: 'name', detail: 'jdbcTable'])
 
         def obj = findDataset(name)
         if (obj == null)
-            throw new ExceptionDSL("Table \"$name\" not found!")
+            throw new DslError(this, '#dsl.object.not_found', [type: 'JDBC table', repname: name])
         if (!(obj instanceof TableDataset))
-            throw new ExceptionDSL("Dataset \"$name\" is not table!")
+            throw new DslError(this, '#dsl.invalid_instance_object', [name: name, type: 'JDBC table'])
 
         def parent = registerDataset(null, obj.getClass().name, name) as TableDataset
         runClosure(parent, cl)
@@ -4201,12 +4211,12 @@ Examples:
                                       @DelegatesTo(TDSTable)
                                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl = null) {
         if (sourceDataset == null)
-            throw new ExceptionDSL("Source dataset cannot be null!")
+            throw new DslError(this, '#params.required', [param: 'sourceDataset', detail: 'embeddedTableWithDataset'])
 
         if (sourceDataset.field.isEmpty()) {
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty())
-                throw new ExceptionDSL("Required field from dataset $sourceDataset")
+                throw new DatasetError(sourceDataset, '#dataset.non_fields')
         }
 
         TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE)?:options.defaultEmbeddedConnection)
@@ -4366,18 +4376,18 @@ Examples:
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
         if (sourceDataset == null)
-            throw new ExceptionDSL("Dataset cannot be null!")
+            throw new DslError(this, '#params.required', [param: 'sourceDataset', detail: 'csvWithDataset'])
 
         def parent = registerDataset(null, RepositoryDatasets.CSVDATASET, name, true,
                 defaultFileConnection(RepositoryDatasets.CSVDATASET), CSVConnection, cl) as CSVDataset
 
         if (sourceDataset.field.isEmpty()) {
             if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
-                throw new ExceptionDSL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+                throw new NotSupportError(sourceDataset, 'read fields')
 
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty())
-                throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
+                throw new DatasetError(sourceDataset, '#dataset.non_fields')
         }
         parent.field = sourceDataset.field
         parent.resetFieldsTypeName()
@@ -4466,18 +4476,18 @@ Examples:
                               @DelegatesTo(DBFDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.dbf.DBFDataset']) Closure cl = null) {
         if (sourceDataset == null)
-            throw new ExceptionDSL("Dataset cannot be null!")
+            throw new DslError(this, '#params.required', [param: 'sourceDataset', detail: 'dbfWithDataset'])
 
         def parent = registerDataset(null, RepositoryDatasets.DBFDATASET, name, true,
                 defaultFileConnection(RepositoryDatasets.DBFDATASET), DBFConnection, cl) as DBFDataset
 
         if (sourceDataset.field.isEmpty()) {
             if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
-                throw new ExceptionDSL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+                throw new NotSupportError(sourceDataset, 'read fields')
 
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty())
-                throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
+                throw new DatasetError(sourceDataset, '#dataset.non_fields')
         }
         parent.field = sourceDataset.field
         parent.resetFieldsTypeName()
@@ -4969,15 +4979,15 @@ Examples:
                                   @DelegatesTo(TFSDataset)
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
         if (sourceDataset == null)
-            throw new ExceptionDSL("Dataset cannot be null!")
+            throw new DslError(this, '#params.required', [param: 'sourceDataset', detail: 'csvTempWithDataset'])
 
         if (sourceDataset.field.isEmpty()) {
             if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
-                throw new ExceptionDSL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+                throw new NotSupportError(sourceDataset, 'read fields')
 
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty())
-                throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
+                throw new DatasetError(sourceDataset, '#dataset.non_fields')
         }
 
         def parent = registerDataset(null, RepositoryDatasets.CSVTEMPDATASET, name, (name != null),
@@ -5068,7 +5078,7 @@ Examples:
                         @DelegatesTo(Manager)
                         @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl = null) {
         if (name == null)
-            throw new ExceptionDSL('Need file manager name value!')
+            throw new DslError(this, '#params.required', [param: 'name', detail: 'filemanager'])
 
         def parent = registerFileManager(null, name, false) as Manager
 
@@ -5094,7 +5104,7 @@ Examples:
      */
     Manager cloneFilemanager(Manager man) {
         if (man == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'manager', detail: 'cloneFilemanager'])
 
         return man.cloneManager(null, this)
     }
@@ -5404,7 +5414,7 @@ Examples:
      */
     HistoryPointManager cloneHistorypoint(HistoryPointManager point) {
         if (point == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'point', detail: 'cloneHistorypoint'])
 
         return point.cloneHistoryPointManager(null, null, this) as HistoryPointManager
     }
@@ -5416,7 +5426,7 @@ Examples:
      */
     HistoryPointManager cloneHistorypointConnection(HistoryPointManager point) {
         if (point == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'point', detail: 'cloneHistorypointConnection'])
 
         return point.cloneHistoryPointManager(point.historyTable?.connection?.cloneConnection() as JDBCConnection,
                 null, this) as HistoryPointManager
@@ -5471,7 +5481,7 @@ Examples:
      */
     Sequence cloneSequence(Sequence seq, JDBCConnection con = null) {
         if (seq == null)
-            throw new ExceptionDSL('Need object value!')
+            throw new DslError(this, '#params.required', [param: 'sequence', detail: 'cloneSequence'])
 
         return seq.cloneSequence(con, null, this) as Sequence
     }
@@ -5598,9 +5608,9 @@ Examples:
      */
     Dataset attachToDataset(Object data, Dataset dataset) {
         if (dataset == null)
-            throw new NullPointerException('Required dataset!')
+            throw new DslError(this, '#params.required', [param: 'dataset', detail: 'attachToDataset'])
         if (!(dataset instanceof AttachData))
-            throw new ExceptionDSL("Dataset \"$dataset\" is not attachment dataset type!")
+            throw new DslError(this, '#dsl.invalid_instance_object', [name: dataset.dslNameObject?:dataset.toString(), type: 'attachment dataset'])
 
         (dataset as AttachData).localDatasetData = data
 
@@ -5615,7 +5625,7 @@ Examples:
      */
     Dataset attachToDataset(Object data, String datasetName) {
         if (datasetName == null)
-            throw new NullPointerException('Required dataset name!')
+            throw new DslError(this, '#params.required', [param: 'datasetName', detail: 'attachToDataset'])
 
         def dataset = dataset(datasetName)
         return attachToDataset(data, dataset)
@@ -5629,7 +5639,7 @@ Examples:
      */
     ArrayDataset attachToArray(Iterable data, ArrayDataset dataset) {
         if (dataset == null)
-            throw new NullPointerException('Required dataset!')
+            throw new DslError(this, '#params.required', [param: 'dataset', detail: 'attachToArray'])
 
         dataset.localDatasetData = data
 
@@ -5645,13 +5655,13 @@ Examples:
      */
     ArrayDataset attachToArray(Iterable data, String datasetName, @DelegatesTo(Field) Closure cl = null) {
         if (datasetName == null)
-            throw new NullPointerException('Required dataset name!')
+            throw new DslError(this, '#params.required', [param: 'datasetName', detail: 'attachToArray'])
 
         def dataset = findDataset(datasetName)
         if (dataset == null)
             dataset = arrayDataset(datasetName, true)
         else if (!(dataset instanceof ArrayDataset))
-            throw new ExceptionDSL("Dataset \"$dataset\" not array dataset!")
+            throw new DslError(this, '#dsl.invalid_instance_object', [name: datasetName, type: 'array dataset'])
 
         if (cl != null)
             dataset.field[0].tap(cl)

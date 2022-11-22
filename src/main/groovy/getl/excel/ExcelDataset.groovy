@@ -2,7 +2,7 @@ package getl.excel
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.*
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -17,7 +17,7 @@ class ExcelDataset extends FileDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ExcelConnection))
-            throw new ExceptionGETL('The connection must be class ExcelConnection!')
+            throw new DatasetError(this, '#dataset.invalid_connection', [className: ExcelConnection.name])
 
         super.setConnection(value)
     }

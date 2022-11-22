@@ -28,4 +28,4 @@ void error(Exception e) {
 @Field Boolean throwError = false
 
 if (throwError)
-    throw new ExceptionGETL("Throw error!")
+    throw new ExceptionGETL("Throw error")

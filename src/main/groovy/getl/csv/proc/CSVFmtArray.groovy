@@ -1,12 +1,10 @@
 package getl.csv.proc
 
-import getl.utils.ListUtils
-import getl.utils.StringUtils
+import getl.exception.RequiredParameterError
 import groovy.json.DefaultJsonGenerator
 import groovy.json.JsonBuilder
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
 import org.apache.groovy.json.internal.CharBuf
 import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
@@ -50,9 +48,9 @@ class CSVFmtArray extends CellProcessorAdaptor {
 			super(options)
 
 			if (openBracket == null)
-				throw new NullPointerException('Required open bracket parameter!')
+				throw new RequiredParameterError('openBracket')
 			if (closeBracket == null)
-				throw new NullPointerException('Required close bracket parameter!')
+				throw new RequiredParameterError('closeBracket')
 
 			this.openBracket = openBracket
 			this.closeBracket = closeBracket

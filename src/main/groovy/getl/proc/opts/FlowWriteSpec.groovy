@@ -85,7 +85,7 @@ class FlowWriteSpec extends FlowBaseSpec {
     /** Before process write rows code */
     void setOnPrepare(Closure value) { saveParamValue('onInit', value) }
     /** Before process write rows code */
-    void prepare(Closure value) {
+    void prepare(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnPrepare(value)
     }
 
@@ -94,7 +94,7 @@ class FlowWriteSpec extends FlowBaseSpec {
     /** After process write rows code */
     void setOnFinalizing(Closure value) { saveParamValue('onDone', value) }
     /** After process write rows code */
-    void finalizing(Closure value) {
+    void finalizing(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnPrepare(value)
     }
 
@@ -103,14 +103,14 @@ class FlowWriteSpec extends FlowBaseSpec {
     /** Code is called after processing rows from source to destination before starting bulk load */
     void setOnPostProcessing(Closure value) { saveParamValue('onPostProcessing', value) }
     /** Code is called after processing rows from source to destination before starting bulk load */
-    void postProcessing(@ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure value) { setOnPostProcessing(value) }
+    void postProcessing(@ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset', 'java.util.HashMap']) Closure value) { setOnPostProcessing(value) }
 
     /** Initialization code before bulk load file */
     Closure getOnBulkLoad() { params.onBulkLoad as Closure }
     /** Initialization code before bulk load file */
     void setOnBulkLoad(Closure value) { saveParamValue('onBulkLoad', value) }
     /** Initialization code before bulk load file */
-    void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+    void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap']) Closure value) {
         setOnBulkLoad(value)
     }
 
@@ -119,14 +119,14 @@ class FlowWriteSpec extends FlowBaseSpec {
     /** Code is called before writing rows to destination */
     void setOnBeforeWrite(Closure value) { saveParamValue('onBeforeWrite', value) }
     /** Code is called before writing rows to destination */
-    void beforeWrite(Closure value) { setOnBeforeWrite(value) }
+    void beforeWrite(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) { setOnBeforeWrite(value) }
 
     /** Code is called after writing rows to destination */
     Closure getOnAfterWrite() { params.onAfterWrite as Closure }
     /** Code is called after writing rows to destination */
     void setOnAfterWrite(Closure value) { saveParamValue('onAfterWrite', value) }
     /** Code is called after writing rows to destination */
-    void afterWrite(Closure value) { setOnAfterWrite(value) }
+    void afterWrite(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) { setOnAfterWrite(value) }
 
     /** Closure code process row */
     void writeRow(@ClosureParams(value = SimpleType, options = ['groovy.lang.Closure']) Closure value = null) {

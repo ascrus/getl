@@ -74,9 +74,15 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         return parent
     }
 
-    @Override
-    @Synchronized
-    void checkModel(Boolean checkObjects = true) {
+    private final Object synchModel = synchObjects
+
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    protected void checkModel(Boolean checkObjects = true, Closure checkNodeCode = null) {
         if (sourceManagerName == null)
             throw new ExceptionModel("The source manager name is not specified!")
 
@@ -85,7 +91,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
             if (!isCon)
                 sourceManager.connect()
             try {
-                super.checkModel(checkObjects)
+                super.checkModel(checkObjects, checkNodeCode)
             }
             finally {
                 if (!isCon)
@@ -94,9 +100,9 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         }
     }
 
+    @Synchronized('synchModel')
     @Override
-    @Synchronized
-    void checkObject(BaseSpec obj) {
+    protected void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         def modelFile = obj as FileSpec
         if (!sourceManager.existsFile(modelFile.filePath))

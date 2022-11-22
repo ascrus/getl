@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.driver.Driver
+import getl.exception.RequiredParameterError
 import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import groovy.transform.InheritConstructors
@@ -123,7 +124,7 @@ class KafkaConnection extends Connection {
      */
     Boolean topicExists(String topicName) {
         if (topicName == null)
-            throw new NullPointerException("Required name topic!")
+            throw new RequiredParameterError(this, 'topicName', 'topicExists')
 
         return currentKafkaDriver.existsTopic(topicName)
     }

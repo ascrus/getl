@@ -2,6 +2,7 @@ package getl.jdbc
 
 import getl.lang.Getl
 import getl.test.GetlTest
+import getl.tfs.TDS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
@@ -407,19 +408,23 @@ RUN_FILE resource:/jdbc/script.sql
     }
 
     @Test
-    @Ignore
-    void test1() {
+    void testCloneConnection() {
         Getl.Dsl {
-            sql {
-                useConnection embeddedConnection()
-                exec '''/*:count_rows*/
-EXPORT TO VERTICA db.SCHEMA."Таблица один"
-  ("Поле1", "Поле2") 
-AS 
-  SELECT "Поле1", "Поле2" 
-  FROM "Таблица один" tab
-;'''
+            def con1 = embeddedConnection {
+                login = 'user1'
+                password = '1'
+                storedLogins.user1 = '1'
+                storedLogins.user2 = '2'
+                storedLogins.user3 = '3'
             }
+
+            def con2 = cloneConnection(con1) as TDS
+            assertEquals('user1', con2.login)
+            assertEquals('9D860BDC3D8A0D9144DCFE252DF7FB59', con2.password)
+            assertEquals(3, con2.storedLogins.size())
+            assertEquals('9D860BDC3D8A0D9144DCFE252DF7FB59', con2.storedLogins.user1)
+            assertEquals('561F4D2C09DB60931C87EA14BFF904F8', con2.storedLogins.user2)
+            assertEquals('333FC4C497DC27ED780FBA55CC03D2BA', con2.storedLogins.user3)
         }
     }
 }

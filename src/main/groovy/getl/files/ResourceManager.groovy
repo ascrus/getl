@@ -1,7 +1,10 @@
+//file:noinspection unused
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.FilemanagerError
+import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
 import getl.files.sub.ResourceCatalogElem
 import getl.utils.FileUtils
@@ -95,7 +98,7 @@ class ResourceManager extends Manager {
 
     private void validResourcePath() {
         if (resourcePath == null)
-            throw new ExceptionGETL('Required to specify the path to the resource directory!')
+            throw new RequiredParameterError(this, 'resourcePath')
     }
 
     /** Return catalog files from specified path */
@@ -103,7 +106,7 @@ class ResourceManager extends Manager {
     static ResourceCatalogElem ListDirFiles(String path) {
         def filePath = new File(path)
         if (!filePath.directory)
-            throw new ExceptionGETL("Directory \"$path\" not found on source \"$this\"!")
+            throw new IOFilesError('#io.dir.not_found', [path: path])
 
         def res = new ResourceCatalogElem()
         res.filename = '/'
@@ -223,7 +226,7 @@ class ResourceManager extends Manager {
             isZipFile = true
         }
         if (res == null)
-            throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources on source \"$this\"!")
+            throw new IOFilesError(this, '#io.dir.not_found', [path: resourcePath, search: 'resources'], writeErrorsToLog)
 
         rootNode = (res.protocol == 'file' && !isZipFile)?ListDirFiles(res.file):ListDirJar(file.path)
         setCurrentDirectory(directoryFromPath(currentRootPath))
@@ -320,7 +323,7 @@ class ResourceManager extends Manager {
     @Override
     void setCurrentPath(String path) {
         if (path == null || path.length() == 0)
-            throw new ExceptionGETL('Required to specify the path to change the directory!')
+            throw new RequiredParameterError(this, 'path')
 
         if (path == '.') return
 
@@ -362,7 +365,7 @@ class ResourceManager extends Manager {
 
             def child = cd.files.find { it.filename == dir }
             if (child == null)
-                throw new ExceptionGETL("Path \"$path\" not found on source \"$this\"!")
+                throw new IOFilesError(this, '#io.file.not_found', [path: path, type: 'Resource'], writeErrorsToLog)
             else if (child.type == Manager.fileType)
                 break
 
@@ -375,7 +378,7 @@ class ResourceManager extends Manager {
     @Override
     void changeDirectoryUp() {
         if (currentDirectory == rootNode)
-            throw new ExceptionGETL("Unable to navigate above the root directory on source \"$this\"!")
+            throw new FilemanagerError(this, '#fileman.fail_change_dir_up_root', writeErrorsToLog)
 
         setCurrentDirectory(currentDirectory.parent)
     }
@@ -394,7 +397,7 @@ class ResourceManager extends Manager {
         def fileName = FileUtils.FileName(filePath)
         def file = cd.files.find { it.filename == fileName }
         if (file == null)
-            throw new ExceptionGETL("File \"$filePath\" not found on source \"$this\"!")
+            throw new IOFilesError(this, '#io.file.not_found', [path: filePath, type: 'Resource'], writeErrorsToLog)
         String fp
         if (!isZipFile)
             fp = resourcePath + file.filepath
@@ -414,7 +417,7 @@ class ResourceManager extends Manager {
 
         def res= FileUtils.FileFromResources(fp, resourceDirectories, classLoader, destFile)
         if (res == null)
-            throw new ExceptionGETL("Resource file \"$fp\" not found on source \"$this\"!")
+            throw new IOFilesError(this, '#io.file.not_found', [path: fp, type: 'Resource'], writeErrorsToLog)
 
         return res
     }
@@ -448,7 +451,7 @@ class ResourceManager extends Manager {
     @Override
     Long getLastModified(String fileName) {
         if (fileName == null)
-            throw new ExceptionGETL('A file name is required!')
+            throw new RequiredParameterError(this, 'fileName', 'lastModified')
 
         def path = FileUtils.RelativePathFromFile(fileName, true)
         def name = FileUtils.FileName(fileName)
@@ -456,7 +459,7 @@ class ResourceManager extends Manager {
         ResourceCatalogElem cd = (path == '.')?currentDirectory:directoryFromPath(path)
         def file = cd.files.find { it.filename == name }
         if (file == null)
-            throw new ExceptionGETL("File \"$fileName\" not found on source \"$this\"!")
+            throw new IOFilesError(this, '#io.file.not_found', [path: fileName, type: 'Resource'], writeErrorsToLog)
 
         return file.filedate as Long
     }

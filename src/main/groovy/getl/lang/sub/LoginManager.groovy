@@ -1,6 +1,7 @@
 package getl.lang.sub
 
-import getl.exception.ExceptionGETL
+import getl.exception.DslError
+import getl.exception.RequiredParameterError
 import groovy.transform.CompileStatic
 
 /**
@@ -11,7 +12,7 @@ import groovy.transform.CompileStatic
 class LoginManager {
     LoginManager(UserLogins owner) {
         if (owner == null)
-            throw new ExceptionGETL('It is required to specify the connection object in the parameter!')
+            throw new RequiredParameterError('owner', 'LoginManager')
 
         this.owner = owner
     }
@@ -25,7 +26,7 @@ class LoginManager {
     /** Use specified login */
     void useLogin(String user) {
         if (!owner.storedLogins.containsKey(user))
-            throw new ExceptionGETL("User \"$user\" not found in login repository!")
+            throw new DslError((owner as GetlRepository), '#logins.user_not_found', [user: user])
 
         def reconnect = (owner.login != user && owner.isConnected())
         if (reconnect) owner.disconnect()
@@ -46,7 +47,7 @@ class LoginManager {
     /** Go back to the last login */
     void switchToPreviousLogin() {
         if (pushLogins.isEmpty())
-            throw new ExceptionGETL('There are no saved logins to switch to!')
+            throw new DslError((owner as GetlRepository), '#logins.no_users')
 
         def lastLogin = pushLogins.pop()
         if (lastLogin.length() > 0)

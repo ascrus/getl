@@ -2,7 +2,7 @@ package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.WebServiceDriver
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.utils.CloneUtils
 import getl.utils.ListUtils
 import groovy.transform.InheritConstructors
@@ -82,7 +82,7 @@ class WebServiceDataset extends FileDataset {
     /** Request method (GET or POST) */
     void setWebRequestMethod(String value) {
         if (value != null && !(value in [WEBREQUESTMETHODGET, WEBREQUESTMETHODPOST]))
-            throw new ExceptionGETL("Unknown request method \"$value\", allowed GET or POST!")
+            throw new DatasetError(this, '#web_files.invalid_request', [request: value])
 
         params.webRequestMethod = value
     }
@@ -106,7 +106,7 @@ class WebServiceDataset extends FileDataset {
         validConnection()
 
         if (fullFileName() == null)
-            throw new ExceptionGETL('File name required!')
+            throw new DatasetError(this, '#dataset.non_filename')
 
         (currentWebServiceConnection.driver as WebServiceDriver).readFromWeb(this, wp)
     }

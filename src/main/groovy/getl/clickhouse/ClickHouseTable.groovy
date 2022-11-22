@@ -4,7 +4,7 @@ package getl.clickhouse
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.clickhouse.opts.ClickHouseCreateSpec
 import getl.data.Connection
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.opts.CreateSpec
@@ -22,7 +22,7 @@ class ClickHouseTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ClickHouseConnection))
-            throw new ExceptionGETL('Connection to ClickHouseConnection class is allowed!')
+            throw new DatasetError(this, '#dataset.invalid_connection', [className: ClickHouseConnection.name])
 
         super.setConnection(value)
     }

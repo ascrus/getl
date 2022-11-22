@@ -1,7 +1,7 @@
 //file:noinspection unused
 package getl.models.sub
 
-import getl.exception.ExceptionDSL
+import getl.exception.ModelError
 import getl.utils.CloneUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
@@ -137,7 +137,7 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
             return null
 
         if (!value.integer)
-            throw new ExceptionDSL("Error converting the value \"$value\" of the attribute \"$name\" into a " +
+            throw new ModelError(ownerModel, "Error converting the value \"$value\" of the attribute \"$name\" into a " +
                     "number from \"${objectNameInModel()}\" node!")
 
         return value.toInteger()
@@ -156,7 +156,7 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
             return null
 
         if (!value.bigInteger)
-            throw new ExceptionDSL("Error converting the value \"$value\" of the attribute \"$name\" into a " +
+            throw new ModelError(ownerModel, "Error converting the value \"$value\" of the attribute \"$name\" into a " +
                     "number from \"${objectNameInModel()}\" node!")
 
         return value.toBigInteger().longValue()
@@ -226,7 +226,7 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
      */
     void checkAttrs(List<String> allowAttrs) {
         if (allowAttrs == null)
-            throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
+            throw new ModelError(ownerModel, 'The list of attribute names in parameter "allowAttrs" is not specified!')
 
         def validation = Path.Masks2Paths(allowAttrs)
         checkAttrsInternal(validation, allowAttrs)
@@ -245,7 +245,7 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
         }
 
         if (!unknownKeys.isEmpty())
-            throw new ExceptionDSL("Unknown attributes were detected in model dataset " +
+            throw new ModelError(ownerModel, "Unknown attributes were detected in model dataset " +
                     "\"$ownerModel.dslNameObject\".\"$this\": $unknownKeys, " +
                     "allow attributes: $allowAttrs")
     }

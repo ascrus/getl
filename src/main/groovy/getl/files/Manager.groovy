@@ -3,7 +3,13 @@ package getl.files
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.*
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.ConfigError
+import getl.exception.FilemanagerError
+import getl.exception.IOFilesError
+import getl.exception.IncorrectParameterError
+import getl.exception.NotSupportError
+import getl.exception.PathError
+import getl.exception.RequiredParameterError
 import getl.files.opts.ManagerBuildListSpec
 import getl.files.opts.ManagerDownloadSpec
 import getl.files.opts.ManagerProcessSpec
@@ -98,7 +104,7 @@ abstract class Manager implements GetlRepository {
 	static Manager CreateManagerInternal(Map parameters) {
 		def className = parameters.manager as String
 		if (className == null)
-			throw new ExceptionGETL("Required class name as \"manager\" property!")
+			throw new RequiredParameterError('manager', 'CreateManagerInternal')
 
 		Manager manager = Class.forName(className).getConstructor().newInstance() as Manager
 		manager.importParams(parameters)
@@ -315,7 +321,7 @@ abstract class Manager implements GetlRepository {
 	@JsonIgnore
 	void setBuildListThread(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL("buildListThread been must great zero!")
+			throw new IncorrectParameterError(this, '#params.great_zero', 'buildListThread')
 		params.buildListThread = value
 	}
 	
@@ -414,11 +420,11 @@ abstract class Manager implements GetlRepository {
 				Config.FindSection("files.${config}")
 
 		if (cp.isEmpty())
-			throw new ExceptionGETL("Config section \"files.${config}\" not found!")
+			throw new ConfigError(this, '#config.section_not_found', [section: config])
 
 		onLoadConfig(cp)
 		validParams()
-		logger.config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
+		Logs.Config(this, '#config.load_object_from_config', [type: 'files', section: config])
 	}
 
 	/** Method parameters */
@@ -460,7 +466,7 @@ abstract class Manager implements GetlRepository {
 	/** Connect to server */
 	void connect() {
 		if (connected)
-			throw new ExceptionGETL('Manager \"$this\" already connected!')
+			throw new FilemanagerError(this, '#fileman.already_connect')
 
 		FileUtils.ValidPath(localDirectoryFile)
 		currentRootPathSet()
@@ -472,7 +478,8 @@ abstract class Manager implements GetlRepository {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Error connecting to source \"$this\"", e)
+				Logs.Severe(this, '#fileman.fail_connect', e)
+
 			sessionID = null
 			throw e
 		}
@@ -484,7 +491,7 @@ abstract class Manager implements GetlRepository {
 	/** Disconnect from server */
 	void disconnect() {
 		if (!connected)
-			throw new ExceptionGETL('Manager \"$this\" already disconnected!')
+			throw new FilemanagerError(this, '#fileman.already_disconnect')
 
 		writeScriptHistoryFile("Disconnect from session $sessionID")
 		try {
@@ -492,12 +499,12 @@ abstract class Manager implements GetlRepository {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Error disconnected from source \"$this\"", e)
+				Logs.Severe(this, '#fileman.fail_disconnect', e)
+
 			throw e
 		}
 		sessionID = null
 		currentRootPath = null
-		//dropLocalDirectory()
 	}
 
 	/** Remove local directory */
@@ -547,7 +554,7 @@ abstract class Manager implements GetlRepository {
 	void list(String maskFiles,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
 		if (processCode == null)
-			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager!")
+			throw new RequiredParameterError(this, 'processCode', 'list')
 
 		validConnect()
 
@@ -601,7 +608,7 @@ abstract class Manager implements GetlRepository {
 		validConnect()
 
 		if (dir == null || dir == '')
-			throw new ExceptionGETL("Null dir not allowed for cd operation on source \"$this\"!")
+			throw new RequiredParameterError(this, 'dir', 'changeDirectory')
 		if (dir == '.') return
 		if (dir == '..') {
 			changeDirectoryUp()
@@ -617,6 +624,7 @@ abstract class Manager implements GetlRepository {
 		}
 		else {
 			dir = FileUtils.ConvertToWindowsPath(dir)
+			//noinspection RegExpSimplifiable
 			isRoot = (dir.matches('(?i)[a-z][:][\\\\].*') || dir.matches('(?i)[\\\\][\\\\].+'))
 		}
 		
@@ -705,7 +713,7 @@ abstract class Manager implements GetlRepository {
 					localDir = localPath
 					localFileName = FileUtils.FileName(localFilePath, true)
 				} else
-					throw new ExceptionGETL("Local path \"$localPath\" not found on source \"$this\"!")
+					throw new IOFilesError(this, '#io.dir.not_found', [path: localPath], writeErrorsToLog)
 			}
 		}
 
@@ -829,7 +837,7 @@ abstract class Manager implements GetlRepository {
 	 */
 	protected void validRootPath() {
 		if (currentRootPath == null || currentRootPath.length() == 0)
-			throw new ExceptionGETL('No root path specified for source \"$this\"!')
+			throw new RequiredParameterError(this, 'rootPath', 'validRootPath')
 	}
 	
 	/** Return current directory with relative path */
@@ -839,7 +847,7 @@ abstract class Manager implements GetlRepository {
 
 		def cur = _currentPath
 		if (cur == null)
-			throw new ExceptionGETL("Current path not set for source \"$this\"!")
+			throw new RequiredParameterError(this, 'currentPath', 'currentDir')
 
 		cur = cur.replace("\\", "/")
 
@@ -934,7 +942,7 @@ abstract class Manager implements GetlRepository {
 	@JsonIgnore
 	void setThreadLevel(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('threadLevel value must be greater than zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'threadLevel')
 		params.threadLevel = value
 	}
 
@@ -945,7 +953,7 @@ abstract class Manager implements GetlRepository {
 	@JsonIgnore
 	void setLimitDirs(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('limitDirs value must be greater than zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'limitDirs')
 
 		params.limitDirs = value
 	}
@@ -957,7 +965,7 @@ abstract class Manager implements GetlRepository {
 	@JsonIgnore
 	void setLimitCountFiles(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('limitCountFiles value must be greater than zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'limitCountFiles')
 
 		params.limitCountFiles = value
 	}
@@ -969,7 +977,7 @@ abstract class Manager implements GetlRepository {
 	@JsonIgnore
 	void setLimitSizeFiles(Long value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('limitSizeFiles value must be greater than zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'limitSizeFiles')
 
 		params.limitSizeFiles = value
 	}
@@ -1257,7 +1265,7 @@ abstract class Manager implements GetlRepository {
 				def varName = key.toUpperCase()
 				//noinspection SpellCheckingInspection
 				if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY', 'ID'])
-					throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+					throw new PathError(path, '#filepath.invalid_name', [name: key])
 
 				def ft = (attr.type as Field.Type)?:Field.Type.STRING
 				def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
@@ -1312,7 +1320,7 @@ abstract class Manager implements GetlRepository {
 		
 		Integer limitDirs = ConvertUtils.Object2Int(lParams.limitDirs)?:this.limitDirs
 		if (limitDirs != null && limitDirs <= 0)
-			throw new ExceptionGETL('"limitDirs" value must be great zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'limitDirs')
 
 
 		List<String> fileListSortOrder = (lParams.fileListSortOrder != null && !(lParams.fileListSortOrder as List<String>).isEmpty())?
@@ -1320,25 +1328,25 @@ abstract class Manager implements GetlRepository {
 
 		Integer limitCountFiles = ConvertUtils.Object2Int(lParams.limitCountFiles)?:this.limitCountFiles
 		if (limitCountFiles != null && limitCountFiles <= 0)
-			throw new ExceptionGETL('"limitCountFiles" value must be great zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'limitCountFiles')
 
 		Long limitSizeFiles = ConvertUtils.Object2Long(lParams.limitSizeFiles)?:this.limitSizeFiles
 		if (limitSizeFiles != null && limitSizeFiles <= 0)
-			throw new ExceptionGETL('"limitSizeFiles" value must be great zero!')
+			throw new IncorrectParameterError(this, 'params.great_zero', 'limitSizeFiles')
 
 		if (fileListSortOrder.isEmpty() && (limitCountFiles != null || limitSizeFiles != null))
-			throw new ExceptionGETL('When specifying the limits of the selection of files, they need to set the sort order!')
+			throw new FilemanagerError(this, '#fileman.non_sort')
 		
 		Integer threadLevel = (lParams.threadLevel as Integer)?:this.threadLevel
 		if (threadLevel != null && threadLevel <= 0)
-			throw new ExceptionGETL("threadLevel value must be great zero!")
+			throw new IncorrectParameterError(this, 'params.great_zero', 'threadLevel')
 
 		Integer threadCount = (lParams.buildListThread as Integer)?:this.buildListThread
 		if (threadCount != null && threadCount <= 0)
-			throw new ExceptionGETL("buildListThread value been must great zero!")
+			throw new IncorrectParameterError(this, 'params.great_zero', 'buildListThread')
 		
 		if (path != null && maskFile != null)
-			throw new ExceptionGETL("Don't compatibility parameters path vs maskFile!")
+			throw new FilemanagerError(this, '#fileman.same_path_and_mask')
 
 		def extendFields = lParams.extendFields as List<Field>
 		def extendIndexes = (lParams.extendIndexes as List<List<String>>)
@@ -1372,7 +1380,7 @@ abstract class Manager implements GetlRepository {
 			//noinspection SpellCheckingInspection
 			if (varName in ['FILEID', 'FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME',
 							'FILEINSTORY', 'ID'])
-				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+				throw new PathError(path, '#filepath.invalid_name', [name: key])
 
 			def ft = (attr.type as Field.Type)?:Field.Type.STRING
 			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
@@ -1384,7 +1392,7 @@ abstract class Manager implements GetlRepository {
 		def orderFields = GenerationUtils.PrepareSortFields(fileListSortOrder)
 		orderFields.keySet().toList().each {f ->
 			if (fileList.fieldByName(f) == null)
-				throw new ExceptionGETL("The sort contains an unknown field \"$f\"!")
+				throw new FilemanagerError(this, '#fileman.invalid_sort_field', [field: f])
 		}
 
 		fileList.tap {
@@ -1541,7 +1549,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				if (!newFiles.currentJDBCConnection.autoCommit())
 					newFiles.connection.commitTran()
 				if (countDouble != countDelete)
-					throw new ExceptionGETL("Internal error on delete double files name for build list files in filemanager!")
+					throw new FilemanagerError(this, '#fileman.fail_delete_double')
 			}
 			doubleFiles.drop(ifExists: true)
 			
@@ -1761,7 +1769,7 @@ FROM (
 		validConnect()
 
 		if (fileList == null || fileList.field.isEmpty())
-			throw new ExceptionGETL("Before download build fileList dataset!")
+			throw new FilemanagerError(this, '#fileman.need_read_file_list')
 
 		writeScriptHistoryFile("Download files from session $sessionID")
 
@@ -1777,7 +1785,7 @@ FROM (
 		
 		if (useStory) {
 			if (ds == null)
-				throw new ExceptionGETL("For use store db required set \"ds\" property!")
+				throw new RequiredParameterError(this, 'story', 'downloadFiles')
 			if (ds.field.isEmpty())
 				ds.retrieveFields()
 
@@ -1994,7 +2002,7 @@ WHERE
 	static File fileFromLocalDir(String path) {
 		def f = new File(path)
 		if (!f.exists() || !f.file)
-			throw new ExceptionGETL("File \"${path}\" not found on source \"$this\"!")
+			throw new IOFilesError('#io.file.not_found', [path: path, type: 'Local'])
 		
 		return f
 	}
@@ -2006,7 +2014,7 @@ WHERE
 	 */
 	protected String processLocalDirPath(String dir) {
 		if (dir == null)
-			throw new ExceptionGETL("Required not null directory parameter!")
+			throw new RequiredParameterError(this, 'dir', 'processLocalDirPath')
 		
 		if (dir == '.')
 			return localDirFile.path
@@ -2053,7 +2061,7 @@ WHERE
 		def fn = "${currentLocalDir()}/${dir}"
 		def file = new File(fn)
 		if (!file.mkdirs() && throwError)
-			throw new ExceptionGETL("Cannot create local directory \"${fn}\" on source \"$this\"!")
+			throw new IOFilesError(this, '#io.dir.fail_create', [path: fn], writeErrorsToLog)
 		if (isTempLocalDirectory)
 			file.deleteOnExit()
 	}
@@ -2074,7 +2082,7 @@ WHERE
 	void removeLocalDir(String dir, Boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).delete() && throwError)
-			throw new ExceptionGETL("Can not remove local directory \"${fn}\" on source \"$this\"!")
+			throw new IOFilesError(this, '#io.dir.fail_delete', [path: fn], writeErrorsToLog)
 	}
 	
 	/**
@@ -2112,7 +2120,7 @@ WHERE
 	void removeLocalFile(String fileName, Boolean valid = true) {
 		def fn = "${currentLocalDir()}/$fileName"
 		if (!new File(fn).delete() && valid)
-			throw new ExceptionGETL("Can not remove local file \"$fn\" on source \"$this\"!")
+			throw new IOFilesError(this, '#io.file.fail_delete', [path: fn], writeErrorsToLog)
 	}
 
 	/**
@@ -2148,7 +2156,7 @@ WHERE
 	protected File setCurrentLocalPath(String path) {
 		File f = new File(path)
 		if (!f.exists() || !f.directory)
-			throw new ExceptionGETL("Local directory \"${path}\" not found on source \"$this\"")
+			throw new IOFilesError(this, '#io.dir.not_found', [path: path], writeErrorsToLog)
 
 		localDirFile = f
 	}
@@ -2184,9 +2192,11 @@ WHERE
 	Boolean existsDirectory(String dirName) {
 		validConnect()
 
-		if (dirName in ['.', '..', '/']) return true
+		if (dirName in ['.', '..', '/'])
+			return true
+
 		if (dirName == null || dirName == '')
-			throw new ExceptionGETL("Invalid empty directory name!")
+			throw new RequiredParameterError(this, 'dirName', 'existsDirectory')
 
 		dirName = FileUtils.PrepareDirPath(dirName, true)
 
@@ -2316,7 +2326,7 @@ WHERE
 		validWrite()
 
 		if (fileList == null)
-			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders!')
+			throw new FilemanagerError(this, '#fileman.need_read_file_list')
 		
 		def dirs = new HashMap<String, Map>()
 		QueryDataset paths = new QueryDataset(connection: fileList.connection,
@@ -2400,10 +2410,13 @@ WHERE
 					removeDir(name)
 				}
 				catch (Exception e) {
-					if (!BoolUtils.IsValue(ignoreErrors, false)) throw e
+					if (!BoolUtils.IsValue(ignoreErrors, false))
+						throw e
+
 					errRemove = true
 				}
-				if (!errRemove && onDelete != null) onDelete("${currentDir()}/$name")
+				if (!errRemove && onDelete != null)
+					onDelete("${currentDir()}/$name")
 			}
 		}
 		
@@ -2454,7 +2467,7 @@ WHERE
 		err.setLength(0)
 		
 		if (!allowCommand)
-			throw new ExceptionGETL("Run command is not allowed by server \"$this\"!")
+			throw new NotSupportError(this, 'command')
 		
 		writeScriptHistoryFile("Execute command from session $sessionID:\n$command")
 
@@ -2564,7 +2577,7 @@ WHERE
 	/** Verify that the connection is established */
 	protected void validConnect() {
 		if (!connected)
-			throw new ExceptionGETL("Requires a connection to the source \"$this\"!")
+			throw new FilemanagerError(this, '#fileman.not_connect')
 	}
 
 	/**
@@ -2637,6 +2650,6 @@ WHERE
 	/** Check write allowed */
 	protected void validWrite() {
 		if (!allowWrite())
-			throw new ExceptionGETL("Modification of files is not allowed on source \"$this\"!")
+			throw new NotSupportError(this, 'change files')
 	}
 }

@@ -28,13 +28,25 @@ class FileCleaner extends FileListProcessing {
             return
         }
 
+        def totalFiles = tmpProcessFiles.countRow()
+        if (totalFiles == 0)
+            return
+
+        def percentFiles = (totalFiles / 100)
+
+        logger.finest("Removing ${StringUtils.WithGroupSeparator(totalFiles)} files ...")
+
         tmpProcessFiles.readOpts {
             order = ['FILEPATH', 'FILENAME']
         }
 
         def fileSize = 0L
+        def copiedFiles = 0L
+        def copiedPercent = 0
 
-        initStoryWrite()
+        if (!onlyFromStory)
+            initStoryWrite()
+
         def curDir = ''
         try {
             tmpProcessFiles.eachRow { file ->
@@ -49,16 +61,27 @@ class FileCleaner extends FileListProcessing {
                     man.removeFile(file.filename as String)
                 }
 
-                storyWrite(file + [fileloaded: new Date()])
+                if (!onlyFromStory)
+                    storyWrite(file + [fileloaded: new Date()])
+
                 fileSize += file.filesize as Long
+                copiedFiles++
+
+                def curPercent = ((copiedFiles / percentFiles).toInteger()).intdiv(10) * 10
+                if (curPercent > copiedPercent) {
+                    copiedPercent = curPercent
+                    logger.fine("Removed $copiedPercent% (${StringUtils.WithGroupSeparator(copiedFiles)} files)")
+                }
             }
         }
         catch (Throwable e) {
             try {
-                if (!isCachedMode)
-                    doneStoryWrite()
-                else
-                    rollbackStoryWrite()
+                if (!onlyFromStory) {
+                    if (!isCachedMode)
+                        doneStoryWrite()
+                    else
+                        rollbackStoryWrite()
+                }
             }
             catch (Exception err) {
                 logger.severe("Failed to save file history", err)
@@ -66,8 +89,9 @@ class FileCleaner extends FileListProcessing {
             throw e
         }
 
-        doneStoryWrite()
-        if (cacheTable != null)
+        if (!onlyFromStory)
+            doneStoryWrite()
+        if (cacheTable != null && !onlyFromStory)
             saveCacheStory()
 
         counter.addCount(tmpProcessFiles.readRows)

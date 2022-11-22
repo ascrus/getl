@@ -918,6 +918,7 @@ ORDER BY t1.id"""
                 configContent.testScript = null
                 shouldFail {
                     callScript DslTestScriptFields1, 'script_params'
+                    println 'it'
                 }
 
                 shouldFail {

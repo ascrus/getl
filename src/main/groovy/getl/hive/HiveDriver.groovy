@@ -3,7 +3,8 @@ package getl.hive
 import getl.csv.*
 import getl.data.*
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
+import getl.exception.DatasetError
 import getl.files.*
 import getl.jdbc.*
 import getl.proc.Flow
@@ -120,23 +121,24 @@ class HiveDriver extends JDBCDriver {
 
             def allowed = ['by', 'sortedBy', 'intoBuckets']
             def unknown = clustered.keySet().toList() - allowed
-            if (!unknown.isEmpty()) throw new ExceptionGETL("Found unknown parameter for \"clustered\" option: $unknown")
+            if (!unknown.isEmpty())
+                throw new DatasetError(dataset, 'invalid parameters {unknown} for clustered option', [unknown: unknown])
 
-            if (clustered.by == null) throw new ExceptionGETL('Required value for parameter "clustered.by"')
-            if (!(clustered.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.by"')
-            def by = clustered.by as List
-            if (by.isEmpty()) throw new ExceptionGETL('Required value for parameter "clustered.by"')
-            sb << "CLUSTERED BY (${by.join(', ')})"
+            if (clustered.by == null)
+                throw new DatasetError(dataset, 'not set "clustered.by"')
+            def clusterBy = ConvertUtils.Object2List(clustered.by)
+            if (clusterBy.isEmpty())
+                throw new DatasetError(dataset, 'not set "clustered.by"')
+            sb << "CLUSTERED BY (${clusterBy.join(', ')})"
 
             if (clustered.sortedBy != null) {
-                if (!(clustered.sortedBy instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.sorterBy"')
-                def sortedBy = clustered.sortedBy as List
-                if (!sortedBy.isEmpty()) sb << " SORTED BY (${sortedBy.join(', ')})"
+                def sortedBy = ConvertUtils.Object2List(clustered.sortedBy)
+                if (!sortedBy.isEmpty())
+                    sb << " SORTED BY (${sortedBy.join(', ')})"
             }
 
             if (clustered.intoBuckets != null) {
-                if (!(clustered.intoBuckets instanceof Integer)) throw new ExceptionGETL('Required integer type for parameter "clustered.intoBuckets"')
-                def intoBuckets = clustered.intoBuckets as Integer
+                def intoBuckets = ConvertUtils.Object2Int(clustered.intoBuckets)
                 sb << " INTO $intoBuckets BUCKETS"
             }
 
@@ -148,22 +150,27 @@ class HiveDriver extends JDBCDriver {
 
             def allowed = ['by', 'on', 'storedAsDirectories']
             def unknown = skewed.keySet().toList() - allowed
-            if (!unknown.isEmpty()) throw new ExceptionGETL("Found unknown parameter for \"skewed\" option: $unknown")
+            if (!unknown.isEmpty())
+                throw new DatasetError(dataset, 'unknown parameters "{unknown}" for "skewed"', [unknown: unknown])
 
-            if (skewed.by == null) throw new ExceptionGETL('Required value for parameter "skewed.by"')
-            if (!(skewed.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.by"')
-            if ((skewed.by as List).isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.by"')
-            def by = skewed.by as List
-            sb << "SKEWED BY (${by.join(', ')})"
+            if (skewed.by == null)
+                throw new DatasetError(dataset, 'not set "skewed.by"')
+            def skewedBy = ConvertUtils.Object2List(skewed.by)
+            if (skewedBy.isEmpty())
+                throw new DatasetError(dataset, 'not set "skewed.by"')
+            sb << "SKEWED BY (${skewedBy.join(', ')})"
 
-            if (skewed.on == null) throw new ExceptionGETL('Required value for parameter "skewed.on"')
-            if (!(skewed.on instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.on"')
-            def on = skewed.on as List
-            if (on.isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.on"')
+            if (skewed.on == null)
+                throw new DatasetError(dataset, 'not set "skewed.on"')
+            def skewedOn = ConvertUtils.Object2List(skewed.on)
+            if (skewedOn.isEmpty())
+                throw new DatasetError(dataset, 'not set "skewed.on"')
             def onCols = [] as List<String>
-            on.each { onCol ->
-                if (!(onCol instanceof List)) throw new ExceptionGETL('Required list type for item by "skewed.on"')
-                onCols << "(${(onCol as List).join(', ')})".toString()
+            skewedOn.each { onCol ->
+                def l = ConvertUtils.Object2List(onCol)
+                if (l.isEmpty())
+                    throw new DatasetError(dataset, 'not set list type for item by "skewed.on"')
+                onCols << "(${l.join(', ')})".toString()
             }
             sb << " ON ${onCols.join(', ')}"
 
@@ -209,8 +216,7 @@ class HiveDriver extends JDBCDriver {
             sb << "LOCATION '${params.location}'\n"
 
         if (params.tblproperties != null) {
-            if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
-            def tblproperties = params.tblproperties as Map
+            def tblproperties = ConvertUtils.Object2Map(params.tblproperties)
             if (!tblproperties.isEmpty()) {
                 def props = [] as List<String>
                 tblproperties.each { k, v ->
@@ -239,7 +245,7 @@ class HiveDriver extends JDBCDriver {
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
         if (source.nullAsValue() != null) /* TODO: Проверить, что действительно не поддерживает nullAsValue */
-            throw new ExceptionGETL("Connection ${dest.connection} not support \"nullAsValue\" in bulk load files!")
+            throw new DatasetError(dest, 'bulk load files not support "nullAsValue" from csv files')
 
         def table = dest as TableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
@@ -257,15 +263,15 @@ class HiveDriver extends JDBCDriver {
         expression.each { String fieldName, expr ->
             def f = table.fieldByName(fieldName)
             if (f == null)
-                throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter for \"${table.objectFullName}\" dataset!")
+                throw new DatasetError(dest, 'invalid field "{field}" in "expression" parameter', [field: fieldName])
         }
 
         if (hdfsHost == null)
-            throw new ExceptionGETL('Required parameter "hdfsHost"')
+            throw new ConnectionError(connection, 'not set "hdfsHost"')
         if (hdfsLogin == null)
-            throw new ExceptionGETL('Required parameter "hdfsLogin"')
+            throw new ConnectionError(connection, 'not set "hdfsLogin"')
         if (hdfsDir == null)
-            throw new ExceptionGETL('Required parameter "hdfsDir"')
+            throw new ConnectionError(connection, 'not set "hdfsDir"')
 
         List<String> files = []
         if (bulkParams.files != null && !(bulkParams.files as List).isEmpty()) {
@@ -359,7 +365,7 @@ class HiveDriver extends JDBCDriver {
         files.each { fileName ->
             def file = new File(fileName)
             if (!file.exists())
-                throw new ExceptionGETL("File $fileName not found!")
+                throw new DatasetError(dest, 'invalid file "{file}" in "files"', [file: fileName])
 
             csvCon.path = file.parent
             csvFile.fileName = file.name

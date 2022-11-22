@@ -1,6 +1,7 @@
 //file:noinspection unused
 package getl.lang.sub
 
+import getl.exception.RequiredParameterError
 import groovy.transform.Synchronized
 
 /**
@@ -20,7 +21,7 @@ class ScriptEvents extends HashMap<String, HashMap<String, Closure>> {
     @Synchronized
     void event(String objectName, String eventName, Closure cl) {
         if (eventName == null)
-            throw new NullPointerException('Required event name!')
+            throw new RequiredParameterError('eventName', 'event')
 
         if (objectName == null)
             objectName = ALL_OBJECTS

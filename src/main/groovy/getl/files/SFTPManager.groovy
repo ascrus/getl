@@ -1,6 +1,10 @@
+//file:noinspection unused
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.FilemanagerError
+import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
 import getl.lang.Getl
 import getl.lang.sub.UserLogins
@@ -9,7 +13,6 @@ import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
-import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -157,7 +160,7 @@ class SFTPManager extends Manager implements UserLogins {
 		if (identityFile != null) {
 			def f = new File(FileUtils.TransformFilePath(identityFile, dslCreator))
 			if (!f.exists())
-				throw new ExceptionGETL("RSA file \"$f\" not found from source \"$this\"!")
+				throw new IOFilesError(this, '#io.file.not_found', [path: f.path, type: 'RSA'], writeErrorsToLog)
 
 			if (passphrase == null) {
 				client.addIdentity(f.canonicalPath)
@@ -218,10 +221,12 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	@Synchronized
 	protected void doConnect() {
-		if (server == null || port == null)
-			throw new ExceptionGETL("Required server host and port for connect on source \"$this\"!")
+		if (server == null)
+			throw new RequiredParameterError(this, 'server', 'connect')
+		if (port == null)
+			throw new RequiredParameterError(this, 'port', 'connect')
 		if (login == null || (loginManager.currentPassword() == null && identityFile == null))
-			throw new ExceptionGETL("Required login and password for connect on source \"$this\"!")
+			throw new RequiredParameterError(this, 'login', 'connect')
 		
 		clientSession = newSession()
 		try {
@@ -409,6 +414,7 @@ class SFTPManager extends Manager implements UserLogins {
 		def curDir = channelFtp.pwd()
 		String cdDir = null
 		try {
+			//noinspection RegExpSimplifiable
 			def dirs = dirName.split("[/]")
 
 			dirs.each { String dir ->
@@ -445,7 +451,7 @@ class SFTPManager extends Manager implements UserLogins {
         if (!channelFtp.stat(dirName).isDir()) {
 			if (writeErrorsToLog)
 				logger.severe("\"$dirName\" is not directory on source \"$this\"!")
-			throw new ExceptionGETL("\"$dirName\" is not directory on source \"$this\"!")
+			throw new IOFilesError(this, '#io.dir.not_found', [path: dirName], writeErrorsToLog)
 		}
 		try {
             if (recursive) {

@@ -3,7 +3,8 @@ package getl.proc.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Field
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
+import getl.exception.NotSupportError
 import getl.files.Manager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -953,7 +954,7 @@ abstract class FileListProcessing implements GetlRepository {
         else if (storeForUpdate != null)
             storeForUpdate.write(file)
         else
-            throw new ExceptionDSL("File \"${file.filepath}/${file.filename}\" is already present in the download history!")
+            throw new DslError(dslCreator,  "File \"${file.filepath}/${file.filename}\" is already present in the download history!")
     }
 
     /** Finish writing to story or cache story table */
@@ -1112,6 +1113,6 @@ abstract class FileListProcessing implements GetlRepository {
 
     @Override
     Object clone() {
-        throw new ExceptionDSL('Clone not supported!')
+        throw new NotSupportError('clone')
     }
 }

@@ -27,8 +27,6 @@ class FlowCopySpec extends FlowBaseSpec {
             params._childs = new HashMap<String, FlowCopyChildSpec>()
         if (params.map == null)
             params.map = new HashMap<String, String>()
-        if (params.processVars == null)
-            params.processVars = new HashMap<String, Object>()
     }
 
     /** Source dataset */
@@ -238,16 +236,6 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Write to the destination dataset only the fields present in the source dataset or mapping (default false) */
     void setCopyOnlyMatching(Boolean value) { params.copyOnlyMatching = value }
 
-    /** Expression processing variables */
-    Map<String, Object> getProcessVars() { params.processVars as Map<String, Object> }
-    /** Expression processing variables */
-    void setProcessVars(Map<String, Object> value) {
-        processVars.clear()
-        if (value != null && !value.isEmpty())
-            processVars.putAll(value)
-    }
-
-
     /** Name in cache for reusing code without generating */
     String getCacheName() { params.cacheName as String }
     /** Name in cache for reusing code without generating */
@@ -258,7 +246,7 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Before process copy rows code */
     void setOnPrepare(Closure value) { saveParamValue('onInit', value) }
     /** Before process copy rows code */
-    void prepare(Closure value) {
+    void prepare(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnPrepare(value)
     }
 
@@ -267,7 +255,7 @@ class FlowCopySpec extends FlowBaseSpec {
     /** After process copy rows code */
     void setOnFinalizing(Closure value) { saveParamValue('onDone', value) }
     /** After process copy rows code */
-    void finalizing(Closure value) {
+    void finalizing(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnFinalizing(value)
     }
 
@@ -276,7 +264,7 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Source rows filtering code */
     void setOnFilter(Closure value) { saveParamValue('onFilter', value) }
     /** Source rows filtering code */
-    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap']) Closure value) {
         setOnFilter(value)
     }
 
@@ -285,21 +273,21 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Code is called before writing rows to destination */
     void setOnBeforeWrite(Closure value) { saveParamValue('onBeforeWrite', value) }
     /** Code is called before writing rows to destination */
-    void beforeWrite(Closure value) { setOnBeforeWrite(value) }
+    void beforeWrite(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) { setOnBeforeWrite(value) }
 
     /** Code is called after writing rows to destination */
     Closure getOnAfterWrite() { params.onAfterWrite as Closure }
     /** Code is called after writing rows to destination */
     void setOnAfterWrite(Closure value) { saveParamValue('onAfterWrite', value) }
     /** Code is called after writing rows to destination */
-    void afterWrite(Closure value) { setOnAfterWrite(value) }
+    void afterWrite(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) { setOnAfterWrite(value) }
 
     /** Code is called after processing rows from source to destination before starting bulk load */
     Closure getOnPostProcessing() { params.onPostProcessing as Closure }
     /** Code is called after processing rows from source to destination before starting bulk load */
     void setOnPostProcessing(Closure value) { saveParamValue('onPostProcessing', value) }
     /** Code is called after processing rows from source to destination before starting bulk load */
-    void postProcessing(@ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure value) {
+    void postProcessing(@ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset', 'java.util.HashMap']) Closure value) {
         setOnPostProcessing(value)
     }
 
@@ -308,7 +296,7 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Initialization code before bulk load file */
     void setOnBulkLoad(Closure value) { saveParamValue('onBulkLoad', value) }
     /** Initialization code before bulk load file */
-    void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+    void bulkLoad(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap']) Closure value) {
         setOnBulkLoad(value)
     }
 

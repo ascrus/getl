@@ -2,7 +2,8 @@
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionDSL
+import getl.exception.IncorrectParameterError
+import getl.exception.NotSupportError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorFactory
@@ -879,7 +880,7 @@ class Executor implements GetlRepository {
 		}
 
 		if (maximumProcessingTime < 0)
-			throw new ExceptionDSL("The value must be greater than zero!")
+			throw new IncorrectParameterError('#params.great_zero', 'maximumProcessingTime', 'Executor.runCodeWithTimeout')
 
 		def ownerThread = (Thread.currentThread() instanceof ExecutorThread)?Thread.currentThread() as ExecutorThread:null as ExecutorThread
 		def service = Executors.newSingleThreadExecutor(new ExecutorFactory(ownerThread))
@@ -907,6 +908,6 @@ class Executor implements GetlRepository {
 
 	@Override
 	Object clone() {
-		throw new ExceptionDSL('Clone not supported!')
+		throw new NotSupportError('clone')
 	}
 }

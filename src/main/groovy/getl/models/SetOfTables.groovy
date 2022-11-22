@@ -5,15 +5,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.FileConnection
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionModel
 import getl.jdbc.JDBCConnection
 import getl.models.opts.TableSpec
-import getl.models.sub.BaseSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -124,6 +122,19 @@ class SetOfTables extends DatasetsModel<TableSpec> {
                    @DelegatesTo(TableSpec)
                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
         addDatasets(mask: maskName, code: cl)
+    }
+
+    private final Object synchModel = synchObjects
+
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    void checkModel(Boolean checkObjects = true,
+                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure checkNodeCode = null) {
+        super.checkModel(checkObjects, checkNodeCode)
     }
 
     @Override

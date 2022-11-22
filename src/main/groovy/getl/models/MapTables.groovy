@@ -5,16 +5,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.FileConnection
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionModel
+import getl.exception.ConnectionError
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.jdbc.JDBCConnection
-import getl.models.sub.BaseSpec
 import getl.models.opts.MapTableSpec
 import getl.models.sub.DatasetsModel
 import getl.proc.sub.ExecutorListElement
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -93,7 +94,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     /** Use specified connection for destination datasets */
     void useDestinationConnection(String connectionName) {
         if (connectionName == null)
-            throw new ExceptionModel('Connection name required!')
+            throw new RequiredParameterError(this, 'connectionName', 'useDestinationConnection')
         dslCreator.connection(connectionName)
 
         saveParamValue('destinationConnectionName', connectionName)
@@ -101,9 +102,9 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     /** Use specified connection for destination datasets */
     void useDestinationConnection(Connection connection) {
         if (connection == null)
-            throw new ExceptionModel('Connection required!')
+            throw new RequiredParameterError(this, 'connection', 'useDestinationConnection')
         if (connection.dslNameObject == null)
-            throw new ExceptionModel('Connection not registered in Getl repository!')
+            throw new ConnectionError(connection, '#dsl.object.not_register')
 
         saveParamValue('destinationConnectionName', connection.dslNameObject)
     }
@@ -164,28 +165,61 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         addDatasets(mask: maskName, code: cl)
     }
 
-    @Override
-    void checkModel(Boolean checkObjects = true) {
-        if (destinationConnectionName == null)
-            throw new ExceptionModel("The destination connection is not specified!")
+    private final Object synchModel = synchObjects
 
-        super.checkModel(checkObjects)
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkDestination check destination tables
+     * @param checkMapping check mapping fields
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    void checkModel(Boolean checkObjects = true, Boolean checkDestination = true, Boolean checkMapping = true,
+                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec']) Closure checkNodeCode = null) {
+        super.checkModel(false)
+
+        if (destinationConnectionName == null && checkDestination)
+            throw new ModelError(this, '#dsl.model.non_dest_connection')
+
+        if (checkObjects)
+            usedMapping.each { obj ->
+                checkMapTable(obj, checkDestination, checkMapping)
+                if (checkNodeCode != null)
+                    checkNodeCode.call(obj)
+            }
     }
 
-    @Override
-    void checkObject(BaseSpec obj) {
+    /**
+     * Check map table of model
+     * @param obj object of model
+     * @param checkDestination check destination tables
+     * @param checkMapping check mapping fields
+     */
+    @Synchronized('synchModel')
+    protected void checkMapTable(MapTableSpec obj, Boolean checkDestination = true, Boolean checkMapping = true) {
         super.checkObject(obj)
 
         def node = obj as MapTableSpec
 
-        if (node.destinationName == null)
-            throw new ExceptionModel("Destination is not specified for table \"${node.sourceName}\"!")
-        if (dslCreator.findDataset(node.destinationName) == null)
-            throw new ExceptionModel("Destination dataset \"${node.destinationName}\" " +
-                    "specified for model table \"${node.sourceName}\" was not found!")
+        if (node.destinationName == null && checkDestination)
+            throw new ModelError(this, '#dsl.model.non_dest_table', [table: node.sourceName])
 
-        checkDataset(node.destination)
-        checkModelDataset(node.destination, destinationConnectionName)
+        if (node.destinationName != null) {
+            if (dslCreator.findDataset(node.destinationName) == null)
+                throw new ModelError(this, '#dsl.model.dest_table_not_found', [table: node.sourceName, destTable: node.destinationName])
+
+            checkDataset(node.destination)
+            checkModelDataset(node.destination, destinationConnectionName)
+
+            if (!node.destination.field.isEmpty() && checkMapping) {
+                node.map.each { destName, expr ->
+                    if (!destName.matches('^[*].+') &&  node.destination.fieldByName(destName) == null)
+                        throw new ModelError(this, '#dsl.model.invalid_destination_field',
+                                [table: node.sourceName, field: destName, destTable: node.destinationName])
+                }
+            }
+        }
     }
 
     @Override

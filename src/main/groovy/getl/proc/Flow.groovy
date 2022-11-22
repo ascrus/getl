@@ -65,15 +65,15 @@ class Flow {
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'linkSource', 'linkField', 'process', 'init', 'done', 'map'])
 
-		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
+		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest', 'processVars',
 										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue', 'clear', 'writeSynch',
 										  'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing', 'onBeforeWrite', 'onAfterWrite'])
 
 		methodParams.register('writeAllTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
-											 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing', 'onBeforeWrite', 'onAfterWrite'])
+											 'processVars', 'writeSynch', 'onInit', 'onDone', 'process', 'onBulkLoad', 'onPostProcessing', 'onBeforeWrite', 'onAfterWrite'])
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
-										  'onInit', 'onDone', 'process', 'statistics', 'onFilter'])
+										  'onInit', 'onDone', 'process', 'statistics', 'onFilter', 'processVars'])
 	}
 
 	/** Parameters validator */
@@ -390,7 +390,7 @@ class Flow {
 
 		Dataset source = params.source as Dataset
 		if (source == null)
-			throw new ExceptionGETL("Required parameter \"source\"")
+			throw new NullPointerException('Required parameter "source"!')
 
 		String sourceDescription
 		if (source == null && params.tempSource != null) {
@@ -398,17 +398,17 @@ class Flow {
 			sourceDescription = "temp.${params.tempSource}"
 		}
 		if (source == null)
-			new ExceptionGETL("Required parameter \"source\"")
+			throw new NullPointerException('Required parameter "source"!')
 		if (source.connection == null)
-			throw new ExceptionGETL("Required specify a connection for the source!")
+			throw new NullPointerException('Required connection for source!')
 		if (sourceDescription == null)
 			sourceDescription = source.objectName
 		
 		Dataset dest = params.dest as Dataset
 		if (dest == null)
-			throw new ExceptionGETL("Required parameter \"dest\"")
+			throw new NullPointerException('Required parameter "dest"!')
 		if (dest.connection == null)
-			throw new ExceptionGETL("Required specify a connection for the destination!")
+			throw new NullPointerException('Required connection for destination!')
 		String destDescription
 		def isDestTemp = false
 		if (dest == null && params.tempDest != null) {
@@ -655,7 +655,7 @@ class Flow {
 				PrepareBulkDsFields(dest, bulkDS, mapRules)
 
 			if (initCode != null)
-				initCode.call()
+				initCode.call(processVars)
 
 			childs.each { String name, FlowCopyChild child ->
 				if (child.linkField != null) {
@@ -667,7 +667,7 @@ class Flow {
 				}
 
 				if (child.onInit != null)
-					child.onInit.call()
+					child.onInit.call(processVars)
 			}
 
             if (createDest)
@@ -677,7 +677,7 @@ class Flow {
 				dest.truncate(truncate: false)
 
 			if (!isBulkLoad && beforeWrite != null)
-				beforeWrite.call()
+				beforeWrite.call(processVars)
 
 			destParams.prepare = initDest
 			if (!writeSynch)
@@ -715,7 +715,7 @@ class Flow {
 						generateResult.destFields.find { String n -> n.toLowerCase() == f.name.toLowerCase() } == null
 					}
 				}
-				errorsDataset.field.add(new Field(name: "error"))
+				errorsDataset.field.add(new Field(name: 'error'))
 				errorsDataset.openWrite()
 			}
 			
@@ -742,7 +742,7 @@ class Flow {
 			try {
 				source.eachRow(sourceParams) { inRow ->
 					if (filterCode != null) {
-						if (!filterCode.call(inRow))
+						if (!filterCode.call(inRow, processVars))
 							return
 					}
 
@@ -883,16 +883,16 @@ class Flow {
 
 				try {
 					if (postProcessing != null)
-						postProcessing.call(bulkDS)
+						postProcessing.call(bulkDS, processVars)
 
 					if (clear)
 						dest.truncate(truncate: false)
 
 					if (beforeWrite != null)
-						beforeWrite.call()
+						beforeWrite.call(processVars)
 
 					if (bulkLoadCode != null)
-						bulkLoadCode.call(bulkParams)
+						bulkLoadCode.call(bulkParams, processVars)
 
 					dest.bulkLoadFile(bulkParams)
 				}
@@ -927,7 +927,7 @@ class Flow {
 			}
 
 			if (afterWrite != null)
-				afterWrite.call()
+				afterWrite.call(processVars)
 
 			if (autoTran)
 				dest.connection.commitTran()
@@ -964,11 +964,11 @@ class Flow {
 		}
 		
 		if (doneCode != null)
-			doneCode.call()
+			doneCode.call(processVars)
 
 		childs.each { String name, FlowCopyChild child ->
 			if (child.onDone != null)
-				child.onDone.call()
+				child.onDone.call(processVars)
 		}
 
 		return countRow
@@ -1072,22 +1072,24 @@ class Flow {
 		if (code == null)
 			code = params.process as Closure
 		if (code == null)
-			throw new ExceptionGETL("Required process code for write to destination dataset")
+			throw new NullPointerException('Required process code!')
+
+		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
 		
 		Dataset dest = params.dest as Dataset
 		if (dest == null)
-			throw new ExceptionGETL("Required parameter \"dest\"")
+			throw new NullPointerException('Required parameter "dest"!')
 		if (dest.connection == null)
-			throw new ExceptionGETL("Required specify a connection for the destination!")
+			throw new NullPointerException('Required connection for destination!')
 
 		if (dest == null && params.tempDest != null) {
 			if (params.tempFields == null)
-				throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDest}\"")
+				throw new NullPointerException("Required parameter \"tempFields\" for temp storage \"${params.tempDest}\"!")
 			dest = TFS.dataset(params.tempDest as String)
 			dest.setField((List<Field>)params.tempFields)
 		}
 		if (dest == null)
-			throw new ExceptionGETL("Required parameter \"dest\"")
+			throw new NullPointerException('Required parameter "dest"!')
 
 		def autoTran = BoolUtils.IsValue(params.autoTran, true)
 		autoTran = autoTran &&
@@ -1097,7 +1099,7 @@ class Flow {
 		
 		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
 		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD))
-			throw new ExceptionGETL("Destination dataset not support bulk load")
+			throw new ExceptionGETL('Destination dataset not support bulk load!')
 		def bulkAsGZIP = params.bulkAsGZIP as Boolean
 		def bulkEscaped = params.bulkEscaped as Boolean
 		String bulkNullAsValue = params.bulkNullAsValue as String
@@ -1127,7 +1129,7 @@ class Flow {
 		Dataset writer
 
 		if (initCode != null)
-			initCode.call()
+			initCode.call(processVars)
 
 		if (isBulkLoad) {
 			bulkDS = PrepareBulkDSParams(dest, bulkEscaped, bulkAsGZIP, bulkNullAsValue)
@@ -1169,7 +1171,7 @@ class Flow {
 					dest.truncate(truncate: false)
 
 				if (!isBulkLoad && beforeWrite != null)
-					beforeWrite.call()
+					beforeWrite.call(processVars)
 
 				if (!writeSynch)
 					writer.openWrite(destParams)
@@ -1201,7 +1203,7 @@ class Flow {
 			}
 
 			if (!isBulkLoad && afterWrite != null)
-				afterWrite.call()
+				afterWrite.call(processVars)
 		}
 		catch (Exception e) {
 			if (autoTran && !isBulkLoad && dest.connection.isTran()) {
@@ -1219,13 +1221,13 @@ class Flow {
 
 			try {
 				if (postProcessing != null)
-					postProcessing.call(bulkDS)
+					postProcessing.call(bulkDS, processVars)
 
 				if (beforeWrite != null)
-					beforeWrite.call()
+					beforeWrite.call(processVars)
 
 				if (bulkLoadCode != null)
-					bulkLoadCode.call(bulkParams)
+					bulkLoadCode.call(bulkParams, processVars)
 
 				dest.bulkLoadFile(bulkParams)
 			}
@@ -1249,7 +1251,7 @@ class Flow {
 
 		try {
 			if (afterWrite != null)
-				afterWrite.call()
+				afterWrite.call(processVars)
 
 			if (autoTran)
 				dest.connection.commitTran()
@@ -1265,7 +1267,7 @@ class Flow {
 		}
 
 		if (doneCode != null)
-			doneCode.call()
+			doneCode.call(processVars)
 
 		return countRow
 	}
@@ -1279,11 +1281,13 @@ class Flow {
 
 		if (code == null) code = params.process as Closure
 		if (code == null)
-			throw new ExceptionGETL("Required process code for write to destination datasets")
+			throw new NullPointerException('Required process code!')
+
+		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
 
 		Map<String, Dataset> dest = params.dest as Map<String, Dataset>
 		if (dest == null || dest.isEmpty())
-			throw new ExceptionGETL("Required parameter \"dest\"")
+			throw new NullPointerException('Required parameter "dest"!')
 		
 		def autoTran = BoolUtils.IsValue(params.autoTran, true)
 		def writeSynch = BoolUtils.IsValue(params."writeSynch", false)
@@ -1301,7 +1305,7 @@ class Flow {
 		Closure afterWrite = params.onAfterWrite as Closure
 
 		if (initCode != null)
-			initCode.call()
+			initCode.call(processVars)
 		
 		Map<Connection, String> destAutoTran = new HashMap<Connection, String>()
 		def destParams = new HashMap()
@@ -1319,7 +1323,7 @@ class Flow {
 			}
 
 			if (d.connection == null)
-				throw new ExceptionGETL("Required specify a connection for the \"$n\" destination!")
+				throw new NullPointerException("Required connection for \"$n\" destination!")
 			
 			// Valid auto transaction
 			def isAutoTran = autoTran &&
@@ -1457,7 +1461,7 @@ class Flow {
 		try {
 			try {
 				if (!isBulkLoad && beforeWrite != null)
-					beforeWrite.call()
+					beforeWrite.call(processVars)
 
 				writer.each { String n, Dataset d ->
 					try {
@@ -1499,13 +1503,13 @@ class Flow {
 
 			try {
 				if (postProcessing != null)
-					postProcessing.call(bulkLoadDS)
+					postProcessing.call(bulkLoadDS, processVars)
 
 				if (beforeWrite != null)
-					beforeWrite.call()
+					beforeWrite.call(processVars)
 
 				if (bulkLoadCode != null)
-					bulkLoadCode.call(bulkParams)
+					bulkLoadCode.call(bulkParams, processVars)
 
 				bulkLoadDS.each { String n, Dataset d ->
 					Dataset ds = dest.get(n) as Dataset
@@ -1525,12 +1529,12 @@ class Flow {
 		}
 
 		if (!isBulkLoad && afterWrite != null)
-			afterWrite.call()
+			afterWrite.call(processVars)
 
 		commitTrans(['ALL', 'COPY', 'BULK'])
 
 		if (doneCode != null)
-			doneCode.call()
+			doneCode.call(processVars)
 	}
 
 	/**
@@ -1546,18 +1550,21 @@ class Flow {
 
 		if (code == null) code = params.process as Closure
 		if (code == null)
-			throw new ExceptionGETL('Required \"process\" code closure')
+			throw new NullPointerException('Required process code!')
+
+		Map<String, Object> processVars = (params.processVars as Map<String, Object>)?:new HashMap<String, Object>()
 		
 		Dataset source = params.source as Dataset
 		if (source == null)
-			throw new ExceptionGETL("Required parameter \"source\"")
+			throw new NullPointerException('Required parameter "source"!')
 		if (source.connection == null)
-			throw new ExceptionGETL("Required specify a connection for the source!")
+			throw new NullPointerException('Required connection for source!')
 
 		if (source == null && params.tempSourceName != null) {
 			source = TFS.dataset((String)(params.tempSourceName), true)
 		}
-		if (source == null) new ExceptionGETL("Required parameter \"source\"")
+		if (source == null)
+			throw new NullPointerException('Required parameter "source"!')
 		
 		Map<String, Object> sourceParams
 		if (params.sourceParams != null && !(params.sourceParams as Map).isEmpty()) {
@@ -1574,7 +1581,8 @@ class Flow {
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
 		def onInitSource = {
-			if (initCode != null) initCode.call()
+			if (initCode != null)
+				initCode.call(processVars)
 
 			if (isSaveErrors) {
 				errorsDataset.field = source.field
@@ -1604,7 +1612,8 @@ class Flow {
 					errorsDataset.write(errorRow)
 				}
 			}
-			if (doneCode != null) doneCode.call()
+			if (doneCode != null)
+				doneCode.call(processVars)
 		}
 		finally {
 			if (isSaveErrors) {

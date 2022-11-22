@@ -1,10 +1,11 @@
 package getl.exception
 
-import groovy.transform.InheritConstructors
+import groovy.transform.CompileStatic
 
 /**
  * Generated when calling to stop DSL code execution by method abortWithError
  */
+@CompileStatic
 class AbortDsl extends Exception {
     AbortDsl() {
         super()

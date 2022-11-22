@@ -1,16 +1,16 @@
 package getl.driver
 
 import getl.data.sub.FileWriteOpts
+import getl.exception.ConnectionError
+import getl.exception.DatasetError
+import getl.exception.IOFilesError
+import getl.exception.NotSupportError
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-
-import java.util.concurrent.locks.Lock
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-
 import getl.data.*
 import getl.csv.CSVDataset
-import getl.exception.ExceptionGETL
 import getl.utils.*
 
 /**
@@ -43,7 +43,8 @@ class FileDriver extends Driver {
 	@Override
 	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
 		def path = (connection as FileConnection).currentPath()
-		if (path == null) throw new ExceptionGETL('Path not setting!')
+		if (path == null)
+			throw new ConnectionError(connection, '#dataset.non_path')
 		
 		if (params.directory != null) path += (connection as FileConnection).fileSeparator() + params.directory
 		def match = (params.mask != null)?(params.mask as String):'.*'
@@ -206,7 +207,7 @@ class FileDriver extends Driver {
             if (f.exists()) {
                 f.delete()
             } else if (BoolUtils.IsValue(params.validExist, false)) {
-                throw new ExceptionGETL("File ${fullFileNameDataset(ds)} not found")
+                throw new IOFilesError(ds, '#io.file.not_found', [path: fullFileNameDataset(ds), type: 'Data'])
             }
         }
         else {
@@ -215,7 +216,7 @@ class FileDriver extends Driver {
                 if (f.exists()) {
                     f.delete()
                 } else if (BoolUtils.IsValue(params.validExist, false)) {
-                    throw new ExceptionGETL("File ${fullFileNameDataset(ds)} not found")
+					throw new IOFilesError(ds, '#io.file.not_found', [path: fullFileNameDataset(ds), type: 'Data'])
                 }
             }
         }
@@ -283,7 +284,7 @@ class FileDriver extends Driver {
 		def isAppend = BoolUtils.IsValue(wp.isAppend)
 
 		if (isAppend && isGzFile)
-			throw new ExceptionGETL("The append operation is not allowed for gzip file \"$fn\"!")
+			throw new DatasetError(dataset, '#dataset.deny_gzip_append')
 		
 		InputStream res
 		if (isGzFile) {
@@ -437,13 +438,13 @@ class FileDriver extends Driver {
 			if (!opt.append) {
 				def isExistsFile = dsFile.exists()
 				if (isExistsFile && !dsFile.delete())
-					throw new ExceptionGETL("Failed to remove file \"${opt.fileName}\"!")
+					throw new IOFilesError(dataset, '#io.file.fail_delete', [path: opt.fileName])
 
 				if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
 					if (!tempFile.delete())
-						connection.logger.severe("Failed to remove file \"${opt.tempFileName}\"!")
+						Logs.Severe(dataset, '#io.file.fail_delete_temp', [path: opt.tempFileName])
 				} else if (!tempFile.renameTo(dsFile)) {
-					throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
+					throw new IOFilesError(dataset, '#io.file.fail_swap_temp', [tempPath: opt.tempFileName, path: opt.fileName])
 				}
 			}
 			else {
@@ -454,7 +455,7 @@ class FileDriver extends Driver {
 
 					if (!isExistsFile && !isHeader) {
 						if (!tempFile.renameTo(dsFile))
-							throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
+							throw new IOFilesError(dataset, '#io.file.fail_swap_temp', [tempPath: opt.tempFileName, path: opt.fileName])
 					} else {
 						if (!isExistsFile)
 							saveHeaderToFile(dataset, dsFile)
@@ -517,58 +518,58 @@ class FileDriver extends Driver {
 	
 	@Override
 	Long executeCommand (String command, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'executeCommand')
 	}
 	
 	@Override
 	Long getSequence(String sequenceName) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'sequence')
 	}
 	
 
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'bulkLoadFile')
 
 	}
 
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'clearDataset')
 
 	}
 	
 	@Override
 	void createDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'createDataset')
 
 	}
 	
 	@Override
 	void startTran(Boolean useSqlOperator = false) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'startTran')
 
 	}
 
 	@Override
 	void commitTran(Boolean useSqlOperator = false) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'commitTran')
 
 	}
 
 	@Override
 	void rollbackTran(Boolean useSqlOperator = false) {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'rollbackTran')
 	}
 	
 	@Override
 	void connect () {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'connect')
 	}
 
 	@Override
 	void disconnect () {
-		throw new ExceptionGETL('Not support this features!')
+		throw new NotSupportError(connection, 'disconnect')
 	}
 
 	@Override

@@ -1,8 +1,9 @@
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.DatasetError
+import getl.exception.RequiredParameterError
 import getl.utils.*
-import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -30,7 +31,7 @@ class StructureFileDataset extends WebServiceDataset {
 			l.each { Map it ->
 				def name = it.name as String
 				if (it.name == null)
-					throw new ExceptionGETL("Required field name: ${it}")
+					throw new DatasetError(this, '#struct_files.invalid_config_attrs', [attr: it])
 				def type = (it.type as Field.Type)?:Field.Type.STRING
 				def isNull = BoolUtils.IsValue(it.isNull, true)
 				def length = it.length as Integer
@@ -82,7 +83,8 @@ class StructureFileDataset extends WebServiceDataset {
 
 	/** Find attribute field by name */
 	Field attributeByName(String name) {
-		if (name == null) throw new ExceptionGETL('The value of parameter "name" must be specified!')
+		if (name == null)
+			throw new RequiredParameterError('name', 'attributeByName')
 		name = name.toUpperCase()
 		return attributeField.find { it.name.toUpperCase() == name }
 	}

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Field
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.impala.opts.ImpalaBulkLoadSpec
 import getl.impala.opts.ImpalaCreateSpec
 import getl.impala.opts.ImpalaWriteSpec
@@ -27,7 +27,7 @@ class ImpalaTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ImpalaConnection))
-            throw new ExceptionGETL('Connection to ImpalaConnection class is allowed!')
+            throw new DatasetError(this, '#dataset.invalid_connection', [className: ImpalaConnection.name])
 
         super.setConnection(value)
     }

@@ -2,15 +2,17 @@ package getl.driver
 
 import getl.data.Dataset
 import getl.data.WebServiceDataset
-import getl.exception.ExceptionGETL
-import getl.utils.DateUtils
-import getl.utils.WebUtils
+import getl.exception.ConnectionError
+import getl.exception.DatasetError
+import getl.exception.RequiredParameterError
+import getl.lang.Getl
+import getl.utils.HttpClientUtils
+import getl.utils.Logs
 import groovy.transform.InheritConstructors
+import org.apache.http.HttpStatus
 
 @InheritConstructors
 class WebServiceDriver extends FileDriver {
-    static private UrlDateFormatter = DateUtils.BuildDateTimeFormatter('yyyy-MM-dd\'T\'HH:mm:ss.n')
-
     @Override
     protected void registerParameters() {
         super.registerParameters()
@@ -27,22 +29,58 @@ class WebServiceDriver extends FileDriver {
 
         def url = con.webUrl
         if (url == null)
-            throw new ExceptionGETL('It is required to set the server address in "webUrl"!')
+            throw new RequiredParameterError(dataset, 'webUrl')
 
         if (wp == null)
             wp = new HashMap<String, Object>()
 
+        def authType = con.authType
+        def login = con.login
+        def password = con.webLoginManager().currentDecryptPassword()
+
+        if (authType != null && login == null)
+            throw new DatasetError(dataset, '#utils.web.non_login', [type: authType])
+
+        if (authType == null && login != null)
+            throw new DatasetError(dataset, '#utils.web.invalid_login')
+
+        if (password != null && login == null)
+            throw new DatasetError(dataset, '#utils.web.invalid_password')
+
         def connectTimeout = con.webConnectTimeout
         def readTimeout = con.webReadTimeout
         def requestMethod = (wp.webRequestMethod as String)?:dataset.webRequestMethod()
+        if (requestMethod.toUpperCase() != 'GET')
+            throw new DatasetError(dataset, '#utils.web.allowed_only_get_method')
         def urlParams = (wp.webParams as Map<String, Object>)?:dataset.webParams()
         def urlVars = (wp.webVars as Map<String, Object>)?:dataset.webVars()
         def serviceName = (wp.webServiceName as String)?:dataset.webServiceName
 
-        def serv = WebUtils.CreateConnection(url: url, service: serviceName, connectTimeout: connectTimeout,
-                readTimeout: readTimeout, requestMethod: requestMethod, params: urlParams, vars: urlVars)
+        def attempts = con.numberConnectionAttempts?:1
+        if (attempts < 1)
+            throw new ConnectionError(con, '#params.great_zero', [param: 'numberConnectionAttempts', value: attempts])
+        def timeout = con.timeoutConnectionAttempts?:1
+        if (timeout < 1)
+            throw new ConnectionError(con, '#params.great_zero', [param: 'timeoutConnectionAttempts', value: timeout])
 
-        WebUtils.DataToFile(serv, fullFileNameDataset(dataset))
+        for (int retry = 0; retry <= con.numberConnectionAttempts; retry++) {
+            def request = HttpClientUtils.BuildGetRequest(url, serviceName, urlParams, urlVars)
+            Logs.Finest(con, '#web.connection.load_data', [url: request.uri.toString()])
+            try(def client = HttpClientUtils.BuildHttpClient(request, authType, login, password, connectTimeout, readTimeout)
+                def response = client.execute(request)) {
+                def status = HttpClientUtils.HttpResponseToFile(response, fullFileNameDataset(dataset))
+                if (status != HttpStatus.SC_OK)
+                    throw new DatasetError(dataset, '#utils.web.invalid_status', [url: url, service: serviceName, status: status])
+
+                break
+            }
+            catch (IOException e) {
+                if (retry > con.numberConnectionAttempts)
+                    throw e
+
+                Getl.pause(timeout * 1000)
+            }
+        }
     }
 
     @Override

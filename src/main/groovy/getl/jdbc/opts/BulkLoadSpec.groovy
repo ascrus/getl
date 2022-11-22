@@ -3,8 +3,8 @@ package getl.jdbc.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
+import getl.data.Dataset
+import getl.exception.DatasetError
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
@@ -215,12 +215,12 @@ class BulkLoadSpec extends BaseSpec {
     void setFiles(Object value) {
         if (value != null) {
             if (!(value instanceof String || value instanceof GString || value instanceof List || value instanceof Path))
-                throw new ExceptionGETL("Option “files” does not support value class type “${(value as Object).getClass().name}”!")
+                throw new DatasetError(ownerObject as Dataset, '#jdbc.table.bulkload_invalid_files')
 
             if (value instanceof List) {
                 value.each {
                     if (!(it instanceof String || it instanceof GString))
-                        throw new ExceptionGETL("Option “files” does not support value class type “${(value as Object).getClass().name}” for list!")
+                        throw new DatasetError(ownerObject as Dataset, '#jdbc.table.bulkload_invalid_files')
                 }
             }
         }
@@ -282,7 +282,7 @@ class BulkLoadSpec extends BaseSpec {
         if (value != null) {
             def csv = own.dslCreator.dataset(value)
             if (!(csv instanceof CSVDataset))
-                throw new ExceptionDSL("Dataset \"$value\" is not a CWS!")
+                throw new DatasetError(csv, '#object.non_instance', [className: CSVDataset.name])
 
             setSourceDataset(csv as CSVDataset)
         }

@@ -3,7 +3,9 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionModel
+import getl.exception.DatasetError
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.models.sub.BaseSpec
@@ -125,13 +127,11 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     void useStatusTable(TableDataset value) {
         if (value != null) {
             if (value.connection == null)
-                throw new ExceptionModel("The connection for the table $value is not specified!")
-            /*if (value.schemaName == null)
-                throw new ExceptionModel("Table $value does not have a schema!")*/
+                throw new DatasetError(value, "#dataset.non_connection")
             if (value.tableName == null)
-                throw new ExceptionModel("Table $value does not have a table name!")
+                throw new DatasetError(value, "#jdbc.table.non_table_name")
             if (value.dslNameObject == null)
-                throw new ExceptionModel("Table $value is not registered in the repository!")
+                throw new DatasetError(value, "#dsl.object.not_register")
         }
 
         saveParamValue('statusTableName', value?.dslNameObject)
@@ -146,14 +146,13 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     @SuppressWarnings("GrMethodMayBeStatic")
     void validQuery(QueryDataset query) {
         if (query == null)
-            throw new ExceptionModel('No query specified!')
+            throw new RequiredParameterError(this, 'query', 'MonitorRules.validQuery')
         if (query.dslNameObject == null)
-            throw new ExceptionModel("Query is not registered in the repository!")
-        def dsn = query.dslNameObject
+            throw new DatasetError(query, "#dsl.object.not_register")
         if (query.connection == null)
-            throw new ExceptionModel("The connection for the query \"$dsn\" is not specified!")
+            throw new DatasetError(query, "#dataset.non_connection")
         if (query.query == null && query.scriptFilePath == null)
-            throw new ExceptionModel("Query \"$dsn\" does not have a sql text!")
+            throw new DatasetError(query, '#jdbc.query.non_script')
 
     }
 
@@ -181,7 +180,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         }
 
         if (queryName == null)
-            throw new ExceptionModel("The repository query name is not specified!")
+            throw new RequiredParameterError(this, 'queryName', 'MonitorRules.rule')
 
         checkModel()
 
@@ -228,7 +227,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     private void createStatusTable() {
         def tab = statusTable
         if (tab.exists)
-            throw new ExceptionModel('Status table already exists!')
+            throw new DatasetError(tab, '#jdbc.table.already_exists')
 
         StatusTableSetFields(tab)
         tab.create()
@@ -280,24 +279,33 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     @Synchronized
     void setCurrentDateTime(Date value) { this._currentDateTime = value }
 
-    @Override
-    void checkModel(Boolean checkObjects = true) {
-        if (statusTableName == null)
-            throw new ExceptionModel('A table of monitoring status storage is required!')
+    private final Object synchModel = synchObjects
 
-        super.checkModel(checkObjects)
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    void checkModel(Boolean checkObjects = true,
+                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.MonitorRuleSpec']) Closure checkNodeCode = null) {
+        if (statusTableName == null)
+            throw new ModelError(this, '#object.non_property', [prop: 'statusTableName'])
+
+        super.checkModel(checkObjects, checkNodeCode)
     }
 
+    @Synchronized('synchModel')
     @Override
-    void checkObject(BaseSpec obj) {
+    protected void checkObject(BaseSpec obj) {
         super.checkObject(obj)
 
         def rule = obj as MonitorRuleSpec
 
         if (rule.lagTime == null)
-            throw new ExceptionModel("You must specify the frequency interval for checking the rule \"${rule.queryName}\" in parameter \"lagTime\"!")
+            throw new ModelError(this, '#dsl.model.monitor_rules.non_param', [rule: rule.queryName, prop: 'lagTime'])
         if (rule.checkFrequency == null)
-            throw new ExceptionModel("You must specify the frequency interval for checking the rule \"${rule.queryName}\" in parameter \"checkFrequency\"!")
+            throw new ModelError(this, '#dsl.model.monitor_rules.non_param', [rule: rule.queryName, prop: 'checkFrequency'])
 
         validQuery(rule.query)
     }
@@ -367,12 +375,12 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             }
 
             if (ruleQuery.fieldByName('value') == null)
-                throw new ExceptionModel("State field \"value\" was not found in rule \"$rule.queryName\"!")
+                throw new DatasetError(ruleQuery, "#dataset.field_not_found", [field: 'value', detail: "model \"${this.dslNameObject}\""])
 
             def useGroups = (ruleQuery.field.size() > 1)
             if (useGroups) {
                 if (ruleQuery.fieldByName('code') == null)
-                    throw new ExceptionModel("Group field \"code\" was not found in rule \"$rule.queryName\"!")
+                    throw new DatasetError(ruleQuery, "#dataset.field_not_found", [field: 'code', detail: "model \"${this.dslNameObject}\""])
 
                 def validTable = TDS.dataset()
                 validTable.tap {
@@ -388,7 +396,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     def invalidGroups = rows()
                     if (!invalidGroups.isEmpty()) {
                         def names = invalidGroups.collect { row -> row.code }
-                        throw new ExceptionModel("For rule \"${rule.queryName}\" duplicates were revealed by codes: $names!")
+                        throw new ModelError(this, '#dsl.model.monitor_rules.invalid_rule_query_duplicate', [rule: rule.queryName, codes: names.join(', ')])
                     }
                 }
 
@@ -408,7 +416,8 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     // Search for a group rows in status
                     def groupRows = hRows.findAll { r -> r.code == groupCode }
                     if (groupRows.size() > 1)
-                        throw new ExceptionModel("Identified multiple rows for rule \"${rule.queryName}\" with group code \"$groupCode\" from status table!")
+                        throw new ModelError(this, '#dsl.model.monitor_rules.invalid_status_table_duplicate',
+                                [rule: rule.queryName, code: groupCode, table: statusTableName])
                     def isNewStatRow = groupRows.isEmpty()
 
                     // Current group row for status table
@@ -508,7 +517,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 order: ['is_correct DESC', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC', 'open_incident', 'rule_name', 'code']) { row ->
             def rule = findRule(row.rule_name as String)
             if (rule == null)
-                throw new ExceptionModel("Unknown rule \"${row.rule_name}\"")
+                throw new ModelError(this, '#dsl.model.monitor_rules.invalid_rule', [rule: row.rule_name, table: statusTableName])
 
             Integer groupError
             if (row.is_notification as Boolean && row.is_correct as Boolean)

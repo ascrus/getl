@@ -1,7 +1,8 @@
 //file:noinspection unused
 package getl.jdbc.opts
 
-import getl.exception.ExceptionGETL
+import getl.data.Dataset
+import getl.exception.DatasetError
 import getl.jdbc.JDBCDataset
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
@@ -54,7 +55,7 @@ class CreateSpec extends BaseSpec {
                         if (param instanceof String)
                             param = (param as String).split('\\|').toList()
                         else
-                            throw new ExceptionGETL("Invalid type of propery \"columns\" from \"$name\" index!")
+                            throw new DatasetError(ownerObject as Dataset, '#jdbc.table.index.invalid_columns', [index: name])
                     }
                 }
                 par.put(name, param)

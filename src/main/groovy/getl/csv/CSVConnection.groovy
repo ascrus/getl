@@ -5,7 +5,7 @@ import getl.csv.CSVDataset.QuoteMode
 import getl.data.Dataset
 import getl.data.FileConnection
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
 import getl.utils.*
 import groovy.transform.InheritConstructors
 
@@ -142,7 +142,7 @@ class CSVConnection extends FileConnection {
 	/** File settings preset */
 	void setPresetMode(String value) {
 		if (!PresetModes.containsKey(value))
-			throw new ExceptionGETL("Preset \"$value\" not defined!")
+			throw new ConnectionError(this, '#csv.invalid_preset', [preset: value])
 
 		params.presetMode = value
 		def p = PresetModes.get(value) as Map<String, Object>

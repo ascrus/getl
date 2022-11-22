@@ -1,9 +1,7 @@
 //file:noinspection unused
 package getl.utils
 
-import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
-
 import java.sql.Time
 import java.util.regex.Pattern
 
@@ -293,7 +291,7 @@ class ConvertUtils {
 		Closure<String> analyzeList = { String div1, String div2 ->
 			if (trimValue.indexOf(div1) == 0) {
 				if (trimValue[trimValue.length() - 1] != div2)
-					throw new ExceptionDSL("The closing symbol \"$div2\" was not found in the expression \"$value\"!")
+					throw new ExceptionGETL("The closing symbol \"$div2\" was not found in the expression \"$value\"!")
 
 				evalResult = true
 				return trimValue.substring(1, value.trim().length() - 1)

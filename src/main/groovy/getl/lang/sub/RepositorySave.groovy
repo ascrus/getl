@@ -1,7 +1,7 @@
 package getl.lang.sub
 
 import getl.config.ConfigSlurper
-import getl.exception.ExceptionDSL
+import getl.exception.DslError
 import getl.jdbc.JDBCConnection
 import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
@@ -13,6 +13,7 @@ import getl.models.sub.RepositorySetOfTables
 import getl.models.sub.RepositoryWorkflows
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
+import getl.utils.Logs
 
 /**
  * Manager of saving objects to the repository
@@ -40,7 +41,7 @@ class RepositorySave extends Getl {
             else if (args instanceof String || args instanceof GString)
                 args = [(args as Object).toString()] as List<String>
             else
-                throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
+                throw new DslError('#dsl.invalid_instance_args', [className: args.getClass().name])
         }
 
         Application(startClass, args)
@@ -127,13 +128,13 @@ class RepositorySave extends Getl {
         if (pathToSave != null)
             repositoryStorageManager.storagePath = pathToSave
 
-        logFinest "Repository initialization ..."
+        Logs.Finest(this, '#dsl.repository_save.init')
         initRepository()
         if (repositoryStorageManager.storagePath == null)
-            throw new ExceptionDSL('It is required to set the path for the repository files to "repositoryStorageManager.storagePath"!')
+            throw new DslError(this, '#dsl.repository.non_path')
 
         if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
-            throw new ExceptionDSL('The repository path cannot be resource path!')
+            throw new DslError(this, '#dsl.repository.deny_path_resource!')
     }
 
     /** Processing declared methods */
@@ -144,7 +145,7 @@ class RepositorySave extends Getl {
                 methods.put(typeName, [] as List<MethodParams>)
             }
 
-            logFinest "Analysis class ..."
+            Logs.Finest(this, '#dsl.repository_save.detect_methods')
             def countMethods = 0
             getClass().methods.each { method ->
                 def an = method.getAnnotation(SaveToRepository)
@@ -154,9 +155,9 @@ class RepositorySave extends Getl {
 
                 def type = an.type()?.trim()
                 if (type == null || type == '')
-                    throw new ExceptionDSL("Method \"$methodName\" has no object type specified in annotation \"SaveToRepository\"!")
+                    throw new DslError('#dsl.repository.invalid_method_annotation')
                 if (!(type in ObjectTypes))
-                        throw new ExceptionDSL("Unknown type \"$type\" in annotation \"SaveToRepository\" of method \"$methodName\"!")
+                    throw new DslError(this, '#dsl.repository.invalid_annotation_object_type', [type: type, method: methodName])
 
                 def otherType = an.otherTypes()?.trim()
                 List<String> otherTypes = null
@@ -165,14 +166,14 @@ class RepositorySave extends Getl {
                     otherType.split(',').each { e ->
                         e = e.trim()
                         if (!(e in ObjectTypes))
-                            throw new ExceptionDSL("Unknown other type \"$e\" in annotation \"SaveToRepository\" of method \"$methodName\"!")
+                            throw new DslError(this, '#dsl.repository.unknown_other_type', [type: e, method: methodName])
                         otherTypes << e
                     }
                 }
 
                 def env = an.env()?.trim()
                 if (env == null)
-                    throw new ExceptionDSL("Required to specify \"env\" parameter in annotation \"SaveToRepository\" for method \"$methodName\"")
+                    throw new DslError(this, "#dsl.repository.need_env", [method: methodName])
                 if (env == '')
                     env = getlDefaultConfigEnvironment
                 List<String> envs = env.split(',').collect { e -> e.trim().toLowerCase() }
@@ -186,16 +187,16 @@ class RepositorySave extends Getl {
                 def overwrite = BoolUtils.IsValue(an.overwrite())
 
                 methods.get(type).add(new MethodParams(methodName, envs, retrieve, mask, otherTypes, clear, overwrite))
-                logFinest "  found method \"$methodName\" of saving objects with type \"$type\"${(mask != null)?" for mask \"$mask\"":''}"
+                Logs.Finest(this, '#dsl.repository_save.found_method', [method: methodName, type: type, mask: mask])
                 countMethods++
             }
-            logInfo "Accepted for processing $countMethods methods"
+            Logs.Info(this, '#dsl.repository_save.count_methods', [count: countMethods])
 
             methods.each {type, listMethods ->
                 if (listMethods.isEmpty())
                     return
 
-                logFinest "Calling methods with type \"$type\" ..."
+                Logs.Finest(this, '#dsl.repository_save.calling', [type: type])
 
                 initRepositoryTypeProcess(type)
 
@@ -210,11 +211,11 @@ class RepositorySave extends Getl {
                         def overExists = p.overwrite
 
                         if (type in ['Connections', 'Files'])
-                            logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
+                            Logs.Finest(this, '#dsl.repository_save.call_method', [method: methodName,envs: envs.join(', ')])
                         else if (type == 'Datasets')
-                            logFinest "Call method \"$methodName\" ${(retrieve)?'(with retrieve fields)':''} from environments: ${envs.join(', ')} ..."
+                            Logs.Finest(this, '#dsl.repository_save.call_method', [method: methodName, envs: envs.join(', '), retrieve:(retrieve)?'retrieve':null])
                         else
-                            logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
+                            Logs.Finest(this, '#dsl.repository_save.call_method', [method: methodName,envs: envs.join(', ')])
 
                         envs.each {e ->
                             //repositoryStorageManager.clearRepositories()
@@ -332,7 +333,7 @@ class RepositorySave extends Getl {
     /** Save connections */
     void saveConnections(String env = getlDefaultConfigEnvironment, String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env, changeTime)
-        logInfo "For environment \"$env\" $count connections saved"
+        Logs.Info(this, '#dsl.repository_save.save_with_env_complete', [type: 'connections', count: count, env: env])
     }
 
     /** Save datasets */
@@ -342,12 +343,13 @@ class RepositorySave extends Getl {
                 def tbl = jdbcTable(tableName)
                 if (tbl.field.isEmpty()) {
                     tbl.retrieveFields()
-                    assert !tbl.field.isEmpty(), "Failed to read the fields of table \"$tbl\"!"
+                    if (tbl.field.isEmpty())
+                        throw new DslError(this, '#dsl.repository_save.fail_read_table_fields', [table: tbl.dslNameObject?:tbl.fullTableName])
                 }
             }
         }
         def count = repositoryStorageManager.saveRepository(RepositoryDatasets, mask, null, changeTime)
-        logInfo "$count datasets saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'datasets', count: count])
     }
 
     /** Save datasets */
@@ -366,9 +368,12 @@ class RepositorySave extends Getl {
      */
     @SuppressWarnings('GrMethodMayBeStatic')
     void addObjects(JDBCConnection con, String schema, String group, List<String> mask = null, List<String> typeObjects = null, Boolean skipExists = false) {
-        assert con != null, 'It is required to specify the connection in "con"!'
-        assert schema != null, 'It is required to specify the schema name in "schema"!'
-        assert group != null, 'It is required to specify the group name in "group"!'
+        if (con == null)
+            throw new DslError(this, '#params.required', [param: 'con', detail: 'addObjects'])
+        if (schema == null)
+            throw new DslError(this, '#params.required', [param: 'schema', detail: 'addObjects'])
+        if (group == null)
+            throw new DslError(this, '#params.required', [param: 'group', detail: 'addObjects'])
 
         con.tap {
             def list = retrieveDatasets {
@@ -377,10 +382,11 @@ class RepositorySave extends Getl {
                 if (typeObjects != null)
                     filterByObjectType = typeObjects
             }
-            assert list.size() > 0, "No objects found in schema \"$schema\"!"
+            if (list.isEmpty())
+                throw new DslError(this, '#dsl.repository_save.fail_read_schema_tables', [schema: schema])
             addTablesToRepository(list, group, skipExists)
 
-            logInfo "Added ${list.size()} objects for schemata \"$schema\" to \"$group\" group in repository"
+            Logs.Info(this, '#dsl.repository_save.save_schemata', [schema: schema, group: group, count: list.size()])
         }
     }
 
@@ -435,56 +441,57 @@ class RepositorySave extends Getl {
     /** Save file managers */
     void saveFiles(String env = getlDefaultConfigEnvironment, String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryFilemanagers, mask, env, changeTime)
-        logInfo "For environment \"$env\" $count file managers saved"
+        Logs.Info(this, '#dsl.repository_save.save_with_env_complete', [type: 'file managers', count: count, env: env])
     }
 
     /** Save history point managers */
     void saveHistorypoints(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryHistorypoints, mask, null, changeTime)
-        logInfo "$count history point managers saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'history points manager', count: count])
     }
 
     /** Save sequences */
     void saveSequences(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositorySequences, mask, null, changeTime)
-        logInfo "$count sequences saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'sequences', count: count])
     }
 
     /** Save models of reference files */
     void saveReferenceFiles(String mask = null, Date changeTime = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryReferenceFiles, mask, null, changeTime)
-            logInfo "$count model of reference files saved"
+            Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'models of reference files', count: count])
         }
     }
 
     /** Save model of reference Vertica tables */
     void saveReferenceVerticaTables(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryReferenceVerticaTables, mask, null, changeTime)
-        logInfo "$count models of reference Vertica tables saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'models of reference Vertica tables', count: count])
     }
 
     /** Save model of monitoring rules */
     void saveMonitorRules(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryMonitorRules, mask, null, changeTime)
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'models of monitoring rules', count: count])
         logInfo "$count model of monitoring rules saved"
     }
 
     /** Save models of set tables */
     void saveSetOfTables(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositorySetOfTables, mask, null, changeTime)
-        logInfo "$count models of tablesets saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'models of grouping tables', count: count])
     }
 
     /** Save models of map tables */
     void saveMapTables(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryMapTables, mask, null, changeTime)
-        logInfo "$count models of map tables saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'models of mapping tables', count: count])
     }
 
     /** Save model of monitoring rules */
     void saveWorkflows(String mask = null, Date changeTime = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryWorkflows, mask, null, changeTime)
-        logInfo "$count model of workflow saved"
+        Logs.Info(this, '#dsl.repository_save.save_complete', [type: 'models of workflows', count: count])
     }
 }

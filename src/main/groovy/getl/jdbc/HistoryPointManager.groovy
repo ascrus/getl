@@ -4,7 +4,9 @@ package getl.jdbc
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Field
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.HistorypointError
+import getl.exception.InternalError
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
@@ -156,9 +158,9 @@ class HistoryPointManager implements GetlRepository {
 	/** Save value method (INSERT OR MERGE) */
 	void setSaveMethod(String value) {
 		if (value == null)
-			throw new ExceptionGETL("Save method can not be NULL and allowed only values \"$insertSave\" or \"$mergeSave\"!")
+			throw new RequiredParameterError(this, 'saveMethod')
 		if (!(value.toUpperCase() in [insertSave, mergeSave]))
-			throw new ExceptionGETL("Unknown save method \"$value\", allowed only values \"$insertSave\" or \"$mergeSave\"!")
+			throw new HistorypointError(this, '#historypoints.invalid_save_method', [method: value])
 		params.saveMethod = value.toUpperCase()
 		isPrepare = false
 	}
@@ -183,7 +185,7 @@ class HistoryPointManager implements GetlRepository {
 		if (value != null) {
 			value = value.trim().toUpperCase()
 			if (!(value in [identitySourceType, timestampSourceType]))
-				throw new ExceptionGETL("Unknown source type \"$value\"!")
+				throw new HistorypointError(this, '#historypoints.invalid_source_type', [type: value])
 		}
 
 		params.sourceType = value
@@ -384,13 +386,24 @@ class HistoryPointManager implements GetlRepository {
 	/** Object name */
 	@JsonIgnore
 	String getObjectName() { historyTable?.objectName?:'HISTORY POINT' }
+
+	@Synchronized('operationLock')
+	/**
+	 * Return last value of history point by source
+	 * @param convertNull if there are no values, then instead of null, return the minimum possible value
+	 * @return value
+	 */
+	@Synchronized('operationLock')
+	Comparable lastValue(Boolean convertNull = false) {
+		return readLastValue(convertNull)
+	}
 	
 	/**
 	 * Return last value of history point by source
 	 * @param convertNull if there are no values, then instead of null, return the minimum possible value
 	 * @return value
 	 */
-	Object lastValue(Boolean convertNull = false) {
+	private Comparable readLastValue(Boolean convertNull = false) {
 		prepareManager(true)
 
 		def con = currentJDBCConnection
@@ -403,7 +416,7 @@ class HistoryPointManager implements GetlRepository {
 		try {
 			rows = lastValueQuery.rows()
 			if (rows.size() > 1)
-				throw new ExceptionGETL("Error getting history value for source \"$sourceName\", more than 1 row returned!")
+				throw new HistorypointError(this, '#historypoints.table_many_rows', [table: fullTableName])
 		}
 		catch (Exception e) {
 			if (isAutoTran)
@@ -417,7 +430,7 @@ class HistoryPointManager implements GetlRepository {
 		if (convertNull && res == null)
 			res = convertNullValue
 
-		return res
+		return (res as Comparable)
 	}
 
 	/** Минимальное значение для числовых значений, в которое конвертируется null */
@@ -457,28 +470,25 @@ class HistoryPointManager implements GetlRepository {
 				updater(row)
 			}
 			if (saveTable.updateRows > 1)
-				throw new ExceptionGETL("Duplicates were detected when changing the values in table $saveTable for " +
-						"source \"$sourceName\"!")
+				throw new InternalError(this, 'Duplicates were detected when changing values', 'saveValue')
 
 			return saveTable.updateRows
 		}
 
 		if (saveMethod == 'MERGE') {
 			if (save('UPDATE') == 0) {
-				def last = lastValue()
+				def last = readLastValue()
 				if (last != null && last >= newValue)
 					return
 
 				if (last == null) {
 					if (save("INSERT") == 0)
-						throw new ExceptionGETL("Error inserting new value into table $saveTable for " +
-								"source \"$sourceName\"!")
+						throw new InternalError(this, 'Error when insert new value')
 				}
 			}
 		} else {
 			if (save("INSERT") != 1)
-				throw new ExceptionGETL("Error inserting new value into table $saveTable for " +
-						"source \"$sourceName\"!")
+				throw new InternalError(this, 'Error when insert new value')
 		}
 	}
 	
@@ -508,17 +518,19 @@ class HistoryPointManager implements GetlRepository {
 	/** Manager check */
 	void checkManager() {
 		if (historyTable == null)
-			throw new ExceptionGETL('Required to specify a history table for storing the values of incremental points!')
+			throw new RequiredParameterError(this, 'historyTable')
 
 		if (sourceName == null)
-			throw new ExceptionGETL('Requires a name for the source!')
+			throw new RequiredParameterError(this, 'sourceName')
 
 		if (sourceType == null)
-			throw new ExceptionGETL('Required to set the type of increment for the source!')
+			throw new RequiredParameterError(this, 'sourceType')
 		if (!(sourceType.toUpperCase() in [identitySourceType, timestampSourceType]))
-			throw new ExceptionGETL("Unknown source type \"$sourceType\"!")
+			throw new HistorypointError(this, '#historypoints.invalid_source_type', [type: sourceType])
 
+		if (saveMethod == null)
+			throw new RequiredParameterError(this, 'saveMethod')
 		if (!(saveMethod.toUpperCase() in  ['MERGE', 'INSERT']))
-			throw new ExceptionGETL("Unknown type \"$saveMethod\" to store point, valid types MERGE and INSERT!")
+			throw new HistorypointError(this, '#historypoints.invalid_save_method', [method: saveMethod])
 	}
 }

@@ -1,12 +1,14 @@
 package getl.csv
 
 import getl.csv.proc.*
-
 import getl.data.sub.FileWriteOpts
 import getl.data.*
 import getl.driver.Driver
 import getl.driver.FileDriver
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
+import getl.exception.IOFilesError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.files.FileManager
 import getl.utils.*
 import groovy.transform.CompileStatic
@@ -127,7 +129,7 @@ class CSVDriver extends FileDriver {
 		
 		def csvFile = new File(p.path)
 		if (!csvFile.exists())
-			throw new ExceptionGETL("File \"${csv.fileName()}\" not found or invalid path \"${csv.currentCsvConnection?.path}\"!")
+			throw new IOFilesError(dataset, '#io.file.not_found', [path: csv.fileName(), search: csv.currentCsvConnection?.path, type: 'CSV'])
 		Reader fileReader = getFileReader(csv, new HashMap())
 
 		CsvPreference pref = new CsvPreference.Builder(p.quoteStr, (int)p.fieldDelimiter, p.rowDelimiter).useQuoteMode(p.qMode).build()
@@ -137,12 +139,12 @@ class CSVDriver extends FileDriver {
 			if (p.isHeader)  {
 				header = reader.getHeader(true)
 				if (header == null)
-					throw new ExceptionGETL("File \"${csv.fileName()}\" is empty!")
+					throw new IOFilesError(dataset, '#io.file.empty', [path: csv.fileName()])
 			}
 			else {
 				def row = reader.read()
 				if (row == null)
-					throw new ExceptionGETL("File \"${csv.fileName()}\" is empty!")
+					throw new IOFilesError(dataset, '#io.file.empty', [path: csv.fileName()])
 				def c = 0
 				def list = [] as List<String>
 				row.each {
@@ -154,7 +156,7 @@ class CSVDriver extends FileDriver {
 
 			header.each { String name ->
 				if (name == null || name.length() == 0)
-					throw new ExceptionGETL("Detected empty field name for $header")
+					throw new DatasetError(dataset,'#csv.empty_header', [header: header.join('; ')])
 
 				res.add(new Field(name: name, type: Field.Type.OBJECT, isNull: false))
 			}
@@ -306,14 +308,14 @@ class CSVDriver extends FileDriver {
 		return res
 	}
 
-	static private List<Field> header2fields(String[] header, List<Field> listField) {
+	static private List<Field> header2fields(Dataset dataset, String[] header, List<Field> listField) {
 		List<Field> fields = []
 		def c = 0
 		def size = header.length
 		for (int i = 0; i < size; i++) {
 			def name = header[i]
 			if (name == null || name.length() == 0)
-				throw new ExceptionGETL("Detected empty field name for $header")
+				throw new DatasetError(dataset, '#csv.empty_header', [header: header.join('; ')])
 
 			def findName = name.toLowerCase()
 			def field = listField.find { field -> field.name.toLowerCase() == findName }
@@ -328,7 +330,7 @@ class CSVDriver extends FileDriver {
 		return fields
 	}
 
-	static private CellProcessor type2cellProcessor(Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
+	static private CellProcessor type2cellProcessor(Dataset dataset, Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
 													String locale, String decimalSeparator, String groupSeparator, String formatDate,
 													String formatTime, String formatDateTime, String formatTimestampWithTz,
 													String formatBoolean, String arrayOpeningBracket, String arrayClosingBracket,
@@ -456,7 +458,7 @@ class CSVDriver extends FileDriver {
 					cp = new CSVFmtArray()
 			}
 		} else {
-			throw new ExceptionGETL("Type ${field.type} not supported")
+			throw new NotSupportError(dataset, 'field type', field.type.toString())
 		}
 
 		if (BoolUtils.IsValue(field.isKey) && isValid)
@@ -522,7 +524,7 @@ class CSVDriver extends FileDriver {
 				else {
 					Field f = dataset.field[i]
 					
-					CellProcessor p = type2cellProcessor(f, isWrite, escaped, nullAsValue, locale, decimalSeparator, groupSeparator,
+					CellProcessor p = type2cellProcessor(dataset, f, isWrite, escaped, nullAsValue, locale, decimalSeparator, groupSeparator,
 							formatDate, formatTime, formatDateTime, formatTimestampWithTz, formatBoolean,
 							arrayOpeningBracket, arrayClosingBracket,  isValid)
 					cp << p
@@ -533,7 +535,7 @@ class CSVDriver extends FileDriver {
 		return cp.toArray() as CellProcessor[]
 	} 
 	
-	protected static String[] fields2header(List<Field> fields, List<String> writeFields) {
+	protected static String[] fields2header(Dataset dataset, List<Field> fields, List<String> writeFields) {
 		if (writeFields == null) writeFields = []
 		def header = []
 		fields.each { v ->
@@ -546,7 +548,7 @@ class CSVDriver extends FileDriver {
 			}
 		}
 		if (header.isEmpty())
-			throw new ExceptionGETL('Fields for processing dataset not found!')
+			throw new DatasetError(dataset, '#dataset.non_fields')
 
 		return header.toArray()
 	}
@@ -567,11 +569,11 @@ class CSVDriver extends FileDriver {
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (code == null)
-			throw new ExceptionGETL('Required process code!')
+			throw new RequiredParameterError(dataset, 'code', 'eachRow')
 		
 		def cds = dataset as CSVDataset
 		if (cds.fileName == null)
-			throw new ExceptionGETL('Dataset required fileName!')
+			throw new DatasetError(cds, '#dataset.non_filename')
 
 		cds.currentCsvConnection.validPath()
 		
@@ -599,7 +601,7 @@ class CSVDriver extends FileDriver {
 		def countRec = 0L
 		Boolean isSplit = BoolUtils.IsValue(p.isSplit)
 		if (isSplit && localData != null)
-			throw new ExceptionGETL('When working with local data, the "isSplit" option must be turned off!')
+			throw new DatasetError(cds, '#csv.split_incorrect')
 
 		def fileMask = fileMaskDataset(cds, isSplit)
 		List<Map> files
@@ -617,7 +619,7 @@ class CSVDriver extends FileDriver {
 			def filesParams = [order: ['number']]
 			files = fm.fileList.rows(filesParams)
 			if (files.isEmpty())
-				throw new ExceptionGETL("File(s) \"${cds.fileName()}\" not found or invalid path \"${((CSVConnection) cds.connection).currentPath()}\"!")
+				throw new IOFilesError(cds, '#io.file.not_found', [path: cds.fileName(), search: cds.currentCsvConnection.currentPath(), type: 'CSV'])
 			numPortion = files[portion].number as Integer
 		}
 		else {
@@ -644,15 +646,15 @@ class CSVDriver extends FileDriver {
 			if (p.isHeader) {
 				header = reader.getHeader(true)
 				if (fieldOrderByHeader)
-					fileFields = header2fields(header, cds.field)
+					fileFields = header2fields(dataset, header, cds.field)
 				else {
-					header = fields2header(cds.field, null)
+					header = fields2header(cds, cds.field, null)
 					fileFields = cds.field
 				}
 			}
 			else {
 				fileFields = cds.field
-				header = fields2header(cds.field, null)
+				header = fields2header(cds, cds.field, null)
 				if (fieldOrderByHeader) {
 					try (def newBufReader = getFileReader(cds, params, numPortion)) {
 						CsvMapReader newReader
@@ -710,7 +712,8 @@ class CSVDriver extends FileDriver {
 						throw e
 
 					def c = e.csvContext
-					def ex = new ExceptionGETL("Line $line column ${c.columnNumber} [${header[c.columnNumber - 1]}]: ${e.message}", e)
+					def ex = new DatasetError(dataset, '#csv.read_error', e,
+							[line: line, colNumber: c.columnNumber, colName: header[c.columnNumber - 1], error: e.message])
 
 					if (!processError(ex, line))
 						throw e
@@ -722,7 +725,8 @@ class CSVDriver extends FileDriver {
 				}
 				catch (Exception e) {
 					def isContinue = (processError != null)?processError(e, line):false
-					if (!isContinue) throw e
+					if (!isContinue)
+						throw e
 					isError = true
 				}
 				if (!isError) {
@@ -814,7 +818,7 @@ class CSVDriver extends FileDriver {
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def csv_ds = dataset as CSVDataset
 		if (csv_ds.fileName == null)
-			throw new ExceptionGETL('Dataset required fileName!')
+			throw new DatasetError(csv_ds, '#dataset.non_filename')
 
 		csv_ds.currentCsvConnection.validPath()
 
@@ -843,8 +847,9 @@ class CSVDriver extends FileDriver {
 			listFields = prepareCode.call([]) as ArrayList
 		}
 		
-		def header = fields2header(csv_ds.field, listFields)
-		if (header.length == 0) throw new ExceptionGETL('Required fields declare')
+		def header = fields2header(dataset, csv_ds.field, listFields)
+		if (header.length == 0)
+			throw new DatasetError(csv_ds, '#dataset.non_fields')
 		wp.header = header*.toLowerCase()
 
 		wp.params = params
@@ -1030,10 +1035,10 @@ class CSVDriver extends FileDriver {
 	@CompileStatic
 	protected static Long readLinesCount(CSVDataset dataset) {
 		if (!dataset.existsFile())
-			throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found!")
+			throw new IOFilesError(dataset, '#io.file.not_found', [path: dataset.fullFileName(), type: 'Text'])
 
 		if (!(dataset.rowDelimiter() in ['\n', '\r\n']))
-			throw new ExceptionGETL('Allow CSV file only standard row delimiter!')
+			throw new DatasetError(dataset, '#csv.invalid_row_delimiter')
 
 		LineNumberReader reader
 		if (dataset.isGzFile()) {
@@ -1057,15 +1062,15 @@ class CSVDriver extends FileDriver {
 			reader.close()
 		}
 		
-		count - ((dataset.isHeader())?1:0)
+		return count - ((dataset.isHeader())?1:0)
 	}
 
 	@SuppressWarnings("DuplicatedCode")
 	static Long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
 		if (!source.existsFile())
-			throw new ExceptionGETL("File \"${source.fullFileName()}\" not found!")
+			throw new IOFilesError(source, '#io.file.not_found', [path: source.fullFileName(), type: 'CSV'])
 		if (!(source.rowDelimiter in ['\n', '\r\n']))
-			throw new ExceptionGETL('Allow convert CSV files only standard row delimiter!')
+			throw new DatasetError(source, '#csv.invalid_row_delimiter')
 
 		def autoSchema = source.isAutoSchema()
 		def header = source.isHeader()
@@ -1237,8 +1242,9 @@ class CSVDriver extends FileDriver {
 		if (code != null) code.call(values)
 	}
 
-	static Long decodeBulkCSV (CSVDataset target, CSVDataset source) {
-		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
+	static Long decodeBulkCSV(CSVDataset target, CSVDataset source) {
+		if (!source.existsFile())
+			throw new IOFilesError(source, '#io.file.not_found', [path: source.fullFileName(), type: 'CSV'])
 		
 		if (source.field.isEmpty() && source.isAutoSchema()) source.loadDatasetMetadata()
 		if (!source.field.isEmpty()) target.setField(source.field)

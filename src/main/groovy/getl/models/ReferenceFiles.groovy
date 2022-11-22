@@ -2,8 +2,10 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
+import getl.exception.FilemanagerError
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.files.FileManager
 import getl.files.Manager
 import getl.models.sub.BaseSpec
@@ -15,6 +17,7 @@ import getl.utils.CloneUtils
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -61,7 +64,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** Specify destination file manager for the model */
     void useDestinationManager(String managerName) {
         if (managerName == null)
-            throw new ExceptionModel('File manager name required!')
+            throw new RequiredParameterError(this, 'managerName')
 
         dslCreator.filemanager(managerName)
         saveParamValue('destinationManagerName', managerName)
@@ -69,9 +72,9 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** Specify destination file manager for the model */
     void useDestinationManager(Manager manager) {
         if (manager == null)
-            throw new ExceptionModel('File manager required!')
+            throw new RequiredParameterError(this, 'manager')
         if (manager.dslNameObject == null)
-            throw new ExceptionModel('File manager not registered in Getl repository!')
+            throw new FilemanagerError(manager, '#dsl.object.not_register')
 
         saveParamValue('destinationManagerName', manager.dslNameObject)
     }
@@ -106,14 +109,21 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         modelFile(filePath, cl)
     }
 
-    /** Valid manager connection */
-    @Override
-    void checkModel(Boolean checkObjects = true) {
+    private final Object synchModel = synchObjects
+
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    void checkModel(Boolean checkObjects = true,
+                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceFileSpec']) Closure checkNodeCode = null) {
         if (!dslCreator.unitTestMode)
-            throw new ExceptionModel("Working with model \"$this\" is allowed only in unit test mode!")
+            throw new ModelError(this, '#dsl.object.non_unit_test_mode')
 
         if (destinationManagerName == null)
-            throw new ExceptionModel("The destination manager name is not specified!")
+            throw new ModelError(this, '#dsl.model.non_dest_connection')
 
         def isCon = destinationManager.connected
         if (checkObjects) {
@@ -121,21 +131,22 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                 destinationManager.connect()
         }
 
-        super.checkModel(checkObjects)
+        super.checkModel(checkObjects, checkNodeCode)
 
         if (checkObjects && !isCon)
             destinationManager.disconnect()
     }
 
+    @Synchronized('synchModel')
     @Override
-    void checkObject(BaseSpec obj) {
+    protected void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         def modelFile = obj as ReferenceFileSpec
         def destPath = (modelFile as ReferenceFileSpec).destinationPath
         if (destPath != null && !destinationManager.existsDirectory(destPath)) {
             if (!BoolUtils.IsValue(createDestinationDirectories))
-                throw new ExceptionModel("Destination path \"$destPath\" not found from \"${modelFile.filePath}\" file " +
-                        "with \"$dslNameObject\" reference files model!")
+                throw new ModelError(this, '#dsl.model.reference_files.dest_path_not_found', [path: destPath, file: modelFile.filePath])
+
             destinationManager.createDirs(destPath)
             destinationManager.changeDirectoryToRoot()
         }

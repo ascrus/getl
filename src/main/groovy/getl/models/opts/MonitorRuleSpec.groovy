@@ -2,7 +2,7 @@
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionModel
+import getl.exception.IncorrectParameterError
 import getl.jdbc.QueryDataset
 import getl.models.MonitorRules
 import getl.models.sub.BaseSpec
@@ -43,7 +43,7 @@ class MonitorRuleSpec extends BaseSpec {
     /** Check frequency */
     void setCheckFrequency(Duration value) {
         if (value != null && value.toMilliseconds() <= 0)
-            throw new ExceptionModel('The value must be greater than zero!')
+            throw new IncorrectParameterError(ownerModel, '#params.great_zero', 'checkFrequency')
 
         saveParamValue('checkFrequency', value)
     }
@@ -53,7 +53,7 @@ class MonitorRuleSpec extends BaseSpec {
     /** Error correction threshold */
     void setNotificationTime(Duration value) {
         if (value != null && value.toMilliseconds() <= 0)
-            throw new ExceptionModel('The value must be greater than zero!')
+            throw new IncorrectParameterError(ownerModel, '#params.great_zero', 'notificationTime')
 
         saveParamValue('notificationTime', value)
     }
@@ -63,7 +63,7 @@ class MonitorRuleSpec extends BaseSpec {
     /** Allowable time lag */
     void setLagTime(Duration value) {
         if (value != null && value.toMilliseconds() <= 0)
-            throw new ExceptionModel('The value must be greater than zero!')
+            throw new IncorrectParameterError(ownerModel, '#params.great_zero', 'lagTime')
 
         saveParamValue('lagTime', value)
     }

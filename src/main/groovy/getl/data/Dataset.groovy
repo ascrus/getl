@@ -5,6 +5,11 @@ import getl.config.ConfigSlurper
 import getl.data.opts.DatasetLookupSpec
 import getl.data.sub.FieldList
 import getl.data.sub.WithConnection
+import getl.exception.ConfigError
+import getl.exception.DatasetError
+import getl.exception.IOFilesError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
@@ -148,13 +153,13 @@ class Dataset implements GetlRepository, WithConnection {
 		if (configName != null && params.dataset == null) {
 			def configParams = Config.FindSection("datasets.${configName}")
 			if (configParams == null)
-				throw new ExceptionGETL("Connection \"${configName}\" not found in configuration")
+				throw new ConfigError('#config.section_not_found', [section: configName])
 			params = configParams + params
 		}
 		
 		def datasetClass = params.dataset as String
 		if (datasetClass == null)
-			throw new ExceptionGETL("Required parameter \"dataset\"")
+			throw new RequiredParameterError('dataset', 'CreateDataset')
 		
 		def dataset = Class.forName(datasetClass).getConstructor().newInstance() as Dataset
 		dataset.importParams(params)
@@ -223,7 +228,7 @@ class Dataset implements GetlRepository, WithConnection {
 	/** Read extended attribute value */
 	Object attribute(String name) {
 		if (name == null)
-			throw new ExceptionGETL('Required "name" parameter!')
+			throw new RequiredParameterError(this, 'name')
 
 		return attributes().get(name)
 	}
@@ -231,7 +236,7 @@ class Dataset implements GetlRepository, WithConnection {
 	@Synchronized
 	void saveAttribute(String name, Object value) {
 		if (name == null)
-			throw new ExceptionGETL('Required "name" parameter!')
+			throw new RequiredParameterError(this, 'name')
 
 		attributes.put(name, value)
 	}
@@ -316,27 +321,10 @@ class Dataset implements GetlRepository, WithConnection {
 	}
 	
 	/**
-	 * Set fields from source list
-	 * @param value field description list
-	 */
-	/*protected void saveFields(List<Field> value) {
-		value.each { Field f ->
-			if (indexOfField(f.name) != -1)
-				return
-
-			Field n = f.copy()
-			if (connection != null)
-				connection.driver.prepareField(n)
-
-			this.field.add(n)
-		}
-	}*/
-	
-	/**
 	 * Add list of fields
 	 * @param fields field description list
 	 */
-	void addFields (List<Field> fields) {
+	void addFields(List<Field> fields) {
 		def l = getField()
 		fields.each { Field f -> l << f.copy() }
 	}
@@ -344,7 +332,7 @@ class Dataset implements GetlRepository, WithConnection {
 	/**
 	 * Add field to list of fields dataset
 	 */
-	void addField (Field added) {
+	void addField(Field added) {
 		getField().add(added)
 	}
 	
@@ -372,19 +360,19 @@ class Dataset implements GetlRepository, WithConnection {
 	
 	/** Schema file name */
 	@JsonIgnore
-	String getSchemaFileName () { params.schemaFileName }
+	String getSchemaFileName() { params.schemaFileName }
 	/** Schema file name */
-	void setSchemaFileName (String value) { params.schemaFileName = value }
+	void setSchemaFileName(String value) { params.schemaFileName = value }
 
 	/**
 	 * Print write rows to console
 	 */
 	@JsonIgnore
-	Boolean getLogWriteToConsole () { return BoolUtils.IsValue([params.logWriteToConsole, connection.logWriteToConsole], false) }
+	Boolean getLogWriteToConsole() { return BoolUtils.IsValue([params.logWriteToConsole, connection.logWriteToConsole], false) }
 	/**
 	 * Print write rows to console
 	 */
-	void setLogWriteToConsole (Boolean value) { params.logWriteToConsole = value }
+	void setLogWriteToConsole(Boolean value) { params.logWriteToConsole = value }
 
 	/** System parameters */
 	private final Map<String, Object> sysParams = new HashMap<String, Object>()
@@ -401,7 +389,7 @@ class Dataset implements GetlRepository, WithConnection {
 	/**
 	 * Init configuration
 	 */
-	protected void onLoadConfig (Map configSection) {
+	protected void onLoadConfig(Map configSection) {
 		MapUtils.MergeMap(params as Map<String, Object>, MapUtils.CleanMap(configSection, ["fields"]) as Map<String, Object>)
 		if (configSection.containsKey("fields")) {
 			List<Map> l = configSection.fields as List<Map>
@@ -430,9 +418,9 @@ class Dataset implements GetlRepository, WithConnection {
 				Config.FindSection("datasets.${config}")
 
 		if (cp.isEmpty())
-			throw new ExceptionGETL("Config section \"datasets.${config}\" not found")
+			throw new ConfigError(this, '#config.section_not_found', [section: config])
 		onLoadConfig(cp)
-		logger.config("Load config \"datasets\".\"${config}\" for object \"${this.getClass().name}.${objectName}\"")
+		Logs.Config(this, '#config.load_object_from_config', [type: 'datasets', section: config])
 	}
 
 	/**
@@ -486,7 +474,7 @@ class Dataset implements GetlRepository, WithConnection {
 	void removeField(String name) {
 		def i = indexOfField(name)
 		if (i == -1)
-			throw new ExceptionGETL("Field \"${name}\" not found")
+			throw new DatasetError(this, '#dataset.field_not_found', [field: name])
 
 		getField().remove(i)
 	}
@@ -531,7 +519,7 @@ class Dataset implements GetlRepository, WithConnection {
 	 */
 	void validConnection (Boolean connecting = true) {
 		if (connection == null)
-			throw new ExceptionGETL("Connection required")
+			throw new RequiredParameterError(this, 'connection')
 
 		if (connecting)
 			connection.tryConnect()
@@ -557,7 +545,7 @@ class Dataset implements GetlRepository, WithConnection {
 			prepareFields(f)
 		}
 		catch (Exception e) {
-			logger.severe("Error reading fields from dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_read_fields', e)
 			throw e
 		}
 		return f
@@ -590,8 +578,6 @@ class Dataset implements GetlRepository, WithConnection {
 					dsField = newField.copy()
 					if (prepare != null)
 						prepare(cur, dsField)
-					/*if (connection != null)
-						connection.driver.prepareField(dsField)*/
 
 					field.add(dsField)
 					break
@@ -601,8 +587,6 @@ class Dataset implements GetlRepository, WithConnection {
 						dsField = newField.copy()
 						if (prepare != null)
 							prepare(cur, dsField)
-						/*if (connection != null)
-							connection.driver.prepareField(dsField)*/
 
 						field.add(dsField)
 					}
@@ -611,8 +595,6 @@ class Dataset implements GetlRepository, WithConnection {
 					newField = newField.copy()
 					if (prepare != null)
 						prepare(cur, newField)
-					/*if (connection != null)
-						connection.driver.prepareField(newField)*/
 
 					dsField = fieldByName(newField.name)
 					if (dsField != null)
@@ -623,7 +605,7 @@ class Dataset implements GetlRepository, WithConnection {
 					}
 					break
 				default:
-					throw new ExceptionGETL("Unknown update type \"$updateFieldType\"!")
+					throw new DatasetError(this, '#dataset.invalid_type_update', [type: updateFieldType])
 			}
 		}
 	}
@@ -634,14 +616,14 @@ class Dataset implements GetlRepository, WithConnection {
 	List<String> retrieveFields(UpdateFieldType updateFieldType, Closure prepare = null) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
-			throw new ExceptionGETL("Driver not supported retrieve fields")
+			throw new NotSupportError(this, 'read fields')
 
 		List<Field> sourceFields
 		try {
 			sourceFields = connection.driver.fields(this)
 		}
 		catch (Exception e) {
-			logger.severe("Error reading fields from dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_read_fields', e)
 			throw e
 		}
 		manualSchema = true
@@ -720,7 +702,7 @@ class Dataset implements GetlRepository, WithConnection {
 	void create(Map procParams = new HashMap()) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.CREATE))
-			throw new ExceptionGETL("Driver not supported create dataset")
+			throw new NotSupportError(this, 'create')
 
 		if (procParams == null)
 			procParams = new HashMap()
@@ -734,7 +716,7 @@ class Dataset implements GetlRepository, WithConnection {
 			connection.driver.createDataset(this, procParams)
 		}
 		catch (Exception e) {
-			logger.severe("Error creating dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_create', e)
 			throw e
 		}
 	}
@@ -745,7 +727,7 @@ class Dataset implements GetlRepository, WithConnection {
 	void drop(Map procParams = new HashMap()) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.DROP))
-			throw new ExceptionGETL("Driver not supported drop dataset")
+			throw new NotSupportError(this, 'drop')
 		
 		if (procParams == null)
 			procParams = new HashMap()
@@ -758,7 +740,7 @@ class Dataset implements GetlRepository, WithConnection {
 			connection.driver.dropDataset(this, procParams)
 		}
 		catch (Exception e) {
-			logger.severe("Error dropping dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_drop', e)
 			throw e
 		}
 	}
@@ -799,8 +781,8 @@ class Dataset implements GetlRepository, WithConnection {
 
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
-			throw new ExceptionGETL("Driver not supported bulk load file!")
-		
+			throw new NotSupportError(this, 'bulk load')
+
 		if (procParams == null)
 			procParams = new HashMap()
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
@@ -811,20 +793,21 @@ class Dataset implements GetlRepository, WithConnection {
 		if (getField().size() == 0) {
 			if (BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
-					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
+					throw new NotSupportError(this, 'load schema file')
 
 				loadDatasetMetadata()
 			}
 			else {
-				if (connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) retrieveFields()
+				if (connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+					retrieveFields()
 			}
 		}
 		if (_field.isEmpty())
-			throw new ExceptionGETL("Destination dataset required declare fields!")
+			throw new DatasetError(this, '#dataset.non_fields')
 		
 		CSVDataset source = procParams.source as CSVDataset
 		if (source == null)
-			throw new ExceptionGETL("Required parameter \"source\"")
+			throw new RequiredParameterError('source', 'bulkLoadFile')
 
 		validCsvTempFile(source)
 		if (BoolUtils.IsValue(procParams.inheritFields))
@@ -833,7 +816,7 @@ class Dataset implements GetlRepository, WithConnection {
 		if (source.field.isEmpty()) {
 			if (BoolUtils.IsValue(procParams.source_autoSchema, source.isAutoSchema())) {
 				if (!source.connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
-					throw new ExceptionGETL("Can not auto load schema from source dataset!")
+					throw new NotSupportError(source, 'load schema file')
 
 				source.loadDatasetMetadata()
 			}
@@ -843,7 +826,7 @@ class Dataset implements GetlRepository, WithConnection {
 			}
 		}
 		if (source.field.isEmpty())
-			throw new ExceptionGETL("Source dataset required declare fields!")
+			throw new DatasetError(source, '#dataset.non_fields')
 
 		def removeFile = BoolUtils.IsValue(procParams.removeFile)
 		def moveFileTo = procParams.moveFileTo as String
@@ -858,7 +841,7 @@ class Dataset implements GetlRepository, WithConnection {
 			result
 		}
 		
-		Map p = MapUtils.CleanMap(procParams, ["prepare", "source"])
+		Map p = MapUtils.CleanMap(procParams, ['prepare', 'source'])
 
 		def autoTran = connection.isSupportTran
 		if (autoTran) {
@@ -873,7 +856,7 @@ class Dataset implements GetlRepository, WithConnection {
 			connection.driver.bulkLoadFile(source, this, p, prepareFields)
 		}
 		catch (Exception e) {
-			logger.severe("Error bulk load files to dataset \"$this\"", e)
+			Logs.Severe(this, '#dataset.fail_bulk_load', e)
 			if (autoTran)
 				connection.rollbackTran()
 			throw e
@@ -886,7 +869,7 @@ class Dataset implements GetlRepository, WithConnection {
 		}
 		else if (removeFile) {
 			if (!FileUtils.DeleteFile(source.fullFileName()))
-				throw new ExceptionGETL("Cannot delete file \"${source.fullFileName()}\"!")
+				throw new IOFilesError(this, '#io.file.fail_delete', [path: source.fullFileName()])
 		}
 	}
 
@@ -931,7 +914,7 @@ class Dataset implements GetlRepository, WithConnection {
 	 */
 	List fieldValues(String fieldName, Map procParams = null) {
 		if (indexOfField(fieldName) == -1)
-			throw new ExceptionGETL("Field \"$fieldName\" not found in dataset \"$this\"!")
+			throw new DatasetError(this, '#dataset.field_not_found', [field: fieldName])
 
 		List res = []
 		eachRow(procParams) { row -> res.add(row.get(fieldName)) }
@@ -1047,7 +1030,7 @@ class Dataset implements GetlRepository, WithConnection {
 		names?.each { String fieldName ->
 			Field f = fieldByName(fieldName)
 			if (f == null)
-				throw new ExceptionGETL("Field \"$fieldName\" not found")
+				throw new DatasetError(this, '#dataset.field_not_found', [field: fieldName])
 
 			res.add(f.copy())
 		}
@@ -1122,9 +1105,9 @@ class Dataset implements GetlRepository, WithConnection {
 				  @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.EACHROW))
-			throw new ExceptionGETL("Driver is not support each row operation")
+			throw new NotSupportError(this, 'read rows')
 		if (status != Status.AVAILABLE)
-			throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
+			throw new DatasetError(this, '#dataset.invalid_status', [operation: 'read', status: status])
 
 		if (procParams == null)
 			procParams = new HashMap()
@@ -1132,7 +1115,7 @@ class Dataset implements GetlRepository, WithConnection {
 
 		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
-				throw new ExceptionGETL("Can not auto load schema from dataset")
+				throw new NotSupportError(this, 'load schema file')
 			loadDatasetMetadata()
 		}
 
@@ -1217,9 +1200,9 @@ class Dataset implements GetlRepository, WithConnection {
 	void openWrite(Map procParams = new HashMap()) {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.WRITE))
-			throw new ExceptionGETL("Driver is not support write operation")
+			throw new NotSupportError(this, 'write rows')
 		if (status != Status.AVAILABLE)
-			throw new ExceptionGETL("Dataset is not avaible for write operation (current status is ${status})")
+			throw new DatasetError(this, '#dataset.invalid_status', [operation: 'write', status: status])
 
 		procParams = procParams?:new HashMap()
 		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
@@ -1228,8 +1211,8 @@ class Dataset implements GetlRepository, WithConnection {
 
 		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())
 		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA))
-			throw new ExceptionGETL("Can not auto save schema from dataset")
-		
+			throw new NotSupportError(this, 'save schema file')
+
 		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 		
 		def prepareFields = { List<Field> sourceFields ->
@@ -1251,7 +1234,7 @@ class Dataset implements GetlRepository, WithConnection {
 			connection.driver.openWrite(this, p, prepareFields)
 		}
 		catch (Exception e) {
-			logger.severe("Error opening dataset \"$objectName\" for writing", e)
+			Logs.Severe(this, '#dataset.fail_open_write', e)
 			throw e
 		}
 		status = Status.WRITE
@@ -1267,14 +1250,14 @@ class Dataset implements GetlRepository, WithConnection {
 	 */
 	void write(Map row) {
 		if (status != Status.WRITE)
-			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+			throw new DatasetError(this, '#dataset.invalid_status', [operation: 'write', status: status])
 		try {
 			if (logWriteToConsole) println("$this: $row")
 			this.connection.driver.write(this, row)
 		}
 		catch (Exception e) {
 			isWriteError = true
-			logger.severe("Failed to save row to dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_write', e)
 			throw e
 		}
 	}
@@ -1284,7 +1267,7 @@ class Dataset implements GetlRepository, WithConnection {
 	 */
 	void writeList(List<Map> rows) {
 		if (status != Status.WRITE)
-			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+			throw new DatasetError(this, '#dataset.invalid_status', [operation: 'write', status: status])
 		try {
 			rows.each { Map row ->
 				if (logWriteToConsole) println("$this: $row")
@@ -1293,7 +1276,7 @@ class Dataset implements GetlRepository, WithConnection {
 		}
 		catch (Exception e) {
 			isWriteError = true
-			logger.severe("Failed to save row list for dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_write', e)
 			throw e
 		}
 	}
@@ -1319,7 +1302,7 @@ class Dataset implements GetlRepository, WithConnection {
 	 */
 	void doneWrite () {
 		if (status != Status.WRITE)
-			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+			throw new DatasetError(this, '#dataset.invalid_status', [operation: 'write', status: status])
 
 		connection.driver.doneWrite(this)
 	}
@@ -1334,7 +1317,7 @@ class Dataset implements GetlRepository, WithConnection {
 			connection.driver.closeWrite(this)
 		}
 		catch (Exception e) {
-			logger.severe("Error closing dataset \"$objectName\" from writing", e)
+			Logs.Severe(this, '#dataset.fail_close_write', e)
 			throw e
 		}
 		finally {
@@ -1426,12 +1409,13 @@ class Dataset implements GetlRepository, WithConnection {
 		methodParams.validation("lookup", procParams)
 		
 		String key = procParams.key as String
-		if (key == null) throw new ExceptionGETL("Required parameter \"key\"!")
+		if (key == null)
+			throw new RequiredParameterError(this, 'key', 'lookup')
 		
 		if (getField().isEmpty()) {
 			if (BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
-					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
+					throw new NotSupportError(this, 'load schema file')
 
 				loadDatasetMetadata()
 			}
@@ -1443,7 +1427,7 @@ class Dataset implements GetlRepository, WithConnection {
 
 		def keyField = fieldByName(key)
 		if (keyField == null)
-			throw new ExceptionGETL("Key field \"$key\" not found!")
+			throw new DatasetError(this, '#dataset.field_not_found', [field: key])
 
 		key = keyField.name.toLowerCase()
 
@@ -1457,13 +1441,16 @@ class Dataset implements GetlRepository, WithConnection {
 			result = new TreeMap()
 		}
 		else {
-			throw new ExceptionGETL("Unknown strategy value \"${procParams.strategy}\"")
+			throw new DatasetError(this, '#dataset.invalid_lookup_strategy',
+					[strategy: procParams.strategy])
 		}
 		procParams = MapUtils.CleanMap(procParams, ['key', 'strategy'])
 		
 		eachRow(procParams) { Map row ->
 			def k = row.get(key)
-			if (k == null) throw new ExceptionGETL("Can not support null in key field value with row: ${row}")
+			if (k == null)
+				throw new DatasetError(this, '#dataset.field_key_value_required', [field: key, row: row])
+
 			result.put(k, row)
 		}
 
@@ -1498,7 +1485,7 @@ class Dataset implements GetlRepository, WithConnection {
 			l = b.parse(reader)
 		}
 		catch (Exception e) {
-			logger.severe("Error reading schema file for dataset \"$objectName\"", e)
+			Logs.Severe(this, '#dataset.fail_read_schema_file', e)
 			throw e
 		}
 		finally {
@@ -1507,7 +1494,7 @@ class Dataset implements GetlRepository, WithConnection {
 
 		List<Field> fl = GenerationUtils.Map2Fields(l as Map)
 		if (fl == null || fl.isEmpty())
-			throw new ExceptionGETL("Fields not found!")
+			throw new DatasetError(this, '#dataset.fields_not_detected')
 		
 		return fl
 	}
@@ -1524,7 +1511,7 @@ class Dataset implements GetlRepository, WithConnection {
 			throw e
 		}
 		catch (Exception e) {
-			logger.severe("Error reading schema file for dataset \"${objectName}\"", e)
+			Logs.Severe(this, '#dataset.fail_read_schema_file', [file: file.path], e)
 			throw e
 		}
 		manualSchema = true
@@ -1539,7 +1526,7 @@ class Dataset implements GetlRepository, WithConnection {
 		def p = ConfigSlurper.LoadConfigFile(file: file, owner: dslCreator)
 		List<Field> fl = GenerationUtils.Map2Fields(p)
 		if (fl == null || fl.isEmpty())
-			throw new ExceptionGETL("Fields not found in file \"$file\"!")
+			throw new DatasetError(this, '#dataset.fields_not_detected', [file: file.path])
 
 		return fl
 	}
@@ -1570,7 +1557,7 @@ class Dataset implements GetlRepository, WithConnection {
 
 	@Override
 	String toString() {
-		return objectName
+		return dslNameObject?:objectName
 	}
 
 	/** Format for reading and writing schema files */
@@ -1584,11 +1571,11 @@ class Dataset implements GetlRepository, WithConnection {
 	@Synchronized
 	void saveDatasetMetadata(List<String> fieldList = null, Boolean overwrite = true) {
 		if (isResourceFileNameSchema())
-			throw new ExceptionGETL('It is not possible to save the schema to a resource file!')
+			throw new NotSupportError(this, 'save schema to resource file')
 
 		def fn = fullFileSchemaName()
 		if (fn == null)
-			throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema!")
+			throw new RequiredParameterError(this, 'schemaFileName')
 
 		FileUtils.ValidFilePath(fn)
 		def file = new File(fn)
@@ -1609,7 +1596,7 @@ class Dataset implements GetlRepository, WithConnection {
 	void loadDatasetMetadata() {
 		def fn = fullFileSchemaName()
 		if (fn == null)
-			throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
+			throw new RequiredParameterError(this, 'schemaFileName')
 
 		try {
 			if (formatSchemaFile == FormatSchemaFile.SLURPER || (formatSchemaFile == null && Config.configClassManager instanceof ConfigSlurper))
@@ -1621,7 +1608,7 @@ class Dataset implements GetlRepository, WithConnection {
 			throw e
 		}
 		catch (Exception e) {
-			logger.severe("Error reading schema file for dataset \"${objectName}\" from file \"$fn\"", e)
+			Logs.Severe(this, '#dataset.fail_read_schema_file', e)
 			throw e
 		}
 	}
@@ -1743,7 +1730,7 @@ class Dataset implements GetlRepository, WithConnection {
 		if (getField().isEmpty()) {
 			if (isAutoSchema()) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
-					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
+					throw new NotSupportError(this, 'load schema file')
 
 				loadDatasetMetadata()
 			}
@@ -1752,7 +1739,8 @@ class Dataset implements GetlRepository, WithConnection {
 					retrieveFields()
 			}
 
-			if (_field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
+			if (_field.isEmpty())
+				throw new DatasetError(this, '#dataset.non_fields')
 		}
 		this.csvTempFile.setField(_field)
 
@@ -1871,7 +1859,7 @@ class Dataset implements GetlRepository, WithConnection {
 
 	static void CheckTableFields(Dataset dataset, List<Field> fields) {
 		if (dataset == null)
-			throw new ExceptionGETL('Need dataset!')
+			throw new RequiredParameterError('dataset', 'CheckTableFields')
 
 		if (dataset.field.isEmpty())
 			return
@@ -1879,24 +1867,24 @@ class Dataset implements GetlRepository, WithConnection {
 		fields.each { needField ->
 			def dsField = dataset.fieldByName(needField.name)
 			if (dsField == null)
-				throw new ExceptionGETL("Field \"${needField.name}\" not found in dataset!")
+				throw new DatasetError(dataset, '#dataset.field_not_found', [field: needField.name])
 
 			def fieldType = FieldSoftType(dsField.type)
 			def needType = FieldSoftType(needField.type)
 			if (fieldType != needType)
-				throw new ExceptionGETL("Field \"${needField.name}\" is not compatible with type \"${needField.type}\"!")
+				throw new DatasetError(dataset, '#dataset.field_type_not_compatible', [field: needField.name, type: needField.type])
 
 			if (Field.AllowLength(needField) && needField.length != null && (dsField.length?:0) < needField.length)
-				throw new ExceptionGETL("Field \"${needField.name}\" must have a length of at least ${needField.length}!")
+				throw new DatasetError(dataset, '#dataset.field_length_not_compatible', [field: needField.name, length: needField.length])
 
 			if (Field.AllowPrecision(needField) && needField.precision != null && (dsField.precision?:0) < needField.precision)
-				throw new ExceptionGETL("Field \"${needField.name}\" must have a precision of at least ${needField.precision}!")
+				throw new DatasetError(dataset, '#dataset.field_prec_not_compatible', [field: needField.name, precision: needField.precision])
 
 			if (!needField.isNull && dsField.isNull)
-				throw new ExceptionGETL("Field \"${needField.name}\" cannot be nullable!")
+				throw new DatasetError(dataset, '#dataset.field_null_not_compatible', [field: needField.name])
 
 			if (needField.isKey && !dsField.isKey)
-				throw new ExceptionGETL("Field \"${needField.name}\" must be a key field!")
+				throw new DatasetError(dataset, '#dataset.field_key_not_compatible', [field: needField.name])
 		}
 	}
 
@@ -1942,7 +1930,7 @@ class Dataset implements GetlRepository, WithConnection {
 	 */
 	Map<String, List<String>> checkRowByFields(Map row, Boolean checkNotNull = true, Boolean checkLength = false, List<String> excludeFields = null) {
 		if (row == null)
-			throw new NullPointerException('Required row!')
+			throw new RequiredParameterError(this, 'row', 'checkRowByFields')
 
 		if (excludeFields != null)
 			excludeFields = excludeFields*.toLowerCase()
@@ -1984,7 +1972,7 @@ class Dataset implements GetlRepository, WithConnection {
 		def p = 0
 		partFields.each { f ->
 			if (!field.remove(f))
-				throw new ExceptionGETL("Failed to move field \"${f.name}\" to the end of the list in dataset \"$objectFullName\"!")
+				throw new DatasetError(this, '#dataset.fail_move_field_to_last', [field: f.name])
 
 			field.add(p, f)
 			p++
@@ -1996,7 +1984,7 @@ class Dataset implements GetlRepository, WithConnection {
 		def partFields = fieldListPartitions
 		partFields.each { f ->
 			if (!field.remove(f))
-				throw new ExceptionGETL("Failed to move field \"${f.name}\" to the end of the list in dataset \"$objectFullName\"!")
+				throw new DatasetError(this, '#dataset.fail_move_field_to_last', [field: f.name])
 			field.add(f)
 		}
 	}

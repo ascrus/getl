@@ -22,6 +22,9 @@ class ProfileSpec extends BaseSpec {
         )
     }
 
+    /** Getl owner */
+    private Getl getGetl() { ownerObject as Getl }
+
     /** Getl profile block */
     private Boolean isProfile = false
     /** Getl profile block */

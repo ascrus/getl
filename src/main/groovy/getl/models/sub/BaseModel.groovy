@@ -2,8 +2,9 @@ package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.exception.ExceptionDSL
+import getl.exception.ExceptionGETL
 import getl.exception.ExceptionModel
+import getl.exception.ModelError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.DateUtils
@@ -12,7 +13,6 @@ import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
-
 import java.lang.reflect.ParameterizedType
 import java.sql.Timestamp
 import java.util.concurrent.CopyOnWriteArrayList
@@ -88,13 +88,14 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             else if (obj instanceof Map)
                 objects.add(createSpec(obj as Map))
             else
-                throw new ExceptionDSL("Invalid used object type \"${obj.getClass()}\" in model \"$this\" [${this.getClass()}]!")
+                throw new ModelError(this, "Invalid used object type \"${obj.getClass()}\" in model \"$this\" [${this.getClass()}]!")
         }
         MapUtils.MergeMap(params, importParams)
         params.usedObjects = objects
     }
 
-    private final Object synchObjects = new Object()
+    /** Synchronize field */
+    protected final Object synchObjects = new Object()
 
     /** Model objects */
     @Synchronized('synchObjects')
@@ -193,7 +194,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             return null
 
         if (!value.integer)
-            throw new ExceptionDSL("Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
+            throw new ModelError(this, "Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
 
         return value.toInteger()
     }
@@ -211,7 +212,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             return null
 
         if (!value.bigInteger)
-            throw new ExceptionDSL("Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
+            throw new ModelError(this, "Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
 
         return value.toBigInteger().longValue()
     }
@@ -276,7 +277,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         try {
             res = _dslCreator.dataset(dsName)
         }
-        catch (ExceptionDSL e) {
+        catch (ExceptionGETL e) {
             _dslCreator.logError("Model \"$this\" has invalid story dataset \"$dsName\"", e)
             throw e
         }
@@ -309,7 +310,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         while (!(genClass.genericSuperclass instanceof ParameterizedType)) {
             genClass = genClass.superclass
             if (!BaseModel.isAssignableFrom(genClass))
-                throw new ExceptionDSL("Can't find super class model for class \"${this.getClass()}\"!")
+                throw new ModelError(this, "Can't find super class model for class \"${this.getClass()}\"!")
         }
         return (genClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
     }
@@ -330,18 +331,23 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     }
 
     /**
-     * Check model parameters
-     * @param validObjects check parameters of model objects
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
      */
     @Synchronized('synchObjects')
-    void checkModel(Boolean checkObjects = true) {
+    protected void checkModel(Boolean checkObjects = true, Closure checkNodeCode = null) {
         if (checkObjects)
-            usedObjects.each { obj -> checkObject(obj) }
+            usedObjects.each { obj ->
+                checkObject(obj)
+                if (checkNodeCode != null)
+                    checkNodeCode.call(obj)
+            }
     }
 
     /** Check object parameter */
     @Synchronized('synchObjects')
-    void checkObject(getl.models.sub.BaseSpec object) { }
+    protected void checkObject(getl.models.sub.BaseSpec object) { }
 
     /**
      * Check attribute naming and generate an unknown error for used objects
@@ -351,7 +357,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Synchronized('synchAttrs')
     void checkAttrs(List<String> allowAttrs, Boolean checkObjects = true) {
         if (allowAttrs == null)
-            throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
+            throw new ModelError(this, 'The list of attribute names in parameter "allowAttrs" is not specified!')
 
         def validation = Path.Masks2Paths(allowAttrs)
         def unknownKeys = [] as List<String>
@@ -361,7 +367,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         }
 
         if (!unknownKeys.isEmpty())
-            throw new ExceptionDSL("Unknown attributes were detected in model \"$_dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
+            throw new ModelError(this, "Unknown attributes were detected in model \"$_dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
 
         if (checkObjects) {
             usedObjects.each { node ->
@@ -373,7 +379,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /** Check model owner */
     protected void checkGetlInstance() {
         if (_dslCreator == null)
-            throw new ExceptionDSL('Requires a Getl instance for the model!')
+            throw new ModelError(this, 'Requires a Getl instance for the model!')
     }
 
     @Override

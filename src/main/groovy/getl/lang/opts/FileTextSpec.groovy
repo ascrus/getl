@@ -1,8 +1,8 @@
+//file:noinspection unused
 package getl.lang.opts
 
 import getl.config.ConfigSlurper
-import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
+import getl.exception.DslError
 import getl.lang.Getl
 import getl.tfs.TFS
 import getl.utils.BoolUtils
@@ -17,6 +17,8 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FileTextSpec extends BaseSpec {
+    private Getl getGetl() { ownerObject as Getl }
+
     /** Text file name */
     String getFileName() { params.fileName as String }
     /** Text file name */
@@ -72,7 +74,7 @@ class FileTextSpec extends BaseSpec {
     @SuppressWarnings('SpellCheckingInspection')
     void save() {
         if (fileName == null && !temporaryFile)
-            throw new ExceptionGETL("Required \"fileName\" value!")
+            throw new DslError(getl,'#params.required', [param: 'fileMan', detail: 'save'])
 
         File file
         if (!temporaryFile) {
@@ -141,7 +143,7 @@ class FileTextSpec extends BaseSpec {
     /** Read text from specified file */
     static String read(String sourceFileName, String codePage = null) {
         if (sourceFileName == null)
-            throw new ExceptionGETL("Required \"sourceFileName\" value!")
+            throw new DslError('#params.required', [param: 'sourceFileName', detail: 'read'])
 
         return new File(sourceFileName).getText(codePage?:'utf-8')
     }
@@ -161,11 +163,11 @@ class FileTextSpec extends BaseSpec {
         def file = new File(filePath())
         if (!file.exists()) {
             if (throwIfNotExists)
-                throw new ExceptionDSL("File \"${filePath()}\" not found!")
+                throw new DslError(getl, '#io.file.not_found', [path: filePath()])
         }
         else {
             if (!file.delete())
-                throw new ExceptionDSL("Can not delete file \"${filePath()}\"!")
+                throw new DslError(getl, '#io.file.fail_delete', [path: filePath()])
         }
     }
 

@@ -643,11 +643,13 @@ class FileUtils {
 	 * @param filePath file path
 	 * @return parent path
 	 */
-	static String PathFromFile(String filePath, Boolean isUnix = null) {
-		if (filePath == null) return null
+	static String PathFromFile(String filePath, Boolean isUnix = null, Boolean relativeResources = false) {
+		if (filePath == null)
+			return null
 
-		def res = new File(TransformFilePath(filePath)).parent
-		if (res == null || res in ['.', '..']) return null
+		def res = new File(TransformFilePath((!IsResourceFileName(filePath, true) || !relativeResources)?filePath:filePath.substring(filePath.indexOf('/')))).parent
+		if (res == null || res in ['.', '..'])
+			return null
 		if (isUnix != null) {
 			if (isUnix)
 				res = ConvertToUnixPath(res)
@@ -701,7 +703,7 @@ class FileUtils {
 		if (filePath == null)
 			return null
 		
-		def res = new File(TransformFilePath(filePath)).name
+		def res = new File(TransformFilePath((!IsResourceFileName(filePath, true))?filePath:filePath.substring(filePath.indexOf('/')))).name
 		if (res in ['.', '..'])
 			return null
 
@@ -1215,12 +1217,13 @@ class FileUtils {
      * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
 	 * @param classLoader use the specified classloader to access resources
 	 * @param destFile place the resource in the specified file
+	 * @return resource file descriptor or null if file not found
      */
 	@SuppressWarnings(['RegExpRedundantEscape', 'RegExpSingleCharAlternation'])
 	@Synchronized
 	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null, File destFile = null) {
 		URL resource = (classLoader == null)?GroovyClassLoader.getResource(fileName):classLoader.getResource(fileName)
-		File res
+		File res = null
 		if (resource == null) {
             if (otherPath != null) {
                 if (otherPath instanceof List) {
@@ -1233,16 +1236,16 @@ class FileUtils {
                     }
                 } else {
                     def file = new File("$otherPath/$fileName")
-                    if (file.exists()) res = file
+                    if (file.exists())
+						res = file
                 }
             }
 			else if (!ListResourcePath.isEmpty()) {
-				ListResourcePath.each { String path ->
+				for (String path in ListResourcePath) {
 					def file = new File("$path/$fileName")
 					if (file.exists()) {
 						res = file
-						//noinspection UnnecessaryQualifiedReference
-						directive = Closure.DONE
+						break
 					}
 				}
 			}
@@ -1269,7 +1272,6 @@ class FileUtils {
 			}
 		}
 
-		//noinspection GroovyVariableNotAssigned
 		return res
 	}
 

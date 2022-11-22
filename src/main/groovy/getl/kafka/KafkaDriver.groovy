@@ -4,7 +4,10 @@ import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
+import getl.exception.ConnectionError
+import getl.exception.DatasetError
+import getl.exception.NotSupportError
+import getl.exception.RequiredParameterError
 import getl.json.JSONConnection
 import getl.json.JSONDataset
 import getl.tfs.TFS
@@ -48,7 +51,7 @@ class KafkaDriver extends Driver {
 
     @Override
     Boolean isConnected() {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'connect')
     }
 
     /** Current Kafka connection object  */
@@ -56,53 +59,53 @@ class KafkaDriver extends Driver {
 
     @Override
     void connect() {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'connect')
     }
 
     @Override
     void disconnect() {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'disconnect')
     }
 
     @Override
     List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'retrieveObject')
     }
 
     @Override
     List<Field> fields(Dataset dataset) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'read fields')
     }
 
     @Override
     void startTran(Boolean useSqlOperator = false) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'start transaction')
     }
 
     @Override
     void commitTran(Boolean useSqlOperator = false) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'commit transaction')
     }
 
     @Override
     void rollbackTran(Boolean useSqlOperator = false) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'rollback transaction')
     }
 
     @Override
     void createDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'create dataset')
     }
 
     void checkKafkaParams(KafkaDataset ds = null) {
         if (ds != null && ds.kafkaTopic == null)
-            throw new ExceptionGETL("Required topic name in the dataset \"$ds\"!")
+            throw new RequiredParameterError(ds, 'kafkaTopic')
 
         def con = currentKafkaConnection
         if (con.bootstrapServers == null)
-            throw new ExceptionGETL('No servers are specified to connect to in the "bootstrapServers" in connection \"$con\"!')
+            throw new RequiredParameterError(ds, 'bootstrapServers')
         if (con.groupId == null)
-            throw new ExceptionGETL('Group id required in connection \"$con\"!')
+            throw new RequiredParameterError(ds, 'groupId')
     }
 
     @SuppressWarnings(['UnnecessaryQualifiedReference'])
@@ -112,7 +115,7 @@ class KafkaDriver extends Driver {
         checkKafkaParams(ds)
 
         if (ds.field.isEmpty())
-            throw new ExceptionGETL("Required fields description with dataset!")
+            throw new DatasetError(ds, '#dataset.non_fields')
 
         def con = currentKafkaConnection
         def topicName = ds.kafkaTopic
@@ -328,22 +331,22 @@ class KafkaDriver extends Driver {
 
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'bulk load file')
     }
 
     @Override
     void clearDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'clear dataset')
     }
 
     @Override
     Long executeCommand(String command, Map params) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'execute command')
     }
 
     @Override
     Long getSequence(String sequenceName) {
-        throw new ExceptionGETL('Not supported!')
+        throw new NotSupportError(connection, 'sequence')
     }
 
     AdminClient createAdminClient() {
@@ -376,7 +379,7 @@ class KafkaDriver extends Driver {
 
     Boolean existsTopic(String topicName, AdminClient adminClient = null) {
         if (topicName == null)
-            throw new NullPointerException("Required topic name!")
+            throw new RequiredParameterError(connection, 'topicName', 'existsTopic')
 
         def admin = adminClient?:createAdminClient()
         Boolean res = false
@@ -393,13 +396,13 @@ class KafkaDriver extends Driver {
 
     void createTopic(String topicName, Integer numPartitions, Short replicationFactor, Boolean ifNotExists, AdminClient adminClient = null) {
         if (topicName == null)
-            throw new NullPointerException("Required topic name!")
+            throw new RequiredParameterError(connection, 'topicName', 'createTopic')
 
         def admin = adminClient?:createAdminClient()
         try {
             def exists = existsTopic(topicName, admin)
             if (exists && !ifNotExists)
-                throw new ExceptionGETL("Topic \"$topicName\" already exists!")
+                throw new ConnectionError(connection, '#kafka.topic_already', [topic: topicName])
 
             if (!exists) {
                 def topic = new NewTopic(topicName, numPartitions, replicationFactor)
@@ -414,13 +417,13 @@ class KafkaDriver extends Driver {
 
     void dropTopic(String topicName, Boolean ifExists, AdminClient adminClient = null) {
         if (topicName == null)
-            throw new NullPointerException("Required topic name!")
+            throw new RequiredParameterError(connection, 'topicName', 'dropTopic')
 
         def admin = adminClient?:createAdminClient()
         try {
             def exists = existsTopic(topicName, admin)
             if (!exists && !ifExists)
-                throw new ExceptionGETL("Topic \"$topicName\" not exists!")
+                throw new ConnectionError(connection, '#kafka.topic_not_found', [topic: topicName])
 
             if (exists) {
                 admin.deleteTopics(Collections.singleton(topicName))

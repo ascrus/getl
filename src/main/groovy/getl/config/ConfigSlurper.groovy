@@ -1,6 +1,8 @@
 package getl.config
 
-import getl.exception.ExceptionGETL
+import getl.exception.IOFilesError
+import getl.exception.IncorrectParameterError
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.proc.Job
@@ -8,7 +10,6 @@ import getl.utils.*
 import groovy.time.Duration
 import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
-
 import java.sql.Time
 import java.sql.Timestamp
 
@@ -44,7 +45,7 @@ class ConfigSlurper extends ConfigManager {
 		if (config.path != null) {
 			this.path = config.path as String
 			if (!(new File(this.path()).exists()))
-				throw new ExceptionGETL("Can not find config path \"${this.path()}\"")
+				throw new IOFilesError('#io.file.not_found', [path: this.path(), type: 'Config'])
 			logger.config("config: set path ${this.path()}")
 		}
 		def configPath = (this.path != null)?"${this.path()}${File.separator}":""
@@ -57,7 +58,8 @@ class ConfigSlurper extends ConfigManager {
 			else {
 				def fs = fn.split(";")
 				fs.each {
-					if (!(new File(configPath + it).exists())) throw new ExceptionGETL("Can not find config file \"${it}\"")
+					if (!(new File(configPath + it).exists()))
+						throw new IOFilesError('#io.file.not_found', [path: it, type: 'Config'])
 				}
 				this.files = []
 				this.files.addAll(fs)
@@ -70,7 +72,8 @@ class ConfigSlurper extends ConfigManager {
 	String getCodePage () { (params.codePage as String)?:'UTF-8' }
 	/** Configuration files code page */
 	void setCodePage (String value) {
-		if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
+		if (value.trim() == '')
+			throw new IncorrectParameterError('#params.empty', 'codePage')
 		params.codePage = value
 	}
 
@@ -78,7 +81,8 @@ class ConfigSlurper extends ConfigManager {
 	String getFileName () { params.fileName as String}
 	/** Configuration file name */
 	void setFileName (String value) {
-		if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
+		if (value.trim() == '')
+			throw new IncorrectParameterError('#params.empty', 'fileName')
 		params.fileName = value?.trim()
 	}
 
@@ -88,7 +92,7 @@ class ConfigSlurper extends ConfigManager {
 	void setFiles (List<String> value) {
 		value.each {
 			if (it == null || it.trim() == '') {
-				throw new ExceptionGETL('The file name can not have empty value')
+				throw new IncorrectParameterError('#params.empty', 'files')
 			}
 		}
 
@@ -106,7 +110,7 @@ class ConfigSlurper extends ConfigManager {
 	/** Directory for configuration files */
 	void setPath(String value) {
 		if (value != null && !(new File(value).exists()))
-			throw new ExceptionGETL("Directory \"$value\" not exists!")
+			throw new IOFilesError('#io.dir.not_found', [path: value])
 
 		params.path = value
 	}
@@ -118,7 +122,7 @@ class ConfigSlurper extends ConfigManager {
 	/** Use environment section */
 	void setEnvironment(String value) {
 		if (value != null && value.trim().length() == 0)
-			throw new ExceptionGETL('The environment can not have empty value')
+			throw new RequiredParameterError('environment')
 
 		params.environment = value
 	}
@@ -186,9 +190,9 @@ class ConfigSlurper extends ConfigManager {
 	static Map<String, Object> LoadConfigFile(File file, String codePage = 'utf-8', String environment = null,
 											  Map<String, Object> configVars = null, Getl owner = null) {
 		if (file == null)
-			throw new ExceptionGETL("No file specified!")
+			throw new RequiredParameterError('file', 'LoadConfigFile')
 		if (!file.exists())
-			throw new ExceptionGETL("Configuration file \"$file\" not found!")
+			throw new IOFilesError('#io.file.not_found', [file: file.path, type: 'Config'])
 
 		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 		if (codePage == null)
@@ -310,7 +314,8 @@ class ConfigSlurper extends ConfigManager {
 		def tm = BoolUtils.IsValue(saveParams?.trimMap)
 		def sw = BoolUtils.IsValue(saveParams?.smartWrite)
 
-		if (fn == null) throw new ExceptionGETL('Required parameter "fileName"')
+		if (fn == null)
+			throw new RequiredParameterError('fileName', 'saveConfig')
 
 		def rp = FileUtils.RelativePathFromFile(fn)
 		if (rp == '.') {

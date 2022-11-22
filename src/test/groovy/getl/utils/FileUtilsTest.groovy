@@ -160,6 +160,12 @@ class FileUtilsTest extends GetlTest {
 
         assertEquals(p, FileUtils.PathFromFile("$p/test_pathfromfile.txt"))
         assertEquals(p, FileUtils.PathFromFile("$p/test_*.txt"))
+
+        assertEquals('/', FileUtils.PathFromFile('resource:/getl-errors.en.properties', true, true))
+        assertEquals('/utils', FileUtils.PathFromFile('resource:/utils/comments.sql', true, true))
+
+        def r = new File(FileUtils.ResourceFileName('resource:/utils/comments.sql'))
+        assertEquals(r.parent, FileUtils.PathFromFile('resource:/utils/comments.sql'))
     }
 
     @Test
@@ -173,6 +179,9 @@ class FileUtilsTest extends GetlTest {
 
         assertEquals('test_pathfromfile.txt', FileUtils.FileName("$p/test_pathfromfile.txt"))
         assertEquals('test_*.txt', FileUtils.FileName("$p/test_*.txt"))
+
+        assertEquals('getl-errors.en.properties', FileUtils.FileName('resource:/getl-errors.en.properties'))
+        assertEquals('comments.sql', FileUtils.FileName('resource:/utils/comments.sql'))
     }
 
     @Test

@@ -20,7 +20,8 @@ import getl.dbf.proc.ReadString
 import getl.dbf.sub.ReadProcessor
 import getl.driver.Driver
 import getl.driver.FileDriver
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
+import getl.exception.RequiredParameterError
 import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import groovy.transform.CompileStatic
@@ -44,7 +45,7 @@ class DBFDriver extends FileDriver {
 
     /** Convert DBF field to Getl field */
     @SuppressWarnings('GroovyFallthrough')
-    static Field DBFField2Field(DBFField dbfField) {
+    static Field DBFField2Field(DBFDataset dataset, DBFField dbfField) {
         Field res = new Field(name: dbfField.name, typeName: dbfField.type.toString())
         switch (dbfField.type) {
             case DBFDataType.CHARACTER:
@@ -100,7 +101,7 @@ class DBFDriver extends FileDriver {
                 res.type = Field.datetimeFieldType
                 break
             default:
-                throw new ExceptionGETL("Not support DBF type \"${dbfField.type}\"!")
+                throw new DatasetError(dataset, '#dataset.invalid_field_type', [type: dbfField.type])
         }
 
         return res
@@ -110,7 +111,7 @@ class DBFDriver extends FileDriver {
     List<Field> fields(Dataset dataset) {
         def ds = dataset as DBFDataset
         if (ds.fileName == null)
-            throw new ExceptionGETL('Dataset required fileName!')
+            throw new DatasetError(ds, '#dataset.non_filename')
 
         ds.currentDbfConnection.validPath()
 
@@ -120,7 +121,7 @@ class DBFDriver extends FileDriver {
             reader = new DBFReader(getFileInputStream(ds, new HashMap()), Charset.forName(ds.codePage()))
             def numberOfFields = reader.fieldCount
             for (int i = 0; i < numberOfFields; i++) {
-                res.add(DBFField2Field(reader.getField(i)))
+                res.add(DBFField2Field(ds, reader.getField(i)))
 
             }
         }
@@ -136,18 +137,18 @@ class DBFDriver extends FileDriver {
     @Override
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         if (code == null)
-            throw new ExceptionGETL('Required process code!')
+            throw new RequiredParameterError('code', 'eachRow')
 
         def ds = dataset as DBFDataset
         if (ds.fileName == null)
-            throw new ExceptionGETL('Dataset required fileName!')
+            throw new DatasetError(ds, '#dataset.non_filename')
 
         ds.currentDbfConnection.validPath()
 
         if (ds.field.isEmpty()) {
             ds.retrieveFields()
             if (ds.field.isEmpty())
-                throw new ExceptionGETL("Unable to get list of fields for DBF file \"$ds\"!")
+                throw new DatasetError(ds, '#dataset.non_fields')
         }
 
         def procs = [] as List<ReadProcessor>
@@ -185,7 +186,7 @@ class DBFDriver extends FileDriver {
                     proc = new ReadBlob(field)
                     break
                 default:
-                    throw new ExceptionGETL("Read does not support field type \"${field.type} [${field.typeName}]\"!")
+                    throw new DatasetError(ds, '#dataset.invalid_field_type', [type: field.type, typeName: field.typeName])
             }
             procs.add(proc)
         }

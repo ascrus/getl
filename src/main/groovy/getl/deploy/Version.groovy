@@ -41,10 +41,10 @@ class Version implements VersionInfo {
 		def conf = ConfigSlurper.LoadConfigFile(file: FileUtils.FileFromResources('/getl.conf'))
 		def getlSection = (conf.getl as Map)
 		if (getlSection == null)
-			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
+			throw new Error('Invalid resource file "getl.conf"!')
 		def jarSection = ((conf.getl as Map).jar as Map)
 		if (jarSection == null || jarSection.version == null || jarSection.year == null)
-			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
+			throw new Error('Invalid resource file "getl.conf"!')
 
 		version = jarSection.version as String
 		years = jarSection.year as String

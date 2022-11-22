@@ -2,7 +2,8 @@
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
 import getl.files.sub.Filter
 import getl.utils.*
@@ -160,11 +161,8 @@ class FileManager extends Manager {
 	String getCurrentPath() {
 		validConnect()
 
-		if (currentDirectory == null) {
-			if (writeErrorsToLog)
-				logger.severe("Current directory is not setting from source \"$this\"!")
-			throw new ExceptionGETL("Current directory is not setting from source \"$this\"!")
-		}
+		if (currentDirectory == null)
+			throw new RequiredParameterError(this, 'currentDirectory', writeErrorsToLog)
 
 		return currentDirectory.path.replace("\\", "/")
 	}
@@ -175,11 +173,8 @@ class FileManager extends Manager {
 		validConnect()
 		
 		File f = new File(path)
-		if (!f.exists()) {
-			if (writeErrorsToLog)
-				logger.severe("Directory \"${path}\" not found in \"$currentPath\" path on source \"$this\"!")
-			throw new ExceptionGETL("Directory \"${path}\" not found in \"$currentPath\" path on source \"$this\"!")
-		}
+		if (!f.exists())
+			throw new IOFilesError(this, '#io.dir.not_found', [path: path, search: currentPath], writeErrorsToLog)
 
 		currentDirectory = f
 		_currentPath = currentDirectory.path.replace("\\", "/")
@@ -243,11 +238,8 @@ class FileManager extends Manager {
 		validWrite()
 		
 		def f = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
-		if (!f.delete()) {
-			if (writeErrorsToLog)
-				logger.severe("Can not remove file ${f.canonicalPath} on source \"$this\"!")
-			throw new ExceptionGETL("Can not remove file ${f.canonicalPath} on source \"$this\"!")
-		}
+		if (!f.delete())
+			throw new IOFilesError(this, 'io.file.fail_delete', [path: f.canonicalPath], writeErrorsToLog)
 	}
 	
 	@Override
@@ -256,16 +248,10 @@ class FileManager extends Manager {
 		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
-		if (f.exists()) {
-			if (writeErrorsToLog)
-				logger.severe("Directory \"${f.canonicalPath}\" already exists on source $this!")
-			throw new ExceptionGETL("Directory \"${f.canonicalPath}\" already exists on source $this!")
-		}
-		if (!f.mkdirs()) {
-			if (writeErrorsToLog)
-				logger.severe("Can not create directory \"${f.canonicalPath}\" on source $this!")
-			throw new ExceptionGETL("Can not create directory \"${f.canonicalPath}\" on source $this!")
-		}
+		if (f.exists())
+			throw new IOFilesError(this, '#io.dir.already', [path: f.canonicalPath], writeErrorsToLog)
+		if (!f.mkdirs())
+			throw new IOFilesError(this, '#io.dir.fail_create', [path: f.canonicalPath], writeErrorsToLog)
 	}
 	
 	@Override
@@ -275,24 +261,15 @@ class FileManager extends Manager {
 		validWrite()
 		
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
-		if (!f.exists()) {
-			if (writeErrorsToLog)
-				logger.severe("Directory \"${f.canonicalPath}\" not found on source \"$this\"!")
-			throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found on source \"$this\"!")
-		}
+		if (!f.exists())
+			throw new IOFilesError(this, '#io.dir.not_found', [path: f.canonicalPath], writeErrorsToLog)
         if (recursive) {
-            if (!f.deleteDir()) {
-				if (writeErrorsToLog)
-					logger.severe("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
-				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
-			}
+            if (!f.deleteDir())
+				throw new IOFilesError(this, '#io.dir.fail_delete', [path: f.canonicalPath], writeErrorsToLog)
         }
         else {
-            if (!f.delete()) {
-				if (writeErrorsToLog)
-					logger.severe("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
-				throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\" on source \"$this\"!")
-			}
+            if (!f.delete())
+				throw new IOFilesError(this, '#io.dir.fail_delete', [path: f.canonicalPath], writeErrorsToLog)
         }
 		if (onDelete != null)
 			onDelete.call(f.path)
@@ -309,11 +286,8 @@ class FileManager extends Manager {
 		def destFile = new File((destPath.indexOf('/') != -1)?"$currentRootPath/$destPath":
 				"${currentDirectory.canonicalPath}/$destPath")
 
-		if (!sourceFile.renameTo(destFile)) {
-			if (writeErrorsToLog)
-				logger.severe("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"!")
-			throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"!")
-		}
+		if (!sourceFile.renameTo(destFile))
+			throw new IOFilesError(this, '#io.file.fail_rename', [path: fileName, dir: path], writeErrorsToLog)
 	}
 	
 	@Override

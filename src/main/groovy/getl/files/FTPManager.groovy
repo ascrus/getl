@@ -2,7 +2,9 @@
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
+import getl.exception.FilemanagerError
+import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
 import getl.lang.Getl
 import getl.lang.sub.UserLogins
@@ -158,10 +160,12 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	@Synchronized
 	protected void doConnect() {
-		if (server == null || port == null)
-			throw new ExceptionGETL('Required server host and port for connect!')
+		if (server == null)
+			throw new RequiredParameterError(this, 'server', 'connect')
+		if (port == null)
+			throw new RequiredParameterError(this, 'port', 'connect')
 		if (login == null)
-			throw new ExceptionGETL('Required login for connect!')
+			throw new RequiredParameterError(this, 'login', 'connect')
 
 		writeScriptHistoryFile("Connect to ftp $server:$port with login $login from session $sessionID")
 		
@@ -201,7 +205,7 @@ class FTPManager extends Manager implements UserLogins {
 					sleep(sleepTime)
 
 					if (numRetry > 4)
-						throw new ExceptionGETL('Can not disconnect from server!')
+						throw new FilemanagerError(this, '#fileman.fail_disconnect')
 				}
 			}
 		}
@@ -212,6 +216,13 @@ class FTPManager extends Manager implements UserLogins {
 
 	@InheritConstructors
 	class FTPList extends FileManagerList {
+		FTPList(FTPManager owner) {
+			super()
+			this.owner = owner
+		}
+
+		private FTPManager owner
+
 		public FTPFile[] listFiles
 		
 		@CompileStatic
@@ -242,10 +253,10 @@ class FTPManager extends Manager implements UserLogins {
 					m.type = Manager.TypeFile.LINK
 					break
 				default:
-					throw new ExceptionGETL("Unnknown type object ${f.type}!")
+					throw new FilemanagerError(owner, '#fileman.ftp.invalid_list_type', [type: f.type])
 			  }
 		  
-			m
+			return m
 		}
 
 		@CompileStatic
@@ -262,7 +273,7 @@ class FTPManager extends Manager implements UserLogins {
 
 		FTPFile[] listFiles = (mask != null)?client.list(mask):client.list()
 
-		FTPList res = new FTPList()
+		FTPList res = new FTPList(this)
 		res.listFiles = listFiles
 		
 		return res
@@ -376,6 +387,7 @@ class FTPManager extends Manager implements UserLogins {
 		def curDir = client.currentDirectory()
 		String cdDir = null
 		try {
+			//noinspection RegExpSimplifiable
 			def dirs = dirName.split('[/]')
 
 			dirs.each { String dir ->
@@ -413,11 +425,9 @@ class FTPManager extends Manager implements UserLogins {
 			if (recursive) {
                 def l = client.list()
                 def d = l.find { FTPFile f -> f.name == dirName && f.type == FTPFile.TYPE_DIRECTORY}
-                if (d == null) {
-					if (writeErrorsToLog)
-						logger.severe("Cannot get attribute by directory \"$dirName\" on source \"$this\"!")
-					throw new ExceptionGETL("Cannot get attribute by directory \"$dirName\" on source \"$this\"!")
-				}
+                if (d == null)
+					throw new IOFilesError(this, '#io.dir.not_found', [path: dirName], writeErrorsToLog)
+
                 doDeleteDirectory(d, onDelete)
             }
             else {
@@ -428,7 +438,8 @@ class FTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not remove directory \"$dirName\" on source \"$this\"", e)
+				Logs.Severe(this, '#io.dir.fail_delete', [path: dirName], e)
+
 			throw e
 		}
 	}
@@ -485,11 +496,9 @@ class FTPManager extends Manager implements UserLogins {
 		validConnect()
 
         def fl = client.list(fileName)
-        if (fl.length != 1) {
-			if (writeErrorsToLog)
-				logger.severe("File \"$fileName\" not found on source \"$this\"!")
-			throw new ExceptionGETL("File \"$fileName\" not found on source \"$this\"!")
-		}
+        if (fl.length != 1)
+			throw new IOFilesError(this, '#io.file.not_found', [path: fileName, type: 'FTP'], writeErrorsToLog)
+
         return fl[0].modifiedDate.time
     }
 

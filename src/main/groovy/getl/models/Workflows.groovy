@@ -3,6 +3,8 @@ package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.RepositorySave
@@ -19,6 +21,7 @@ import getl.utils.CloneUtils
 import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.GenerationUtils
+import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -70,7 +73,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
      */
     Map result(String scriptName) {
         if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel("Required script name for result function!")
+            throw new RequiredParameterError(this, 'scriptName', 'result')
 
         return _result.get(scriptName.toUpperCase())?:new HashMap()
     }
@@ -85,11 +88,10 @@ class Workflows extends BaseModel<WorkflowSpec> {
     /** Set variable value in workflow script */
     Map<String, Object> vars(String scriptName) {
         if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel('The script name is required for "vars" function!')
+            throw new RequiredParameterError(this, 'scriptName', 'vars')
 
         if (scriptByName(scriptName) == null)
-            throw new ExceptionModel("There is script \"$scriptName\" specified in the vars function, which is not defined " +
-                    "for model \"$dslNameObject\"!")
+            throw new ModelError(this, '#dsl.model.workflows.unknown_script', [script: scriptName, detail: 'vars'])
 
         scriptName = scriptName.toUpperCase()
         def sv = modelScriptVars.get(scriptName)
@@ -107,11 +109,10 @@ class Workflows extends BaseModel<WorkflowSpec> {
     /** Events on script */
     ScriptEvents events(String scriptName, @DelegatesTo(ScriptEvents) Closure cl = null) {
         if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel('The script name is required for "events" function!')
+            throw new RequiredParameterError(this, 'scriptName', 'events')
 
         if (scriptByName(scriptName) == null)
-            throw new ExceptionModel("There is script \"$scriptName\" specified in the events function, which is not defined " +
-                    "for model \"$dslNameObject\"!")
+            throw new ModelError(this, '#dsl.model.workflows.unknown_script', [script: scriptName, detail: 'events'])
 
         scriptName = scriptName.toUpperCase()
         def res = modelScriptEvents.get(scriptName)
@@ -217,7 +218,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
      */
     WorkflowScriptSpec scriptByName(String scriptName) {
         if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel("Required script name for result function!")
+            throw new RequiredParameterError(this, 'scriptName', 'scriptByName')
 
         def res = findNodeByScriptName(usedSteps, scriptName)
         return (res != null)?new WorkflowScriptSpec(res, true, res.findScript(scriptName)):null
@@ -264,7 +265,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                               Closure cl = null) {
         def parent = stepByName(stepName)
         if (parent == null)
-            throw new ExceptionModel("Step \"$stepName\" not found in workflow!")
+            throw new ModelError(this, '#dsl.model.workflows.unknown_step', [step: stepName])
 
         parent.runClosure(cl)
 
@@ -282,7 +283,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowScriptSpec'])
                                 Closure cl = null) {
         if (scriptName == null || scriptName.length() == 0)
-            throw new ExceptionModel("Required script name for result function!")
+            throw new RequiredParameterError(this, 'scriptName', 'script')
 
         def parent = scriptByName(scriptName)
         if (parent == null)
@@ -304,15 +305,15 @@ class Workflows extends BaseModel<WorkflowSpec> {
                        @ClosureParams(value = SimpleType, options = ['getl.models.opts.WorkflowSpec'])
                                Closure cl = null) {
         if (stepName == null || stepName.length() == 0)
-            throw new ExceptionModel('Step name required!')
+            throw new RequiredParameterError(this, 'stepName', 'start')
 
         if (!usedSteps.isEmpty())
-            throw new ExceptionModel('It is allowed to specify no more than one "start" step in the workflow!')
+            throw new ModelError(this, '#dsl.model.workflows.invalid_start_step')
 
         checkModel()
 
         if (stepByName(stepName) != null)
-            throw new ExceptionModel("The step named \"$stepName\" is already defined in the workflow!")
+            throw new ModelError(this, '#dsl.model.workflows.step_already', [step: stepName])
 
         def parent = addSpec(new WorkflowSpec(this, stepName, executeOperation))
         parent.runClosure(cl)
@@ -330,15 +331,28 @@ class Workflows extends BaseModel<WorkflowSpec> {
         start(defaultStepName(), cl)
     }
 
+    private final Object synchModel = synchObjects
+
+    /**
+     * Check model
+     * @param checkObjects check model object parameters
+     * @param checkNodeCode additional validation code for model objects
+     */
+    @Synchronized('synchModel')
+    void checkModel(Boolean checkObjects = true, Closure checkNodeCode = null) {
+        super.checkModel(checkObjects, checkNodeCode)
+    }
+
+    @Synchronized('synchModel')
     @Override
-    void checkObject(BaseSpec obj) {
+    protected void checkObject(BaseSpec obj) {
         super.checkObject(obj)
 
         def step = obj as WorkflowSpec
         if (step.stepName == null)
-            throw new ExceptionModel('Required name for step!')
+            throw new ModelError(this, '#params.required', [param: 'stepName'])
         if (step.operation == null)
-            throw new ExceptionModel('Required operation for \"${step.stepName}\" step!')
+            throw new ModelError(this, '#params.required', [param: 'operation', detail: step.stepName])
     }
 
     /**
@@ -538,7 +552,7 @@ return $className"""
 
                 def runClass = classForExecute(className, userClassLoader, node.stepName)
                 if (runClass == null)
-                    throw new ExceptionModel("Can't access class ${className} of step ${node.stepName}!")
+                    throw new ModelError(this, '#dsl.model.workflows.invalid_class', [step: node.stepName, script: scriptName, className: className])
 
                 classes.put(scriptName.toUpperCase(), runClass)
                 if (RepositorySave.isAssignableFrom(runClass))
@@ -546,12 +560,11 @@ return $className"""
             }
             if (isRepositorySave) {
                 if (node.countThreads > 1)
-                    throw new ExceptionModel("The number of threads in step \"${node.stepName}\" must be equal to 1 " +
-                            "when using the script for saving repository objects!")
+                    throw new ModelError(this, '#dsl.model.workflows.deny_threads_for_save', [step: node.stepName])
                 classes.each { scriptName, runClass ->
                     if (!RepositorySave.isAssignableFrom(runClass))
-                        throw new ExceptionModel("Script \"$scriptName\" cannot participate in step \"${node.stepName}\", " +
-                                "because the script for saving repository objects is used!")
+                        throw new ModelError(this, '#dsl.model.workflows.invalid_save_mode_script',
+                                [script: scriptName, step: node.stepName, className: runClass.name])
                 }
             }
 
@@ -613,8 +626,9 @@ return $className"""
                                     else if (val instanceof String)
                                         map.putAll(ConvertUtils.String2Map(val as String) as Map)
                                     else
-                                        throw new ExceptionModel("It is not possible to convert " +
-                                                "type \"${val.getClass().name}\" to type \"${Map.name}\"!")
+                                        throw new ModelError(this, '#dsl.model.workflows.invalid_script_param_type',
+                                                [step: node.stepName, script: scriptName, param_type: val.getClass().name, script_param_type: Map.name,
+                                                 param_name: fieldName])
 
                                     return map
                                 }
@@ -638,8 +652,9 @@ return $className"""
                                     else if (val instanceof String)
                                         list.addAll(ConvertUtils.String2List(val as String))
                                     else
-                                        throw new ExceptionModel("It is not possible to convert " +
-                                                "type \"${val.getClass().name}\" to type \"${List.name}\"!")
+                                        throw new ModelError(this, '#dsl.model.workflows.invalid_script_param_type',
+                                                [step: node.stepName, script: scriptName, param_type: val.getClass().name, script_param_type: List.name,
+                                                 param_name: fieldName])
 
                                     return list
                                 }
@@ -657,7 +672,7 @@ return $className"""
                             scriptResult = dslCreator.callScript(runClass, execVars, macroVars, modelScriptEvents.get(scriptName.toUpperCase()))
                         }
                         catch (Throwable e) {
-                            dslCreator.logError("Error execution class \"$scriptName\"[${runClass.name}] in step \"$stepLabel\"", e)
+                            Logs.Severe(this, '#dsl.model.workflows.error_executing', [step: stepLabel, script: scriptName, className: runClass.name], e)
                             if (generatedUserCode != null)
                                 dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel].[$scriptName]", scriptUserCode)
                             throw e
@@ -724,7 +739,7 @@ return $className"""
      */
     private Class<Getl> classForExecute(String className, URLClassLoader classLoader, String stepName) {
         if (className == null)
-            throw new ExceptionModel("Required class name in step \"$stepName\"!")
+            throw new RequiredParameterError(this, 'className', stepName)
 
         Class<Getl> res
         try {
@@ -739,7 +754,7 @@ return $className"""
         }
 
         if (!Getl.isAssignableFrom(res))
-            throw new ExceptionModel("Class \"$className\" is not compatible with Getl class in step \"$stepName\"!")
+            throw new ModelError(this, '#dsl.model.workflows.invalid_run_class', [className: className, step: stepName])
 
         return res as Class<Getl>
     }
@@ -752,7 +767,7 @@ return $className"""
     @SuppressWarnings('UnnecessaryQualifiedReference')
     static List<Map<String, Object>> ReadClassFields(Class<Getl> scriptClass, Boolean ignoreClosure = false) {
         if (scriptClass == null)
-            throw new ExceptionModel('Required script class!')
+            throw new RequiredParameterError('scriptClass')
 
         def res = [] as List<Map<String, Object>>
 

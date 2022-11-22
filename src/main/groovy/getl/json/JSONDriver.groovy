@@ -1,13 +1,14 @@
 package getl.json
 
-
+import getl.exception.DatasetError
+import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 import groovy.json.JsonGenerator
 import groovy.json.JsonSlurper
 import groovy.json.StreamingJsonBuilder
 import groovy.transform.CompileStatic
 import getl.data.*
 import getl.driver.*
-import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import org.apache.groovy.json.internal.LazyMap
@@ -189,7 +190,7 @@ class JSONDriver extends WebServiceDriver {
 	@CompileStatic
 	protected void doRead(JSONDataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty())
-			throw new ExceptionGETL("Required fields description with dataset!")
+			throw new DatasetError(dataset, '#dataset.non_fields')
 
 		def data = params.localDatasetData?:dataset.localDatasetData
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L
@@ -197,11 +198,11 @@ class JSONDriver extends WebServiceDriver {
 		if (data == null) {
 			def fn = fullFileNameDataset(dataset)
 			if (fn == null)
-				throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
+				throw new RequiredParameterError(dataset, 'fileName', 'read')
 
 			File f = new File(fn)
 			if (!f.exists())
-				throw new ExceptionGETL("File \"${fn}\" not found!")
+				throw new IOFilesError(dataset, '#io.file.not_found', [path: fn])
 
 			data = readData(dataset, params)
 		}
@@ -242,14 +243,14 @@ class JSONDriver extends WebServiceDriver {
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def ds = dataset as JSONDataset
 		if (ds.field.isEmpty())
-			throw new ExceptionGETL("Required fields description with dataset!")
+			throw new DatasetError(dataset, "#dataset.non_fields")
 		if (ds.rootNode == null)
-			throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
+			throw new RequiredParameterError(dataset, 'rootNode', 'write')
 
 		(dataset.connection as JSONConnection).validPath()
 		def fn = fullFileNameDataset(ds)
 		if (fn == null)
-			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
+			throw new RequiredParameterError(dataset, 'fileName', 'write')
 
 		def writer = getFileWriter(ds, params, null)
 
