@@ -143,7 +143,6 @@ class MSSQLDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)DATETIMEOFFSET")) {
 				field.type = Field.timestamp_with_timezoneFieldType
 				field.dbType = Types.TIMESTAMP_WITH_TIMEZONE
-				field.getMethod = '({field} as microsoft.sql.DateTimeOffset).timestamp'
 				return
 			}
 
@@ -161,6 +160,14 @@ class MSSQLDriver extends JDBCDriver {
 //				return
 			}
 		}
+	}
+
+	@Override
+	String prepareReadField(Field field) {
+		if (field.typeName?.matches("(?i)DATETIMEOFFSET"))
+			return '({field} as microsoft.sql.DateTimeOffset).timestamp'
+
+		return null
 	}
 
 	@Override

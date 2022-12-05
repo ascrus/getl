@@ -40,6 +40,7 @@ class ClickHouseDriver extends JDBCDriver {
         defaultTransactionIsolation = Connection.TRANSACTION_READ_UNCOMMITTED
         localTemporaryTablePrefix = 'TEMPORARY'
         defaultBatchSize = 10000L
+        needNullKeyWordOnCreateField = true
 
         sqlExpressionSqlTimestampFormat = 'yyyy-MM-dd HH:mm:ss'
         sqlExpressions.sysDualTable = 'system.one'
@@ -124,16 +125,22 @@ class ClickHouseDriver extends JDBCDriver {
     void prepareField(Field field) {
         super.prepareField(field)
 
-        if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate')
-            field.getMethod = '({field} as java.time.LocalDate).toDate().toTimestamp()'
-        else if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
-            field.getMethod = '({field} as java.time.LocalTime).toDate().toTimestamp()'
-        else if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime')
-            field.getMethod = '({field} as java.time.LocalDateTime).toDate().toTimestamp()'
-        else if (field.type == Field.stringFieldType && field.typeName == 'UUID') {
+        if (field.type == Field.stringFieldType && field.typeName == 'UUID') {
             field.type = Field.uuidFieldType
             field.length = null
         }
+    }
+
+    @Override
+    String prepareReadField(Field field) {
+        if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate')
+            return '({field} as java.time.LocalDate).toDate().toTimestamp()'
+        else if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
+            return '({field} as java.time.LocalTime).toDate().toTimestamp()'
+        else if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime')
+            return '({field} as java.time.LocalDateTime).toDate().toTimestamp()'
+
+        return null
     }
 
     @Override

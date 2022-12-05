@@ -19,7 +19,6 @@ import getl.utils.DateUtils
 import getl.utils.FileUtils
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
-import org.junit.Ignore
 import org.junit.Test
 
 @InheritConstructors
@@ -1260,6 +1259,41 @@ fileName = 'test1.csv'
 
                 conFile.delete()
                 dsFile.delete()
+            }
+        }
+    }
+
+    @Test
+    void testSqlScripterRun() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'resource:/repository'
+            }
+
+            sql {
+                useConnection embeddedConnection('h2:con')
+                exec true, 'RUN_FILE repository:/sql/script1.sql'
+                assertTrue(vars.is_complete as Boolean)
+
+                vars.remove('is_complete')
+                exec true, 'RUN_FILE /sql/script1.sql'
+                assertTrue(vars.is_complete as Boolean)
+
+                vars.remove('is_complete')
+                exec true, 'RUN_FILE sql/script1.sql'
+                assertTrue(vars.is_complete as Boolean)
+
+                vars.remove('is_complete')
+                exec true, 'RUN_FILE sql/script1'
+                assertTrue(vars.is_complete as Boolean)
+
+                shouldFail {
+                    exec true, 'RUN_FILE repository:/sql/script1'
+                }
+
+                shouldFail {
+                    exec true, 'RUN_FILE sql/script1.txt'
+                }
             }
         }
     }

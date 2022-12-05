@@ -54,11 +54,19 @@ class DB2Driver extends JDBCDriver {
 		
 		if (field.typeName?.matches('(?i)CLOB')) {
 			field.type= Field.Type.STRING
-			field.getMethod = '{field}.getSubString(1, (int){field}.length())'
 		}
 		else if (field.typeName?.matches('(?i)XML')) {
 			field.type= Field.Type.STRING
-			field.getMethod = '{field}.getString()'
-		} 
+		}
+	}
+
+	@Override
+	String prepareReadField(Field field) {
+		if (field.typeName?.matches('(?i)CLOB'))
+			return '{field}.getSubString(1, (int){field}.length())'
+		else if (field.typeName?.matches('(?i)XML'))
+			return '{field}.getString()'
+
+		return null
 	}
 }

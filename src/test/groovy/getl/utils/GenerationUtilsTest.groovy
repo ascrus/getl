@@ -277,7 +277,13 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         def stat = GenerationUtils.GenerateRowCopy(c.driver as JDBCDriver, l, true)
         def d = [:] as Map<String, Object>
         c.connected = true
-        (stat.code as Closure).call(c.javaConnection, r, d)
+        try {
+            (stat.code as Closure).call(c.javaConnection, r, d)
+        }
+        catch (Exception e) {
+            println stat.statement
+            throw e
+        }
         r.field_text = r.field_text.getSubString(1L, r.field_text.length() as Integer)
         r.field_blob = r.field_blob.getBytes(1L, r.field_blob.length() as Integer)
         r.field_array = ((int[])(r.field_array as Array).array).toList()

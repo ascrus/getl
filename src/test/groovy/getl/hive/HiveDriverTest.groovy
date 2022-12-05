@@ -26,6 +26,9 @@ class HiveDriverTest extends JDBCDriverProto {
     String getUseTableName() { 'getl_test_hive' }
 
     @Override
+    protected String localTablePrefix() { '' }
+
+    @Override
     protected TableDataset createPerformanceTable(JDBCConnection con, String name, List<Field> fields) {
         HiveTable t = new HiveTable(connection: con, schemaName: con.connectDatabase, tableName: name, field: fields)
         t.drop(ifExists: true)

@@ -848,14 +848,22 @@ class JDBCDriver extends Driver {
 	/** Prepare database, schema and table name for retrieve field operation */
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = new HashMap<String, String>()
-		names.dbName = prepareRetrieveObject(ListUtils.NotNullValue([dataset.dbName(), defaultDBName]) as String)
+		def dbName = dataset.dbName()
+		if (dbName == null && !(dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType]))
+			dbName = defaultDBName
+		names.dbName = prepareRetrieveObject(dbName)
 
-		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType] && tempSchemaName != null)
+		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType] &&
+				tempSchemaName != null)
 			names.schemaName = tempSchemaName
-		else
-			names.schemaName = prepareRetrieveObject(ListUtils.NotNullValue([dataset.schemaName(), defaultSchemaName]) as String)
+		else {
+			def schemaName = dataset.schemaName()
+			if (schemaName == null && !(dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType]))
+				schemaName = defaultSchemaName
+			names.schemaName = prepareRetrieveObject(schemaName)
+		}
 
-		names.tableName = prepareRetrieveObject(dataset.tableName as String)
+		names.tableName = prepareRetrieveObject(dataset.tableName)
 
 		return names
 	}
@@ -901,14 +909,17 @@ class JDBCDriver extends Driver {
 			def names = prepareForRetrieveFields(ds)
 			def schemaName = names.schemaName
 			def tabName = names.tableName
+			if (tabName == null)
+				throw new DatasetError(dataset, '#jdbc.table.non_table_name')
 
 			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${tabName.replace('\n', '\\n')}]")
 			ResultSet rs = sqlConnect.connection.metaData.getColumns(names.dbName, prepareObjectNameForMetaFunc(schemaName), prepareObjectNameForMetaFunc(tabName), null)
 			try {
-				def sn = schemaName.toLowerCase()
+				def sn = schemaName?.toLowerCase()
 				def tn = tabName.toLowerCase()
 				while (rs.next()) {
-					if (rs.getString('TABLE_SCHEM')?.toLowerCase() != sn)
+					def ts = rs.getString('TABLE_SCHEM')
+					if (ts != null && sn != null && ts.toLowerCase() != sn)
 						continue
 					if (rs.getString('TABLE_NAME')?.toLowerCase() != tn)
 						continue
@@ -979,7 +990,7 @@ class JDBCDriver extends Driver {
 		def schemaName = names.schemaName
 		def tabName = names.tableName
 
-		def sn = schemaName.toLowerCase()
+		def sn = schemaName?.toLowerCase()
 		def tn = tabName.toLowerCase()
 
 		def res = [] as List<String>
@@ -1298,7 +1309,8 @@ class JDBCDriver extends Driver {
 					def idxCols = []
 					def orderFields = GenerationUtils.PrepareSortFields(value.columns as List<String>)
 					orderFields?.each { nameCol, sortMethod ->
-						idxCols.add(((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) + ' ' + sortMethod)
+						idxCols.add(((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) +
+								((sortMethod != 'ASC')?(' ' + sortMethod):''))
 					}
 					
 					def varsCI = [
@@ -1331,6 +1343,10 @@ class JDBCDriver extends Driver {
 			con.commitTran(false, commitDDL)
 	}
 
+
+	/** Need null keyword when defining field in create table */
+	protected Boolean needNullKeyWordOnCreateField = false
+
 	/**
 	 * Get column definition for CREATE TABLE statement
 	 * @param f - specified field
@@ -1343,7 +1359,7 @@ class JDBCDriver extends Driver {
 		fp.type = type2sqlType(f, useNativeDBType)
 		if (isSupport(Support.PRIMARY_KEY) && !f.isNull)
 			fp.not_null =  'NOT NULL'
-		else
+		else if (needNullKeyWordOnCreateField)
 			fp.not_null = 'NULL'
 		if (isSupport(Support.AUTO_INCREMENT) && f.isAutoincrement)
 			fp.increment = sqlExpressionValue('ddlAutoIncrement')
@@ -1798,7 +1814,7 @@ class JDBCDriver extends Driver {
 			def lf = (dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
 			lf.each { prepareField(it) }
 			
-			if (!onlyFields && !excludeFields) {
+			if (onlyFields == null && excludeFields == null) {
 				metaFields = lf
 			}
 			else {
@@ -3361,4 +3377,7 @@ FROM {source} {after_from}'''
 
 		return sqlExpressionValue('escapedText', [text: StringUtils.ReplaceMany(value, ruleEscapedText)])
 	}
+
+	/** Preparing read field value code */
+	String prepareReadField(Field field) { return null }
 }

@@ -827,27 +827,4 @@ class StringUtils {
 	static String NullIsEmpty(String value) {
 		return (value != null && value.length() == 0)?null:value
 	}
-
-	/**
-	 * Prepare parameter for using as sql parameter
-	 * @param param parameter value
-	 * @return prepared parameter value
-	 */
-	static String PrepareSQLParameter(Object param) {
-		String res
-		if (param instanceof Time)
-			res = "'" + DateUtils.FormatDate('HH:mm:ss', param as Time) + "'::time"
-		else if (param instanceof java.sql.Date)
-			res = "'" + DateUtils.FormatDate('yyyy-MM-dd', param as java.sql.Date) + "'::date"
-		else if (param instanceof Timestamp)
-			res = "'" + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', param as Timestamp) + "'::timestamp"
-		else if (param instanceof Date)
-			res = "'" + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', param as Timestamp) + "'::timestamp"
-		else if (param instanceof String)
-			res = "'" + param + "'"
-		else
-			res = param
-
-		return res
-	}
 }

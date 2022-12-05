@@ -1,6 +1,8 @@
 //file:noinspection unused
 package getl.utils
 
+import getl.exception.IOFilesError
+
 //@GrabConfig(systemClassLoader=true)
 
 import getl.files.*
@@ -1152,6 +1154,7 @@ class FileUtils {
 	 * @param args command line arguments
 	 * @return list of arguments
 	 */
+	@SuppressWarnings('RegExpSimplifiable')
 	static List<String> ParseArguments(String args) {
 		if (args == null)
 			throw new ExceptionGETL("Required arguments!")
@@ -1289,6 +1292,29 @@ class FileUtils {
 	}
 
 	/**
+	 * Create new file
+	 * @param path file path
+	 * @param errorOnExists throw error if file already exists
+	 * @return created file
+	 */
+	static File CreateNewFile(String path, Boolean errorOnExists = false) {
+		def filePath = TransformFilePath(path)
+		def file = new File(filePath)
+		if (file.exists()) {
+			if (errorOnExists)
+				throw new IOFilesError('#io.file.already_exists', [path: filePath])
+
+			if (!file.delete())
+				throw new IOFilesError('#io.file.fail_delete', [path: filePath])
+		}
+
+		if (!file.createNewFile())
+			throw new IOFilesError('#io.file.fail_create', [path: filePath])
+
+		return file
+	}
+
+	/**
 	 * Process the prefix "resource:" or "repository:" in the file name and return the full path to the resource file
 	 * <br>P.S. If the prefix is missing, return the input file name.
 	 * @param fileName input file name
@@ -1340,6 +1366,7 @@ class FileUtils {
 	 * @param fileName file name (use "resource:" or "repository:" to specify the file name in application resources)
 	 * @return true if the file is in resource storage
 	 */
+	@SuppressWarnings('RegExpSimplifiable')
 	static Boolean IsResourceFileName(String fileName, Boolean checkRepository = true) {
 		if (fileName == null) return null
 		return (fileName.matches('resource[:].+') || (checkRepository && fileName.matches('repository[:].+')))
@@ -1350,6 +1377,7 @@ class FileUtils {
 	 * @param fileName file name (use "repository:" to specify the file name in Getl repository)
 	 * @return true if the file is in Getl repository storage
 	 */
+	@SuppressWarnings('RegExpSimplifiable')
 	static Boolean IsRepositoryFileName(String fileName) {
 		if (fileName == null) return null
 		return (fileName.matches('repository[:].+'))

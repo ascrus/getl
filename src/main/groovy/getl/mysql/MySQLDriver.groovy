@@ -118,26 +118,6 @@ class MySQLDriver extends JDBCDriver {
 			return
 		}
 
-		if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate') {
-			field.getMethod = '({field} as java.time.LocalDate).toDate().toTimestamp()'
-			return
-		}
-
-		if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime') {
-			field.getMethod = '({field} as java.time.LocalTime).toDate().toTimestamp()'
-			return
-		}
-
-		if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime') {
-			field.getMethod = '({field} as java.time.LocalDateTime).toDate().toTimestamp()'
-			return
-		}
-
-		if (field.type == Field.timestamp_with_timezoneFieldType && field.columnClassName == 'java.time.OffsetDateTime') {
-			field.getMethod = '({field} as java.time.OffsetDateTime).toDate().toTimestamp()'
-			return
-		}
-
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)TEXT")) {
 				field.type = Field.textFieldType
@@ -147,6 +127,23 @@ class MySQLDriver extends JDBCDriver {
 //				return
 			}
 		}
+	}
+
+	@Override
+	String prepareReadField(Field field) {
+		if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate')
+			return '({field} as java.time.LocalDate).toDate().toTimestamp()'
+
+		if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
+			return '({field} as java.time.LocalTime).toDate().toTimestamp()'
+
+		if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime')
+			return '({field} as java.time.LocalDateTime).toDate().toTimestamp()'
+
+		if (field.type == Field.timestamp_with_timezoneFieldType && field.columnClassName == 'java.time.OffsetDateTime')
+			return '({field} as java.time.OffsetDateTime).toDate().toTimestamp()'
+
+		return null
 	}
 
 	@SuppressWarnings(['SqlDialectInspection', 'SqlNoDataSourceInspection'])

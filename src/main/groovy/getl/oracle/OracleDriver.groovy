@@ -32,6 +32,9 @@ class OracleDriver extends JDBCDriver {
 		transactionalDDL = true
 
 		ruleNameNotQuote = '(?i)^[a-z]+[a-z0-9_]*$'
+		ruleEscapedText.put('\'', '\'\'')
+		ruleEscapedText.remove('\n')
+		ruleEscapedText.remove('\\')
 
 		sqlExpressions.convertTextToTimestamp = 'TO_TIMESTAMP(\'{value}\', \'yyyy-mm-dd hh24:mi:ss.FF\')'
 		sqlExpressions.now = 'LOCALTIMESTAMP'
@@ -83,6 +86,7 @@ end;'''
 	void connect() {
 		System.properties.setProperty('oracle.jdbc.fanEnabled', 'false')
 		super.connect()
+		defaultSchemaName = jdbcConnection.login
 	}
 	
 	@Override
@@ -189,31 +193,10 @@ end;'''
 			}
 		}
 
-		if (field.type == Field.integerFieldType) {
-			field.getMethod = "({field} as Number).toInteger()"
-			return
-		}
-
-		if (field.type == Field.bigintFieldType) {
-			field.getMethod = "({field} as Number).toLong()"
-			return
-		}
-
-		if (field.type == Field.doubleFieldType) {
-			field.getMethod = "({field} as Number).toDouble()"
-			return
-		}
-		
-		if (field.type == Field.Type.ROWID) {
-			field.getMethod = "new String({field}.bytes)"
-			return
-		}
-		
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)DATE")) {
 				field.type = Field.Type.DATETIME
 				field.dbType = java.sql.Types.TIMESTAMP
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue().getTime())"
 				return
 			}
 
@@ -221,7 +204,6 @@ end;'''
 					field.typeName.matches("(?i)TIMESTAMP")) {
 				field.type = Field.Type.DATETIME
 				field.dbType = java.sql.Types.TIMESTAMP
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue().getTime())"
 				return
 			}
 			
@@ -229,7 +211,6 @@ end;'''
 					field.typeName.matches("(?i)TIMESTAMP WITH TIME ZONE")) {
 				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
 				field.dbType = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection).getTime())"
 				return
 			}
 			
@@ -237,7 +218,6 @@ end;'''
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE")) {
 				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
 				field.dbType = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection, Calendar.instance).getTime())"
 				return
 			}
 			
@@ -271,6 +251,44 @@ end;'''
 //				return
 			}
 		}
+	}
+
+	@Override
+	String prepareReadField(Field field) {
+		if (field.type == Field.integerFieldType)
+			return '({field} as Number).toInteger()'
+
+		if (field.type == Field.bigintFieldType)
+			return '({field} as Number).toLong()'
+
+		if (field.type == Field.doubleFieldType)
+			return '({field} as Number).toDouble()'
+
+		if (field.type == Field.Type.ROWID)
+			return 'new String({field}.bytes)'
+
+		if (field.type in [Field.Type.DATE, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE] &&
+				!(field.columnClassName in ['java.sql.Date', 'java.sql.Time', 'java.sql.Timestamp']) && field.typeName != null) {
+			/*if (field.columnClassName != null)
+				return "new java.sql.Timestamp(({field} as ${field.columnClassName}).timestampValue(connection).getTime())"*/
+
+			if (field.typeName.matches("(?i)DATE"))
+				return '({field} as oracle.sql.DATE).timestampValue()'
+
+			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") ||
+					field.typeName.matches("(?i)TIMESTAMP"))
+				return '({field} as oracle.sql.TIMESTAMP).timestampValue()'
+
+			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH TIME ZONE") ||
+					field.typeName.matches("(?i)TIMESTAMP WITH TIME ZONE"))
+				return '({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection)'
+
+			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
+					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE"))
+				return '({field} as oracle.sql.TIMESTAMPLTZ).timestampValue(connection)'
+		}
+
+		return null
 	}
 	
 	@Override

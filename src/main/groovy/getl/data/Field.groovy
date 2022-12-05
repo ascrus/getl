@@ -225,10 +225,6 @@ class Field implements Serializable, Cloneable {
 		if (value != null) this.extended.putAll(value)
 	}
 	
-	/** Get value method */
-	@JsonIgnore
-	public String getMethod
-
 	/** Allow length for field */
 	static Boolean AllowLength(Field f) {
 		return (f.type in [Type.STRING, Type.NUMERIC, Type.BLOB, Type.TEXT, Type.ROWID])
@@ -487,7 +483,6 @@ class Field implements Serializable, Cloneable {
         if (BoolUtils.IsValue(this.trim) != BoolUtils.IsValue(o.trim)) return false
         if (this.extended != o.extended) return false
         if (this.description != o.description) return false
-        if (this.getMethod != o.getMethod) return false
 
 		return true
 	}

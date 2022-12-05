@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.exception.ExceptionModel
 import getl.jdbc.HistoryPointManager
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -197,5 +198,14 @@ class DatasetSpec extends BaseSpec {
         scripts.clear()
         if (value != null)
             scripts.putAll(value)
+    }
+
+    /**
+     * List of scripts by specified mask name
+     * @param maskName mask name
+     * @return list of scripts
+     */
+    Map<String, String> findScripts(String maskName) {
+        return MapUtils.FindNodes(scripts, maskName) as Map<String, String>
     }
 }

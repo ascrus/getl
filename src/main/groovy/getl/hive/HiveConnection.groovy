@@ -23,7 +23,7 @@ class HiveConnection extends JDBCConnection {
     @Override
     protected void registerParameters () {
         super.registerParameters()
-        methodParams.register('Super', ['vendor', 'version', 'hdfsHost', 'hdfsLogin', 'hdfsDir'])
+        methodParams.register('Super', ['vendor', 'versionDriver', 'hdfsHost', 'hdfsPort', 'hdfsLogin', 'hdfsDir'])
     }
 
     @Override

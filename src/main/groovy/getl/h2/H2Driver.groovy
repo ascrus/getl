@@ -218,11 +218,6 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	void prepareField (Field field) {
 		super.prepareField(field)
 
-		if (field.type == Field.timestamp_with_timezoneFieldType) {
-			field.getMethod = 'org.h2.value.ValueTimestampTimeZone.fromDateValueAndNanos(({field} as org.h2.api.TimestampWithTimeZone).YMD, ({field} as org.h2.api.TimestampWithTimeZone).nanosSinceMidnight, ({field} as org.h2.api.TimestampWithTimeZone).timeZoneOffsetSeconds).getTimestamp(TimeZone.default)'
-			return
-		}
-
 		if (field.typeName == null)
 			return
 
@@ -247,6 +242,14 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			if (match.find())
 				field.arrayType = match.group(1).toUpperCase()
 		}
+	}
+
+	@Override
+	String prepareReadField(Field field) {
+		if (field.type == Field.timestamp_with_timezoneFieldType && field.columnClassName == 'org.h2.api.TimestampWithTimeZone')
+			return 'org.h2.value.ValueTimestampTimeZone.fromDateValueAndNanos(({field} as org.h2.api.TimestampWithTimeZone).YMD, ({field} as org.h2.api.TimestampWithTimeZone).nanosSinceMidnight, ({field} as org.h2.api.TimestampWithTimeZone).timeZoneOffsetSeconds).getTimestamp(TimeZone.default)'
+
+		return null
 	}
 
 	@Override

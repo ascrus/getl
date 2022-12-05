@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection RegExpSimplifiable
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -8,7 +9,6 @@ import getl.data.sub.WithConnection
 import getl.driver.Driver
 import getl.exception.ConnectionError
 import getl.exception.DslError
-import getl.exception.ExceptionGETL
 import getl.exception.IOFilesError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
@@ -68,9 +68,11 @@ class SQLScripter implements WithConnection, GetlRepository {
 	}
 
 	/** External variables */
+	@JsonIgnore
 	public Map<String, Object> extVars
 	/** All variables */
-	Map<String, Object> getAllVars() { (extVars != null)?((extVars + vars) as Map<String, Object>):vars }
+	@JsonIgnore
+	Map<String, Object> getAllVars() { ((connection?.attributes?:[:]) + (extVars?:[:]) + vars) as Map<String, Object> }
 	
 	/***  Source JDBC connection */
 	private JDBCConnection connection
@@ -263,8 +265,22 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (posParam.length() == 0)
 			throw new SQLScripterError(this, '#sqlscripter.run_file_non_filename')
 
-		if (!FileUtils.IsResourceFileName(posParam, true) && !FileUtils.ExistsFile(posParam))
-			throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
+		if (!FileUtils.IsResourceFileName(posParam, true)) {
+			if (!FileUtils.ExistsFile(posParam)) {
+				if (dslCreator != null) {
+					if (FileUtils.FileExtension(posParam) == '')
+						posParam += '.sql'
+
+					def rn = FileUtils.TransformFilePath('repository:' + ((posParam[0] != '/')?'/':'') + posParam, false, dslCreator)
+					if (FileUtils.ExistsFile(rn))
+						posParam = rn
+					else
+						throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
+				}
+				else
+					throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
+			}
+		}
 
 		if (debugMode)
 			Logs.Finest(this, '#sqlscripter.run_file_start', [path: posParam])

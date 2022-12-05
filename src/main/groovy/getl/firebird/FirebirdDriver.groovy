@@ -21,12 +21,13 @@ class FirebirdDriver extends JDBCDriver {
         connectionParamBegin = '?'
         connectionParamJoin = ';'
 
-        //commitDDL = true
         transactionalDDL = true
 
         caseObjectName = 'UPPER'
         caseRetrieveObject = 'UPPER'
-        //caseQuotedName = false
+        ruleEscapedText.put('\'', '\'\'')
+        ruleEscapedText.remove('\n')
+        ruleEscapedText.remove('\\')
 
         sqlExpressions.now = 'cast(\'NOW\' as timestamp)'
         sqlExpressions.sequenceNext = "SELECT NEXT VALUE FOR {value} AS id FROM {sysDualTable}"

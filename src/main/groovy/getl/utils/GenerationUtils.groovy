@@ -2022,13 +2022,13 @@ sb << """
 
 			sb << "	def _getl_temp_var_$i = inRow.${getSourceMethod}('$fName')\n"
 			sb << "	if (_getl_temp_var_$i == null) outRow.put('$fName', null) else {\n"
-			if (f.getMethod != null)
-				sb << "\t\t_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
+			def getMethod = driver.prepareReadField(f)
+			if (getMethod != null)
+				sb << "\t\t_getl_temp_var_$i = ${getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
 
 			switch (f.type) {
 				case Field.timestamp_with_timezoneFieldType:
 					if (!driver.timestamptzReadAsTimestamp())
-						//sb << " outRow.put('$fName', java.sql.Timestamp.valueOf((_getl_temp_var_${i} as java.time.OffsetDateTime).toLocalDateTime()))"
 						sb << " outRow.put('$fName', (_getl_temp_var_${i} as java.time.OffsetDateTime).toDate().toTimestamp())"
 					else
 						sb << "	outRow.put('$fName', _getl_temp_var_${i})"

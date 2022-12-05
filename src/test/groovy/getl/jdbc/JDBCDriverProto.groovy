@@ -104,6 +104,8 @@ abstract class JDBCDriverProto extends GetlTest {
     void initTable() {
         if (con != null) {
             table = con.newDataset() as TableDataset
+            table.dbName = defaultDatabase
+            table.schemaName = defaultSchema
             table.tableName = useTableName
             prepareTable()
         }
@@ -164,6 +166,8 @@ abstract class JDBCDriverProto extends GetlTest {
         }
     }
 
+    protected String localTablePrefix() { '#' }
+
     @Test
     void testLocalTable() {
         if (!con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
@@ -172,7 +176,7 @@ abstract class JDBCDriverProto extends GetlTest {
         }
         def tempTable = con.newDataset() as TableDataset
         tempTable.tap {
-            tableName = '#_getl_local_temp_test'
+            tableName = localTablePrefix() + '_getl_local_temp_test'
             type = JDBCDataset.Type.LOCAL_TEMPORARY
         }
 
@@ -828,7 +832,7 @@ IF ('{support_update}' = 'true') DO {
                     onCommit = true
                 }
                 schemaName = null
-                tableName = '#' + tableName
+                tableName = localTablePrefix() + tableName
             }
 
             tableName = tableName + '_clone'
