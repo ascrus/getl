@@ -168,14 +168,14 @@ class Messages {
 
     /** Generate text from message or code */
     static String BuildText(GetlRepository object, String message, Map vars = null) {
-        return StringUtils.EvalMacroString('{objectClassName} ~{~{object}~}~: ' + manager.message(message),
+        return StringUtils.EvalMacroString('{objectClassName} [{object}]: ' + manager.message(message),
                 (vars?:[:]) + [object: object.dslNameObject?:object.toString(), objectClassName: object.getClass().simpleName], false)
     }
 
     /** Generate text from message or code */
     static String BuildText(Getl getl, String message, Map vars = null) {
         return StringUtils.EvalMacroString('{getl}: ' + manager.message(message),
-                (vars?:[:]) + [getl: (getl.getGetlSystemParameter('runMode') == 'workflow')?'Workflow ~{~' + getl.getGetlSystemParameter('workflow') + '~}~':
-                        'Script ~{~' + (getl.getlMainClassName?:'DSL') + '~}~'], false)
+                (vars?:[:]) + [getl: (getl.getGetlSystemParameter('runMode') == 'workflow')?'Workflow [' + getl.getGetlSystemParameter('workflow') + ']':
+                        'Script [' + (getl.getlMainClassName?:'DSL') + ']'], false)
     }
 }
