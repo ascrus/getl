@@ -3,6 +3,7 @@ package getl.csv.opts
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -15,7 +16,7 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class CSVWriteSpec extends BaseSpec {
     /** Check constraints while writing a file */
-    Boolean getIsValid() { params.isValid as Boolean }
+    Boolean getIsValid() { ConvertUtils.Object2Boolean(params.isValid) }
     /** Check constraints while writing a file */
     void setIsValid(Boolean value) { saveParamValue('isValid', value) }
 
@@ -71,7 +72,7 @@ class CSVWriteSpec extends BaseSpec {
     }
 
     /** Parts of files are available immediately after writing */
-    Boolean getAvailableAfterWrite() { params.availableAfterWrite as Boolean }
+    Boolean getAvailableAfterWrite() { ConvertUtils.Object2Boolean(params.availableAfterWrite) }
     /** Parts of files are available immediately after writing */
     void setAvailableAfterWrite(Boolean value) { saveParamValue('availableAfterWrite', value) }
 }

@@ -110,7 +110,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Read table as update locking */
 	@JsonIgnore
-	Boolean getForUpdate() { readDirective.forUpdate as Boolean }
+	Boolean getForUpdate() { ConvertUtils.Object2Boolean(readDirective.forUpdate) }
 	/** Read table as update locking */
 	void setForUpdate(Boolean value) { readDirective.forUpdate = value }
 

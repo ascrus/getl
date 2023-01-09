@@ -2,6 +2,7 @@ package getl.files.opts
 
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -19,17 +20,17 @@ class ManagerDownloadSpec extends BaseSpec {
     void setHistoryTable(TableDataset value) { saveParamValue('story', value) }
 
     /** Delete files after download (default false) */
-    Boolean getDeleteLoadedFile() { params.deleteLoadedFile as Boolean }
+    Boolean getDeleteLoadedFile() { ConvertUtils.Object2Boolean(params.deleteLoadedFile) }
     /** Delete files after download (default false) */
     void setDeleteLoadedFile(Boolean value) {saveParamValue('deleteLoadedFile', value) }
 
     /** Skip download errors and continue downloading files (default false) */
-    Boolean getIgnoreError() { params.ignoreError as Boolean }
+    Boolean getIgnoreError() { ConvertUtils.Object2Boolean(params.ignoreError) }
     /** Skip download errors and continue downloading files (default false) */
     void setIgnoreError(Boolean value) {saveParamValue('ignoreError', value) }
 
     /** Repeat directory structure when downloading files (default true) */
-    Boolean getSaveDirectoryStructure() { params.folders as Boolean }
+    Boolean getSaveDirectoryStructure() { ConvertUtils.Object2Boolean(params.folders) }
     /** Repeat directory structure when downloading files (default true) */
     void setSaveDirectoryStructure(Boolean value) { saveParamValue('folders', value) }
 

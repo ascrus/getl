@@ -2,6 +2,7 @@ package getl.data.opts
 
 import getl.driver.FileDriver
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -48,7 +49,7 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     static public final FileDriver.RetrieveObjectSort sizeSort = FileDriver.RetrieveObjectSort.SIZE
 
     /** Recursive directory processing */
-    Boolean getRecursive() { params.recursive as Boolean }
+    Boolean getRecursive() { ConvertUtils.Object2Boolean(params.recursive) }
     /** Recursive directory processing */
     void setRecursive(Boolean value) { saveParamValue('recursive', value) }
 

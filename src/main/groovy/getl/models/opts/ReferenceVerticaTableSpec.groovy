@@ -12,6 +12,7 @@ import getl.models.ReferenceVerticaTables
 import getl.models.sub.DatasetSpec
 import getl.proc.Flow
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import getl.utils.StringUtils
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
@@ -67,7 +68,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     void setLimitCopy(Long value) { saveParamValue('limitCopy', value) }
 
     /** The table is used when copying from source (default false) */
-    Boolean getAllowCopy() { params.allowCopy as Boolean }
+    Boolean getAllowCopy() { ConvertUtils.Object2Boolean(params.allowCopy) }
     /** The table is used when copying from source (default false) */
     void setAllowCopy(Boolean value) { saveParamValue('allowCopy', value) }
 
@@ -75,7 +76,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     Boolean isAllowCopy() { BoolUtils.IsValue(allowCopy, whereCopy != null) }
 
     /** Always fill the table (default false) */
-    Boolean getAlwaysFill() { params.alwaysFill as Boolean }
+    Boolean getAlwaysFill() { ConvertUtils.Object2Boolean(params.alwaysFill) }
     /** Always fill the table (default false) */
     void setAlwaysFill(Boolean value) { saveParamValue('alwaysFill', value) }
 

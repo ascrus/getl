@@ -4,6 +4,7 @@ package getl.proc.opts
 import getl.data.Dataset
 import getl.data.Field
 import getl.proc.Flow
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -51,32 +52,32 @@ class FlowWriteManySpec extends FlowBaseSpec {
     }
 
     /** Write with synchronize main thread */
-    Boolean getWriteSynch() { params.writeSynch as Boolean }
+    Boolean getWriteSynch() { ConvertUtils.Object2Boolean(params.writeSynch) }
     /** Write with synchronize main thread */
     void setWriteSynch(Boolean value) { saveParamValue('writeSynch', value) }
 
     /** Auto starting and finishing transaction for write process */
-    Boolean getAutoTran() { params.autoTran as Boolean }
+    Boolean getAutoTran() { ConvertUtils.Object2Boolean(params.autoTran) }
     /** Auto starting and finishing transaction for write process */
     void setAutoTran(Boolean value) { saveParamValue('autoTran', value) }
 
     /** Clearing destination dataset before write */
-    Boolean getClear() { params.clear as Boolean }
+    Boolean getClear() { ConvertUtils.Object2Boolean(params.clear) }
     /** Clearing destination dataset before write */
     void setClear(Boolean value) { saveParamValue('clear', value) }
 
     /** Load to destination as bulk load (only is supported) */
-    Boolean getBulkLoad() { params.bulkLoad as Boolean }
+    Boolean getBulkLoad() { ConvertUtils.Object2Boolean(params.bulkLoad) }
     /** Load to destination as bulk load (only is supported) */
     void setBulkLoad(Boolean value) { saveParamValue('bulkLoad', value) }
 
     /** Convert bulk file to escaped format */
-    Boolean getBulkEscaped() { params.bulkEscaped as Boolean }
+    Boolean getBulkEscaped() { ConvertUtils.Object2Boolean(params.bulkEscaped) }
     /** Convert bulk file to escaped format */
     void setBulkEscaped(Boolean value) { saveParamValue('bulkEscaped', value) }
 
     /** Compress bulk file from GZIP algorithm */
-    Boolean getBulkAsGZIP() { params.bulkAsGZIP as Boolean }
+    Boolean getBulkAsGZIP() { ConvertUtils.Object2Boolean(params.bulkAsGZIP) }
     /** Compress bulk file from GZIP algorithm */
     void setBulkAsGZIP(Boolean value) { saveParamValue('bulkAsGZIP', value) }
 

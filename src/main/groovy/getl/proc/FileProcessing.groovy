@@ -20,6 +20,7 @@ import getl.proc.sub.FileProcessingElement
 import getl.proc.sub.FileProcessingTimeoutException
 import getl.tfs.TDSTable
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
@@ -77,7 +78,7 @@ class FileProcessing extends FileListProcessing {
     void setStorageErrorFiles(Manager value) { params.storageErrorFiles = value }
 
     /** Processing source files directly without downloading to local files (default false for remote source and true for local source) */
-    Boolean getProcessingDirectly() { params.processingDirectly as Boolean }
+    Boolean getProcessingDirectly() { ConvertUtils.Object2Boolean(params.processingDirectly) }
     /** Processing source files directly without downloading to local files (default false for remote source and true for local source) */
     void setProcessingDirectly(Boolean value) { params.processingDirectly = value }
 
@@ -92,12 +93,12 @@ class FileProcessing extends FileListProcessing {
     }
 
     /** File processing timeout as an error (default true) */
-    Boolean getProcessingTimeoutAsError() { params.processingTimeoutAsError as Boolean }
+    Boolean getProcessingTimeoutAsError() { ConvertUtils.Object2Boolean(params.processingTimeoutAsError) }
     /** File processing timeout as an error (default true) */
     void setProcessingTimeoutAsError(Boolean value) { params.processingTimeoutAsError = value }
 
     /** Debugging mode for multi-threaded file processing */
-    Boolean getDebugMode() { params.debugMode as Boolean }
+    Boolean getDebugMode() { ConvertUtils.Object2Boolean(params.debugMode) }
     /** Debugging mode for multi-threaded file processing */
     void setDebugMode(Boolean value) { params.debugMode = value }
 

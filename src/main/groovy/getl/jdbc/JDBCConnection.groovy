@@ -166,7 +166,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 	
 	@Override
-	Boolean getAutoCommit() { params.autoCommit as Boolean }
+	Boolean getAutoCommit() { ConvertUtils.Object2Boolean(params.autoCommit) }
 	/** Auto commit transaction */
 	void setAutoCommit(Boolean value) {
 		params.autoCommit = value
@@ -175,7 +175,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 
 	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
-	Boolean getExtensionForSqlScripts() { params.extensionForSqlScripts as Boolean }
+	Boolean getExtensionForSqlScripts() { ConvertUtils.Object2Boolean(params.extensionForSqlScripts) }
 	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */
 	void setExtensionForSqlScripts(Boolean value) { params.extensionForSqlScripts = value }
 	/** SQL scripts require extended support for Getl Stored Procedure language (default false) */

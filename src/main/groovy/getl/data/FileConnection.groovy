@@ -95,7 +95,7 @@ class FileConnection extends Connection {
 	String codePage() { codePage?:'utf-8' }
 
 	/** Auto create path if not exists */
-	Boolean getCreatePath() { params.createPath as Boolean }
+	Boolean getCreatePath() { ConvertUtils.Object2Boolean(params.createPath) }
 	/** Auto create path if not exists */
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path if not exists */
@@ -103,7 +103,7 @@ class FileConnection extends Connection {
 	Boolean isCreatePath() { BoolUtils.IsValue(createPath) }
 	
 	/** Delete file if empty after write */
-	Boolean getDeleteOnEmpty() { params.deleteOnEmpty as Boolean }
+	Boolean getDeleteOnEmpty() { ConvertUtils.Object2Boolean(params.deleteOnEmpty) }
 	/** Delete file if empty after write */
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
@@ -111,7 +111,7 @@ class FileConnection extends Connection {
 	Boolean isDeleteOnEmpty() { BoolUtils.IsValue(deleteOnEmpty) }
 	
 	/** Append to exists connection files */
-	Boolean getAppend() { params.append as Boolean }
+	Boolean getAppend() { ConvertUtils.Object2Boolean(params.append) }
 	/** Append to exists connection files */
 	void setAppend(Boolean value) { params.append = value }
 	/** Append to exists connection files */
@@ -119,7 +119,7 @@ class FileConnection extends Connection {
 	Boolean isAppend() { BoolUtils.IsValue(append) }
 	
 	/** Pack GZIP connection files */
-	Boolean getIsGzFile() { params.isGzFile as Boolean }
+	Boolean getIsGzFile() { ConvertUtils.Object2Boolean(params.isGzFile) }
 	/** Pack GZIP connection files */
 	void setIsGzFile(Boolean value) { params.isGzFile = value }
 	/** Pack GZIP connection files */

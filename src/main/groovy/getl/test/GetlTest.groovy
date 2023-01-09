@@ -13,7 +13,6 @@ import groovy.time.Duration
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
-
 import java.sql.Time
 import java.util.concurrent.ConcurrentHashMap
 

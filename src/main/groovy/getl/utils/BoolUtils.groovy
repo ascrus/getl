@@ -17,6 +17,9 @@ class BoolUtils {
 	 * @return
 	 */
     static Boolean IsValue(def value, Boolean defaultValue = false) {
+		if (defaultValue == null)
+			defaultValue = false
+
 		if (value == null)
 			return defaultValue
 		if (value instanceof Boolean)

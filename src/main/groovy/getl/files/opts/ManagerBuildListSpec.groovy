@@ -6,6 +6,7 @@ import getl.exception.IncorrectParameterError
 import getl.files.Manager
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import getl.utils.Path
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -52,42 +53,42 @@ class ManagerBuildListSpec extends BaseSpec {
     void setHistoryTable(TableDataset value) { saveParamValue('story', value) }
 
     /** Create history table if not exists (default false) */
-    Boolean getCreateHistoryTable() { params.createStory as Boolean }
+    Boolean getCreateHistoryTable() { ConvertUtils.Object2Boolean(params.createStory) }
     /** Create history table if not exists (default false) */
     void setCreateHistoryTable(Boolean value) {saveParamValue('createStory', value) }
 
     /** Store relative file path in history table */
-    Boolean getTakePathInStory() { params.takePathInStory as Boolean }
+    Boolean getTakePathInStory() { ConvertUtils.Object2Boolean(params.takePathInStory) }
     /** Store relative file path in history table */
     void setTakePathInStory(Boolean value) {saveParamValue('takePathInStory', value) }
 
     /** Include in the list only files that are in the processing history */
-    Boolean getOnlyFromStory() { params.onlyFromStory as Boolean }
+    Boolean getOnlyFromStory() { ConvertUtils.Object2Boolean(params.onlyFromStory) }
     /** Include in the list only files that are in the processing history */
     void setOnlyFromStory(Boolean value) { saveParamValue('onlyFromStory', value) }
 
     /** Processing previously downloaded but modified files */
-    Boolean getProcessModified() { params.processModified as Boolean }
+    Boolean getProcessModified() { ConvertUtils.Object2Boolean(params.processModified) }
     /** Processing previously downloaded but modified files */
     void setProcessModified(Boolean value) { saveParamValue('processModified', value) }
 
     /** Ignore file processing history */
-    Boolean getIgnoreStory() { params.ignoreStory as Boolean }
+    Boolean getIgnoreStory() { ConvertUtils.Object2Boolean(params.ignoreStory) }
     /** Ignore file processing history */
     void setIgnoreStory(Boolean value) { saveParamValue('ignoreStory', value) }
 
     /** Processing subdirectories (default false) */
-    Boolean getRecursive() { params.recursive as Boolean }
+    Boolean getRecursive() { ConvertUtils.Object2Boolean(params.recursive) }
     /** Processing subdirectories (default false) */
     void setRecursive(Boolean value) {saveParamValue('recursive', value) }
 
     /** Save file path in history table (default true) */
-    Boolean getStoreFilePath() { params.takePathInStory as Boolean }
+    Boolean getStoreFilePath() { ConvertUtils.Object2Boolean(params.takePathInStory) }
     /** Save file path in history table (default true) */
     void setStoreFilePath(Boolean value) { saveParamValue('takePathInStory', value) }
 
     /** Skip previously saved files in history (default true) */
-    Boolean getSkipSavedInHistory() { params.ignoreExistInStory as Boolean }
+    Boolean getSkipSavedInHistory() { ConvertUtils.Object2Boolean(params.ignoreExistInStory) }
     /** Skip previously saved files in history (default true) */
     void setSkipSavedInHistory(Boolean value) { saveParamValue('ignoreExistInStory', value) }
 

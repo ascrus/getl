@@ -2,6 +2,7 @@ package getl.csv.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileReadSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -14,17 +15,17 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class CSVReadSpec extends FileReadSpec {
     /** Check constraints while reading a file */
-    Boolean getIsValid() { params.isValid as Boolean }
+    Boolean getIsValid() { ConvertUtils.Object2Boolean(params.isValid) }
     /** Check constraints while reading a file */
     void setIsValid(Boolean value) { saveParamValue('isValid', value) }
 
     /** Read chunked files */
-    Boolean getIsSplit() { params.isSplit as Boolean }
+    Boolean getIsSplit() { ConvertUtils.Object2Boolean(params.isSplit) }
     /** Read chunked files */
     void setIsSplit(Boolean value) { saveParamValue('isSplit', value) }
 
     /** Read all columns as text type */
-    Boolean getReadAsText() { params.readAsText as Boolean }
+    Boolean getReadAsText() { ConvertUtils.Object2Boolean(params.readAsText) }
     /** Read all columns as text type */
     void setReadAsText(Boolean value) { saveParamValue('readAsText', value) }
 
@@ -49,7 +50,7 @@ class CSVReadSpec extends FileReadSpec {
     }
 
     /** The order of the fields is determined by the file header */
-    Boolean getFieldOrderByHeader() { params.fieldOrderByHeader as Boolean }
+    Boolean getFieldOrderByHeader() { ConvertUtils.Object2Boolean(params.fieldOrderByHeader) }
     /** The order of the fields is determined by the file header */
     void setFieldOrderByHeader(Boolean value) { saveParamValue('fieldOrderByHeader', value) }
 

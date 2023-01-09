@@ -6,6 +6,7 @@ import getl.data.Dataset
 import getl.driver.Driver
 import getl.exception.RequiredParameterError
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import groovy.transform.InheritConstructors
 
@@ -58,7 +59,7 @@ class KafkaConnection extends Connection {
     }
 
     /** Automatically create a topic on request if it doesn't exist in Kafka */
-    Boolean getAutoCreateTopic() { params.autoCreateTopic as Boolean }
+    Boolean getAutoCreateTopic() { ConvertUtils.Object2Boolean(params.autoCreateTopic) }
     /** Automatically create a topic on request if it doesn't exist in Kafka */
     void setAutoCreateTopic(Boolean value) { params.autoCreateTopic = value}
     /** Automatically create a topic on request if it doesn't exist in Kafka */

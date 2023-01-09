@@ -58,7 +58,7 @@ class ExcelDataset extends FileDataset {
     void setLimit(final Integer value) { params.limit = value }
 
     /** The first entry is the field header */
-    Boolean getHeader() { params.header as Boolean }
+    Boolean getHeader() { ConvertUtils.Object2Boolean(params.header) }
     /** The first entry is the field header */
     void setHeader(Boolean value) { params.header = value }
     /** The first entry is the field header */
@@ -73,7 +73,7 @@ class ExcelDataset extends FileDataset {
 
     /** Warnings from Dataset (e.g. show warning when list not found) */
     @SuppressWarnings('unused')
-    Boolean getShowWarnings() { params.showWarnings as Boolean }
+    Boolean getShowWarnings() { ConvertUtils.Object2Boolean(params.showWarnings) }
     /** Warnings from Dataset (e.g. show warning when list not found) */
     @SuppressWarnings('unused')
     void setShowWarnings(final Boolean value) { params.showWarnings = value}

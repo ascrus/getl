@@ -30,6 +30,8 @@ dependencies {
 
 	api 'com.fasterxml.jackson.core:jackson-annotations:2.13.3'
 
+	//implementation 'com.h2database:h2:1.4.200'
+
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'
 	addJars 'net.lingala.zip4j:zip4j:2.11.1'

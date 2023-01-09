@@ -1,6 +1,7 @@
 package getl.jdbc.opts
 
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -13,7 +14,7 @@ class DropSpec extends BaseSpec {
     /**
      * Drop table if exists
      */
-    Boolean getIfExists() { params.ifExists as Boolean }
+    Boolean getIfExists() { ConvertUtils.Object2Boolean(params.ifExists) }
     /**
      * Drop table if exists
      */

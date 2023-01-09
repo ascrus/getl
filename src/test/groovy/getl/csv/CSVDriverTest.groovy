@@ -1072,4 +1072,42 @@ class CSVDriverTest extends GetlTest {
             }
         }
     }
+
+    @Test
+    void testFileName() {
+        Getl.Dsl {
+            def con = csvConnection {
+                path = '/tmp/files'
+            }
+
+            def csv = csv {
+                useConnection con
+                assertNull(fileNameWithExt())
+                assertNull(fileNameWithoutExt())
+                assertNull(fullFileName())
+
+                fileName = 'test'
+                assertEquals('test', fileNameWithExt())
+                assertEquals('test', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test'), fullFileName())
+
+                extension = 'csv'
+                assertEquals('test.csv', fileNameWithExt())
+                assertEquals('test', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.csv'), fullFileName())
+
+                extension = null
+                isGzFile = true
+                assertEquals('test.gz', fileNameWithExt())
+                assertEquals('test', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.gz'), fullFileName())
+
+                extension = 'csv'
+                isGzFile = true
+                assertEquals('test.csv.gz', fileNameWithExt())
+                assertEquals('test', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.csv.gz'), fullFileName())
+            }
+        }
+    }
 }

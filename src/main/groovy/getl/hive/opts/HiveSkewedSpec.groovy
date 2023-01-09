@@ -1,6 +1,7 @@
 package getl.hive.opts
 
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -44,7 +45,7 @@ class HiveSkewedSpec extends BaseSpec {
     /**
      * Stored data as directories
      */
-    Boolean getStoredAsDirectories() { params.storedAsDirectories as Boolean }
+    Boolean getStoredAsDirectories() { ConvertUtils.Object2Boolean(params.storedAsDirectories) }
     /**
      * Stored data as directories
      */

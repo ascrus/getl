@@ -2,6 +2,7 @@ package getl.tfs
 
 import getl.csv.*
 import getl.exception.ExceptionGETL
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 
@@ -63,7 +64,7 @@ class TFS extends CSVConnection {
 	}
 
 	/** Delete temporary directories and files after exit is program */
-	Boolean getDeleteOnExit () { params.deleteOnExit }
+	Boolean getDeleteOnExit () { ConvertUtils.Object2Boolean(params.deleteOnExit) }
 	/** Delete temporary directories and files after exit is program */
 	void setDeleteOnExit (Boolean value) { params.deleteOnExit = value }
 	

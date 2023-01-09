@@ -5,6 +5,7 @@ import getl.data.Dataset
 import getl.data.FileConnection
 import getl.driver.Driver
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -29,7 +30,7 @@ class ExcelConnection extends FileConnection {
     ExcelDriver getCurrentExcelDriver() { driver as ExcelDriver }
 
     /** The first entry is the field header */
-    Boolean getHeader() { params.header as Boolean }
+    Boolean getHeader() { ConvertUtils.Object2Boolean(params.header) }
     /** The first entry is the field header */
     void setHeader(Boolean value) { params.header = value }
 

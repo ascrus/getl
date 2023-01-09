@@ -3,6 +3,7 @@ package getl.proc.opts
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.proc.Flow
+import getl.utils.ConvertUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -52,12 +53,12 @@ class FlowCopySpec extends FlowBaseSpec {
     void setTempDestName(String value) { saveParamValue('tempDest', value) }
 
     /** Destination fields inherit from source fields */
-    Boolean getInheritFields() { params.inheritFields as Boolean }
+    Boolean getInheritFields() { ConvertUtils.Object2Boolean(params.inheritFields) }
     /** Destination fields inherit from source fields */
     void setInheritFields(Boolean value) { saveParamValue('inheritFields', value) }
 
     /** Create destination if not exist */
-    Boolean getCreateDest() { params.createDest as Boolean }
+    Boolean getCreateDest() { ConvertUtils.Object2Boolean(params.createDest) }
     /** Create destination if not exist */
     void setCreateDest(Boolean value) { saveParamValue('createDest', value) }
 
@@ -99,37 +100,37 @@ class FlowCopySpec extends FlowBaseSpec {
     }
 
     /** Write with synchronize main thread */
-    Boolean getWriteSynch() { params.writeSynch as Boolean }
+    Boolean getWriteSynch() { ConvertUtils.Object2Boolean(params.writeSynch) }
     /** Write with synchronize main thread */
     void setWriteSynch(Boolean value) { saveParamValue('writeSynch', value) }
 
     /** Auto mapping value from source fields to destination fields */
-    Boolean getAutoMap() { params.autoMap as Boolean }
+    Boolean getAutoMap() { ConvertUtils.Object2Boolean(params.autoMap) }
     /** Auto mapping value from source fields to destination fields */
     void setAutoMap(Boolean value) { saveParamValue('autoMap', value) }
 
     /** Auto converting type value from source fields to destination fields */
-    Boolean getAutoConvert() { params.autoConvert as Boolean }
+    Boolean getAutoConvert() { ConvertUtils.Object2Boolean(params.autoConvert) }
     /** Auto converting type value from source fields to destination fields */
     void setAutoConvert(Boolean value) { saveParamValue('autoConvert', value) }
 
     /** Auto starting and finishing transaction for copy process */
-    Boolean getAutoTran() { params.autoTran as Boolean}
+    Boolean getAutoTran() { ConvertUtils.Object2Boolean(params.autoTran) }
     /** Auto starting and finishing transaction for copy process */
     void setAutoTran(Boolean value) { saveParamValue('autoTran', value) }
 
     /** Clearing destination dataset before copy */
-    Boolean getClear() { params.clear as Boolean }
+    Boolean getClear() { ConvertUtils.Object2Boolean(params.clear) }
     /** Clearing destination dataset before copy */
     void setClear(Boolean value) { saveParamValue('clear', value) }
 
     /** Save row processing errors to temporary dataset "errorsDataset" */
-    Boolean getSaveErrors() { params.saveErrors as Boolean }
+    Boolean getSaveErrors() { ConvertUtils.Object2Boolean(params.saveErrors) }
     /** Save row processing errors to temporary dataset "errorsDataset" */
     void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 
     /** Save expression errors to temporary dataset "errorsDataset" */
-    Boolean getSaveExprErrors() { params.saveExprErrors as Boolean }
+    Boolean getSaveExprErrors() { ConvertUtils.Object2Boolean(params.saveExprErrors) }
     /** Save expression errors to temporary dataset "errorsDataset" */
     void setSaveExprErrors(Boolean value) { saveParamValue('saveExprErrors', value) }
 
@@ -139,27 +140,27 @@ class FlowCopySpec extends FlowBaseSpec {
     void setExcludeFields(List<String> value) { saveParamValue('excludeFields', value) }
 
     /** List of fields destination that do not need to converted */
-    Boolean getNotConverted() { params.notConverted as Boolean }
+    Boolean getNotConverted() { ConvertUtils.Object2Boolean(params.notConverted) }
     /** List of fields destination that do not need to converted */
     void setNotConverted(Boolean value) { saveParamValue('notConverted', value) }
 
     /** Filename  of mirror CSV dataset */
-    String getMirrorCSV() { params.mirrorCSV as Boolean }
+    String getMirrorCSV() { ConvertUtils.Object2Boolean(params.mirrorCSV) }
     /** Filename  of mirror CSV dataset */
     void setMirrorCSV(String value) { saveParamValue('mirrorCSV', value) }
 
     /** Load to destination as bulk load (only is supported) */
-    Boolean getBulkLoad() { params.bulkLoad as Boolean }
+    Boolean getBulkLoad() { ConvertUtils.Object2Boolean(params.bulkLoad) }
     /** Load to destination as bulk load (only is supported) */
     void setBulkLoad(Boolean value) { saveParamValue('bulkLoad', value) }
 
     /** Convert bulk file to escaped format */
-    Boolean getBulkEscaped() { params.bulkEscaped as Boolean }
+    Boolean getBulkEscaped() { ConvertUtils.Object2Boolean(params.bulkEscaped) }
     /** Convert bulk file to escaped format */
     void setBulkEscaped(Boolean value) { saveParamValue('bulkEscaped', value) }
 
     /** Compress bulk file from GZIP algorithm */
-    Boolean getBulkAsGZIP() { params.bulkAsGZIP as Boolean }
+    Boolean getBulkAsGZIP() { ConvertUtils.Object2Boolean(params.bulkAsGZIP) }
     /** Compress bulk file from GZIP algorithm */
     void setBulkAsGZIP(Boolean value) { saveParamValue('bulkAsGZIP', value) }
 
@@ -222,17 +223,17 @@ class FlowCopySpec extends FlowBaseSpec {
     void setFormatNumeric(String value) { params.formatNumeric = value }
 
     /** Convert empty string values as null */
-    Boolean getConvertEmptyToNull() { params.convertEmptyToNull as Boolean }
+    Boolean getConvertEmptyToNull() { ConvertUtils.Object2Boolean(params.convertEmptyToNull) }
     /** Convert empty string values as null */
     void setConvertEmptyToNull(Boolean value) { params.convertEmptyToNull = value }
 
     /** Copy only fields with values */
-    Boolean getCopyOnlyWithValue() { params.copyOnlyWithValue as Boolean }
+    Boolean getCopyOnlyWithValue() { ConvertUtils.Object2Boolean(params.copyOnlyWithValue) }
     /** Copy only fields with values */
     void setCopyOnlyWithValue(Boolean value) { params.copyOnlyWithValue = value }
 
     /** Write to the destination dataset only the fields present in the source dataset or mapping (default false) */
-    Boolean getCopyOnlyMatching() { params.copyOnlyMatching as Boolean }
+    Boolean getCopyOnlyMatching() { ConvertUtils.Object2Boolean(params.copyOnlyMatching) }
     /** Write to the destination dataset only the fields present in the source dataset or mapping (default false) */
     void setCopyOnlyMatching(Boolean value) { params.copyOnlyMatching = value }
 
@@ -301,7 +302,7 @@ class FlowCopySpec extends FlowBaseSpec {
     }
 
     /** Save transformation code to dump (default false) */
-    Boolean getDebug() { params.debug as Boolean }
+    Boolean getDebug() { ConvertUtils.Object2Boolean(params.debug) }
     /** Save transformation code to dump (default false) */
     void setDebug(Boolean value) { saveParamValue('debug', value) }
 

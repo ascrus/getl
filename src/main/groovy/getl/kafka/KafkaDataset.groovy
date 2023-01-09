@@ -7,6 +7,7 @@ import getl.data.Field
 import getl.exception.DatasetError
 import getl.kafka.opts.KafkaReadSpec
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -54,7 +55,7 @@ class KafkaDataset extends Dataset {
     void setKeyName(String value) { params.keyName = value }
 
     /** Automatically create a topic on request if it doesn't exist in Kafka */
-    Boolean getAutoCreateTopic() { params.autoCreateTopic as Boolean }
+    Boolean getAutoCreateTopic() { ConvertUtils.Object2Boolean(params.autoCreateTopic) }
     /** Automatically create a topic on request if it doesn't exist in Kafka */
     void setAutoCreateTopic(Boolean value) { params.autoCreateTopic = value}
     /** Automatically create a topic on request if it doesn't exist in Kafka */

@@ -9,6 +9,7 @@ import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import getl.utils.Path
 import groovy.transform.InheritConstructors
@@ -162,12 +163,12 @@ class BulkLoadSpec extends BaseSpec {
     void setRemoteLoad(Boolean value) { saveParamValue('remoteLoad', value) }
 
     /** Automatic linking by the file and table field names */
-    Boolean getAutoMap() { params.autoMap as Boolean }
+    Boolean getAutoMap() { ConvertUtils.Object2Boolean(params.autoMap) }
     /** Automatic linking by the file and table field names */
     void setAutoMap(Boolean value) { saveParamValue('autoMap', value) }
 
     /** Allow to use expressions in mapping */
-    Boolean getAllowExpressions() { params.allowExpressions as Boolean }
+    Boolean getAllowExpressions() { ConvertUtils.Object2Boolean(params.allowExpressions) }
     /** Allow to use expressions in mapping */
     void setAllowExpressions(Boolean value) { saveParamValue('allowExpressions', value) }
 
@@ -181,7 +182,7 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /** Auto commit after bulk load files */
-    Boolean getAutoCommit() { params.autoCommit as Boolean }
+    Boolean getAutoCommit() { ConvertUtils.Object2Boolean(params.autoCommit) }
     /** Auto commit after bulk load files */
     void setAutoCommit(Boolean value) { saveParamValue('autoCommit', value) }
 
@@ -191,7 +192,7 @@ class BulkLoadSpec extends BaseSpec {
     void setAbortOnError(Boolean value) { saveParamValue('abortOnError', value) }
 
     /** Use the table field description to read the CSV file */
-    Boolean getInheritFields() { params.inheritFields as Boolean }
+    Boolean getInheritFields() { ConvertUtils.Object2Boolean(params.inheritFields) }
     /** Use the table field description to read the CSV file */
     void setInheritFields(Boolean value) { saveParamValue('inheritFields', value) }
 

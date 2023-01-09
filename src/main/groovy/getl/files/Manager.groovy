@@ -265,7 +265,7 @@ abstract class Manager implements GetlRepository {
 	}
 
 	/** Allow only read from source */
-	Boolean getReadOnlyMode() { params.readOnlyMode }
+	Boolean getReadOnlyMode() { ConvertUtils.Object2Boolean(params.readOnlyMode) }
 	/** Allow only read from source */
 	void setReadOnlyMode(Boolean value) { params.readOnlyMode = value }
 	/** Allow only read from source */

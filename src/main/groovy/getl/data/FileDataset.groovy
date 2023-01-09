@@ -7,6 +7,7 @@ import getl.data.sub.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.DatasetError
 import getl.exception.RequiredParameterError
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -62,7 +63,7 @@ class FileDataset extends Dataset implements AttachData {
 	String codePage() { codePage?:fileConnection?.codePage() }
 
 	/** Append if file exists */
-	Boolean getAppend() { params.append as Boolean }
+	Boolean getAppend() { ConvertUtils.Object2Boolean(params.append) }
 	/** Append if file exists */
 	void setAppend (Boolean value) { params.append = value }
 	/** Append if file exists */
@@ -70,7 +71,7 @@ class FileDataset extends Dataset implements AttachData {
 	Boolean isAppend() { append?:fileConnection?.isAppend() }
 	
 	/** Auto create path for connection */
-	Boolean getCreatePath() { params.createPath as Boolean }
+	Boolean getCreatePath() { ConvertUtils.Object2Boolean(params.createPath) }
 	/** Auto create path for connection */
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path for connection */
@@ -78,7 +79,7 @@ class FileDataset extends Dataset implements AttachData {
 	Boolean isCreatePath() { createPath?:fileConnection?.isCreatePath() }
 	
 	/** Delete file if empty after write */
-	Boolean getDeleteOnEmpty() { params.deleteOnEmpty as Boolean }
+	Boolean getDeleteOnEmpty() { ConvertUtils.Object2Boolean(params.deleteOnEmpty) }
 	/** Delete file if empty after write */
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
@@ -86,7 +87,7 @@ class FileDataset extends Dataset implements AttachData {
 	Boolean isDeleteOnEmpty() { deleteOnEmpty?:fileConnection?.isDeleteOnEmpty() }
 	
 	/** File is pack of GZIP */
-	Boolean getIsGzFile() { params.isGzFile as Boolean }
+	Boolean getIsGzFile() { ConvertUtils.Object2Boolean(params.isGzFile) }
 	/** File is pack of GZIP */
 	void setIsGzFile(Boolean value) { params.isGzFile = value }
 	/** File is pack of GZIP */
@@ -196,7 +197,7 @@ class FileDataset extends Dataset implements AttachData {
 
 	/** File name with extension */
 	String fileNameWithExt() {
-		objectName
+		(fileConnection.driver as FileDriver).fileNameWithExtension(this)
 	}
 	
 	/**
@@ -204,7 +205,6 @@ class FileDataset extends Dataset implements AttachData {
 	 */
 	String fullFileName(Integer portion) {
 		FileDriver drv = connection.driver as FileDriver
-		
 		return drv.fullFileNameDataset(this, portion)
 	}
 	
@@ -218,12 +218,10 @@ class FileDataset extends Dataset implements AttachData {
 	}
 	
 	/**
-	 * Return dataset fileName without extension
+	 * File name without extension
 	 */
-	String fileNameWithoutExtension(Dataset dataset) {
-		FileDriver drv = connection.driver as FileDriver
-		
-		return drv.fileNameWithoutExtension(this)
+	String fileNameWithoutExt() {
+		return (connection.driver as FileDriver).fileNameWithoutExtension(this)
 	}
 
 	/** Return dataset file */

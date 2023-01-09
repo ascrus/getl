@@ -2,6 +2,7 @@ package getl.jdbc.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -28,12 +29,12 @@ class ReadSpec extends BaseSpec {
     }
 
     /** Use schemata file for reading dataset structure */
-    Boolean getAutoSchema() { params.autoSchema as Boolean }
+    Boolean getAutoSchema() { ConvertUtils.Object2Boolean(params.autoSchema) }
     /** Use schemata file for reading dataset structure */
     void setAutoSchema(Boolean value) { saveParamValue('autoSchema', value) }
 
     /** Save error row to temporary dataset */
-    Boolean getSaveErrors() { params.saveErrors as Boolean }
+    Boolean getSaveErrors() { ConvertUtils.Object2Boolean(params.saveErrors) }
     /** Save error row to temporary dataset */
     void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 
@@ -61,7 +62,7 @@ class ReadSpec extends BaseSpec {
     }
 
     /** Read table as update locking */
-    Boolean getForUpdate() { params.forUpdate as Boolean }
+    Boolean getForUpdate() { ConvertUtils.Object2Boolean(params.forUpdate) }
     /** Read table as update locking */
     void setForUpdate(Boolean value) { saveParamValue('forUpdate', value) }
 }

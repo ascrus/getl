@@ -338,7 +338,7 @@ class Dataset implements GetlRepository, WithConnection {
 	
 	/** Auto load schema with meta file */
 	@JsonIgnore
-	Boolean getAutoSchema() { params.autoSchema as Boolean }
+	Boolean getAutoSchema() { ConvertUtils.Object2Boolean(params.autoSchema) }
 	/** Auto load schema with meta file */
 	void setAutoSchema(Boolean value) { params.autoSchema = value }
 	/** Auto load schema with meta file */
@@ -347,7 +347,7 @@ class Dataset implements GetlRepository, WithConnection {
 	
 	/** Use manual schema for dataset */
 	@JsonIgnore
-	Boolean getManualSchema() { params.manualSchema as Boolean }
+	Boolean getManualSchema() { ConvertUtils.Object2Boolean(params.manualSchema) }
 	/** Use manual schema for dataset */
 	void setManualSchema(Boolean value) {
 		if (value)

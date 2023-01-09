@@ -6,6 +6,7 @@ import getl.exception.DatasetError
 import getl.exception.IncorrectParameterError
 import getl.exception.RequiredParameterError
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -30,7 +31,7 @@ class WriteSpec extends BaseSpec {
     void prepare(Closure value) { setOnPrepare(value) }
 
     /** Use schemata file for reading dataset structure */
-    Boolean getAutoSchema() { params.autoSchema as Boolean }
+    Boolean getAutoSchema() { ConvertUtils.Object2Boolean(params.autoSchema) }
     /** Use schemata file for reading dataset structure */
     void setAutoSchema(Boolean value) { saveParamValue('autoSchema', value) }
 

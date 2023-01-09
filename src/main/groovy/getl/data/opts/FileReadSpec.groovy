@@ -2,6 +2,7 @@ package getl.data.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -38,7 +39,7 @@ class FileReadSpec extends BaseSpec {
     void setLimit(Long value) { saveParamValue('limit', value) }
 
     /** Save read errors to errors dataset */
-    Boolean getSaveErrors() { params.saveErrors as Boolean }
+    Boolean getSaveErrors() { ConvertUtils.Object2Boolean(params.saveErrors) }
     /** Save read errors to errors dataset */
     void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 }

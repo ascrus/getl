@@ -10,6 +10,7 @@ import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.BoolUtils
 import getl.utils.CloneUtils
+import getl.utils.ConvertUtils
 import getl.utils.MapUtils
 import getl.utils.Path
 import getl.utils.StringUtils
@@ -58,6 +59,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.datasetName = p.workTableName
+            p.allowCopy = ConvertUtils.Object2Boolean(p.allowCopy)
+            p.alwaysFill = ConvertUtils.Object2Boolean(p.alwaysFill)
 
             p.remove('id')
             p.remove('index')

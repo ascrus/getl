@@ -1,6 +1,7 @@
 package getl.jdbc.opts
 
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -31,7 +32,7 @@ class IndexSpec extends BaseSpec {
     /**
      * Create unique index
      */
-    Boolean getUnique() { params.unique as Boolean }
+    Boolean getUnique() { ConvertUtils.Object2Boolean(params.unique) }
     /**
      * Create unique index
      */
@@ -40,7 +41,7 @@ class IndexSpec extends BaseSpec {
     /**
      * Create hash index
      */
-    Boolean getHash() { params.hash as Boolean }
+    Boolean getHash() { ConvertUtils.Object2Boolean(params.hash) }
     /**
      * Create hash index
      */
@@ -49,7 +50,7 @@ class IndexSpec extends BaseSpec {
     /**
      * Create index if not exists
      */
-    Boolean getIfNotExists() { params.ifNotExists as Boolean}
+    Boolean getIfNotExists() { ConvertUtils.Object2Boolean(params.ifNotExists) }
     /**
      * Create index if not exists
      */

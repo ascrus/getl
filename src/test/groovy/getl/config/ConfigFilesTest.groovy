@@ -5,7 +5,6 @@ import getl.h2.H2Connection
 import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.Config
-import getl.utils.FileUtils
 import getl.utils.MapUtils
 import groovy.json.JsonBuilder
 import groovy.json.JsonGenerator

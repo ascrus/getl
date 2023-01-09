@@ -7,6 +7,7 @@ import getl.jdbc.QueryDataset
 import getl.models.MonitorRules
 import getl.models.sub.BaseSpec
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import groovy.time.Duration
 import groovy.transform.InheritConstructors
 
@@ -74,7 +75,7 @@ class MonitorRuleSpec extends BaseSpec {
     void setDescription(String value) { saveParamValue('description', value) }
 
     /** Allow rule */
-    Boolean getEnabled() { params.enabled as Boolean }
+    Boolean getEnabled() { ConvertUtils.Object2Boolean(params.enabled) }
     /** Allow rule */
     void setEnabled(Boolean value) { saveParamValue('enabled', value) }
 

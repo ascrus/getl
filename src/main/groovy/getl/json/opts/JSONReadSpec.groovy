@@ -3,6 +3,7 @@ package getl.json.opts
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileReadSpec
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -53,7 +54,7 @@ class JSONReadSpec extends FileReadSpec {
     }
 
     /** Wrap json text in root */
-    Boolean getConvertToList () { params.convertToList as Boolean }
+    Boolean getConvertToList () { ConvertUtils.Object2Boolean(params.convertToList) }
     /** Wrap json text in root */
     void setConvertToList (Boolean value) { params.convertToList = value }
 }

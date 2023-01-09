@@ -118,6 +118,29 @@ class FileDriver extends Driver {
 
 		return FileUtils.TransformFilePath(fn, dataset.dslCreator)
 	}
+
+	/**
+	 * File name with extension without path
+	 * @param dataset file dataset
+	 * @return file name
+	 */
+	@SuppressWarnings("GrMethodMayBeStatic")
+	String fileNameWithExtension(FileDataset dataset) {
+		def fn = dataset.fileName()
+		if (fn == null)
+			return null
+
+		if (FileUtils.FileExtension(fn) == '') {
+			def extDs = dataset.extension()
+			if (extDs != null)
+				fn += ('.' + extDs)
+
+			if (dataset.isGzFile())
+				fn += '.gz'
+		}
+
+		return fn
+	}
 	
 	/**
 	 * Clear file extension by file name	

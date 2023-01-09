@@ -17,6 +17,7 @@ import getl.tfs.TDS
 import getl.tfs.TDSTable
 import getl.utils.BoolUtils
 import getl.utils.CloneUtils
+import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.EMailer
 import getl.utils.StringUtils
@@ -88,6 +89,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             convertDuration.call('checkFrequency')
             convertDuration.call('lagTime')
             convertDuration.call('notificationTime')
+            p.enabled = ConvertUtils.Object2Boolean(p.enabled)
 
             list.add(new MonitorRuleSpec(own, p))
         }

@@ -1,6 +1,7 @@
 package getl.h2.opts
 
 import getl.jdbc.opts.CreateSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -13,7 +14,7 @@ class H2CreateSpec extends CreateSpec {
     /**
      * Create transactional table
      */
-    Boolean getTransactional() { params.transactional as Boolean }
+    Boolean getTransactional() { ConvertUtils.Object2Boolean(params.transactional) }
     /**
      * Create transactional table
      */
@@ -22,7 +23,7 @@ class H2CreateSpec extends CreateSpec {
     /**
      * Create not persistent table
      */
-    Boolean getNot_persistent() { params.not_persistent as Boolean }
+    Boolean getNot_persistent() { ConvertUtils.Object2Boolean(params.not_persistent) }
     /**
      * Create not persistent table
      */

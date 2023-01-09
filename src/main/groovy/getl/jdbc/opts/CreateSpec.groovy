@@ -5,6 +5,7 @@ import getl.data.Dataset
 import getl.exception.DatasetError
 import getl.jdbc.JDBCDataset
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -26,12 +27,12 @@ class CreateSpec extends BaseSpec {
     }
 
     /** Create table if not exists */
-    Boolean getIfNotExists() { params.ifNotExists as Boolean }
+    Boolean getIfNotExists() { ConvertUtils.Object2Boolean(params.ifNotExists) }
     /** Create table if not exists */
     void setIfNotExists(Boolean value) { saveParamValue('ifNotExists', value) }
 
     /** Create commit preserve rows for temporary table */
-    Boolean getOnCommit() { params.onCommit as Boolean }
+    Boolean getOnCommit() { ConvertUtils.Object2Boolean(params.onCommit) }
     /** Create commit preserve rows for temporary table */
     void setOnCommit(Boolean value) { saveParamValue('onCommit', value) }
 
@@ -65,12 +66,12 @@ class CreateSpec extends BaseSpec {
     }
 
     /** Create hash primary key */
-    Boolean getHashPrimaryKey() { params.hashPrimaryKey as Boolean }
+    Boolean getHashPrimaryKey() { ConvertUtils.Object2Boolean(params.hashPrimaryKey) }
     /** Create hash primary key */
     void setHashPrimaryKey(Boolean value ) { saveParamValue('hashPrimaryKey', value) }
 
     /** Create field by name of native database type */
-    Boolean getUseNativeDBType() { params.useNativeDBType as Boolean }
+    Boolean getUseNativeDBType() { ConvertUtils.Object2Boolean(params.useNativeDBType) }
     /** Create field by name of native database type */
     void setUseNativeDBType(Boolean value) { saveParamValue('useNativeDBType', value) }
 

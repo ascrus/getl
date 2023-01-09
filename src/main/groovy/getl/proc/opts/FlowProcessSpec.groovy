@@ -4,6 +4,7 @@ import getl.data.Dataset
 import getl.lang.opts.BaseSpec
 import getl.proc.Flow
 import getl.tfs.TFSDataset
+import getl.utils.ConvertUtils
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -56,7 +57,7 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
-    Boolean getSaveErrors() { params.saveErrors as Boolean }
+    Boolean getSaveErrors() { ConvertUtils.Object2Boolean(params.saveErrors) }
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */

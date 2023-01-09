@@ -1,6 +1,7 @@
 package getl.jdbc.opts
 
 import getl.lang.opts.BaseSpec
+import getl.utils.ConvertUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -36,7 +37,7 @@ class SequenceCreateSpec extends BaseSpec {
     void setCacheNumbers(BigInteger value) { saveParamValue('cacheNumbers', value) }
 
     /** Specifies whether the sequence can wrap when its minimum or maximum values are reached */
-    Boolean getIsCycle() { params.isCycle as Boolean }
+    Boolean getIsCycle() { ConvertUtils.Object2Boolean(params.isCycle) }
     /** Specifies whether the sequence can wrap when its minimum or maximum values are reached */
     void setIsCycle(Boolean value) { saveParamValue('isCycle', value) }
 }

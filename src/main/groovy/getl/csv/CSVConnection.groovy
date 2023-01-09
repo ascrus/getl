@@ -80,7 +80,7 @@ class CSVConnection extends FileConnection {
 	String rowDelimiter() { rowDelimiter?:'\n' }
 	
 	/** File has header of fields name */
-	Boolean getHeader() { params.header as Boolean }
+	Boolean getHeader() { ConvertUtils.Object2Boolean(params.header) }
 	/** File has header of fields name */
     void setHeader(Boolean value) {
 		params.header = value
@@ -91,7 +91,7 @@ class CSVConnection extends FileConnection {
 	Boolean isHeader() { BoolUtils.IsValue(header, true) }
 	
 	/** The order of the fields is determined by the file header */
-	Boolean getFieldOrderByHeader() { params.fieldOrderByHeader as Boolean }
+	Boolean getFieldOrderByHeader() { ConvertUtils.Object2Boolean(params.fieldOrderByHeader) }
 	/** The order of the fields is determined by the file header */
     void setFieldOrderByHeader(Boolean value) { params.fieldOrderByHeader = value }
 	/** The order of the fields is determined by the file header */
@@ -99,7 +99,7 @@ class CSVConnection extends FileConnection {
 	Boolean isFieldOrderByHeader() { BoolUtils.IsValue(fieldOrderByHeader) }
 	
 	/** Required convert string to escape value */
-	Boolean getEscaped() { params.escaped as Boolean }
+	Boolean getEscaped() { ConvertUtils.Object2Boolean(params.escaped) }
 	/** Required convert string to escape value */
     void setEscaped(Boolean value) {
 		params.escaped = value
@@ -115,7 +115,7 @@ class CSVConnection extends FileConnection {
     void setNullAsValue(String value) { params.nullAsValue = value }
 
 	/** Required format values for output to file */
-	Boolean getFormatOutput() { params.formatOutput as Boolean }
+	Boolean getFormatOutput() { ConvertUtils.Object2Boolean(params.formatOutput) }
 	/** Required format values for output to file */
     void setFormatOutput(Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
@@ -123,7 +123,7 @@ class CSVConnection extends FileConnection {
 	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, true) }
 
 	/** Check constraints during reading and writing */
-	Boolean getConstraintsCheck() { params.constraintsCheck as Boolean }
+	Boolean getConstraintsCheck() { ConvertUtils.Object2Boolean(params.constraintsCheck) }
 	/** Check constraints during reading and writing */
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	/** Check constraints during reading and writing */

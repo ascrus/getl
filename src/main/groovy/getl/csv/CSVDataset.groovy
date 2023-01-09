@@ -59,7 +59,7 @@ class CSVDataset extends FileDataset {
 	String rowDelimiter() { rowDelimiter?:currentCsvConnection?.rowDelimiter() }
 	
 	/** File has header of fields name */
-	Boolean getHeader() { params.header as Boolean }
+	Boolean getHeader() { ConvertUtils.Object2Boolean(params.header) }
 	/** File has header of fields name */
 	void setHeader (Boolean value) {
 		params.header = value
@@ -70,7 +70,7 @@ class CSVDataset extends FileDataset {
 	Boolean isHeader() { BoolUtils.IsValue(header, currentCsvConnection?.isHeader()) }
 
 	/** The order of the fields is determined by the file header */
-	Boolean getFieldOrderByHeader() { params.fieldOrderByHeader as Boolean }
+	Boolean getFieldOrderByHeader() { ConvertUtils.Object2Boolean(params.fieldOrderByHeader) }
 	/** The order of the fields is determined by the file header */
 	void setFieldOrderByHeader(Boolean value) { params.fieldOrderByHeader = value }
 	/** The order of the fields is determined by the file header */
@@ -78,7 +78,7 @@ class CSVDataset extends FileDataset {
 	Boolean isFieldOrderByHeader() { BoolUtils.IsValue(fieldOrderByHeader, currentCsvConnection?.isFieldOrderByHeader()) }
 	
 	/** Required format values for output to file */
-	Boolean getFormatOutput() { params.formatOutput }
+	Boolean getFormatOutput() { ConvertUtils.Object2Boolean(params.formatOutput) }
 	/** Required format values for output to file */
 	void setFormatOutput(Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
@@ -86,7 +86,7 @@ class CSVDataset extends FileDataset {
 	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, currentCsvConnection?.isFormatOutput()) }
 
 	/** Check constraints during reading and writing */
-	Boolean getConstraintsCheck() { params.constraintsCheck as Boolean }
+	Boolean getConstraintsCheck() { ConvertUtils.Object2Boolean(params.constraintsCheck) }
 	/** Check constraints during reading and writing */
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	/** Check constraints during reading and writing */
@@ -101,7 +101,7 @@ class CSVDataset extends FileDataset {
 	String nullAsValue() { nullAsValue?:currentCsvConnection?.nullAsValue }
 
 	/** Required convert string to escape value */
-	Boolean getEscaped() { params.escaped as Boolean }
+	Boolean getEscaped() { ConvertUtils.Object2Boolean(params.escaped) }
 	/** Required convert string to escape value */
 	void setEscaped(Boolean value) {
 		params.escaped = value

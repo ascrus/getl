@@ -334,7 +334,7 @@ class Connection implements GetlRepository {
 
 	/** Auto load schema with meta file for connection datasets */
 	@JsonIgnore
-	Boolean getAutoSchema() { params.autoSchema as Boolean }
+	Boolean getAutoSchema() { ConvertUtils.Object2Boolean(params.autoSchema) }
 	/** Auto load schema with meta file for connection datasets */
 	void setAutoSchema(Boolean value) { params.autoSchema = value }
 	/** Auto load schema with meta file for connection datasets */
