@@ -1086,27 +1086,39 @@ class CSVDriverTest extends GetlTest {
                 assertNull(fileNameWithoutExt())
                 assertNull(fullFileName())
 
-                fileName = 'test'
-                assertEquals('test', fileNameWithExt())
-                assertEquals('test', fileNameWithoutExt())
-                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test'), fullFileName())
+                fileName = 'test.1'
+                assertEquals('test.1', fileNameWithExt())
+                assertEquals('test.1', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1'), fullFileName())
 
                 extension = 'csv'
-                assertEquals('test.csv', fileNameWithExt())
-                assertEquals('test', fileNameWithoutExt())
-                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.csv'), fullFileName())
+                assertEquals('test.1.csv', fileNameWithExt())
+                assertEquals('test.1', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1.csv'), fullFileName())
 
                 extension = null
                 isGzFile = true
-                assertEquals('test.gz', fileNameWithExt())
-                assertEquals('test', fileNameWithoutExt())
-                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.gz'), fullFileName())
+                assertEquals('test.1.gz', fileNameWithExt())
+                assertEquals('test.1', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1.gz'), fullFileName())
 
                 extension = 'csv'
                 isGzFile = true
-                assertEquals('test.csv.gz', fileNameWithExt())
-                assertEquals('test', fileNameWithoutExt())
-                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.csv.gz'), fullFileName())
+                assertEquals('test.1.csv.gz', fileNameWithExt())
+                assertEquals('test.1', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1.csv.gz'), fullFileName())
+
+                fileName = 'test.1.csv'
+                isGzFile = false
+                assertEquals('test.1.csv', fileNameWithExt())
+                assertEquals('test.1', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1.csv'), fullFileName())
+
+                fileName = 'test.1.csv.gz'
+                isGzFile = true
+                assertEquals('test.1.csv.gz', fileNameWithExt())
+                assertEquals('test.1', fileNameWithoutExt())
+                assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1.csv.gz'), fullFileName())
             }
         }
     }

@@ -15,6 +15,8 @@ class FileUtilsTest extends GetlTest {
     void testFileExtension() {
         assertEquals('txt', FileUtils.FileExtension('test.txt'))
         assertEquals('txt', FileUtils.FileExtension('/tmp/test.getl/test.txt'))
+        assertEquals('', FileUtils.FileExtension('test'))
+        assertEquals('', FileUtils.FileExtension('/tmp/test.getl/test'))
         assertEquals('file.txt',  FileUtils.AddExtension('file.txt', 'txt'))
         assertEquals('file.txt',  FileUtils.AddExtension('file', 'txt'))
         assertEquals('/tmp/file.txt',  FileUtils.AddExtension('/tmp/file.txt', 'txt'))

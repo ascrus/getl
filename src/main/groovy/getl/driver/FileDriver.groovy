@@ -130,14 +130,15 @@ class FileDriver extends Driver {
 		if (fn == null)
 			return null
 
-		if (FileUtils.FileExtension(fn) == '') {
-			def extDs = dataset.extension()
-			if (extDs != null)
+		def isGz = dataset.isGzFile
+		def ext = FileUtils.FileExtension(fn)
+		def extDs = dataset.extension()
+		if (extDs != null && ext != extDs) {
+			if (!isGz || ext != 'gz')
 				fn += ('.' + extDs)
-
-			if (dataset.isGzFile())
-				fn += '.gz'
 		}
+		if (isGz && ext != 'gz')
+			fn += '.gz'
 
 		return fn
 	}
@@ -149,7 +150,7 @@ class FileDriver extends Driver {
 	 */
 	@SuppressWarnings("GrMethodMayBeStatic")
 	String fileNameWithoutExtension(FileDataset dataset) {
-		def fn = dataset.fileName()
+		def fn = fileNameWithExtension(dataset)
 		if (fn == null)
 			return null
 
@@ -157,6 +158,7 @@ class FileDriver extends Driver {
 		def extFile = FileUtils.FileExtension(fn)?.toLowerCase()
 		if (dataset.isGzFile() && extFile == "gz")
 			fn = FileUtils.ExcludeFileExtension(fn)
+		extFile = FileUtils.FileExtension(fn)?.toLowerCase()
 		if (extDs != null && extFile == extDs.toLowerCase())
 			fn = FileUtils.ExcludeFileExtension(fn)
 
