@@ -3,6 +3,7 @@ package getl.utils.sub
 
 import getl.lang.Getl
 import getl.utils.*
+import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import groovy.xml.XmlParser
 import groovy.yaml.YamlSlurper
@@ -212,7 +213,20 @@ class BaseUserCode extends Getl {
 
     /** Parse text to json data */
     static Object parseJSON(String text) {
-        return (text != null)?new JsonSlurper().parseText(text):null
+        def json = new JsonSlurper()
+        return (text != null)?json.parseText(text):null
+    }
+
+    /** Parse text to json data with fast method */
+    static Object parseFastJSON(String text) {
+        def json = new JsonSlurper().tap { type = JsonParserType.INDEX_OVERLAY }
+        return (text != null)?json.parseText(text):null
+    }
+
+    /** Parse text to json data with LAX method */
+    static Object parseLaxJSON(String text) {
+        def json = new JsonSlurper().tap { type = JsonParserType.LAX }
+        return (text != null)?json.parseText(text):null
     }
 
     /** Parse text to yaml data */

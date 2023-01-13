@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -19,6 +20,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import java.util.concurrent.ConcurrentHashMap
+import java.util.regex.Pattern
 
 /**
  * Data flow manager class 
@@ -196,7 +198,7 @@ class Flow {
 	String getScriptExpr() { scriptExpr }
 
 	/** Cache code repository */
-	static private final ConcurrentHashMap<String, Map<String, Object>> cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()
+	static private final ConcurrentHashMap<String, Map<String, Object>> cacheObjects = new ConcurrentHashMap<String, Map<String, Object>>()
 
 	/**
 	 * Generate code for mapping records from source to destination
@@ -326,29 +328,189 @@ class Flow {
 		if (cf == 0)
 			throw new ExceptionGETL("No fields were found for copying data from source \"$source\" to destination \"$dest\"!")
 
-		synchronized (cacheCode) {
-			if (cacheName != null) {
-				def cache = cacheCode.get(cacheName)
-				if (cache != null && (cache.hash as Integer) == scriptMap.hashCode())
-					result.code = cache.code as Closure
-			}
-
-			if (result.code == null) {
-				result.code = GenerationUtils.EvalGroovyClosure(value: scriptMap, owner: dslCreator)
-				if (cacheName != null) {
-					def cache = cacheCode.get(cacheName)
-					if (cache == null) {
-						cache = new ConcurrentHashMap<String, Object>()
-						cacheCode.put(cacheName, cache)
-					}
-					cache.putAll([hash: scriptMap.hashCode(), code: result.code])
-				}
-			}
+		result.code = CacheObject(cacheName, 'map', scriptMap.hashCode()) {
+			GenerationUtils.EvalGroovyClosure(value: scriptMap, owner: dslCreator)
 		}
 		result.sourceFields = sourceFields
 		result.destFields = destFields
 
 		return scriptMap
+	}
+
+	/**
+	 * <p>Generate code for calculating receiver fields based on source fields and variables according to the specified mapping</p>
+	 * <p>To create virtual fields in the source, precede the field name with an asterisk. A virtual field can only refer to an expression.
+	 * Specify expressions as ${expression}.</p><br>
+	 * <i>Example:</i><br>
+	 * <pre>
+	 [dest_field1: 'source_field1',
+	 '*virtual_field_level1': '${source.source_field1}',
+	 '**virtual_field_level2': '${source.virtual_field_level1}',
+	 dest_field2: '${source.virtual_field_level2}']
+	 * </pre>
+	 * @param map field mapping (destination field: source field or expression)
+	 * @param cacheName cache object name
+	 * @param sb generated script
+	 * @return calculation code
+	 */
+	private CalcMapVarsScript generateCalculateMapScript(Map<String, String> map, String cacheName, StringBuilder sb) {
+		if (map == null)
+			return null
+
+		if (map.isEmpty())
+			throw new ExceptionGETL("Empty map not supported!")
+
+		if (sb == null)
+			sb = new StringBuilder()
+
+		sb.append """import getl.utils.*
+class {GETL_FLOW_CALC_CLASS_NAME} extends getl.utils.sub.CalcMapVarsScript {
+@Override
+void processRow(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {
+  if (vars == null) vars = new HashMap<String, Object>()
+"""
+
+		//noinspection RegExpRedundantEscape
+		// Calculated field
+		//noinspection RegExpRedundantEscape
+		def pCalculated = Pattern.compile('^\\$\\{(.+)\\}$')
+		// Virtual field
+		def pVirtual = Pattern.compile('^([*]+)(.+)')
+		// Numeric constant
+		//noinspection RegExpSimplifiable
+		def pNumeric = Pattern.compile('^([+-]*\\d+[.]{0,1}\\d*)$')
+		// String constant
+		def pString = Pattern.compile('^(\'.*\')$')
+
+		def removeKeys = [] as List<String>
+		def clearKeys = [] as List<String>
+		def virtualValues = [:] as Map<Integer, List<String>>
+		def destValues = [] as List<String>
+		def calcVars = [:] as Map<String, String>
+		map.each { destName, sourceName ->
+			String destValue = null
+			if (sourceName != null && sourceName.length() > 0) {
+				def mNumeric = pNumeric.matcher(sourceName)
+				if (mNumeric.find())
+					destValue = mNumeric.group(1)
+				else {
+					def mString = pString.matcher(sourceName)
+					if (mString.find())
+						destValue = mString.group(1)
+					else {
+						def mCalculated = pCalculated.matcher(sourceName)
+						if (mCalculated.find())
+							destValue = mCalculated.group(1)
+					}
+				}
+			}
+
+			def mVirtual = pVirtual.matcher(destName)
+			def isVirtual = mVirtual.find()
+			def virtualLevel = (isVirtual)?mVirtual.group(1).length():null
+			def virtualName = (isVirtual)?mVirtual.group(2):null
+
+			if (!isVirtual) {
+				if (destValue == null)
+					return
+			}
+			else if (destValue == null)
+				throw new ExceptionGETL("It is required to set an expression for the virtual field \"$destName\"!")
+
+			if (isVirtual) {
+				def vm = virtualValues.get(virtualLevel)
+				if (vm == null) {
+					vm = [] as List<String>
+					virtualValues.put(virtualLevel, vm)
+				}
+				def vName = virtualName.toLowerCase()
+				calcVars.put(vName, destValue)
+				vm.add("source.put('${StringUtils.EscapeJavaWithoutUTF(vName)}', $destValue)".toString())
+				removeKeys.add(destName)
+			}
+			else {
+				destValues.add("dest.put('${StringUtils.EscapeJavaWithoutUTF(destName).toLowerCase()}', $destValue)".toString())
+				clearKeys.add(destName)
+			}
+		}
+
+		if (removeKeys.isEmpty() && clearKeys.isEmpty())
+			return null
+
+		virtualValues.sort().each {level, list ->
+			list.each {
+				sb.append('  ')
+				sb.append(it)
+				sb.append('\n')
+			}
+		}
+
+		destValues.each {
+			sb.append('  ')
+			sb.append(it)
+			sb.append('\n')
+		}
+
+		sb.append """}
+}
+
+return {GETL_FLOW_CALC_CLASS_NAME}"""
+
+		MapUtils.RemoveKeys(map, removeKeys)
+		clearKeys.each { map.put(it, null) }
+
+//		println sb.toString()
+		def script = sb.toString()
+
+		def classGenerated = CacheObject(cacheName, 'calc', script.hashCode()) {
+			def className = "Flow_calc_${StringUtils.RandomStr().replace('-', '')}"
+			GenerationUtils.EvalGroovyScript(script.replace('{GETL_FLOW_CALC_CLASS_NAME}', className), null, false, null, dslCreator)
+		} as Class<Getl>
+		CalcMapVarsScript res = null
+		if (dslCreator != null)
+			res = dslCreator.useScript(classGenerated) as CalcMapVarsScript
+		else
+			Getl.Dsl {
+				res = useScript(classGenerated) as CalcMapVarsScript
+			}
+		res.calcVars.putAll(calcVars)
+
+		return res
+	}
+
+	/**
+	 * Use object caching
+	 * @param cacheName cache name
+	 * @param code object generator
+	 * @return cached object
+	 */
+	protected static Object CacheObject(String cacheName, String groupName, Integer hash, Closure generationCode) {
+		if (cacheName == null)
+			return generationCode.call()
+
+		if (groupName != null)
+			cacheName += ('/' + groupName)
+
+		Object res
+		synchronized (cacheObjects) {
+			def cache = cacheObjects.get(cacheName)
+			if (cache != null && (cache.hash as Integer) == hash)
+				//noinspection GroovyUnusedAssignment
+				res = cache.cacheObject
+
+			if (res == null) {
+				res = generationCode.call()
+
+				if (cache == null) {
+					cache = new ConcurrentHashMap<String, Object>()
+					cacheObjects.put(cacheName, cache)
+				}
+
+				cache.putAll([hash: hash, cacheObject: res])
+			}
+		}
+
+		return res
 	}
 
 	protected static void assignFieldToTemp(Dataset source, Dataset dest, Map<String, String> map) {
@@ -454,7 +616,7 @@ class Flow {
 			String childScriptExpr = null
 			if (!childMap.isEmpty()) {
 				def calcMapScriptCode = new StringBuilder()
-				childCalcCode = GenerationUtils.GenerateCalculateMapClosure(childMap, dslCreator, calcMapScriptCode)
+				childCalcCode = generateCalculateMapScript(childMap, cacheName, calcMapScriptCode)
 				if (childCalcCode != null)
 					childScriptExpr = calcMapScriptCode.toString()
 			}
@@ -516,7 +678,7 @@ class Flow {
 		scriptExpr = null
 		if (map != null && !map.isEmpty()) {
 			def calcMapScriptCode = new StringBuilder()
-			calcCode = GenerationUtils.GenerateCalculateMapClosure(map, dslCreator, calcMapScriptCode)
+			calcCode = generateCalculateMapScript(map, cacheName, calcMapScriptCode)
 			if (calcCode != null)
 				scriptExpr = calcMapScriptCode.toString()
 		}

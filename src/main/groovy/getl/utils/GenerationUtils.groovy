@@ -1,4 +1,5 @@
 //file:noinspection UnnecessaryQualifiedReference
+//file:noinspection DuplicatedCode
 package getl.utils
 
 import getl.data.*
@@ -6,7 +7,6 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.lang.Getl
-import getl.utils.sub.CalcMapVarsScript
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -14,7 +14,6 @@ import groovy.transform.NamedVariant
 import org.codehaus.groovy.control.CompilerConfiguration
 import java.sql.Time
 import java.sql.Timestamp
-import java.util.regex.Pattern
 
 /**
  * Generation code library functions class 
@@ -2260,143 +2259,6 @@ else
 		}
 
 		return res
-	}
-
-	/**
-	 * <p>Generate code for calculating receiver fields based on source fields and variables according to the specified mapping</p>
-	 * <p>To create virtual fields in the source, precede the field name with an asterisk. A virtual field can only refer to an expression.
-	 * Specify expressions as ${expression}.</p><br>
-	 * <i>Example:</i><br>
-	 * <pre>
-[dest_field1: 'source_field1',
-  '*virtual_field_level1': '${source.source_field1}',
-  '**virtual_field_level2': '${source.virtual_field_level1}',
-  dest_field2: '${source.virtual_field_level2}']
-	 * </pre>
-	 * @param map field mapping (destination field: source field or expression)
-	 * @param owner getl instance
-	 * @return closure code
-	 */
-	static CalcMapVarsScript GenerateCalculateMapClosure(Map<String, String> map, Getl owner = null, StringBuilder sb = null) {
-		if (map == null)
-			return null
-
-		if (map.isEmpty())
-			throw new ExceptionGETL("Empty map not supported!")
-
-		def className = "Flow_calc_${StringUtils.RandomStr().replace('-', '')}"
-		if (sb == null)
-			sb = new StringBuilder()
-
-		sb.append """import getl.utils.*
-class $className extends getl.utils.sub.CalcMapVarsScript {
-@Override
-void processRow(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {
-  if (vars == null) vars = new HashMap<String, Object>()
-"""
-
-		//noinspection RegExpRedundantEscape
-		// Calculated field
-		//noinspection RegExpRedundantEscape
-		def pCalculated = Pattern.compile('^\\$\\{(.+)\\}$')
-		// Virtual field
-		def pVirtual = Pattern.compile('^([*]+)(.+)')
-		// Numeric constant
-		//noinspection RegExpSimplifiable
-		def pNumeric = Pattern.compile('^([+-]*\\d+[.]{0,1}\\d*)$')
-		// String constant
-		def pString = Pattern.compile('^(\'.*\')$')
-
-		def removeKeys = [] as List<String>
-		def clearKeys = [] as List<String>
-		def virtualValues = [:] as Map<Integer, List<String>>
-		def destValues = [] as List<String>
-		def calcVars = [:] as Map<String, String>
-		map.each { destName, sourceName ->
-			String destValue = null
-			if (sourceName != null && sourceName.length() > 0) {
-				def mNumeric = pNumeric.matcher(sourceName)
-				if (mNumeric.find())
-					destValue = mNumeric.group(1)
-				else {
-					def mString = pString.matcher(sourceName)
-					if (mString.find())
-						destValue = mString.group(1)
-					else {
-						def mCalculated = pCalculated.matcher(sourceName)
-						if (mCalculated.find())
-							destValue = mCalculated.group(1)
-					}
-				}
-			}
-
-			def mVirtual = pVirtual.matcher(destName)
-			def isVirtual = mVirtual.find()
-			def virtualLevel = (isVirtual)?mVirtual.group(1).length():null
-			def virtualName = (isVirtual)?mVirtual.group(2):null
-
-			if (!isVirtual) {
-				if (destValue == null)
-					return
-			}
-			else if (destValue == null)
-				throw new ExceptionGETL("It is required to set an expression for the virtual field \"$destName\"!")
-
-			if (isVirtual) {
-				def vm = virtualValues.get(virtualLevel)
-				if (vm == null) {
-					vm = [] as List<String>
-					virtualValues.put(virtualLevel, vm)
-				}
-				def vName = virtualName.toLowerCase()
-				calcVars.put(vName, destValue)
-				vm.add("source.put('${StringUtils.EscapeJavaWithoutUTF(vName)}', $destValue)")
-				removeKeys.add(destName)
-			}
-			else {
-				destValues.add("dest.put('${StringUtils.EscapeJavaWithoutUTF(destName).toLowerCase()}', $destValue)")
-				clearKeys.add(destName)
-			}
-		}
-
-		if (removeKeys.isEmpty() && clearKeys.isEmpty())
-			return null
-
-		virtualValues.sort().each {level, list ->
-			list.each {
-				sb.append('  ')
-				sb.append(it)
-				sb.append('\n')
-			}
-		}
-
-		destValues.each {
-			sb.append('  ')
-			sb.append(it)
-			sb.append('\n')
-		}
-
-		sb.append """}
-}
-
-return $className"""
-
-		MapUtils.RemoveKeys(map, removeKeys)
-		clearKeys.each { map.put(it, null) }
-
-//		println sb.toString()
-
-		def classGenerated = GenerationUtils.EvalGroovyScript(sb.toString(), null, false, null, owner) as Class<Getl>
-        CalcMapVarsScript res = null
-        if (owner != null)
-		    res = owner.useScript(classGenerated) as CalcMapVarsScript
-        else
-            Getl.Dsl {
-                res = useScript(classGenerated) as CalcMapVarsScript
-            }
-		res.calcVars.putAll(calcVars)
-
-        return res
 	}
 
 	/**

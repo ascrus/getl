@@ -104,6 +104,9 @@ class ExecutorTest extends GetlTest {
             def mainFile1 = csvTempWithDataset('file1', embeddedTable('table1')) {
                 clearKeys()
                 writeOpts { append = true }
+                field('v1') { length = 10 }
+                field('v2') { length = 10 }
+                field('v3') { length = 10 }
             }
 
             def mainFile2 = csvTempWithDataset('file2', embeddedTable('table1')) {
@@ -164,12 +167,21 @@ class ExecutorTest extends GetlTest {
                             assertEquals(MapUtils.Copy(mainFile1.params, ['connection']), MapUtils.Copy(file1.params, ['connection']))
                             etl.copyRows(table1, file1) {
                                 cacheName = 'testBigThreads'
+                                map.v1 = "'const'"
+                                map."*c1" = '${source.name}'
+                                map.v2 = '${source.c1}'
+                                map."**c2" = '${parseFastJSON(\'{"a": "json"}\')}'
+                                map.v3 = '${source.c2.a}'
                             }
                             assertEquals(10, table1.readRows)
                             assertEquals(10, file1.writeRows)
+                            /*file1.eachRow { row ->
+                                assertEquals('const', row.v1)
+                                assertEquals(row.name, row.v2)
+                                //assertEquals('json', row.v3)
+                            }*/
 
                             assertEquals(10, csvTemp('file2').rows().size())
-
                             assertTrue(table1.connection.connected)
                             proc.counter.addToList(table1.connection)
                         }

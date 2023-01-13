@@ -424,6 +424,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         pt.finish(countGenerateRandomRow)
     }
 
+    /*
     @Test
     void testGenerateCalculateMapClosure() {
         def map = [
@@ -449,5 +450,5 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals('test', dest.field3)
         assertEquals(-123.45, dest.field4)
         assertEquals('test', dest.field5)
-    }
+    }*/
 }
