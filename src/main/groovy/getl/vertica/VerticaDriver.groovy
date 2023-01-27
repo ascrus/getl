@@ -75,8 +75,7 @@ class VerticaDriver extends JDBCDriver {
         return super.supported() +
 				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE,
                  Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE,
-				 Support.TIMESTAMP_WITH_TIMEZONE, Support.BOOLEAN,
-                 Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
+				 Support.TIMESTAMP_WITH_TIMEZONE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
 				 Support.BULKLOADMANYFILES, Support.START_TRANSACTION/*, Support.ARRAY*/]
     }
@@ -564,13 +563,8 @@ class VerticaDriver extends JDBCDriver {
 		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter() != '\r\n')
 			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
 
-		/*if (!csvFile.escaped()) {
-			def blobFields = csvFile.field.findAll { it.type == Field.blobFieldType && source.fieldByName(it.name) != null }
-			if (blobFields != null && !blobFields.isEmpty()) {
-				def blobNames = blobFields*.name
-				throw new ExceptionGETL("When escaped is off, bulk loading with binary type fields is not allowed (fields: ${blobNames.join(', ')})!")
-			}
-		}*/
+		if (!csvFile.escaped() && csvFile.nullAsValue() != null)
+			throw new ExceptionGETL("When escaped is off, null as value is not allowed!")
 	}
 
 	@Override
@@ -758,8 +752,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.prepareCsvTempFile(source, csvFile)
-		if (csvFile.nullAsValue() != null && !csvFile.escaped())
-			csvFile.escaped = true
+		csvFile.escaped = true
 	}
 
 	@Override

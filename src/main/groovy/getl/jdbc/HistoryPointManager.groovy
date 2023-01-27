@@ -4,6 +4,7 @@ package getl.jdbc
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.ExceptionGETL
 import getl.exception.HistorypointError
 import getl.exception.InternalError
 import getl.exception.RequiredParameterError
@@ -278,6 +279,11 @@ class HistoryPointManager implements GetlRepository {
 			return
 
 		checkManager()
+
+		JDBCDriver driver = currentJDBCConnection.driver as JDBCDriver
+		if (!driver.isSupport(Driver.Support.TIMESTAMP))
+			throw new ExceptionGETL(this, 'Connection not support timestamp fields')
+
 		prepareTable(historyTable)
 
 		if (createTable)
@@ -291,13 +297,13 @@ class HistoryPointManager implements GetlRepository {
 					field('source') { isKey = true }
 					if (sourceType == identitySourceType)
 						where = "$sourceFieldName < {value}"
-					else
+					else {
 						where = "$sourceFieldName < ${currentJDBCConnection.currentJDBCDriver.sqlExpression('convertTextToTimestamp')}"
+					}
 				}
 			}
 		}
 
-		JDBCDriver driver = currentJDBCConnection.driver as JDBCDriver
 		def fp = driver.fieldPrefix
 		def fpe = driver.fieldEndPrefix?:fp
 

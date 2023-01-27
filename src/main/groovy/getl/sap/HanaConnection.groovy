@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
 /**
  * SAP Hana connection class
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
 class HanaConnection extends JDBCConnection {

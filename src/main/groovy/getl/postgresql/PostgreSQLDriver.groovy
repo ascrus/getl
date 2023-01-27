@@ -52,7 +52,7 @@ class PostgreSQLDriver extends JDBCDriver {
 				[Driver.Support.LOCAL_TEMPORARY, Support.START_TRANSACTION,
 				 Driver.Support.SEQUENCE, Driver.Support.CLOB, Driver.Support.INDEX, Support.INDEXFORTEMPTABLE,
 				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
-				 Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST,
+				 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Driver.Support.AUTO_INCREMENT,
 				 Driver.Support.BLOB, Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.ARRAY]
 	}

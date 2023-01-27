@@ -1963,6 +1963,13 @@ class JDBCDriver extends Driver {
 			connection.logger.dump(e, getClass().name + ".sql", dataset.objectName, sql)
 			throw e
 		}
+		catch (Error e) {
+			connection.logger.dump(e, getClass().name + ".sql", dataset.objectName, sql)
+			connection.logger.severe("Critical error processing read dataset \"${dataset.objectName}\"", e)
+			if (rowCopy != null)
+				connection.logger.dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+			throw e
+		}
 
 		if (fetchSize != null) {
 			sqlConnect.withStatement { Statement stmt ->

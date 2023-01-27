@@ -45,8 +45,8 @@ class FirebirdDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-            [Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.TIME, Support.DATE, Support.BOOLEAN, Support.AUTO_INCREMENT] -
-            [/*Support.DEFAULT_VALUE, Support.COMPUTE_FIELD, */Support.DATABASE, Support.SCHEMA, Support.SELECT_WITHOUT_FROM]
+            [Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.TIME, Support.DATE, Support.AUTO_INCREMENT] -
+            [Support.DATABASE, Support.SCHEMA, Support.SELECT_WITHOUT_FROM]
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")

@@ -9,6 +9,7 @@ import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
+import org.junit.After
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
@@ -112,11 +113,12 @@ abstract class JDBCDriverProto extends GetlTest {
     }
 
     protected void connect() {
-        con.connected = true
+        con?.connected = true
     }
 
-    protected void disconnect() {
-        con.connected = false
+    @After
+    void disconnect() {
+        con?.connected = false
     }
 
     protected void createTable() {
@@ -530,6 +532,9 @@ abstract class JDBCDriverProto extends GetlTest {
 
     protected void queryData() {
         def drv = (con.driver as JDBCDriver)
+        if (!drv.isSupport(Driver.Support.TIMESTAMP))
+            return
+
         def fieldName = drv.prepareFieldNameForSQL('ID1', table)
 
         def q1 = new QueryDataset(connection: con, query: "SELECT $fieldName FROM ${table.objectFullName} WHERE $fieldName = :param1")
@@ -545,8 +550,11 @@ abstract class JDBCDriverProto extends GetlTest {
         assertEquals(1, r2.size())
         def id2 = r2[0].id1 as Integer
         assertEquals(2, id2)
-        if (dt != r2[0].calc_dt)
-            assertEquals(DateUtils.TruncTime('MINUTE', dt), DateUtils.TruncTime('MINUTE', r2[0].calc_dt as Date))
+        def rowDt = r2[0].calc_dt
+        if (!(rowDt instanceof Date))
+            rowDt = ConvertUtils.Object2Timestamp(rowDt)
+        if (dt != rowDt)
+            assertEquals(DateUtils.TruncTime('MINUTE', dt), DateUtils.TruncTime('MINUTE', rowDt))
 
         def q3 = new QueryDataset(connection: con)
         q3.loadFile('resource:/sql/test_query.sql')
@@ -652,7 +660,7 @@ abstract class JDBCDriverProto extends GetlTest {
         }
         assertEquals(countRows, countFiles)
 
-        def countCopy = new Flow().copy(source: file, dest: bulkTable, bulkLoad: true)
+        def countCopy = new Flow().copy(source: file, dest: bulkTable, bulkLoad: true, bulkEscaped: false)
         assertEquals(countRows, countCopy)
         assertEquals(countRows, bulkTable.countRow())
         def num = 1
@@ -809,6 +817,7 @@ IF ('{support_update}' = 'true') DO {
         finally {
             t?.drop()
         }
+        c.connected = false
 	}
 
     protected void copyToCsv() {
@@ -991,7 +1000,7 @@ IF ('{support_update}' = 'true') DO {
             query = "SELECT ${con.expressionString2Timestamp(date)} AS dt{ FROM %dual%}"
             queryParams.dual = con.sysDualTable
             eachRow { row ->
-                assertEquals(date, row.dt)
+                assertEquals(date, ConvertUtils.Object2Timestamp(row.dt))
             }
         }
     }

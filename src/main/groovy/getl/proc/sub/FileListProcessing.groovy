@@ -153,6 +153,13 @@ abstract class FileListProcessing implements GetlRepository {
     /** Execute code when starting the file processing */
     void startProcess(Closure value) { params.startProcess = value }
 
+    /** Execute code when file processing has errors */
+    Closure getOnErrorProcess() { params.errorProcess as Closure }
+    /** Execute code when file processing has errors */
+    void setOnErrorProcess(Closure value) { params.errorProcess = value }
+    /** Execute code when file processing has errors */
+    void errorProcess(Closure value) { params.errorProcess = value }
+
     /** Execute code when file processing ends */
     Closure getOnFinishProcess() { params.finishProcess as Closure }
     /** Execute code when file processing ends */
@@ -772,23 +779,20 @@ abstract class FileListProcessing implements GetlRepository {
     }
 
     /** Run before processing */
-    protected void beforeProcessing() {
-        if (onStartProcess != null) onStartProcess.call(this)
+    protected void beforeProcessing() { }
+
+    /** Run on start processing files */
+    protected void startProcessing() {
+        if (onStartProcess != null)
+            onStartProcess.call(this)
 
         if (sourceBeforeScript != null)
             if (source.connected)
                 Command(source, sourceBeforeScript, numberAttempts, timeAttempts, true, null, Config.ConfigVars(dslCreator))
     }
 
-    /** Run after error in processing */
-    protected void errorProcessing() {
-        if (sourceErrorScript != null)
-            if (source.connected)
-                Command(source, sourceErrorScript, numberAttempts, timeAttempts, false, null, Config.ConfigVars(dslCreator))
-    }
-
-    /** Run after processing */
-    protected void afterProcessing() {
+    /** Run on finish processing files */
+    protected void finishProcessing() {
         if (onFinishProcess != null)
             onFinishProcess.call(this)
 
@@ -796,6 +800,19 @@ abstract class FileListProcessing implements GetlRepository {
             if (source.connected)
                 Command(source, sourceAfterScript, numberAttempts, timeAttempts, true, null, Config.ConfigVars(dslCreator))
     }
+
+    /** Run when file processing has errors */
+    protected void errorProcessing() {
+        if (onErrorProcess != null)
+            onErrorProcess.call(this)
+
+        if (sourceErrorScript != null)
+            if (source.connected)
+                Command(source, sourceErrorScript, numberAttempts, timeAttempts, false, null, Config.ConfigVars(dslCreator))
+    }
+
+    /** Run after processing */
+    protected void afterProcessing() { }
 
     /** Save cached history table to story in source */
     protected void saveCacheStory() {
@@ -868,6 +885,8 @@ abstract class FileListProcessing implements GetlRepository {
                     cacheTable.create()
                 }
 
+                startProcessing()
+
                 try {
                     processFiles()
                 }
@@ -884,6 +903,8 @@ abstract class FileListProcessing implements GetlRepository {
                     saveCachedData()
                 else if (cacheTable != null)
                     saveCacheStory()
+
+                finishProcessing()
 
                 ConnectTo([source], numberAttempts, timeAttempts)
 

@@ -62,7 +62,7 @@ class HiveDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-                [Driver.Support.LOCAL_TEMPORARY, Driver.Support.DATE, Driver.Support.BOOLEAN, Driver.Support.EXTERNAL, Driver.Support.CREATEIFNOTEXIST,
+                [Driver.Support.LOCAL_TEMPORARY, Driver.Support.DATE, Driver.Support.EXTERNAL, Driver.Support.CREATEIFNOTEXIST,
                  Driver.Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Driver.Support.BULKLOADMANYFILES] -
                 [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD,
                  Driver.Support.CHECK_FIELD, Driver.Support.SELECT_WITHOUT_FROM, Driver.Support.TRANSACTIONAL]

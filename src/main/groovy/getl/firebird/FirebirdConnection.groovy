@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -28,4 +29,7 @@ class FirebirdConnection extends JDBCConnection {
 
     @Override
     protected Class<TableDataset> getTableClass() { FirebirdTable }
+
+    @Override
+    String currentConnectDatabase() { FileUtils.TransformFilePath(connectDatabase, false, dslCreator) }
 }

@@ -80,6 +80,7 @@ end;'''
         return super.operations() - [Driver.Operation.CREATE_SCHEMA]
 	}
 
+	@Override
 	Boolean timestamptzReadAsTimestamp() { return true }
 
 	@Override
@@ -264,6 +265,9 @@ end;'''
 		if (field.type == Field.doubleFieldType)
 			return '({field} as Number).toDouble()'
 
+		if (field.type == Field.blobFieldType && field.columnClassName == 'oracle.sql.BLOB')
+			return '({field} as oracle.sql.BLOB).getBytes((long)1, (int)(({field} as oracle.sql.BLOB).length()))'
+
 		if (field.type == Field.Type.ROWID)
 			return 'new String({field}.bytes)'
 
@@ -355,4 +359,7 @@ end;'''
 
 		return res
 	}
+
+	@Override
+	Boolean blobReadAsObject(Field field = null) { return false }
 }

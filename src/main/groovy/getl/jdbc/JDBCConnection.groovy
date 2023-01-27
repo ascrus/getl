@@ -8,6 +8,7 @@ import getl.driver.Driver
 import getl.exception.ConnectionError
 import getl.exception.DatasetError
 import getl.exception.DslError
+import getl.exception.ExceptionGETL
 import getl.exception.IncorrectParameterError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
@@ -707,6 +708,9 @@ class JDBCConnection extends Connection implements UserLogins {
 
 	/** Return SQL expression converting text to timestamp value for current RDBMS */
 	String expressionString2Timestamp(Object value) {
+		if (!driver.isSupport(Driver.Support.TIMESTAMP))
+			throw new ExceptionGETL(this, 'Connection not support timestamp fields')
+
 		return currentJDBCDriver.sqlExpressionValue('convertTextToTimestamp', [value: value])
 	}
 

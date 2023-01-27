@@ -54,7 +54,7 @@ class MSSQLDriver extends JDBCDriver {
 	List<Support> supported() {
 		def res = super.supported() +
 				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE,
-				 Support.TIMESTAMP_WITH_TIMEZONE, Support.BOOLEAN, Support.MULTIDATABASE, Support.START_TRANSACTION]
+				 Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION]
 		if (serverVersion > 12)
 			res.addAll([Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST])
 

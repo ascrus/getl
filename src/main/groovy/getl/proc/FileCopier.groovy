@@ -279,8 +279,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     }
 
     @Override
-    protected void beforeProcessing() {
-        super.beforeProcessing()
+    protected void startProcessing() {
+        super.startProcessing()
 
         if (destinationBeforeScript != null) {
             destinations.each { man ->
@@ -303,8 +303,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     }
 
     @Override
-    protected void afterProcessing() {
-        super.afterProcessing()
+    protected void finishProcessing() {
+        super.finishProcessing()
 
         if (destinationAfterScript != null) {
             destinations.each { man ->

@@ -23,6 +23,7 @@ import getl.oracle.OracleConnection
 import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
 import getl.sap.HanaConnection
+import getl.sqlite.SQLiteConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.transform.ArrayDatasetConnection
@@ -59,6 +60,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String ORACLECONNECTION = OracleConnection.name
     static public final String POSTGRESQLCONNECTION = PostgreSQLConnection.name
     static public final String SALESFORCECONNECTION = SalesForceConnection.name
+    static public final String SQLITECONNECTION = SQLiteConnection.name
     static public final String EMBEDDEDCONNECTION = TDS.name
     static public final String VERTICACONNECTION = VerticaConnection.name
     static public final String XMLCONNECTION = XMLConnection.name
@@ -69,7 +71,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, CLICKHOUSECONNECTION, DB2CONNECTION, DBFCONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
-        MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
+        MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION, SQLITECONNECTION,
         VERTICACONNECTION, XMLCONNECTION, YAMLCONNECTION, ARRAYDATASETCONNECTION
     ]
 
@@ -77,7 +79,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final List<String> LISTJDBCCONNECTIONS = [
             CLICKHOUSECONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HANACONNECTION, HIVECONNECTION, IMPALACONNECTION,
             JDBCCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
-            POSTGRESQLCONNECTION, VERTICACONNECTION
+            POSTGRESQLCONNECTION, SQLITECONNECTION, VERTICACONNECTION
     ]
 
     /** List of allowed other connection classes */

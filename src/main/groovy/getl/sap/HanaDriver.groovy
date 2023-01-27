@@ -40,7 +40,7 @@ class HanaDriver extends JDBCDriver {
     List<Support> supported() {
         return super.supported() +
                 [Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.TIME, Support.DATE,
-                 Support.BOOLEAN, Support.COMPUTE_FIELD, Support.INDEX] - [Support.CHECK_FIELD, Support.SELECT_WITHOUT_FROM]
+                 Support.COMPUTE_FIELD, Support.INDEX] - [Support.CHECK_FIELD, Support.SELECT_WITHOUT_FROM]
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")

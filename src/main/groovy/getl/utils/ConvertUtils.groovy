@@ -3,6 +3,7 @@ package getl.utils
 
 import getl.exception.ExceptionGETL
 import java.sql.Time
+import java.sql.Timestamp
 import java.util.regex.Pattern
 
 /**
@@ -524,5 +525,67 @@ class ConvertUtils {
 		}
 
 		return varValue
+	}
+
+	/**
+	 * Convert object to sql timestamp
+	 * @param value object value
+	 * @return timestamp result
+	 */
+	static Timestamp Object2Timestamp(Object value) {
+		if (value == null)
+			return null
+		if (value instanceof Timestamp)
+			return value as Timestamp
+		if (value instanceof Date)
+			return DateUtils.Date2SQLTimestamp(value as Date)
+		if (value instanceof Number)
+			return new Timestamp((value as Number).toLong())
+
+		def mask = 'yyyy-MM-dd HH:mm:ss'
+		def str = value.toString()
+		if (str.matches('.+[.]\\d+$'))
+			str += '.SSS'
+		return DateUtils.ParseSQLTimestamp(mask, str, false)
+	}
+
+	/**
+	 * Convert object to sql date
+	 * @param value object value
+	 * @return timestamp result
+	 */
+	static java.sql.Date Object2Date(Object value) {
+		if (value == null)
+			return null
+		if (value instanceof java.sql.Date)
+			return value as java.sql.Date
+		if (value instanceof Date)
+			return DateUtils.Date2SQLDate(value as Date)
+		if (value instanceof Number)
+			return new java.sql.Date((value as Number).toLong())
+
+		return DateUtils.ParseSQLDate(value, false)
+	}
+
+	/**
+	 * Convert object to sql date
+	 * @param value object value
+	 * @return timestamp result
+	 */
+	static Time Object2Time(Object value) {
+		if (value == null)
+			return null
+		if (value instanceof Time)
+			return value as Time
+		if (value instanceof Date)
+			return DateUtils.Date2SQLTime(value as Date)
+		if (value instanceof Number)
+			return new Time((value as Number).toLong())
+
+		def mask = 'HH:mm:ss'
+		def str = value.toString()
+		if (str.matches('.+[.]\\d+$'))
+			str += '.SSS'
+		return DateUtils.ParseSQLTime(mask, value, false)
 	}
 }

@@ -41,7 +41,7 @@ class MySQLDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Support.LOCAL_TEMPORARY, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.START_TRANSACTION,
-				 Support.TIME, Support.DATE, Support.BOOLEAN, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
+				 Support.TIME, Support.DATE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST] -
 				[Support.SELECT_WITHOUT_FROM/*, Support.CHECK_FIELD*/] /* TODO : Valid CHECK on new version! */
 	}

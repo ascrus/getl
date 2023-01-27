@@ -51,7 +51,7 @@ class ClickHouseDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-                [Support.LOCAL_TEMPORARY, Support.UUID, Support.DATE, Support.BOOLEAN, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
+                [Support.LOCAL_TEMPORARY, Support.UUID, Support.DATE, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
                  Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST] -
                 [Support.COMPUTE_FIELD, Support.CHECK_FIELD, Support.TRANSACTIONAL]
     }

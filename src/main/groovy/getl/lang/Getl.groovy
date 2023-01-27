@@ -36,6 +36,8 @@ import getl.proc.sub.*
 import getl.salesforce.*
 import getl.sap.HanaConnection
 import getl.sap.HanaTable
+import getl.sqlite.SQLiteConnection
+import getl.sqlite.SQLiteTable
 import getl.stat.*
 import getl.test.GetlTest
 import getl.tfs.*
@@ -4086,6 +4088,63 @@ Examples:
     VerticaTable verticaTable(@DelegatesTo(VerticaTable)
                               @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure cl) {
         verticaTable(null, false, cl)
+    }
+
+    /** SQLite connection */
+    SQLiteConnection sqliteConnection(String name, Boolean registration,
+                                      @DelegatesTo(SQLiteConnection)
+                                      @ClosureParams(value = SimpleType, options = ['getl.sqlite.SQLiteConnection']) Closure cl = null) {
+        def parent = registerConnection(RepositoryConnections.SQLITECONNECTION, name, registration) as SQLiteConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** SQLite connection */
+    SQLiteConnection sqliteConnection(String name,
+                                      @DelegatesTo(SQLiteConnection)
+                                      @ClosureParams(value = SimpleType, options = ['getl.sqlite.SQLiteConnection']) Closure cl = null) {
+        sqliteConnection(name, false, cl)
+    }
+
+    /** SQLite connection */
+    SQLiteConnection sqliteConnection(@DelegatesTo(SQLiteConnection)
+                                      @ClosureParams(value = SimpleType, options = ['getl.sqlite.SQLiteConnection']) Closure cl) {
+        sqliteConnection(null, false, cl)
+    }
+
+    /** SQLite current connection */
+    SQLiteConnection sqliteConnection() {
+        defaultJdbcConnection(RepositoryDatasets.SQLITETABLE) as SQLiteConnection
+    }
+
+    /** Use default SQLite connection for new datasets */
+    SQLiteConnection useSQLiteConnection(SQLiteConnection connection) {
+        useJdbcConnection(RepositoryDatasets.SQLITETABLE, connection) as SQLiteConnection
+    }
+
+    /** SQLite table */
+    SQLiteTable sqliteTable(String name, Boolean registration,
+                            @DelegatesTo(SQLiteTable)
+                            @ClosureParams(value = SimpleType, options = ['getl.sqlite.SQLiteTable']) Closure cl = null) {
+        def parent = registerDataset(null, RepositoryDatasets.SQLITETABLE, name, registration,
+                defaultJdbcConnection(RepositoryDatasets.SQLITETABLE), SQLiteConnection, cl) as SQLiteTable
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** SQLite table */
+    SQLiteTable sqliteTable(String name,
+                            @DelegatesTo(SQLiteTable)
+                            @ClosureParams(value = SimpleType, options = ['getl.sqlite.SQLiteTable']) Closure cl = null) {
+        sqliteTable(name, false, cl)
+    }
+
+    /** SQLite table */
+    SQLiteTable sqliteTable(@DelegatesTo(SQLiteTable)
+                            @ClosureParams(value = SimpleType, options = ['getl.sqlite.SQLiteTable']) Closure cl) {
+        sqliteTable(null, false, cl)
     }
 
     /** NetSuite connection */

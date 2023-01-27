@@ -31,8 +31,7 @@ class DB2Driver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
-				 Driver.Support.INDEX, Support.INDEXFORTEMPTABLE, Driver.Support.TIME, Driver.Support.DATE, /*Driver.Support.TIMESTAMP_WITH_TIMEZONE,*/
-				 Driver.Support.BOOLEAN]
+				 Driver.Support.INDEX, Support.INDEXFORTEMPTABLE, Driver.Support.TIME, Driver.Support.DATE]
 	}
 
 	/*@SuppressWarnings("UnnecessaryQualifiedReference")

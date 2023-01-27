@@ -14,7 +14,6 @@ import getl.utils.*
 /**
  * H2 driver class
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
 class H2Driver extends JDBCDriver {
@@ -56,7 +55,7 @@ class H2Driver extends JDBCDriver {
 				[Support.GLOBAL_TEMPORARY, Support.LOCAL_TEMPORARY, Support.MEMORY,
 				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
 				 Support.UUID, Support.TIME, Support.DATE, Support.TIMESTAMP_WITH_TIMEZONE,
-				 Support.BOOLEAN, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
+				 Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.AUTO_INCREMENT/*,
 				 Support.ARRAY*/]
 		/* TODO: H2 ARRAY NOT FULL */

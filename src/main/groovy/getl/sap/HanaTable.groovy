@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
 /**
  * SAP Hana database table
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
 class HanaTable extends TableDataset {

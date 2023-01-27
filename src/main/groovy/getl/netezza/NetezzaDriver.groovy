@@ -30,7 +30,7 @@ class NetezzaDriver extends JDBCDriver {
     List<Driver.Support> supported() {
         return super.supported() +
                 [Driver.Support.LOCAL_TEMPORARY, Driver.Support.SEQUENCE,
-                 Driver.Support.BLOB, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN,
+                 Driver.Support.BLOB, Driver.Support.TIME, Driver.Support.DATE,
                  Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
     }
 

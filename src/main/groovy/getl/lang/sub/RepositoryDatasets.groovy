@@ -30,6 +30,7 @@ import getl.proc.sub.ExecutorListElement
 import getl.salesforce.SalesForceDataset
 import getl.salesforce.SalesForceQueryDataset
 import getl.sap.HanaTable
+import getl.sqlite.SQLiteTable
 import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.tfs.TFSDataset
@@ -74,6 +75,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String POSTGRESQLTABLE = PostgreSQLTable.name
     static public final String SALESFORCEDATASET = SalesForceDataset.name
     static public final String SALESFORCEQUERYDATASET = SalesForceQueryDataset.name
+    static public final String SQLITETABLE = SQLiteTable.name
     static public final String EMBEDDEDTABLE = TDSTable.name
     static public final String VIEWDATASET = ViewDataset.name
     static public final String VERTICATABLE = VerticaTable.name
@@ -85,13 +87,13 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final List<String> LISTDATASETS = [
         CSVDATASET, CSVTEMPDATASET, CLICKHOUSETABLE, DB2TABLE, DBFDATASET, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
-        SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET, ARRAYDATASET
+        SALESFORCEDATASET, SALESFORCEQUERYDATASET, SQLITETABLE, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XMLDATASET, YAMLDATASET, ARRAYDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
     static public List<String> LISTJDBCTABLES = [
             CLICKHOUSETABLE, DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HANATABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
-            NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE, VIEWDATASET
+            NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SQLITETABLE, VERTICATABLE, VIEWDATASET
     ]
 
     /** List of allowed file dataset classes */

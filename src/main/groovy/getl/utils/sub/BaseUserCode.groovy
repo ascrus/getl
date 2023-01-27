@@ -7,6 +7,8 @@ import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import groovy.xml.XmlParser
 import groovy.yaml.YamlSlurper
+
+import java.sql.Time
 import java.sql.Timestamp
 
 /**
@@ -132,6 +134,18 @@ class BaseUserCode extends Getl {
 
     static Double asDouble(def value) {
         ConvertUtils.Object2Double(value)
+    }
+
+    static Timestamp asTimestamp(def value) {
+        ConvertUtils.Object2Timestamp(value)
+    }
+
+    static java.sql.Date asDate(def value) {
+        ConvertUtils.Object2Date(value)
+    }
+
+    static Time asTime(def value) {
+        ConvertUtils.Object2Time(value)
     }
 
     static List asList(def value) {

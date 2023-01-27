@@ -38,7 +38,8 @@ class NetsuiteDriver extends JDBCDriver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
-		return super.supported() + [Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN] -
+		return super.supported() +
+				[Driver.Support.TIME, Driver.Support.DATE] -
 				[Driver.Support.VIEW]
 	}
 
