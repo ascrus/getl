@@ -1194,12 +1194,13 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	 */
 	static protected TFSDataset PrepareBulkDSParams(Dataset dest, Boolean bulkEscaped, Boolean bulkAsGZIP, String bulkNullAsValue) {
 		TFSDataset bulkDS = TFS.dataset()
+		def drv = dest.connection.driver
 		dest.prepareCsvTempFile(bulkDS)
-		if (bulkEscaped != null)
+		if (bulkEscaped != null && drv.isSupport(Driver.Support.BULKESCAPED))
 			bulkDS.escaped = bulkEscaped
-		if (bulkAsGZIP != null)
+		if (bulkAsGZIP != null && drv.isSupport(Driver.Support.BULKGZ))
 			bulkDS.isGzFile = bulkAsGZIP
-		if (bulkNullAsValue != null)
+		if (bulkNullAsValue != null && drv.isSupport(Driver.Support.BULKNULLASVALUE))
 			bulkDS.nullAsValue = bulkNullAsValue
 
 		return bulkDS

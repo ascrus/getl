@@ -77,7 +77,8 @@ class VerticaDriver extends JDBCDriver {
                  Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE,
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
-				 Support.BULKLOADMANYFILES, Support.START_TRANSACTION/*, Support.ARRAY*/]
+				 Support.BULKLOADMANYFILES, Support.BULKESCAPED, Support.BULKGZ, Support.BULKNULLASVALUE,
+				 Support.START_TRANSACTION/*, Support.ARRAY*/]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

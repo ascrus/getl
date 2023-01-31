@@ -3270,6 +3270,29 @@ FROM {source} {after_from}'''
 	protected String sqlExpressionDateFormat
 
 	/**
+	 * Convert date and time variables to formatted string value
+	 * @param value object value
+	 * @return formatted string value
+	 */
+	String convertDateTime2String(Object value) {
+		if (value == null)
+			return null
+
+		/*if (value instanceof java.sql.Date)
+			value = DateUtils.FormatDate(sqlExpressionSqlDateFormat, value as Date)
+		else if (value instanceof Time)
+			value = DateUtils.FormatDate(sqlExpressionSqlTimeFormat, value as Date)
+		else if (value instanceof Timestamp)
+			value = DateUtils.FormatDate(sqlExpressionSqlTimestampFormat, value as Date)*/
+		if (value instanceof Timestamp || value instanceof java.sql.Date || value instanceof Time)
+			value = value.toString()
+		else if (value instanceof Date)
+			value = DateUtils.FormatDate(sqlExpressionDateFormat, value as Date)
+
+		return value
+	}
+
+	/**
 	 * Evaluate text with SQL parameters
 	 * @param value text
 	 * @param vars variables values
@@ -3277,20 +3300,7 @@ FROM {source} {after_from}'''
 	 * @return prepared text
 	 */
 	String evalSqlParameters(String value, Map<String, Object> vars, Boolean errorWhenUndefined = true) {
-		def res = StringUtils.EvalMacroString(value, vars?:[:], errorWhenUndefined) { varValue ->
-			if (varValue instanceof java.sql.Date)
-				varValue = DateUtils.FormatDate(sqlExpressionSqlDateFormat, varValue as Date)
-			else if (varValue instanceof Time)
-				varValue = DateUtils.FormatDate(sqlExpressionSqlTimeFormat, varValue as Date)
-			else if (varValue instanceof Timestamp)
-				varValue = DateUtils.FormatDate(sqlExpressionSqlTimestampFormat, varValue as Date)
-			else if (varValue instanceof Date)
-				varValue = DateUtils.FormatDate(sqlExpressionDateFormat, varValue as Date)
-
-			return varValue
-		}
-
-		return res
+		return StringUtils.EvalMacroString(value, vars?:[:], errorWhenUndefined) { varValue -> convertDateTime2String(varValue) }
 	}
 
 	/** Value from sql expression by name */
