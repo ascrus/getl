@@ -21,7 +21,7 @@ different sources.
 * Simplify the development of data processing patterns.
 
 ## Supported RDBMS
-IBM DB2, FireBird, H2 Database, Hadoop Hive, Cloudera Impala, MS SQLServer, MySql, IBM Netezza, NetSuite, Oracle, PostgreSql, Micro Focus Vertica.
+IBM DB2, FireBird, H2 Database, Hadoop Hive, Cloudera Impala, MS SQLServer, MySql, IBM Netezza, NetSuite, Oracle, PostgreSql, SAP Hana, SQLite, Micro Focus Vertica.
 
 ## Supported file sources
 CSV, MS Excel, Json, XML, Yaml, DBF.
