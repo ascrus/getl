@@ -267,7 +267,8 @@ Example:
 	 * @return
 	 */
 	static String par(String param, def value, Boolean quote = false) {
-		if (value == null) return ''
+		if (value == null)
+			return ''
 		if ((value instanceof String || value instanceof GString) && value == '')
 			return ''
 		if (quote)
@@ -357,20 +358,18 @@ Example:
 		StringBuilder alter = new StringBuilder()
 		def finishAnalyze = false
 		def startProj = false
-		sql.eachLine { String line ->
-			if (finishAnalyze || line.trim() == '\n') {
-				directive = Closure.DONE
-				return
-			}
+		for (line in sql.lines()) {
+			if (finishAnalyze || line.trim() == '\n')
+				break
 
 			Matcher projMatcher
 			if (!projectionTables || projectionAnalyzeSuper || projectionKsafe != null) {
 				projMatcher = line =~ /(?i)CREATE PROJECTION (.+)[.](.+)/
 
 				if (!projectionTables && projMatcher.count == 1) {
+					//noinspection GroovyUnusedAssignment
 					finishAnalyze = true
-					directive = Closure.DONE
-					return
+					break
 				}
 			}
 

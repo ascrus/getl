@@ -742,12 +742,13 @@ class Path implements GetlRepository {
 		if (mat.groupCount() >= 1 && ((List)mat[0]).size() > 1) {
 			def i = 0
             def isError = false
-			vars.each { key, value ->
-                if (isError) {
-					directive = Closure.DONE
-					return
-				}
-				if (value.calc != null) return
+			for (varE in vars) {
+				def key = varE.key
+				def value = varE.value
+                if (isError)
+					break
+				if (value.calc != null)
+					continue
 
                 //noinspection GroovyAssignabilityCheck
                 def v = (mat[0][i + 1]) as String
@@ -840,12 +841,14 @@ class Path implements GetlRepository {
 							throw new ExceptionGETL("Unknown type ${value.type} in filepath mask [$maskStr]!")
 					}
 				}
-                if (isError) return
+                if (isError)
+					continue
 
 				res.put(key, v)
 				i++
 			}
-            if (isError) return null
+            if (isError)
+				return null
 
 			vars.each { key,value ->
 				if (value.calc != null) {

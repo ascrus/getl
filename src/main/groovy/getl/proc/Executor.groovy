@@ -441,9 +441,9 @@ class Executor implements GetlRepository {
 
 		def runCode = { Map node ->
 			def num = node.num
-			def threadList = (node.element as List)
+			def threadList = node.element as List
 			node.put('start',  new Date())
-			def curElement
+			Object curElement
 
 			addNodeToThreadActive(node)
 
@@ -453,13 +453,11 @@ class Executor implements GetlRepository {
 
 				def inf = new ExecutorSplitListElement(node: node)
 
-				threadList.each { element ->
-					if (!((!isError || !abortOnError) && !isInterrupt)) {
-						//noinspection UnnecessaryQualifiedReference
-						directive = Closure.DONE
-						return
-					}
+				for (element in threadList) {
+					if (!((!isError || !abortOnError) && !isInterrupt))
+						break
 
+					//noinspection GroovyUnusedAssignment
 					curElement = element
 
 					def allowRun = true

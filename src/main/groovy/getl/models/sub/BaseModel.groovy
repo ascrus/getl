@@ -7,6 +7,7 @@ import getl.exception.ExceptionModel
 import getl.exception.ModelError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.ParseObjectName
 import getl.utils.DateUtils
 import getl.utils.MapUtils
 import getl.utils.Path
@@ -396,7 +397,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
      * @return model object
      */
     T findModelObject(String name) {
-        return usedObjects.find { obj -> obj.objectNameInModel() == name }
+        def objName = ParseObjectName.Parse(name).name
+        return usedObjects.find { obj -> obj.objectNameInModel() == objName }
     }
 
     /**

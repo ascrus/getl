@@ -119,7 +119,9 @@ class SQLiteDriver extends JDBCDriver {
                 if (m.find()) {
                     field.type = Field.Type.NUMERIC
                     field.dbType = java.sql.Types.DECIMAL
+                    //noinspection GroovyAssignabilityCheck
                     field.length = ConvertUtils.Object2Int(m[0][1])
+                    //noinspection GroovyAssignabilityCheck
                     field.precision = ConvertUtils.Object2Int(m[0][2])
                 }
                 //return

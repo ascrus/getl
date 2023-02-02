@@ -194,18 +194,15 @@ class Workflows extends BaseModel<WorkflowSpec> {
     static private WorkflowSpec findStepByName(List<WorkflowSpec> nodes, String stepName) {
         WorkflowSpec res = null
         stepName = stepName.toUpperCase()
-        nodes.each { node ->
+        for (node in nodes) {
             if (node.stepName.toUpperCase() == stepName) {
                 res = node
-                directive = Closure.DONE
-                return
+                break
             }
 
             res = findStepByName(node.nested, stepName)
-            if (res != null) {
-                directive = Closure.DONE
-                return
-            }
+            if (res != null)
+                break
         }
 
         return res
@@ -230,24 +227,21 @@ class Workflows extends BaseModel<WorkflowSpec> {
     static private WorkflowSpec findNodeByScriptName(List<WorkflowSpec> nodes, String scriptName) {
         WorkflowSpec res = null
         scriptName = scriptName.toUpperCase()
-        nodes.each { node ->
-            node.scripts.each { name, scriptParams ->
+        for (node in nodes) {
+            for (script in node.scripts) {
+                def name = script.key
+                //def scriptParams = script.value
                 if (name.toUpperCase() == scriptName) {
                     res = node
-                    directive = Closure.DONE
-                    return
+                    break
                 }
             }
-            if (res != null) {
-                directive = Closure.DONE
-                return
-            }
+            if (res != null)
+                break
 
             res = findNodeByScriptName(node.nested, scriptName)
-            if (res != null) {
-                directive = Closure.DONE
-                return
-            }
+            if (res != null)
+                break
         }
 
         return res

@@ -585,6 +585,7 @@ class ConvertUtils {
 		def mask = 'HH:mm:ss'
 		def str = value.toString()
 		if (str.matches('.+[.]\\d+$'))
+			//noinspection GroovyUnusedAssignment
 			str += '.SSS'
 		return DateUtils.ParseSQLTime(mask, value, false)
 	}

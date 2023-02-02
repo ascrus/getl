@@ -16,7 +16,8 @@ class BoolUtils {
 	 * @param defaultValue - return if value has null
 	 * @return
 	 */
-    static Boolean IsValue(def value, Boolean defaultValue = false) {
+	@SuppressWarnings('GroovyUnusedAssignment')
+	static Boolean IsValue(Object value, Boolean defaultValue = false) {
 		if (defaultValue == null)
 			defaultValue = false
 
@@ -27,12 +28,11 @@ class BoolUtils {
 
         Boolean result
 		if (value instanceof List) {
-			value.each { v ->
+			for (v in (value as List)) {
 				if (v != null) {
-					if (v instanceof Boolean) {
+					if (v instanceof Boolean)
                         result = v
-                    }
-                    else //noinspection DuplicatedCode
+                    else
 					{
                         def s = v.toString().toLowerCase()
 						if (s.length() != 0) {
@@ -48,8 +48,8 @@ class BoolUtils {
 						}
                     }
 				}
-				//noinspection UnnecessaryQualifiedReference
-				directive = Closure.DONE
+				if (result != null)
+					break
 			}
 			if (result == null)
 				return defaultValue

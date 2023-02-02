@@ -128,39 +128,35 @@ $body
 		sb << '\n'
 
 		if (!isDetails) {
-			sb << """	rootList?.each { Map struct ->
+			sb << """	for (Map struct in rootList) {
 		if (limit > 0) {
 			cur++
-			if (cur > limit) {
-				directive = Closure.DONE
-				return
-			}
+			if (cur > limit)
+				break
 		}
 		Map<String, Object> row = new HashMap<String, Object>()
 $body
 		code.call(row)
 		if (code.directive == Closure.DONE)
-			directive = Closure.DONE
+			break
 	}"""
 		}
 		else {
-			sb << """	rootList?.each { Map parent ->
-		(parent.get('${subRootNodes[1]}') as List<Map>)?.each { Map struct ->
+			sb << """	for (Map parent in rootList) {
+		for (Map struct in (parent.get('${subRootNodes[1]}') as List<Map>)) {
 			if (limit > 0) {
 				cur++
-				if (cur > limit) {
-					directive = Closure.DONE
-					return
-				}
+				if (cur > limit)
+					break
 			}
 			Map<String, Object> row = new HashMap<String, Object>()
 $body
 			code.call(row)
+			if (code.directive == Closure.DONE)
+				break
 		}
-		if (limit > 0 && cur > limit) {
-			directive = Closure.DONE
-			return
-		}
+		if (limit > 0 && cur > limit)
+			break
 	}"""
 		}
 	}

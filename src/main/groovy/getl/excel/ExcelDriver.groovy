@@ -341,13 +341,13 @@ class ExcelDriver extends FileDriver {
 
         Workbook res
         switch (ext) {
-            case {fileName.endsWith(ext) && ext == 'xlsx'}:
+            case {fileName.toLowerCase().endsWith(ext) && ext == 'xlsx'}:
                 res = StreamingReader.builder()
                         .rowCacheSize(rowCacheSize?:100)
                         .bufferSize(bufferSize?:4096)
                         .open(is)
                 break
-            case {fileName.endsWith(ext) && ext == 'xls'}:
+            case {fileName.toLowerCase().endsWith(ext) && ext == 'xls'}:
                 res = new HSSFWorkbook(new POIFSFileSystem(is), false)
                 break
             default:

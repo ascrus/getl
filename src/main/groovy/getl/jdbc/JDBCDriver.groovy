@@ -1792,6 +1792,9 @@ class JDBCDriver extends Driver {
 		return res
 	}
 
+	/** Exception for stopping read dataset */
+	private class StopEachRow extends Exception { }
+
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@CompileStatic
 	@Synchronized('operationLock')
@@ -1902,54 +1905,48 @@ class JDBCDriver extends Driver {
 		try {
 			java.sql.Connection con = sqlConnect.connection
 			if (sqlParams == null) {
-				def isContinue = true
-				sqlConnect.eachRow(sql, getFields, offs, max) { GroovyResultSet row ->
-					if (!isContinue)
-						return
+				try {
+					sqlConnect.eachRow(sql, getFields, offs, max) { GroovyResultSet row ->
+						def outRow = new HashMap<String, Object>()
+						try {
+							copyToMap.call(con, row, outRow)
+						}
+						catch (Exception e) {
+							throw new JDBCProcessException(e)
+						}
 
-					def outRow = new HashMap<String, Object>()
-					try {
-						copyToMap.call(con, row, outRow)
-					}
-					catch (Exception e) {
-						throw new JDBCProcessException(e)
-					}
-					
-					if (filter != null && !filter(outRow))
-						return
-					
-					countRec++
-					code.call(outRow)
-					if (code.directive == Closure.DONE) {
-						directive = Closure.DONE
-						isContinue = false
+						if (filter != null && !filter(outRow))
+							return
+
+						countRec++
+						code.call(outRow)
+						if (code.directive == Closure.DONE)
+							throw new StopEachRow()
 					}
 				}
+				catch (StopEachRow ignored) { }
 			}
 			else {
-				def isContinue = true
-				sqlConnect.eachRow(sqlParams as Map, sql, getFields, offs, max) { row ->
-					if (!isContinue)
-						return
+				try {
+					sqlConnect.eachRow(sqlParams as Map, sql, getFields, offs, max) { row ->
+						def outRow = new HashMap<String, Object>()
+						try {
+							copyToMap.call(con, row, outRow)
+						}
+						catch (Exception e) {
+							throw new JDBCProcessException(e)
+						}
 
-					def outRow = new HashMap<String, Object>()
-					try {
-						copyToMap.call(con, row, outRow)
-					}
-					catch (Exception e) {
-						throw new JDBCProcessException(e)
-					}
-					
-					if (filter != null && !filter(outRow))
-						return
-					
-					countRec++
-					code.call(outRow)
-					if (code.directive == Closure.DONE) {
-						directive = Closure.DONE
-						isContinue = false
+						if (filter != null && !filter(outRow))
+							return
+
+						countRec++
+						code.call(outRow)
+						if (code.directive == Closure.DONE)
+							throw new StopEachRow()
 					}
 				}
+				catch (StopEachRow ignored) { }
 			}
 		}
 		catch (JDBCProcessException e) {

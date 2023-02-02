@@ -150,13 +150,13 @@ class XMLDriver extends WebServiceDriver {
 
 		def rootNode = dataset.rootNode
 		sb << "def cur = 0L\n"
-		sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
+		def dataNode = 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'')
+		//sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
+		sb << "for (struct in $dataNode) {\n"
 		sb << """	if (limit > 0) {
 	cur++
-	if (cur > limit) {
-		directive = Closure.DONE
-		return
-	}
+	if (cur > limit)
+		break
 }
 """
 		sb << '	Map<String, Object> row = new HashMap<String, Object>()\n'

@@ -3,6 +3,8 @@ package getl.utils
 import getl.test.GetlTest
 import org.junit.Test
 
+import java.sql.Timestamp
+
 /**
  * @author Alexsey Konstantinov
  */
@@ -20,12 +22,13 @@ class BoolUtilsTest extends GetlTest {
         assertTrue(BoolUtils.IsValue([null, null, true], false))
         assertTrue(BoolUtils.IsValue([null, null, 'true'], false))
         assertTrue(BoolUtils.IsValue([null, null, 1], false))
+        assertFalse(BoolUtils.IsValue([false, null, true]))
         shouldFail { BoolUtils.IsValue('a', true)}
         shouldFail { BoolUtils.IsValue(['a'], true)}
     }
 
     @Test
     void testClassInstanceOf() {
-        assertTrue(BoolUtils.ClassInstanceOf(java.sql.Timestamp, Date))
+        assertTrue(BoolUtils.ClassInstanceOf(Timestamp, Date))
     }
 }
