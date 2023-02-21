@@ -25,9 +25,9 @@ class CSVConnection extends FileConnection {
 
 		methodParams.register('Super',
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped',
-					'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
-					'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale',
-					'constraintsCheck', 'presetMode', 'formatOutput', 'arrayOpeningBracket', 'arrayClosingBracket'])
+				 'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
+				 'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale', 'blobAsPureHex',
+				 'constraintsCheck', 'presetMode', 'formatOutput', 'arrayOpeningBracket', 'arrayClosingBracket'])
 	}
 
 	@Override
@@ -164,6 +164,13 @@ class CSVConnection extends FileConnection {
 	void setArrayClosingBracket(String value) { params.arrayClosingBracket = value }
 	/** Close bracket for array fields */
 	String arrayClosingBracket() { arrayClosingBracket?:']' }
+
+	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
+	Boolean getBlobAsPureHex() { ConvertUtils.Object2Boolean(params.blobAsPureHex) }
+	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
+	void setBlobAsPureHex(Boolean value) { params.blobAsPureHex = value }
+	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
+	Boolean blobAsPureHex() { BoolUtils.IsValue(blobAsPureHex, false) }
 
 	@Override
 	String formatTimestampWithTz() { super.formatTimestampWithTz?:DateUtils.defaultTimestampWithTzSmallMask }

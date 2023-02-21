@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -6,6 +7,8 @@ import getl.lang.Getl
 import groovy.transform.CompileStatic
 import groovy.transform.NamedVariant
 import java.nio.charset.StandardCharsets
+import java.sql.Time
+import java.sql.Timestamp
 import java.time.format.DateTimeFormatter
 
 /**
@@ -22,7 +25,7 @@ class WebUtils {
     static public final String WEBREQUESTMETHODPOST = 'POST'
 
     @SuppressWarnings('SpellCheckingInspection')
-    static public final DateTimeFormatter UrlDateFormatter = DateUtils.BuildDateTimeFormatter('yyyy-MM-dd\'T\'HH:mm:ss.n')
+    static public final DateTimeFormatter UrlDateFormatter = DateUtils.BuildDateTimeFormatter('yyyy-MM-dd\'T\'HH:mm:ss[.SSS]')
 
     /**
      * Create a connection to a web service
@@ -73,11 +76,27 @@ class WebUtils {
                 if (value instanceof String || value instanceof GString) {
                     if (isVars)
                         val = StringUtils.EvalMacroString((value as Object).toString(), vars, true) { v ->
-                            (v instanceof Date) ? (UrlDateFormatter.format((v as Date).toLocalDateTime()) + 'Z') : v.toString()
+                            String res = null
+                            if (v instanceof Timestamp)
+                                res = UrlDateFormatter.format((v as Timestamp).toLocalDateTime()) + 'Z'
+                            else if (v instanceof java.sql.Date)
+                                res = UrlDateFormatter.format((v as java.sql.Date).toLocalDate()) + 'Z'
+                            else if (v instanceof Time)
+                                res = UrlDateFormatter.format((v as Time).toLocalTime()) + 'Z'
+                            else if (v instanceof Date)
+                                res = UrlDateFormatter.format((v as Date).toLocalDateTime()) + 'Z'
+
+                            return res
                         }
                     else
                         val = value.toString()
                 }
+                else if (value instanceof Timestamp)
+                    val = UrlDateFormatter.format((value as Timestamp).toLocalDateTime()) + 'Z'
+                else if (value instanceof java.sql.Date)
+                    val = UrlDateFormatter.format((value as java.sql.Date).toLocalDate()) + 'Z'
+                else if (value instanceof Time)
+                    val = UrlDateFormatter.format((value as Time).toLocalTime()) + 'Z'
                 else if (value instanceof Date)
                     val = UrlDateFormatter.format((value as Date).toLocalDateTime()) + 'Z'
                 else

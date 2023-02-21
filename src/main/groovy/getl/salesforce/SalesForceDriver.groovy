@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.salesforce
 
 import com.sforce.async.AsyncApiException
@@ -33,7 +34,6 @@ import getl.utils.BoolUtils
 import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
-import getl.utils.Logs
 import groovy.transform.InheritConstructors
 
 /**
@@ -62,6 +62,10 @@ class SalesForceDriver extends Driver {
 
 	@Override
 	List<Operation> operations() { return [Operation.RETRIEVEFIELDS] }
+
+    /** Current SalesForce connection */
+    @SuppressWarnings('unused')
+    SalesForceConnection getCurrentSalesForceConnection() { connection as SalesForceConnection }
 
 	@Override
     Boolean isConnected() {
@@ -166,8 +170,9 @@ class SalesForceDriver extends Driver {
 		return result
 	}
 
-	@Override
-	void prepareField (Field field) {
+    @SuppressWarnings('SpellCheckingInspection')
+    @Override
+    void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
 
@@ -435,7 +440,8 @@ class SalesForceDriver extends Driver {
 		connection.updateJob(job)
 	}
 
-	static private Object parseTypes(Object value, Field field) {
+    @SuppressWarnings('SpellCheckingInspection')
+    static private Object parseTypes(Object value, Field field) {
 		switch (field.type) {
 			case 'STRING':
 				value = ConvertUtils.Object2String(value)
@@ -458,11 +464,11 @@ class SalesForceDriver extends Driver {
 				break
 
 			case 'DATETIME':
-				value = DateUtils.ParseDate("yyyy-MM-dd'T'HH:mm:ss", value)
+				value = DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ss", value)
 				break
 
 			case 'DATE':
-				value = DateUtils.ParseDate("yyyy-MM-dd", value)
+				value = DateUtils.ParseSQLDate("yyyy-MM-dd", value)
 				break
 
 			case 'TIME':

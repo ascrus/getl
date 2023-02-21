@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.hive
 
 import getl.csv.*
@@ -78,6 +79,10 @@ class HiveDriver extends JDBCDriver {
     String defaultConnectURL () {
         return 'jdbc:hive2://{host}/{database}'
     }
+
+    /** Current Hive connection */
+    @SuppressWarnings('unused')
+    HiveConnection getCurrentHiveConnection() { connection as HiveConnection }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
@@ -517,5 +522,12 @@ class HiveDriver extends JDBCDriver {
             connection.logger.dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
             throw e
         }
+    }
+
+    @Override
+    void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+        super.prepareCsvTempFile(source, csvFile)
+        csvFile.formatDateTime = 'yyyy-MM-dd HH:mm:ss.SSS'
+        csvFile.formatTimestampWithTz = 'yyyy-MM-dd HH:mm:ss.SSSx'
     }
 }

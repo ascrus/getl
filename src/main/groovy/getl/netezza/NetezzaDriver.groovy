@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.netezza
 
 import getl.driver.Driver
@@ -70,6 +71,10 @@ class NetezzaDriver extends JDBCDriver {
             params.offs = null
         }
     }
+
+    /** Current Netezza connection */
+    @SuppressWarnings('unused')
+    NetezzaConnection getCurrentNetezzaConnection() { connection as NetezzaConnection }
 
     /* TODO: checking what syntax is correct
     @Override

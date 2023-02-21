@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.xml
 
 import groovy.transform.CompileStatic
@@ -34,6 +35,10 @@ class XMLDriver extends WebServiceDriver {
 		[Driver.Operation.DROP]
 	}
 
+	/** Current XML connection */
+	@SuppressWarnings('unused')
+	XMLConnection getCurrentXMLConnection() { connection as XMLConnection }
+
 	@Override
 	List<Field> fields(Dataset dataset) {
 		return null
@@ -57,7 +62,7 @@ class XMLDriver extends WebServiceDriver {
 				s.type = Field.Type.STRING
 			
 			String path = GenerationUtils.Field2Alias(d, true)
-			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d),
+			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d, true),
 					sourceMap: 'data', sourceValue: path, destMap: 'attrValue', cloneObject:  false, saveOnlyWithValue: false)
 			
 			sb << "\n"

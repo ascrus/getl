@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -134,7 +135,7 @@ class SavePointManager implements GetlRepository, WithConnection {
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
 		if (value != null) {
-			GetlValidate.IsRegister(this)
+			GetlValidate.IsRegister(this, false)
 			def con = dslCreator.jdbcConnection(value)
 			value = con.dslNameObject
 		}

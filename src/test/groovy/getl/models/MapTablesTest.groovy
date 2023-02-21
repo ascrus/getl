@@ -27,6 +27,15 @@ class MapTablesTest extends TestDsl {
 
             embeddedConnection('h2:con', true)
             useEmbeddedConnection embeddedConnection('h2:con')
+
+            embeddedTable('story', true) {
+                type = localTemporaryTableType
+            }
+
+            embeddedTable('points', true) {
+                type = localTemporaryTableType
+            }
+
             embeddedTable('master', true) {
                 type = localTemporaryTableType
                 field('id') { type = integerFieldType; isKey = true }
@@ -48,9 +57,12 @@ class MapTablesTest extends TestDsl {
             def model = models.mapTables('map1', true) {
                 useSourceConnection 'csv:con'
                 useDestinationConnection 'h2:con'
+                useStoryDataset embeddedTable('story')
+                useIncrementDataset embeddedTable('points')
 
                 mapTable('file') {
                     linkTo 'master'
+                    incrementFieldName = 'ID'
                     scripts.before = 'DELETE FROM {dest_table}'
                 }
 
@@ -63,6 +75,7 @@ class MapTablesTest extends TestDsl {
             }
 
             model.tap {
+                clearIncrementDataset()
                 etl.copyRows(mapTable('file').source, mapTable('file').destination) { fc ->
                     fc.beforeWrite {
                         def sql = mapTable('file').scripts.before
@@ -79,7 +92,17 @@ class MapTablesTest extends TestDsl {
                             (cf.dataset as TableDataset).currentJDBCConnection.executeCommand(sql, [queryParams: [dest_table: cf.dataset.objectFullName]])
                         }
                     }
+
+                    requiredStatistics = ['ID']
+
+                    fc.afterWrite {
+                        mapTable('file').historyPointObject.saveValue(statistics.id.maximumValue)
+                    }
                 }
+                assertEquals(1, incrementDataset.countRow())
+                assertEquals(3, mapTable('file').historyPointObject.lastValue())
+                clearIncrementDataset()
+                assertEquals(0, incrementDataset.countRow())
             }
 
             def csvRows = csvTemp('file').rows()

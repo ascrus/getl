@@ -3,12 +3,14 @@ package getl.models.sub
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.RepositoryObjects
 import getl.models.Workflows
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
  * Repository models of workflow processes
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class RepositoryWorkflows extends RepositoryObjects<Workflows> {
     @Override

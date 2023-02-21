@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -21,6 +22,8 @@ import org.apache.hc.core5.http.message.BasicHeader
 import org.apache.hc.core5.util.Timeout
 import org.apache.hc.client5.http.auth.AuthScope
 import java.nio.charset.StandardCharsets
+import java.sql.Time
+import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 
 /**
@@ -70,13 +73,30 @@ class HttpClientUtils {
                 if (value instanceof String || value instanceof GString) {
                     if (isVars)
                         val = StringUtils.EvalMacroString((value as Object).toString(), vars, true) { v ->
-                            (v instanceof Date) ? (WebUtils.UrlDateFormatter.format((v as Date).toLocalDateTime()) + 'Z') : v.toString()
+                            String res = null
+                            if (v instanceof Timestamp)
+                                res = WebUtils.UrlDateFormatter.format((v as Timestamp).toLocalDateTime()) + 'Z'
+                            else if (v instanceof java.sql.Date)
+                                res = WebUtils.UrlDateFormatter.format((v as java.sql.Date).toLocalDate()) + 'Z'
+                            else if (v instanceof Time)
+                                res = WebUtils.UrlDateFormatter.format((v as Time).toLocalTime()) + 'Z'
+                            else if (v instanceof Date)
+                                res = WebUtils.UrlDateFormatter.format((v as Date).toLocalDateTime()) + 'Z'
+
+                            return res
                         }
                     else
                         val = value.toString()
                 }
+                else if (value instanceof Timestamp)
+                    val = WebUtils.UrlDateFormatter.format((value as Timestamp).toLocalDateTime()) + 'Z'
+                else if (value instanceof java.sql.Date)
+                    val = WebUtils.UrlDateFormatter.format((value as java.sql.Date).toLocalDate()) + 'Z'
+                else if (value instanceof Time)
+                    val = WebUtils.UrlDateFormatter.format((value as Time).toLocalTime()) + 'Z'
                 else if (value instanceof Date)
                     val = WebUtils.UrlDateFormatter.format((value as Date).toLocalDateTime()) + 'Z'
+
                 else
                     val = value.toString()
 

@@ -8,7 +8,6 @@ import getl.driver.Driver
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
 import getl.utils.BoolUtils
-import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import java.sql.Connection
@@ -86,7 +85,7 @@ class ClickHouseDriver extends JDBCDriver {
     }
 
     /** ClickHouse connection */
-    ClickHouseConnection getClickHouseConnection() { connection as ClickHouseConnection }
+    ClickHouseConnection getCurrentClickHouseConnection() { connection as ClickHouseConnection }
 
     @Override
     protected String sessionID() { connectionSessionId }
@@ -164,7 +163,7 @@ class ClickHouseDriver extends JDBCDriver {
     @Override
     protected Map<String, Object> connectionParams() {
         def res = super.connectionParams()
-        def con = clickHouseConnection
+        def con = currentClickHouseConnection
         if (con.useSsl != null)
             res.ssl = con.useSsl
         if (BoolUtils.IsValue(res.ssl)) {

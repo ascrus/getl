@@ -233,8 +233,8 @@ class KafkaDriver extends Driver {
                     dataNode = ds.dataNode
                     formatDate = ds.formatDate()
                     formatTime = ds.formatTime()
-                    formatDateTime = ds.formatDateTime()
-                    formatTimestampWithTz = ds.formatTimestampWithTz()
+                    formatDateTime = ds.formatDateTime(true)
+                    formatTimestampWithTz = ds.formatTimestampWithTz(true)
                     uniFormatDateTime = ds.uniFormatDateTime()
                     formatBoolean = ds.formatBoolean()
                     decimalSeparator = ds.decimalSeparator()

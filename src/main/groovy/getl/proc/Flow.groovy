@@ -825,7 +825,8 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 						throw new ExceptionGETL("In the child dataset \"$name\", the link field \"${child.linkField}\" is specified, " +
 								"which is not in the source \"$source\"!")
 
-					child.mapRules = PrepareMap(child.linkSource, child.writer, child.map, copyOnlyMatching, autoMap, []/*TODO: added exclude parameter*/, source)
+					child.mapRules = PrepareMap(child.linkSource, child.writer, child.map, copyOnlyMatching, autoMap,
+							[]/*TODO: добавит поддержку исключаемых полей для дочерних */, source)
 				}
 
 				if (child.onInit != null)

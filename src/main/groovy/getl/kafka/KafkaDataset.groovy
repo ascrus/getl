@@ -73,14 +73,14 @@ class KafkaDataset extends Dataset {
     /** Format for datetime fields */
     void setFormatDateTime(String value) { params.formatDateTime = value }
     /** Format for datetime fields */
-    String formatDateTime() { formatDateTime?:currentKafkaConnection?.formatDateTime() }
+    String formatDateTime(Boolean formatValue = false) { formatDateTime?:currentKafkaConnection?.formatDateTime(formatValue) }
 
     /** Format for timestamp with timezone fields */
     String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
     /** Format for timestamp with timezone fields */
     void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
     /** Format for timestamp with timezone fields */
-    String formatTimestampWithTz() { formatTimestampWithTz?:currentKafkaConnection?.formatTimestampWithTz() }
+    String formatTimestampWithTz(Boolean formatValue = false) { formatTimestampWithTz?:currentKafkaConnection?.formatTimestampWithTz(formatValue) }
 
     /** Format for time fields */
     String getFormatTime() { params.formatTime as String }
@@ -122,7 +122,7 @@ class KafkaDataset extends Dataset {
      * @return format
      */
     @CompileStatic
-    String fieldFormat(Field field) {
+    String fieldFormat(Field field, Boolean formatValue = false) {
         if (field.format != null)
             return field.format
         if (uniFormatDateTime != null)
@@ -134,10 +134,10 @@ class KafkaDataset extends Dataset {
                 res = formatDate()
                 break
             case Field.datetimeFieldType:
-                res = formatDateTime()
+                res = formatDateTime(formatValue)
                 break
             case Field.timestamp_with_timezoneFieldType:
-                res = formatTimestampWithTz()
+                res = formatTimestampWithTz(formatValue)
                 break
             case Field.timeFieldType:
                 res = formatTime()

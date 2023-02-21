@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
+import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -27,6 +28,12 @@ class OracleConnection extends JDBCConnection {
 	}
 
 	@Override
+	protected void initParams() {
+		super.initParams()
+		charLengthAsBytes = true
+	}
+
+	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
 		driverName = 'oracle.jdbc.OracleDriver'
@@ -34,4 +41,7 @@ class OracleConnection extends JDBCConnection {
 
 	@Override
 	protected Class<TableDataset> getTableClass() { OracleTable }
+
+	@Override
+	Boolean charLengthAsBytes() { BoolUtils.IsValue(charLengthAsBytes, true) }
 }

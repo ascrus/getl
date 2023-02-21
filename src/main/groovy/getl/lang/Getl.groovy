@@ -2793,7 +2793,8 @@ Examples:
                 if (script instanceof Getl && (value instanceof String || value instanceof GString)) {
                     def v = (value as Object).toString()
                     if (v.indexOf('{') != -1)
-                        value = StringUtils.EvalMacroString(v, [environment: configuration.environment] + (script as Getl).scriptExtendedVars, false)
+                        value = StringUtils.EvalMacroString(v,
+                                [environment: configuration.environment, unitmode: unitTestMode] + (script as Getl).scriptExtendedVars, false)
                 }
 
                 switch (prop.type) {
@@ -2977,6 +2978,9 @@ Examples:
      * @return found object
      */
     static Object DetectClosureDelegate(Object obj, Boolean ignoreOpts = false) {
+        if (obj == null)
+            return null
+
         while (obj instanceof Closure)
             obj = (obj as Closure).delegate
 

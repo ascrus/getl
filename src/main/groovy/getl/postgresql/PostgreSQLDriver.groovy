@@ -21,6 +21,7 @@ import java.sql.Types
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 @InheritConstructors
 class PostgreSQLDriver extends JDBCDriver {
 	@Override
@@ -90,6 +91,10 @@ class PostgreSQLDriver extends JDBCDriver {
 		return res
 	}
 
+	/** Current PostgreSQL connection */
+	@SuppressWarnings('unused')
+	PostgreSQLConnection getCurrentPostgreSQLConnection() { connection as PostgreSQLConnection }
+
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
@@ -101,6 +106,7 @@ class PostgreSQLDriver extends JDBCDriver {
 			return
 		}
 
+		//noinspection DuplicatedCode
 		if (field.type == Field.Type.ARRAY) {
 			if (field.typeName?.length() > 0 && field.typeName[0] == '_') {
 				field.arrayType = field.typeName.substring(1)
@@ -191,6 +197,8 @@ class PostgreSQLDriver extends JDBCDriver {
 		super.prepareCsvTempFile(source, csvFile)
 		csvFile.arrayOpeningBracket = '{'
 		csvFile.arrayClosingBracket = '}'
+		csvFile.formatDateTime = 'yyyy-MM-dd HH:mm:ss.SSS'
+		csvFile.formatTimestampWithTz = 'yyyy-MM-dd HH:mm:ss.SSSx'
 	}
 
 	@Override
@@ -204,8 +212,6 @@ class PostgreSQLDriver extends JDBCDriver {
 		if (!(pFormat in ['csv', 'text']))
 			throw new ExceptionGETL("Unknown bulk load format \"$pFormat\"!")
 
-		def pFieldDelimiter = source.fieldDelimiter()
-
 		if (source.rowDelimiter() != '\n') {
 			if (pFormat != 'csv')
 				throw new ExceptionGETL('The line separator must be a line break character!')
@@ -213,14 +219,10 @@ class PostgreSQLDriver extends JDBCDriver {
 				needConvert = true
 		}
 
-		def pNullAsValue = source.nullAsValue()
-
-		def pHeader = source.isHeader()
-		if (pHeader && pFormat != 'csv')
+		if (pFormat != 'csv' && source.isHeader())
 			throw new ExceptionGETL('File header is only allowed for csv file format!')
 
-		def pQuoteStr = source.quoteStr()
-		if (pFormat != 'csv' && pQuoteStr != null)
+		if (pFormat != 'csv' && source.quoteStr() != null)
 			throw new ExceptionGETL('Field quotes are only allowed for csv file format!')
 
 		if (source.escaped()) {
@@ -271,8 +273,8 @@ class PostgreSQLDriver extends JDBCDriver {
 			def tempFile = TFS.dataset()
 			tempFile.tap {
 				header = true
-				fieldDelimiter = '|'
-				rowDelimiter = '\n'
+				/*fieldDelimiter = '|'
+				rowDelimiter = '\n'*/
 				escaped = false
 				nullAsValue = '<NULL>'
 				quoteStr = '"'
@@ -287,9 +289,7 @@ class PostgreSQLDriver extends JDBCDriver {
 					}
 				}
 			}
-			pHeader = true
-			pFieldDelimiter = '|'
-			pQuoteStr = '"'
+
 			try {
 				new Flow().copy(source: orig, dest: tempFile, map: loadMap)
 			}
@@ -316,20 +316,19 @@ class PostgreSQLDriver extends JDBCDriver {
 		}
 
 		def opts = [] as List<String>
-		opts.add("FORMAT $pFormat")
-		opts.add("DELIMITER '${StringUtils.EscapeJavaWithoutUTF(pFieldDelimiter)}'")
-		if (pNullAsValue != null)
-			opts.add("NULL '$pNullAsValue'")
+		opts.add("FORMAT $pFormat".toString())
+		opts.add("DELIMITER '${StringUtils.EscapeJavaWithoutUTF(bulkFile.fieldDelimiter())}'".toString())
+		if (bulkFile.nullAsValue() != null)
+			opts.add("NULL '${bulkFile.nullAsValue()}'".toString())
 		if (pFormat == 'csv') {
-			if (pHeader)
+			if (bulkFile.isHeader())
 				opts.add("HEADER true")
-			if (pQuoteStr != '"')
-				opts.add("QUOTE AS '${StringUtils.EscapeJavaWithoutUTF(pQuoteStr)}'")
-			//opts.add("ESCAPE '\\'")
+			if (bulkFile.quoteStr() != '"')
+				opts.add("QUOTE AS '${StringUtils.EscapeJavaWithoutUTF(bulkFile.quoteStr())}'".toString())
 			if (!listForceNotNull.isEmpty())
-				opts.add("FORCE_NOT_NULL(${listForceNotNull.join(', ')})")
+				opts.add("FORCE_NOT_NULL(${listForceNotNull.join(', ')})".toString())
 			if (!listForceNull.isEmpty())
-				opts.add("FORCE_NULL(${listForceNull.join(', ')})")
+				opts.add("FORCE_NULL(${listForceNull.join(', ')})".toString())
 		}
 		opts.add("ENCODING 'UTF8'")
 

@@ -10,6 +10,7 @@ import getl.models.opts.TableSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -19,6 +20,7 @@ import groovy.transform.stc.SimpleType
  * Table list model
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class SetOfTables extends DatasetsModel<TableSpec> {
     /** Connection name in the repository */
@@ -136,6 +138,9 @@ class SetOfTables extends DatasetsModel<TableSpec> {
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure checkNodeCode = null) {
         super.checkModel(checkObjects, checkNodeCode)
     }
+
+    /** Find table in model */
+    TableSpec findTable(String name) { findModelObject(name) as TableSpec }
 
     @Override
     String toString() { "setOfTable('${dslNameObject?:'unregister'}')" }

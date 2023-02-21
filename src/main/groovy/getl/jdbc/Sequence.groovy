@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -144,7 +145,7 @@ class Sequence implements GetlRepository, WithConnection {
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
 		if (value != null) {
-			GetlValidate.IsRegister(this)
+			GetlValidate.IsRegister(this, false)
 			def con = dslCreator.jdbcConnection(value)
 			if (!con.driver.isSupport(Driver.Support.SEQUENCE))
 				throw new NotSupportError(con, 'sequence', 'useConnection')

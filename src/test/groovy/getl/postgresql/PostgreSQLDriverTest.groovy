@@ -35,4 +35,10 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 
 	@Override
 	protected String getUseArrayType() { 'int4' }
+
+	@Override
+	void prepareTable() {
+		table.fieldByName('id2').length = 6
+		table.fieldByName('dtwithtz').length = 6
+	}
 }

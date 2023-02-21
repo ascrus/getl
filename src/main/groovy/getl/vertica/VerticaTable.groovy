@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.vertica
 
 import com.fasterxml.jackson.annotation.JsonIgnore

@@ -1,10 +1,11 @@
 package getl.csv
 
+import getl.test.GetlTest
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import org.junit.Test
 
-class LoadOGGTest extends getl.test.GetlTest {
+class LoadOGGTest extends GetlTest {
     @Test
     void testReadOGG() {
         def csvFile = FileUtils.FileFromResources('/csv/ogg.dsv')
@@ -20,8 +21,8 @@ class LoadOGGTest extends getl.test.GetlTest {
         assertEquals(119432, rows[1].file_num)
         assertEquals(365897840, rows[1].file_row)
         assertEquals(13116676799804, rows[1].scn)
-        assertEquals(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS','2018-04-16 00:01:22.125'), rows[1].timestamp)
-        assertEquals(DateUtils.ParseDateTime('2018-04-16 00:00:23.000'), rows[1].strt)
+        assertEquals(DateUtils.ParseSQLTimestamp('yyyy-MM-dd HH:mm:ss.SSSSSS','2018-04-16 00:01:11.011125'), rows[1].timestamp)
+        assertEquals(DateUtils.ParseSQLTimestamp('2018-04-16 00:00:23'), rows[1].strt)
         assertEquals('\u0014', rows[1].rtype)
     }
 }

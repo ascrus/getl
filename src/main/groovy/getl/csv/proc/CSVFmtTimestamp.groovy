@@ -1,4 +1,3 @@
-//file:noinspection DuplicatedCode
 package getl.csv.proc
 
 import getl.data.Field
@@ -18,13 +17,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle
 
 /**
- * Format date field for write to CSV files by format and locale
+ * Format timestamp field for write to CSV files by format and locale
  * @author Alexsey Konstantinov
  *
  */
 @CompileStatic
-class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
-	CSVFmtDate(String format, Field.Type typeField, String locale) {
+class CSVFmtTimestamp extends CellProcessorAdaptor implements DateCellProcessor {
+	CSVFmtTimestamp(String format, Field.Type typeField, String locale) {
 		super()
 
 		this.format = format
@@ -34,7 +33,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 		initProcessor()
 	}
 
-    CSVFmtDate(String format, Field.Type typeField, String locale, StringCellProcessor next) {
+    CSVFmtTimestamp(String format, Field.Type typeField, String locale, StringCellProcessor next) {
 		super(next)
 
 		this.format = format
@@ -55,17 +54,17 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 		if( typeField == null )
 			throw new RequiredParameterError('typeField')
 
-		if (typeField != Field.dateFieldType)
+		if (typeField != Field.datetimeFieldType)
 			throw new IncorrectParameterError('Invalid type "{type}" for parameter {param}', 'typeField', [type: typeField.toString()])
 
-		formatter = DateUtils.BuildDateFormatter(format, ResolverStyle.STRICT, locale)
+		formatter = DateUtils.BuildDateTimeFormatter(format, ResolverStyle.STRICT, locale)
 	}
 	
 	@Override
     Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
-		def result = formatter.format(ConvertUtils.Object2Date(value).toLocalDate())
+		def result = formatter.format(ConvertUtils.Object2Timestamp(value).toLocalDateTime())
 		return next.execute(result, context)
 	}
 }

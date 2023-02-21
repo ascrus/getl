@@ -2,9 +2,15 @@ package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
+import getl.data.FileDataset
+import getl.exception.DatasetError
+import getl.exception.DslError
 import getl.exception.ExceptionGETL
-import getl.exception.ExceptionModel
 import getl.exception.ModelError
+import getl.exception.RequiredParameterError
+import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
+import getl.jdbc.ViewDataset
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.ParseObjectName
@@ -12,6 +18,7 @@ import getl.utils.DateUtils
 import getl.utils.MapUtils
 import getl.utils.Path
 import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.lang.reflect.ParameterizedType
@@ -23,6 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * @author Alexsey Konstantinov
  */
 @SuppressWarnings(['UnnecessaryQualifiedReference', 'unused'])
+@CompileStatic
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
     private String _dslNameObject
@@ -79,7 +87,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Override
     void importFromMap(Map<String, Object> importParams) {
         if (importParams == null)
-            throw new NullPointerException('Required importParams!')
+            throw new RequiredParameterError(this, 'importParams')
 
         def objParams = importParams.usedObjects as List
         def objects = [] as List<T>
@@ -89,7 +97,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             else if (obj instanceof Map)
                 objects.add(createSpec(obj as Map))
             else
-                throw new ModelError(this, "Invalid used object type \"${obj.getClass()}\" in model \"$this\" [${this.getClass()}]!")
+                throw new ModelError(this, '#dsl.model.invalid_used_object_class', [class: obj.getClass().toString()])
         }
         MapUtils.MergeMap(params, importParams)
         params.usedObjects = objects
@@ -97,6 +105,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
 
     /** Synchronize field */
     protected final Object synchObjects = new Object()
+
+    /** Close all resource by model */
+    @Synchronized('synchObjects')
+    void doneModel() { }
 
     /** Model objects */
     @Synchronized('synchObjects')
@@ -195,7 +207,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             return null
 
         if (!value.integer)
-            throw new ModelError(this, "Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
+            throw new ModelError(this, '#dsl.model.invalid_attribute_type', [value: value, attr: name, type: 'number'])
 
         return value.toInteger()
     }
@@ -213,7 +225,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
             return null
 
         if (!value.bigInteger)
-            throw new ModelError(this, "Error converting the value \"$value\" of the model attribute \"$name\" into a number!")
+            throw new ModelError(this, '#dsl.model.invalid_attribute_type', [value: value, attr: name, type: 'number'])
 
         return value.toBigInteger().longValue()
     }
@@ -267,6 +279,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Synchronized('synchStoryDataset')
     protected void setStoryDatasetName(String value) { useStoryDatasetName(value) }
     /** Dataset of mapping processing history */
+    @SuppressWarnings('DuplicatedCode')
     @Synchronized('synchStoryDataset')
     protected Dataset getStoryDataset() {
         if (storyDatasetName == null)
@@ -289,7 +302,13 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Synchronized('synchStoryDataset')
     protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
     /** Dataset of mapping processing history */
-    String modelStoryDatasetName() { StringUtils.EvalMacroString(storyDatasetName, modelVars, false) }
+    String modelStoryDatasetName() {
+        def extVars = (dslCreator?.scriptExtendedVars)?:([:] as Map<String, Object>)
+        return StringUtils.EvalMacroString(storyDatasetName, modelVars + extVars, false)
+    }
+    /** Story dataset as TableDataset */
+    @JsonIgnore
+    protected TableDataset getStoryTable() { storyDataset as TableDataset }
 
     /** Use specified dataset name of mapping processing history */
     @Synchronized('synchStoryDataset')
@@ -301,7 +320,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Synchronized('synchStoryDataset')
     protected void useStoryDataset(Dataset dataset) {
         if (dataset != null && dataset.dslNameObject == null)
-            throw new ExceptionModel('Dataset not registered in Getl repository!')
+            throw new ModelError(this, '#dsl.model.dataset_not_registered', [dataset: dataset])
 
         saveParamValue('storyDatasetName', dataset?.dslNameObject)
     }
@@ -311,7 +330,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         while (!(genClass.genericSuperclass instanceof ParameterizedType)) {
             genClass = genClass.superclass
             if (!BaseModel.isAssignableFrom(genClass))
-                throw new ModelError(this, "Can't find super class model for class \"${this.getClass()}\"!")
+                throw new ModelError(this, "#dsl.model.super_class_not_found")
         }
         return (genClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
     }
@@ -332,23 +351,87 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     }
 
     /**
-     * Check model
+     * Check model base and objects parameters
      * @param checkObjects check model object parameters
      * @param checkNodeCode additional validation code for model objects
      */
     @Synchronized('synchObjects')
     protected void checkModel(Boolean checkObjects = true, Closure checkNodeCode = null) {
-        if (checkObjects)
+        checkGetlInstance()
+
+        checkDataset(modelStoryDatasetName())
+
+        if (checkObjects) {
             usedObjects.each { obj ->
                 checkObject(obj)
                 if (checkNodeCode != null)
                     checkNodeCode.call(obj)
             }
+        }
     }
 
-    /** Check object parameter */
+    /** Check model object parameter */
     @Synchronized('synchObjects')
     protected void checkObject(getl.models.sub.BaseSpec object) { }
+
+    /** Check dataset parameters */
+    protected void checkDataset(String dsName) {
+        if (dsName == null)
+            return
+
+        def ds = dslCreator.findDataset(dsName)
+        if (ds == null)
+            throw new ModelError(this, '#dsl.model.dataset_not_found', [dataset: dsName])
+
+        checkDataset(ds)
+    }
+
+    /** Check dataset parameters */
+    protected void checkDataset(Dataset ds) {
+        if (ds == null)
+            return
+
+        if (dslCreator.findDataset(ds) == null)
+            throw new ModelError(this, '#dsl.model.dataset_not_registered', [dataset: ds])
+
+        if (ds.connection == null)
+            throw new DatasetError(ds, '#dataset.non_connection')
+
+        if (ds instanceof TableDataset) {
+            def jdbcTable = ds as TableDataset
+            if (jdbcTable.tableName == null)
+                throw new DatasetError(ds, '#jdbc.table.non_table_name')
+        }
+        else if (ds instanceof ViewDataset) {
+            def viewTable = ds as ViewDataset
+            if (viewTable.tableName == null)
+                throw new DatasetError(ds, '#jdbc.table.non_table_name')
+        }
+        else if (ds instanceof QueryDataset) {
+            def queryTable = ds as QueryDataset
+            if (queryTable.query == null && queryTable.scriptFilePath == null)
+                throw new DatasetError(ds, '#jdbc.query.non_script')
+        }
+        else if (ds instanceof FileDataset) {
+            def fileTable = ds as FileDataset
+            if (fileTable.fileName == null)
+                throw new DatasetError(ds, '#dataset.non_filename')
+        }
+    }
+
+    /**
+     * Check dataset model
+     * @param ds checking dataset
+     * @param connectionName the name of the connection used for the dataset
+     */
+    @Synchronized('synchObjects')
+    protected void checkModelDataset(Dataset ds, String connectionName = null) {
+        if (ds == null)
+            throw new RequiredParameterError(this, 'ds')
+
+        if (ds.connection.dslNameObject != connectionName)
+            throw new ModelError(this, "#dsl.model.invalid_connection_for_dataset", [dataset: ds])
+    }
 
     /**
      * Check attribute naming and generate an unknown error for used objects
@@ -358,7 +441,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Synchronized('synchAttrs')
     void checkAttrs(List<String> allowAttrs, Boolean checkObjects = true) {
         if (allowAttrs == null)
-            throw new ModelError(this, 'The list of attribute names in parameter "allowAttrs" is not specified!')
+            throw new RequiredParameterError(this, 'allowAttrs')
 
         def validation = Path.Masks2Paths(allowAttrs)
         def unknownKeys = [] as List<String>
@@ -368,7 +451,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         }
 
         if (!unknownKeys.isEmpty())
-            throw new ModelError(this, "Unknown attributes were detected in model \"$_dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
+            throw new ModelError(this, '#dsl.model.invalid_attributes', [attrs: allowAttrs, unknown_attrs: unknownKeys])
 
         if (checkObjects) {
             usedObjects.each { node ->
@@ -380,7 +463,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /** Check model owner */
     protected void checkGetlInstance() {
         if (_dslCreator == null)
-            throw new ModelError(this, 'Requires a Getl instance for the model!')
+            throw new DslError(this, '#dsl.owner_required')
     }
 
     @Override
@@ -390,6 +473,14 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         res.dslNameObject = _dslNameObject
         return res
     }
+
+    /** Get model object by index */
+    @JsonIgnore
+    T getModelObject(Integer index) { usedObjects[index] }
+
+    /** Count of tables in model */
+    @JsonIgnore
+    Integer getCountUsedModelObjects() { usedObjects.size() }
 
     /**
      * Find object from model by name
@@ -445,5 +536,25 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
      */
     Boolean isObjectInModel(String name) {
         return findModelObject(name) != null
+    }
+
+    /** Clear incremental points for model tables */
+    void clearStoryDataset(List<String> includedTables = null, List<String> excludedTables = null) {
+        if (storyDatasetName == null)
+            return
+
+        if (storyDataset instanceof TableDataset) {
+            (storyDataset as TableDataset).tap {
+                if (exists)
+                    truncate()
+            }
+        }
+        else if (storyDataset instanceof FileDataset)
+            (storyDataset as FileDataset).tap {
+                if (existsFile())
+                    drop()
+            }
+        else
+            throw new ModelError(this, '#dsl.model.story_dataset_not_support_clear', [dataset: modelStoryDatasetName()])
     }
 }

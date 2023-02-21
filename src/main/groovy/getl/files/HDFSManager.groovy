@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore

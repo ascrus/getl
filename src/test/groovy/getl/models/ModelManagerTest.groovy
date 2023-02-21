@@ -56,7 +56,7 @@ class ModelManagerTest extends TestRepository {
                 useReferenceConnection verticaConnection('con')
                 referenceSchemaName = '_test_reference'
 
-                referenceFromTable('table1')
+                referenceFromTable('table1') { }
             }
 
             assertEquals(['test:model1', 'test:model2'].sort(), models.listReferenceVerticaTables('*:*').sort())

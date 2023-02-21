@@ -2,6 +2,8 @@ package getl.utils
 
 import groovy.transform.Synchronized
 
+import java.sql.Timestamp
+
 /**
  * Synchronized object
  * @author Alexsey Konstantinov
@@ -52,9 +54,10 @@ class SynchronizeObject {
 	}
 
 	private Comparable compare
-	/** Compareble value */
+	/** Compare value */
 	@Synchronized
 	Comparable getCompare() { compare }
+	/** Compare value */
 	@Synchronized
 	void setCompare(Comparable value) { compare = value }
 
@@ -94,15 +97,15 @@ class SynchronizeObject {
 	setText (String value) { text = value }
 
 	/** Date value */
-	private Date date = DateUtils.ParseDate('1900-01-01')
+	private Timestamp date = DateUtils.ParseSQLTimestamp('1900-01-01 00:00:00')
 
 	/** Date value */
 	@Synchronized
-	Date getDate() { date }
+	Timestamp getDate() { date }
 
 	/** Date value */
 	@Synchronized
-	void setDate(Date value) { date = value }
+	void setDate(Timestamp value) { date = value }
 
 	/** Array list */
 	private final List list = []

@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.csv
 
 import getl.csv.proc.*
@@ -39,12 +40,12 @@ class CSVDriver extends FileDriver {
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header',
 										  'isSplit', 'readAsText', 'escaped', 'processError', 'filter',
 										  'nullAsValue', 'fieldOrderByHeader', 'skipRows', 'limit',
-										  'arrayOpeningBracket', 'arrayClosingBracket'])
+										  'arrayOpeningBracket', 'arrayClosingBracket', 'blobAsPureHex'])
 		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize',
 											'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue',
 											'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime',
 											'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'onSplitFile',
-											'arrayOpeningBracket', 'arrayClosingBracket'])
+											'arrayOpeningBracket', 'arrayClosingBracket', 'blobAsPureHex'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -99,6 +100,10 @@ class CSVDriver extends FileDriver {
 		
 		return p
 	}
+
+	/** Current CSV connection */
+	@SuppressWarnings('unused')
+	CSVConnection getCurrentCSVConnection() { connection as CSVConnection }
 	
 	protected static QuoteMode datasetQuoteMode(Dataset dataset) {
 		QuoteMode res
@@ -333,7 +338,7 @@ class CSVDriver extends FileDriver {
 	static private CellProcessor type2cellProcessor(Dataset dataset, Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
 													String locale, String decimalSeparator, String groupSeparator, String formatDate,
 													String formatTime, String formatDateTime, String formatTimestampWithTz,
-													String formatBoolean, String arrayOpeningBracket, String arrayClosingBracket,
+													String formatBoolean, String arrayOpeningBracket, String arrayClosingBracket, Boolean blobAsPureHex,
 													Boolean isValid) {
 		CellProcessor cp = null
 		if (field.type == null || (field.type in [Field.stringFieldType, Field.objectFieldType, Field.rowidFieldType, Field.uuidFieldType])) {
@@ -415,25 +420,42 @@ class CSVDriver extends FileDriver {
 			}
 			def fieldLocale = (field.extended.locale as String)?:locale
 			if (!isWrite) {
-				if (fieldLocale == null) {
-					cp = new ParseDate(df, true)
-				}
-				else {
-					cp = new ParseDate(df, true, StringUtils.NewLocale(fieldLocale))
+				switch (field.type) {
+					case Field.dateFieldType:
+						cp = new CSVParseDate(df, field.type, fieldLocale)
+						break
+					case Field.timeFieldType:
+						cp = new CSVParseTime(df, field.type, fieldLocale)
+						break
+					case Field.datetimeFieldType:
+						cp = new CSVParseTimestamp(df, field.type, fieldLocale)
+						break
+					case Field.timestamp_with_timezoneFieldType:
+						cp = new CSVParseTimestamp(df, field.type, fieldLocale)
+						break
 				}
 			}
 			else {
-				if (fieldLocale == null)
-					//noinspection UnnecessaryQualifiedReference
-					cp = new org.supercsv.cellprocessor.FmtDate(df)
-				else
-					cp = new CSVFmtDate(df, fieldLocale)
+				switch (field.type) {
+					case Field.dateFieldType:
+						cp = new CSVFmtDate(df, field.type, fieldLocale)
+						break
+					case Field.timeFieldType:
+						cp = new CSVFmtTime(df, field.type, fieldLocale)
+						break
+					case Field.datetimeFieldType:
+						cp = new CSVFmtTimestamp(df, field.type, fieldLocale)
+						break
+					case Field.timestamp_with_timezoneFieldType:
+						cp = new CSVFmtTimestampWithTz(df, field.type, fieldLocale)
+						break
+				}
 			}
 		} else if (field.type == Field.Type.BLOB) {
 			if (!isWrite)
-				cp = new CSVParseBlob()
+				cp = new CSVParseBlob(blobAsPureHex)
 			else
-				cp = new CSVFmtBlob()
+				cp = new CSVFmtBlob(blobAsPureHex)
 		} else if (field.type == Field.Type.TEXT) {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
@@ -500,11 +522,12 @@ class CSVDriver extends FileDriver {
 		def uniFormatDateTime = ListUtils.NotNullValue([fParams.uniFormatDateTime, dataset.uniFormatDateTime()]) as String
 		def formatDate = ListUtils.NotNullValue([fParams.formatDate, uniFormatDateTime, dataset.formatDate()]) as String
 		def formatTime = ListUtils.NotNullValue([fParams.formatTime, uniFormatDateTime, dataset.formatTime()]) as String
-		def formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, uniFormatDateTime, dataset.formatDateTime()]) as String
-		def formatTimestampWithTz = ListUtils.NotNullValue([fParams.formatTimestampWithTz, uniFormatDateTime, dataset.formatTimestampWithTz()]) as String
+		def formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, uniFormatDateTime, dataset.formatDateTime(isWrite)]) as String
+		def formatTimestampWithTz = ListUtils.NotNullValue([fParams.formatTimestampWithTz, uniFormatDateTime, dataset.formatTimestampWithTz(isWrite)]) as String
 		def formatBoolean = ListUtils.NotNullValue([fParams.formatBoolean, dataset.formatBoolean()]) as String
 		def arrayOpeningBracket = ListUtils.NotNullValue([fParams.arrayOpeningBracket, dataset.arrayOpeningBracket()]) as String
 		def arrayClosingBracket = ListUtils.NotNullValue([fParams.arrayClosingBracket, dataset.arrayClosingBracket()]) as String
+		def blobAsPureHex = ListUtils.NotNullValue([fParams.blobAsPureHex, dataset.blobAsPureHex()]) as Boolean
 		
 		if (fields == null)
 			fields = [] as List<String>
@@ -526,7 +549,7 @@ class CSVDriver extends FileDriver {
 					
 					CellProcessor p = type2cellProcessor(dataset, f, isWrite, escaped, nullAsValue, locale, decimalSeparator, groupSeparator,
 							formatDate, formatTime, formatDateTime, formatTimestampWithTz, formatBoolean,
-							arrayOpeningBracket, arrayClosingBracket,  isValid)
+							arrayOpeningBracket, arrayClosingBracket, blobAsPureHex, isValid)
 					cp << p
 				}
 			}
@@ -559,7 +582,7 @@ class CSVDriver extends FileDriver {
 	 * @param localData
 	 * @return
 	 */
-	@SuppressWarnings('GrMethodMayBeStatic')
+	@SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 	@CompileStatic
 	Reader getLocalDataReader(FileDataset dataset, String localData) {
 		return new StringReader(localData?:'')
@@ -683,9 +706,9 @@ class CSVDriver extends FileDriver {
 
 			List<String> listFields
 			if (prepareCode != null)
-				listFields = prepareCode.call(fileFields.findAll { field -> !field.name.matches('(?i)^[_]getl[_]csv[_]col[_]\\d+') }) as List<String>
+				listFields = prepareCode.call(fileFields.findAll { field -> !field.name.matches('(?i)^_getl_csv_col_\\d+') }) as List<String>
 			else
-				listFields = fileFields.findAll { field -> !field.name.matches('(?i)^[_]getl[_]csv[_]col[_]\\d+') }
+				listFields = fileFields.findAll { field -> !field.name.matches('(?i)^_getl_csv_col_\\d+') }
 						.collect { field -> field.name }
 			
 			CellProcessor[] cp = fields2cellProcessor(dataset: cds, fields: listFields, header: header,

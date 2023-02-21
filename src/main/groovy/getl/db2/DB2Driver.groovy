@@ -46,6 +46,10 @@ class DB2Driver extends JDBCDriver {
     String defaultConnectURL () {
 		return "jdbc:db2://{host}/{database}"
 	}
+
+	/** Current DB2 connection */
+	@SuppressWarnings('unused')
+	DB2Connection getCurrentDB2Connection() { connection as DB2Connection }
 	
 	@Override
     void prepareField (Field field) {

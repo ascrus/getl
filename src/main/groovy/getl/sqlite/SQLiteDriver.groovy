@@ -55,6 +55,11 @@ class SQLiteDriver extends JDBCDriver {
         return 'jdbc:sqlite:{database}'
     }
 
+    /** Current SQLite connection */
+    @SuppressWarnings('unused')
+    SQLiteConnection getCurrentSQLiteConnection() { connection as SQLiteConnection }
+
+    @Override
     String getNowFunc() { sqlExpressionValue('DATETIME()') }
 
     @Override
@@ -100,7 +105,7 @@ class SQLiteDriver extends JDBCDriver {
             }
 
             if (field.typeName.matches('(?i)CLOB[(]\\d+[)]') ||
-                    field.typeName.matches('(?i)CBLOB')) {
+                    field.typeName.matches('(?i)CLOB')) {
                 field.type = Field.Type.TEXT
                 field.dbType = java.sql.Types.CLOB
                 return
@@ -112,7 +117,7 @@ class SQLiteDriver extends JDBCDriver {
                 return
             }
 
-            def decimalMask = '(?i)DECIMAL[(]\\s*(\\d+)\\s*[,]\\s*(\\d+)\\s*[)]'
+            def decimalMask = '(?i)DECIMAL[(]\\s*(\\d+)\\s*,\\s*(\\d+)\\s*[)]'
             if (field.typeName.matches(decimalMask)) {
                 def p = Pattern.compile(decimalMask)
                 def m = p.matcher(field.typeName)

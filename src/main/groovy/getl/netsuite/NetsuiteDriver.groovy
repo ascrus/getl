@@ -103,4 +103,8 @@ class NetsuiteDriver extends JDBCDriver {
 
 		return url
 	}
+
+	/** Current Netsuite connection */
+	@SuppressWarnings('unused')
+	NetsuiteConnection getCurrentNetsuiteConnection() { connection as NetsuiteConnection }
 }

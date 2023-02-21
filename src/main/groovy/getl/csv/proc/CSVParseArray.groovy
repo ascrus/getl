@@ -39,9 +39,8 @@ class CSVParseArray extends  CellProcessorAdaptor{
     <T> T execute(final Object value, final CsvContext context) {
         validateInputNotNull(value, context)
 
-        if (!(value instanceof String)) {
+        if (!(value instanceof String))
             throw new SuperCsvCellProcessorException(String, value, context, this)
-        }
 
         def str = value as String
         if (openBracket != null) {

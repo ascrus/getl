@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.test
 
 import getl.config.ConfigManager

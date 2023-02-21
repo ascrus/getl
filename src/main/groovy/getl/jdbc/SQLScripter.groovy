@@ -18,6 +18,7 @@ import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.*
 import groovy.transform.Synchronized
+import java.sql.Timestamp
 import java.util.regex.Pattern
 
 /**
@@ -104,7 +105,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	@Synchronized
 	void setConnectionName(String value) {
 		if (value != null) {
-			GetlValidate.IsRegister(this)
+			GetlValidate.IsRegister(this, false)
 			def con = dslCreator.jdbcConnection(value)
 			useConnection(con)
 		}
@@ -213,12 +214,21 @@ class SQLScripter implements WithConnection, GetlRepository {
 	/** DML history */
 	public final StringBuffer historyDML = new StringBuffer()
 
+	/** Evaluate command with variables */
+	@SuppressWarnings('SpellCheckingInspection')
+	private String evalMacroString(String command, Boolean errorWhenUndefined = true) {
+		return StringUtils.EvalMacroString(command, allVars, errorWhenUndefined) { value ->
+			String res = (value instanceof Timestamp)?DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSSSSS', value as Timestamp):null
+			return res
+		}.trim()
+	}
+
 	@SuppressWarnings('GroovyAssignabilityCheck')
 	private void doLoadPoint(SQLParser parser) {
 		if (dslCreator == null)
 			throw new DslError(this, '#dsl.owner_required')
 
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		def m = lastSql =~ /(?is)load_point\s+([^\s]+)\s+to\s+([^\s]+)/
 		if (m.size() == 0)
 			throw new SQLScripterError(this, '#sqlscripter.invalid_syntax', [operator: 'LOAD_POINT', sql: lastSql])
@@ -240,7 +250,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (dslCreator == null)
 			throw new DslError(this, '#dsl.owner_required')
 
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		def m = lastSql =~ /(?is)save_point\s+([^\s]+)\s+from\s+([^\s]+)/
         if (m.size() == 0)
 			throw new SQLScripterError(this, '#sqlscripter.invalid_syntax', [operator: 'SAVE_POINT', sql: lastSql])
@@ -259,7 +269,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	}
 
 	private void doRunFile(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		def posCmd = parser.lexer.findKeyWord('RUN_FILE')
 		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
 		if (posParam.length() == 0)
@@ -301,7 +311,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	}
 
 	private void doSwitchLogin(SQLParser parser) {
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		def posCmd = parser.lexer.findKeyWord('SWITCH_LOGIN')
 		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
 		if (posParam.length() == 0)
@@ -316,7 +326,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	private void doDML(SQLParser parser) {
 		if (debugMode)
 			logger.finest('Executing DML operator ...')
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		def rc = connection.executeCommand(command: lastSql)
 		if (rc > 0)
 			rowCount += rc
@@ -333,7 +343,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	private void doDDL(SQLParser parser) {
 		if (debugMode)
 			logger.finest('Executing DDL operator ...')
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		connection.executeCommand(command: lastSql)
 
 		historyDDL.append(lastSql)
@@ -345,7 +355,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (debugMode)
 			logger.finest('Executing other operator ...')
 		if (!parser.scripts(true).isEmpty()) {
-			setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+			setLastSql(evalMacroString(parser.lexer.script))
 
 			def scriptLabel = detectScriptVariable(parser)
 			def rc = connection.executeCommand(command: lastSql)
@@ -361,7 +371,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	private void doSelect(SQLParser parser) {
 		if (debugMode)
 			logger.finest('Executing SELECT operator ...')
-		setLastSql(StringUtils.EvalMacroString(parser.lexer.script, allVars).trim())
+		setLastSql(evalMacroString(parser.lexer.script))
 		QueryDataset ds = new QueryDataset(connection: connection, query: lastSql)
 		def rows = ds.rows()
 
@@ -382,7 +392,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 			Logs.Finest(this, '#sqlscripter.set_start')
 
 		def setScript = matcher.group(1)
-		setLastSql(StringUtils.EvalMacroString(setScript, allVars).trim())
+		setLastSql(evalMacroString(setScript))
 
 		QueryDataset query = new QueryDataset(connection: connection, query: lastSql)
 		def rows = query.rows(limit: 1)
@@ -420,7 +430,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 			Logs.Finest(this, '#sqlscripter.start', [operator: 'FOR'])
 
 		def queryText = parseScript.substring(listHeader[0].first as Integer, (listHeader[listHeader.size() - 1].last as Integer) + 1)
-		setLastSql(StringUtils.EvalMacroString(queryText, allVars).trim())
+		setLastSql(evalMacroString(queryText.trim()))
 		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1).trim()
 
 		QueryDataset query = new QueryDataset(connection: connection, query: lastSql)
@@ -487,7 +497,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 			sc += ' FROM ' + connection.currentJDBCDriver.sysDualTable
 		}
-		sc += ' WHERE (\n' + StringUtils.EvalMacroString(queryText.trim(), allVars) + '\n)'
+		sc += ' WHERE (\n' + evalMacroString(queryText.trim()) + '\n)'
 		lastSql = setLastSql(sc)
 
 		def bodyText = parseScript.substring(listDo[0].first as Integer, (listDo[listDo.size() - 1].last as Integer) + 1)
@@ -533,7 +543,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (debugMode)
 			Logs.Finest(this, '#sqlscripter.start', [operator: 'COMMAND'])
 
-		setLastSql(StringUtils.EvalMacroString(bodyText, allVars).trim())
+		setLastSql(evalMacroString(bodyText))
 		def rc = connection.executeCommand(command: lastSql)
 		if (rc > 0)
 			rowCount += rc
@@ -566,7 +576,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 			logger.finest('Echo ...')
 
 		if (text != null && text.length() > 0)
-			logger.write(logEcho, StringUtils.UnescapeJava(StringUtils.EvalMacroString(text, allVars)))
+			logger.write(logEcho, StringUtils.UnescapeJava(evalMacroString(text)))
 	}
 
 	private void doError(SQLParser parser) {
@@ -582,7 +592,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (posText < parseScript.length() - 1)
 			text = parseScript.substring(posText).trim()
 
-		def message = StringUtils.EvalMacroString(text, allVars)
+		def message = evalMacroString(text)
 		logger.severe(message)
 		throw new SQLScripterError(this, message)
 	}
@@ -613,7 +623,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 		historyDML.setLength(0)
 
 		if (!useParsing) {
-			setLastSql(StringUtils.EvalMacroString(script, allVars).trim())
+			setLastSql(evalMacroString(script))
 			connection.executeCommand(command: lastSql)
 			historyCommands.append(lastSql)
 			if (StringUtils.RightStr(lastSql, 1) != ';') {
@@ -826,7 +836,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	@Override
 	String toString() {
 		def res ='sqlscripter'
-		def name = (dslNameObject?:connection.toString())
-		return (name != null)?(res + ' ' + name):res
+		def name = (dslNameObject?:connection?.toString())
+		return (name != null)?(res + ' ' + name?:''):res
 	}
 }

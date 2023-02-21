@@ -3,12 +3,14 @@ package getl.models.sub
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.RepositoryObjects
 import getl.models.ReferenceVerticaTables
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
  * Repository models of reference tables
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class RepositoryReferenceVerticaTables extends RepositoryObjects<ReferenceVerticaTables>  {
     @Override

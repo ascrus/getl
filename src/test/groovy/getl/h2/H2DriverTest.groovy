@@ -1,5 +1,6 @@
 package getl.h2
 
+import getl.csv.CSVDataset
 import getl.data.Field
 import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriver
@@ -30,6 +31,9 @@ class H2DriverTest extends JDBCDriverProto {
         needCatalog = res.connectDatabase.toUpperCase()
         return res
     }
+
+    @Override
+    protected prepareBulkFile(CSVDataset file) { file.escaped = false }
 
     @Test
     void testVersion() {

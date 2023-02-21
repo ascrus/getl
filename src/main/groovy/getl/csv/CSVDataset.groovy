@@ -149,6 +149,13 @@ class CSVDataset extends FileDataset {
 	/** Close bracket for array fields */
 	String arrayClosingBracket() { arrayClosingBracket?:currentCsvConnection?.arrayClosingBracket() }
 
+	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
+	Boolean getBlobAsPureHex() { ConvertUtils.Object2Boolean(params.blobAsPureHex) }
+	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
+	void setBlobAsPureHex(Boolean value) { params.blobAsPureHex = value }
+	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
+	Boolean blobAsPureHex() { BoolUtils.IsValue(blobAsPureHex, currentCsvConnection?.blobAsPureHex()) }
+
 	/** Reset preset mode to custom */
 	void resetPresetMode() {
 		params.presetMode = 'custom'

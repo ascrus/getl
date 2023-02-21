@@ -75,7 +75,7 @@ class StringUtils {
 		return s.toString().padLeft(len, '0')
 	}
 
-	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[$]?[{]([^}{]+)[}]')
+	static private final Pattern EvalMacroStringPattern1 = Pattern.compile('[${]?[{]([^}{]+)[}][}]?')
 	@SuppressWarnings('RegExpSimplifiable')
 	static private final Pattern EvalMacroStringPattern2 = Pattern.compile('[%]([^%]+)[%]')
 
@@ -134,7 +134,7 @@ class StringUtils {
 
 			def vl = vn.toLowerCase()
 			def varValue = vars.get(vl)
-			if (!vars.containsKey(vl) || (varValue instanceof Map)) { /* TODO: why not map? */
+			if (!vars.containsKey(vl) || (varValue instanceof Map)) { /* Видимо map где то используется и его нельзя обрабатывать, а оставлять переменную */
 				if (errorWhenUndefined) {
 					if ((varValue instanceof Map))
 						throw new ExceptionGETL('#strings.invalid_var_type_map', [var: vn])
@@ -155,25 +155,31 @@ class StringUtils {
 
 			if (varValue == null)
 				varValue = ''
-			else if (formatValue != null)
-				varValue = formatValue.call(varValue)
-			else if (varValue instanceof java.sql.Date)
-				varValue = DateUtils.FormatDate('yyyy-MM-dd', varValue as Date)
-			else if (varValue instanceof java.sql.Time)
-				varValue = DateUtils.FormatDate('HH:mm:ss.SSS', varValue as Date)
-			else if (varValue instanceof Timestamp)
-				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', varValue as Date)
-			else if (varValue instanceof Date)
-				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
-			else if (varValue instanceof Collection) {
-				def list = [] as List<String>
-				(varValue as Collection).each { val ->
-					if (val instanceof String || val instanceof GString)
-						list.add('\'' + (val as Object).toString() + '\'')
-					else
-						list.add(val.toString())
+			else {
+				def calcValue = (formatValue != null)?formatValue.call(varValue):null
+
+				if (calcValue != null)
+					varValue = calcValue
+				else {
+					if (varValue instanceof java.sql.Date)
+						varValue = DateUtils.FormatDate('yyyy-MM-dd', varValue as Date)
+					else if (varValue instanceof Time)
+						varValue = DateUtils.FormatDate('HH:mm:ss', varValue as Date)
+					else if (varValue instanceof Timestamp)
+						varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', varValue as Date)
+					else if (varValue instanceof Date)
+						varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
+					else if (varValue instanceof Collection) {
+						def list = [] as List<String>
+						(varValue as Collection).each { val ->
+							if (val instanceof String || val instanceof GString)
+								list.add('\'' + (val as Object).toString() + '\'')
+							else
+								list.add(val.toString())
+						}
+						varValue = list.join(', ')
+					}
 				}
-				varValue = list.join(', ')
 			}
 
 			sb.append(varValue)
@@ -770,7 +776,7 @@ class StringUtils {
 	 * @param password 128 bit key
 	 * @return encrypted text
 	 */
-	@SuppressWarnings('UnnecessaryQualifiedReference')
+	@SuppressWarnings(['UnnecessaryQualifiedReference', 'DuplicatedCode'])
 	static String Encrypt(String text, String password) {
 		if (text == null)
 			return null
@@ -798,7 +804,7 @@ class StringUtils {
 	 * @param password 128 bit key
 	 * @return original text
 	 */
-	@SuppressWarnings('UnnecessaryQualifiedReference')
+	@SuppressWarnings(['UnnecessaryQualifiedReference', 'DuplicatedCode'])
 	static String Decrypt(String text, String password) {
 		if (text == null)
 			return null

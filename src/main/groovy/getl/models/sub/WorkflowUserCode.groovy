@@ -6,13 +6,13 @@ import getl.models.Workflows
 import getl.models.opts.WorkflowScriptSpec
 import getl.models.opts.WorkflowSpec
 import getl.utils.sub.BaseUserCode
-
-import java.sql.Timestamp
+import groovy.transform.CompileStatic
 
 /**
  * Base class for extending workflow with custom code
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 class WorkflowUserCode extends BaseUserCode {
     /** Current workflow model */
     public Workflows currentModel

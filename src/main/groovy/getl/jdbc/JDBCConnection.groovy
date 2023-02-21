@@ -78,7 +78,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		methodParams.register('Super', [
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'sessionProperty', 'schemaName', 'driverName', 'driverPath', 'connectHost',
-				'connectDatabase', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput',
+				'connectDatabase', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput', 'codePage', 'charLengthAsBytes',
 				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation', 'extensionForSqlScripts'])
 		methodParams.register('createSchema', ['ifNotExists'])
 		methodParams.register('dropSchema', ['ifExists'])
@@ -199,6 +199,22 @@ class JDBCConnection extends Connection implements UserLogins {
 
 		return res
 	}
+
+	/** Code page for connection files */
+	String getCodePage() { super.codePage }
+	/** Code page for connection files */
+	void setCodePage(String value) {
+		super.setCodePage(value)
+	}
+	/** Code page for connection files */
+	String codePage() { super.codePage() }
+
+	/** Character length for text fields is specified in bytes */
+	Boolean getCharLengthAsBytes() { params.charLengthAsBytes }
+	/** Character length for text fields is specified in bytes */
+	void setCharLengthAsBytes(Boolean value) { params.charLengthAsBytes = value }
+	/** Character length for text fields is specified in bytes */
+	Boolean charLengthAsBytes() { BoolUtils.IsValue(charLengthAsBytes, false) }
 	
 	/** Extend connection properties */
 	Map getConnectProperty() {

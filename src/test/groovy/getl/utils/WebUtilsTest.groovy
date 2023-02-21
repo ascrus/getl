@@ -53,7 +53,7 @@ class WebUtilsTest extends GetlDslTest {
                     createPath = true
                     extension = 'json'
                     //noinspection SpellCheckingInspection
-                    uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSSSSSSS\'Z\''
+                    uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''
                     authType = 'basic'
                     login = 'user'
                     password = 'user'

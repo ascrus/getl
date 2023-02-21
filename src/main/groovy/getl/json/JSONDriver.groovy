@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.json
 
 import getl.exception.DatasetError
@@ -38,6 +39,10 @@ class JSONDriver extends WebServiceDriver {
 		[Driver.Operation.DROP]
 	}
 
+	/** Current JSON connection */
+	@SuppressWarnings('unused')
+	JSONConnection getCurrentJSONConnection() { connection as JSONConnection }
+
 	@Override
 	List<Field> fields(Dataset dataset) {
 		return null
@@ -64,7 +69,7 @@ class JSONDriver extends WebServiceDriver {
 			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 			
 			String path = GenerationUtils.Field2Alias(d, true)
-			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d),
+			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d, true),
 					sourceMap: 'data', sourceValue: path, destMap: 'attrValue', cloneObject: false, saveOnlyWithValue: true)
 			
 			sb << "\n"

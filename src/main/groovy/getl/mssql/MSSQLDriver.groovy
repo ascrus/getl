@@ -47,7 +47,10 @@ class MSSQLDriver extends JDBCDriver {
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 
 		ruleQuotedWords.add('DOUBLE')
+
 		ruleEscapedText.put('\'', '\'\'')
+		ruleEscapedText.remove('\n')
+		ruleEscapedText.remove('\\')
 	}
 
 	@Override
@@ -55,8 +58,8 @@ class MSSQLDriver extends JDBCDriver {
 		def res = super.supported() +
 				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE,
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION]
-		if (serverVersion > 12)
-			res.addAll([Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST])
+		/*if (serverVersion > 12)
+			res.addAll([Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST])*/
 
 		return res
 	}
@@ -94,6 +97,10 @@ class MSSQLDriver extends JDBCDriver {
 	String defaultConnectURL () {
 		return 'jdbc:sqlserver://{host};databaseName={database}'
 	}
+
+	/** Current Mssql connection */
+	@SuppressWarnings('unused')
+	MSSQLConnection getCurrentMSSQLConnection() { connection as MSSQLConnection }
 	
 	@Override
 	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {

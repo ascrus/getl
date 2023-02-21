@@ -28,14 +28,14 @@ class PostgreSQLBulkLoadSpec extends BulkLoadSpec {
     /**
      * Where condition is any expression that evaluates to a result of type boolean. Any row that does not satisfy this condition will not be
      * inserted to the table. A row satisfies the condition if it returns true when the actual row values are substituted for any variable references.
-     * Currently, subqueries are not allowed in WHERE expressions, and the evaluation does not see any changes made by the COPY itself
+     * Currently, sub queries are not allowed in WHERE expressions, and the evaluation does not see any changes made by the COPY itself
      * (this matters when the expression contains calls to VOLATILE functions).
      */
     String getWhere() { params.where as String }
     /**
      * Where condition is any expression that evaluates to a result of type boolean. Any row that does not satisfy this condition will not be
      * inserted to the table. A row satisfies the condition if it returns true when the actual row values are substituted for any variable references.
-     * Currently, subqueries are not allowed in WHERE expressions, and the evaluation does not see any changes made by the COPY itself
+     * Currently, sub queries are not allowed in WHERE expressions, and the evaluation does not see any changes made by the COPY itself
      * (this matters when the expression contains calls to VOLATILE functions).
      */
     void setWhere(String value) { saveParamValue('where', value) }

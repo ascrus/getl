@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.lang.sub
 
 import getl.config.ConfigSlurper

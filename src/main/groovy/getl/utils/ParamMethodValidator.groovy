@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.utils
 
 import getl.exception.ExceptionGETL

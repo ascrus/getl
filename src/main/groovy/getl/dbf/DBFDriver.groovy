@@ -42,6 +42,8 @@ class DBFDriver extends FileDriver {
         [Driver.Operation.DROP, Driver.Operation.RETRIEVEFIELDS]
     }
 
+    /** Current DBF connection */
+    DBFConnection getCurrentDBFConnection() { connection as DBFConnection }
 
     /** Convert DBF field to Getl field */
     @SuppressWarnings('GroovyFallthrough')

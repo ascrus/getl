@@ -13,13 +13,17 @@ import getl.utils.*
  */
 @CompileStatic
 class CSVFmtBlob extends CellProcessorAdaptor {
-	CSVFmtBlob() {
+	CSVFmtBlob(Boolean pureFormat) {
 		super()
+		this.pureFormat = pureFormat
 	}
 
-	CSVFmtBlob(StringCellProcessor next) {
+	CSVFmtBlob(Boolean pureFormat, StringCellProcessor next) {
 		super(next)
+		this.pureFormat = pureFormat
 	}
+
+	private Boolean pureFormat
 
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
@@ -30,7 +34,7 @@ class CSVFmtBlob extends CellProcessorAdaptor {
 			throw new SuperCsvCellProcessorException((b.getClass()), value, context, this)
 		}
 		
-		final String result = StringUtils.RawToHex((byte[])value)
+		String result = (!pureFormat)?'\\x' + StringUtils.RawToHex((byte[])value):StringUtils.RawToHex((byte[])value)
 		return next.execute(result, context)
 	}
 }

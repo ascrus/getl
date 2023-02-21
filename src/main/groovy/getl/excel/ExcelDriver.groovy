@@ -52,6 +52,10 @@ class ExcelDriver extends FileDriver {
         [Driver.Operation.DROP, Driver.Operation.RETRIEVEFIELDS]
     }
 
+    /** Current Excel connection */
+    @SuppressWarnings('unused')
+    ExcelConnection getCurrentExcelConnection() { connection as ExcelConnection }
+
     @Override
     List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
         throw new NotSupportError(connection, 'retrieveObjects')
@@ -262,8 +266,13 @@ class ExcelDriver extends FileDriver {
             case Field.Type.DATE:
                 if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
                     res = new java.sql.Date(cell.dateCellValue.time)
-                else if (cell.cellType == CellType.STRING)
-                    res = DateUtils.ParseSQLDate(formatDate, cell.stringCellValue, false)
+                else if (cell.cellType == CellType.STRING) {
+                    def val = cell.stringCellValue
+                    if (val != '')
+                        res = DateUtils.ParseSQLDate(formatDate, val, false)
+                    else
+                        res = null as java.sql.Date
+                }
                 else
                     throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'date'])
 
@@ -271,8 +280,13 @@ class ExcelDriver extends FileDriver {
             case Field.Type.DATETIME:
                 if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
                     res = new Timestamp(cell.dateCellValue.time)
-                else if (cell.cellType == CellType.STRING)
-                    res = DateUtils.ParseSQLDate(formatDateTime, cell.stringCellValue, false)
+                else if (cell.cellType == CellType.STRING) {
+                    def val = cell.stringCellValue
+                    if (val != '')
+                        res = DateUtils.ParseSQLTimestamp(formatDateTime, val, false)
+                    else
+                        res = null as Timestamp
+                }
                 else
                     throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'datetime'])
 
@@ -280,8 +294,13 @@ class ExcelDriver extends FileDriver {
             case Field.Type.TIME:
                 if (cell.cellType in [CellType.NUMERIC, CellType.FORMULA])
                     res = new Time(cell.dateCellValue.time)
-                else if (cell.cellType == CellType.STRING)
-                    res = DateUtils.ParseSQLDate(formatTime, cell.stringCellValue, false)
+                else if (cell.cellType == CellType.STRING) {
+                    def val = cell.stringCellValue
+                    if (val != '')
+                        res = DateUtils.ParseSQLTime(formatTime, val, false)
+                    else
+                        res = null as Time
+                }
                 else
                     throw new DatasetError(dataset, notCompatible, [cellType: cell.cellType, type: 'time'])
 

@@ -2,7 +2,6 @@
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.ExceptionGETL
 import getl.exception.RequiredParameterError
 import getl.utils.*
 import groovy.transform.Synchronized
@@ -99,6 +98,13 @@ class Field implements Serializable, Cloneable {
 	Integer getLength() { return this.length }
 	/** Length of value */
 	void setLength(Integer value) { this.length = value }
+
+	/** For char types the maximum number of bytes in the column */
+	private Integer charOctetLength
+	/** For char types the maximum number of bytes in the column */
+	Integer getCharOctetLength() { this.charOctetLength }
+	/** For char types the maximum number of bytes in the column */
+	void setCharOctetLength(Integer value) { this.charOctetLength = value }
 	
 	private Integer precision
 	/** Precision number of numeric value */
@@ -227,7 +233,7 @@ class Field implements Serializable, Cloneable {
 	
 	/** Allow length for field */
 	static Boolean AllowLength(Field f) {
-		return (f.type in [Type.STRING, Type.NUMERIC, Type.BLOB, Type.TEXT, Type.ROWID])
+		return (f.type in [Type.STRING, Type.NUMERIC, Type.BLOB, Type.TEXT, Type.ROWID/*, Type.TIMESTAMP_WITH_TIMEZONE, Type.DATETIME, Type.TIME*/])
 	}
 	
 	/** Allow precision for field */
@@ -249,6 +255,7 @@ class Field implements Serializable, Cloneable {
 		if (columnClassName != null) n.columnClassName = columnClassName
 		
 		if (AllowLength(this) && length != null) n.length = length
+		if (charOctetLength != null) n.charOctetLength = charOctetLength
 		if (AllowPrecision(this) && precision != null) n.precision = precision
 		if (!isNull) n.isNull = isNull
 		if (isKey) n.isKey = isKey
@@ -288,15 +295,16 @@ class Field implements Serializable, Cloneable {
 		def type = (typeStr != null)? Type.valueOf(typeStr): Type.STRING
 		def typeName = StringUtils.NullIsEmpty(map.typeName as String)
 		def columnClassName = StringUtils.NullIsEmpty(map.columnClassName as String)
-		def isNull = BoolUtils.IsValue(map.isNull,true)
-		def length = NumericUtils.Obj2Integer(map.length)
-		def precision = NumericUtils.Obj2Integer(map.precision)
-		def isKey = BoolUtils.IsValue(map.isKey, false)
+		def isNull = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isNull), true)
+		def length = ConvertUtils.Object2Int(map.length)
+		def charOctetLength = ConvertUtils.Object2Int(map.charOctetLength)
+		def precision = ConvertUtils.Object2Int(map.precision)
+		def isKey = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isKey), false)
 		def ordKey = NumericUtils.Obj2Integer(map.ordKey)
-		def isPartition = BoolUtils.IsValue(map.isPartition, false)
-		def ordPartition = NumericUtils.Obj2Integer(map.ordPartition)
-		def isAutoincrement = BoolUtils.IsValue(map.isAutoincrement, false)
-		def isReadOnly = BoolUtils.IsValue(map.isReadOnly, false)
+		def isPartition = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isPartition), false)
+		def ordPartition = ConvertUtils.Object2Int(map.ordPartition)
+		def isAutoincrement = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isAutoincrement), false)
+		def isReadOnly = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isReadOnly), false)
 		def arrayType = StringUtils.NullIsEmpty(map.arrayType as String)
 		def defaultValue = StringUtils.NullIsEmpty(map.defaultValue as String)
 		def compute = StringUtils.NullIsEmpty(map.compute as String)
@@ -305,13 +313,14 @@ class Field implements Serializable, Cloneable {
 		def maxValue = (map.maxValue instanceof String && (map.maxValue as String).length() == 0)?null:map.maxValue
 		def format = StringUtils.NullIsEmpty(map.format as String)
 		def alias = StringUtils.NullIsEmpty(map.alias as String)
-		def trim = BoolUtils.IsValue(map.trim,false)
+		def trim = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.trim), false)
 		def decimalSeparator = StringUtils.NullIsEmpty(map.decimalSeparator as String)
 		def description = StringUtils.NullIsEmpty(map.description as String)
 		def extended = map.extended as Map<String, Object>
 
 		def res = new Field(
-					name: name, type: type, typeName: typeName, columnClassName: columnClassName, isNull: isNull, length: length, precision: precision,
+					name: name, type: type, typeName: typeName, columnClassName: columnClassName, isNull: isNull,
+					length: length, charOctetLength: charOctetLength, precision: precision,
 					isKey: isKey, ordKey: ordKey, isPartition: isPartition, ordPartition: ordPartition,
 					isAutoincrement: isAutoincrement, isReadOnly: isReadOnly, arrayType: arrayType,
 					defaultValue: defaultValue, compute: compute, checkValue: checkValue,
@@ -357,6 +366,7 @@ class Field implements Serializable, Cloneable {
 		isPartition = (f.isPartition)?true:isPartition
 		ordPartition = (f.ordPartition != null)?f.ordPartition:ordPartition
 		length = (f.length > 0)?f.length:length
+		charOctetLength = (f.charOctetLength > 0)?f.charOctetLength:charOctetLength
 		precision = (f.precision > 0)?f.precision:precision
 		isAutoincrement = (f.isAutoincrement)?true:isAutoincrement
 		isReadOnly = (f.isReadOnly)?true:isReadOnly
@@ -394,7 +404,7 @@ class Field implements Serializable, Cloneable {
 	Field copy() {
 		return new Field(
 				name: this.name, type: this.type, typeName: this.typeName, columnClassName: this.columnClassName, dbType: this.dbType, isNull: this.isNull,
-				length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
+				length: this.length, charOctetLength: this.charOctetLength, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isPartition: this.isPartition, ordPartition: this.ordPartition, isAutoincrement: this.isAutoincrement,
 				isReadOnly: this.isReadOnly, arrayType: this.arrayType, defaultValue: this.defaultValue, compute: this.compute, checkValue: this.checkValue,
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias,
@@ -465,6 +475,7 @@ class Field implements Serializable, Cloneable {
 		if (BoolUtils.IsValue(this.isPartition) != BoolUtils.IsValue(o.isPartition)) return false
 		if (this.ordPartition != o.ordPartition) return false
         if (this.length != o.length) return false
+		if (this.charOctetLength != null && o.charOctetLength != null && this.charOctetLength != o.charOctetLength) return false
         if (this.precision != o.precision) return false
         if (this.dbType != o.dbType) return false
         if (this.typeName?.toUpperCase() != o.typeName?.toUpperCase()) return false

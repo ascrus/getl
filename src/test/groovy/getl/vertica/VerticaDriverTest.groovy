@@ -1,6 +1,8 @@
 //file:noinspection GrMethodMayBeStatic
 package getl.vertica
 
+import getl.config.ConfigFiles
+import getl.csv.CSVDataset
 import getl.data.Field
 import getl.files.Manager
 import getl.jdbc.*
@@ -48,6 +50,9 @@ class VerticaDriverTest extends JDBCDriverProto {
             writeOpts {direct = 'DIRECT'}
         }
     }
+
+    @Override
+    protected prepareBulkFile(CSVDataset file) { file.escaped = false }
 
     @Test
     void testLimit() {
@@ -569,11 +574,18 @@ LIMIT 1'''
             }
 
             def oraTable = oracleTable {
-                useConnection oracleConnection {}
-                schemaName = 'test'
-                tableName = 'table1'
+                useConnection oracleConnection {
+                    def oraConfig = ConfigFiles.LoadConfigFile(new File('tests/oracle/oracle.conf'))
+                    configContent.putAll(oraConfig)
+                    setConfig('oracle')
+                    connected = true
+                }
+                tableName = 'getl_test_import_fields'
                 field('dt') { typeName = 'date' }
                 importFields(csvFile)
+                drop(ifExists: true)
+                create()
+                retrieveFields()
             }
 
             verticaTable {verTable ->
@@ -582,26 +594,26 @@ LIMIT 1'''
                 tableName = 'test_import_fields'
 
                 importFields(oraTable)
-                assertEquals(csvFile.field.size(), field.size())
-                assertEquals(csvFile.fieldByName('id'), fieldByName('id'))
-                assertEquals(csvFile.fieldByName('name').isNull, fieldByName('name').isNull)
-                assertEquals(csvFile.fieldByName('name').length * 2, fieldByName('name').length)
-                assertEquals(csvFile.fieldByName('value'), fieldByName('value'))
+                assertEquals(oraTable.field.size(), field.size())
+                assertEquals(oraTable.fieldByName('id'), fieldByName('id'))
+                assertEquals(oraTable.fieldByName('name').isNull, fieldByName('name').isNull)
+                assertEquals(oraTable.fieldByName('name').length * 3, fieldByName('name').length)
+                assertEquals(oraTable.fieldByName('value'), fieldByName('value'))
                 assertEquals(12, fieldByName('num').length)
                 assertEquals(2, fieldByName('num').precision)
-                assertEquals(Field.doubleFieldType, fieldByName('double').type)
+                assertEquals(Field.numericFieldType, fieldByName('double').type)
                 assertEquals(Field.integerFieldType, fieldByName('num_small').type)
                 assertEquals(Field.bigintFieldType, fieldByName('num_medium').type)
-                assertEquals(csvFile.fieldByName('num_large'), fieldByName('num_large'))
+                assertEquals(oraTable.fieldByName('num_large'), fieldByName('num_large'))
                 assertEquals(Field.datetimeFieldType, fieldByName('dt').type)
                 assertNull(fieldByName('dt').typeName)
-                assertEquals(csvFile.fieldByName('ts'), fieldByName('ts'))
+                assertEquals(oraTable.fieldByName('ts'), fieldByName('ts'))
 
                 importFields(csvFile)
                 assertEquals(csvFile.field.size(), field.size())
                 assertEquals(csvFile.fieldByName('id'), fieldByName('id'))
                 assertEquals(csvFile.fieldByName('name').isNull, fieldByName('name').isNull)
-                assertEquals(csvFile.fieldByName('name').length * 2, fieldByName('name').length)
+                assertEquals(csvFile.fieldByName('name').length * 3, fieldByName('name').length)
                 assertEquals(csvFile.fieldByName('value'), fieldByName('value'))
                 assertEquals(12, fieldByName('num').length)
                 assertEquals(2, fieldByName('num').precision)

@@ -2,14 +2,8 @@ package getl.mysql
 
 import getl.data.Field
 import getl.driver.Driver
-import getl.exception.ExceptionGETL
 import getl.jdbc.*
-import getl.utils.ListUtils
-import getl.utils.Path
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
-
-import java.sql.ResultSet
 
 /**
  * MySQL driver class
@@ -74,6 +68,10 @@ class MySQLDriver extends JDBCDriver {
 
 		return res
 	}
+
+	/** Current MySQL connection */
+	@SuppressWarnings('unused')
+	MySQLConnection getMySQLConnection() { connection as MySQLConnection }
 
 	@Override
 	Boolean blobReadAsObject (Field field = null) { return false }

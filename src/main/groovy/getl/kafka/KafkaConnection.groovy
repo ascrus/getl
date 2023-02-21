@@ -3,6 +3,7 @@ package getl.kafka
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
+import getl.data.WebServiceConnection
 import getl.driver.Driver
 import getl.exception.RequiredParameterError
 import getl.utils.BoolUtils
@@ -77,14 +78,16 @@ class KafkaConnection extends Connection {
     /** Format for datetime fields */
     void setFormatDateTime(String value) { params.formatDateTime = value }
     /** Format for datetime fields */
-    String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
+    String formatDateTime(Boolean formatValue = false) { formatDateTime?:((formatValue)?DateUtils.defaultDateTimeMaskFormat:DateUtils.defaultDateTimeMask) }
 
     /** Format for timestamp with timezone fields */
     String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
     /** Format for timestamp with timezone fields */
     void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
     /** Format for timestamp with timezone fields */
-    String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzFullMask }
+    String formatTimestampWithTz(Boolean formatValue = false) {
+        return formatTimestampWithTz?:((formatValue)? WebServiceConnection.defaultTimestampWithTzFullMaskFormat:WebServiceConnection.defaultTimestampWithTzFullMask)
+    }
 
     /** Format for time fields */
     String getFormatTime() { params.formatTime as String }

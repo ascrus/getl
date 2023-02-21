@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.files.Manager
 import getl.models.opts.ReferenceFileSpec
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 
@@ -12,6 +13,7 @@ import groovy.transform.Synchronized
  * Source files model
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class FilesModel<T extends FileSpec> extends BaseModel {
     /** Source file manager name for model */
@@ -107,5 +109,12 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         def modelFile = obj as FileSpec
         if (!sourceManager.existsFile(modelFile.filePath))
             throw new ExceptionModel("Source file \"${modelFile.filePath}\" not found!")
+    }
+
+    @Override
+    void doneModel() {
+        super.doneModel()
+        if (sourceManagerName != null && sourceManager.connected)
+            sourceManager.disconnect()
     }
 }

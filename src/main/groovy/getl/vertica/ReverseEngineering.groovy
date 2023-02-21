@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.vertica
 
 import getl.data.Field

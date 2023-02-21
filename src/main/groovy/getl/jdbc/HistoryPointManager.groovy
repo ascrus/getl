@@ -132,7 +132,7 @@ class HistoryPointManager implements GetlRepository {
 	/** Use specified table name from repository for storage incremental capture history */
 	void useHistoryTableName(String value) {
 		if (value != null) {
-			GetlValidate.IsRegister(this)
+			GetlValidate.IsRegister(this, false)
 			def table = dslCreator.jdbcTable(value)
 			value = table.dslNameObject
 		}
@@ -179,9 +179,9 @@ class HistoryPointManager implements GetlRepository {
 	/** Store timestamp values */
 	static public final String timestampSourceType = 'TIMESTAMP'
 
-	/** Type of stored source values */
+	/** Type of stored source values (IDENTITY, TIMESTAMP) */
 	String getSourceType() { params.sourceType as String }
-	/** Type of stored source values */
+	/** Type of stored source values (IDENTITY, TIMESTAMP) */
 	void setSourceType(String value) {
 		if (value != null) {
 			value = value.trim().toUpperCase()
@@ -253,7 +253,7 @@ class HistoryPointManager implements GetlRepository {
 
 	/** List of field for history table */
 	public static final List<Field> tableHistoryFields = [
-			Field.New('source') { length = 128; isNull = false },
+			Field.New('source') { length = 256; isNull = false },
 			Field.New('changed') { type = datetimeFieldType; isNull = false },
 			Field.New('id') { type = bigintFieldType },
 			Field.New('dt') { type = datetimeFieldType }
@@ -348,7 +348,9 @@ class HistoryPointManager implements GetlRepository {
 	 */
 	@Synchronized('operationLock')
 	Boolean create(Boolean ifNotExists = false) {
-		checkManager()
+		if (historyTable == null)
+			throw new RequiredParameterError(this, 'historyTable')
+
 		prepareTable(historyTable)
 		localCreate(ifNotExists)
 	}
@@ -502,10 +504,10 @@ class HistoryPointManager implements GetlRepository {
 	 * Clear save point value by source
 	 */
 	@Synchronized('operationLock')
-	void clearValue () {
+	void clearValue (String mask = null) {
 		checkManager()
 		prepareTable(historyTable)
-		historyTable.deleteRows("source = '$sourceName'")
+		historyTable.deleteRows((mask != null)?mask:"source = '$sourceName'")
 	}
 
 	/** Delete all rows in history point table */
@@ -538,5 +540,12 @@ class HistoryPointManager implements GetlRepository {
 			throw new RequiredParameterError(this, 'saveMethod')
 		if (!(saveMethod.toUpperCase() in  ['MERGE', 'INSERT']))
 			throw new HistorypointError(this, '#historypoints.invalid_save_method', [method: saveMethod])
+	}
+
+	@Override
+	String toString() {
+		def res ='historypoint'
+		def name = (dslNameObject?:historyTableName?.toString())
+		return (name != null)?(res + ' ' + name?:''):res
 	}
 }

@@ -7,6 +7,7 @@ import groovy.transform.InheritConstructors
 import getl.data.Field
 import getl.driver.Driver
 import getl.utils.*
+import java.sql.Blob
 
 /**
  * Oracle driver class
@@ -82,6 +83,10 @@ end;'''
 
 	@Override
 	Boolean timestamptzReadAsTimestamp() { return true }
+
+	/** Current Oracle connection */
+	@SuppressWarnings('unused')
+	OracleConnection getCurrentOracleConnection() { connection as OracleConnection }
 
 	@Override
 	void connect() {
@@ -265,16 +270,23 @@ end;'''
 		if (field.type == Field.doubleFieldType)
 			return '({field} as Number).toDouble()'
 
-		if (field.type == Field.blobFieldType && field.columnClassName == 'oracle.sql.BLOB')
-			return '({field} as oracle.sql.BLOB).getBytes((long)1, (int)(({field} as oracle.sql.BLOB).length()))'
+		if (field.type == Field.blobFieldType) {
+			if (field.columnClassName == 'oracle.sql.BLOB')
+				return '({field} as oracle.sql.BLOB).getBytes((long)1, (int)(({field} as oracle.sql.BLOB).length()))'
+			else if (field.columnClassName == 'oracle.jdbc.OracleBlob')
+				return '({field} as oracle.jdbc.OracleBlob).getBytes((long)1, (int)(({field} as oracle.jdbc.OracleBlob).length()))'
+			else {
+				def classBlob = Class.forName(field.columnClassName)
+				if (Blob.isAssignableFrom(classBlob))
+					return '({field} as java.sql.Blob).getBytes((long)1, (int)(({field} as java.sql.Blob).length()))'
+			}
+		}
 
 		if (field.type == Field.Type.ROWID)
 			return 'new String({field}.bytes)'
 
 		if (field.type in [Field.Type.DATE, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE] &&
 				!(field.columnClassName in ['java.sql.Date', 'java.sql.Time', 'java.sql.Timestamp']) && field.typeName != null) {
-			/*if (field.columnClassName != null)
-				return "new java.sql.Timestamp(({field} as ${field.columnClassName}).timestampValue(connection).getTime())"*/
 
 			if (field.typeName.matches("(?i)DATE"))
 				return '({field} as oracle.sql.DATE).timestampValue()'
@@ -289,6 +301,7 @@ end;'''
 
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE"))
+				//noinspection SpellCheckingInspection
 				return '({field} as oracle.sql.TIMESTAMPLTZ).timestampValue(connection)'
 		}
 

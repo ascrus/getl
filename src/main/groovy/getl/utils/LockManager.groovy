@@ -163,7 +163,7 @@ class LockManager {
         }
         else {
             synchronized (lockObjects) {
-                def curDate = new Date()
+                def curDate = DateUtils.Now()
                 if (lockObject.counter.date == null || lockObject.counter.date < curDate)
                     lockObject.counter.date = curDate
             }

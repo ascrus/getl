@@ -1,4 +1,5 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.exception
 
 import getl.lang.sub.GetlRepository

@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -926,7 +927,7 @@ abstract class Manager implements GetlRepository {
 	/** Use table name for storing history download files */
 	void useStoryName(String value) {
 		if (value != null) {
-			GetlValidate.IsRegister(this)
+			GetlValidate.IsRegister(this, false)
 			def tab = dslCreator.jdbcTable(value)
 			value = tab.dslNameObject
 		}

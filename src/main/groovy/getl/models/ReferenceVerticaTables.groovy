@@ -16,6 +16,7 @@ import getl.utils.Path
 import getl.utils.StringUtils
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -25,6 +26,7 @@ import groovy.transform.stc.SimpleType
  * Reference tables model
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** Vertica connection name in the repository */
@@ -478,6 +480,9 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
         return res
     }
+
+    /** Find reference table in model */
+    ReferenceVerticaTableSpec findReferenceTable(String name) { findModelObject(name) as ReferenceVerticaTableSpec }
 
     @Override
     String toString() { "referenceVerticaTables('${dslNameObject?:'unregister'}')" }

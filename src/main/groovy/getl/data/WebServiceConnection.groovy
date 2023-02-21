@@ -91,6 +91,19 @@ class WebServiceConnection extends FileConnection implements UserLogins {
     /** Automatic data capture from a web service when reading rows */
     void setAutoCaptureFromWeb(Boolean value) { params.autoCaptureFromWeb = value }
 
+    /** Default timestamp with timezone mask */
+    @SuppressWarnings('SpellCheckingInspection')
+    static public String defaultTimestampWithTzFullMask = 'yyyy-MM-dd\'T\'HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]X'
+    /** Default timestamp with timezone mask for format */
+    @SuppressWarnings('SpellCheckingInspection')
+    static public String defaultTimestampWithTzFullMaskFormat = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSX'
+
+    /** Format for timestamp with timezone fields */
+    @Override
+    String formatTimestampWithTz(Boolean formatValue = false) {
+        return formatTimestampWithTz?:((formatValue)?defaultTimestampWithTzFullMaskFormat:defaultTimestampWithTzFullMask)
+    }
+
     @Override
     Map<String, Object> attributes() { super.attributes() + webVars }
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.FileConnection
+import getl.driver.Driver
 import getl.exception.ConnectionError
 import getl.exception.ModelError
 import getl.exception.RequiredParameterError
@@ -14,6 +15,7 @@ import getl.models.sub.DatasetsModel
 import getl.proc.sub.ExecutorListElement
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -23,6 +25,7 @@ import groovy.transform.stc.SimpleType
  * Mapping tables model
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class MapTables extends DatasetsModel<MapTableSpec> {
     /** Repository connection name for source datasets */
@@ -238,6 +241,20 @@ class MapTables extends DatasetsModel<MapTableSpec> {
                 linkTo(elem.destination as String)
             }
             mapTable(elem.source as String, cl)
+        }
+    }
+
+    /**
+     * Find table in model
+     */
+    MapTableSpec findMapTable(String name) { findModelObject(name) as MapTableSpec }
+
+    @Override
+    void doneModel() {
+        super.doneModel()
+        usedDatasets.each { node ->
+            if (node.destinationName != null && node.destination.connection.driver.isSupport(Driver.Support.CONNECT))
+                node.destination.connection.connected = false
         }
     }
 }

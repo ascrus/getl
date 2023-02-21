@@ -31,7 +31,7 @@ class RepositoryTest extends TestDsl {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
         def rep = new RepositoryConnections(dslCreator: getl)
-        assertEquals(26, rep.listClasses.size())
+        assertEquals(27, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
         assertNull(rep.find(new H2Connection()))

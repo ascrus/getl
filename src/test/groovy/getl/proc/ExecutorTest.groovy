@@ -193,6 +193,8 @@ class ExecutorTest extends GetlTest {
             }
 
             System.gc()
+            pause(1000)
+            System.gc()
             assertEquals(1, sessions.countRow())
             def heapSizeFinish = Runtime.runtime.totalMemory()
             logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)} free: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"

@@ -70,7 +70,7 @@ class FlowBaseSpec extends BaseSpec {
     @JsonIgnore
     Boolean getIsProcessed() { isProcessed }
 
-    private final Map<String, FieldStatistic> statistics = new HashMap<String, FieldStatistic>()
+    private Map<String, FieldStatistic> statistics = new HashMap<String, FieldStatistic>()
     /** Processed fields statistics */
     @JsonIgnore
     Map<String, FieldStatistic> getStatistics() { statistics }
@@ -85,6 +85,7 @@ class FlowBaseSpec extends BaseSpec {
             throw new ExceptionGETL('Required "process" code!')
 
         Flow flow = new Flow(ownerObject as Getl)
+        statistics = flow.statistics
         countRow = 0
         errorsDataset = null
         processRowScript = null
@@ -94,7 +95,6 @@ class FlowBaseSpec extends BaseSpec {
         countRow = flow.countRow
         errorsDataset = flow.errorsDataset
         processRowScript = flow.scriptMap
-        statistics.putAll(flow.statistics)
     }
 
     /**

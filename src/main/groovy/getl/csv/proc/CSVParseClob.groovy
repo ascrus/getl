@@ -24,9 +24,8 @@ class CSVParseClob extends CellProcessorAdaptor implements StringCellProcessor {
     <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
-		if (!(value instanceof String)) {
+		if (!(value instanceof String))
 			throw new SuperCsvCellProcessorException(String, value, context, this)
-		}
 
 		return next.execute(value, context)
 	}

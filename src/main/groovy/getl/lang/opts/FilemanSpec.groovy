@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.lang.opts
 
 import getl.exception.DslError

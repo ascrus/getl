@@ -1,4 +1,5 @@
 //file:noinspection GrMethodMayBeStatic
+//file:noinspection DuplicatedCode
 package getl.vertica
 
 import getl.jdbc.sub.BulkLoadMapping
@@ -36,7 +37,6 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('createView', ['privileges'])
 		methodParams.register('createSchema', ['authorization', 'privileges'])
 		methodParams.register('dropSchema', ['cascade'])
-		methodParams.register('prepareImportFields', ['convertToUtf'])
 	}
 
 	@Override
@@ -94,6 +94,10 @@ class VerticaDriver extends JDBCDriver {
 	String defaultConnectURL () {
 		return 'jdbc:vertica://{host}/{database}'
 	}
+
+	/** Current Vertica connection */
+	@SuppressWarnings('unused')
+	VerticaConnection getCurrentVerticaConnection() { connection as VerticaConnection }
 
 	@Override
 	protected List<Map> getIgnoreWarning () {
@@ -673,14 +677,11 @@ class VerticaDriver extends JDBCDriver {
 
 	/**
 	 * Process field to suitable Vertica field types
-	 * @param convertToUtf convert length of text fields to store utf 8 encoding
 	 */
-	static void ProcessField(Field field, Boolean convertToUtf = true) {
+	protected void prepareImportField(Field field) {
 		if (field.type == Field.stringFieldType) {
 			if ((field.length?:0) == 0)
 				field.length = 255
-			else if (convertToUtf)
-				field.length = field.length * 2
 		}
 		else if (field.type in [Field.textFieldType, Field.blobFieldType]) {
 			if (field.length <= 65000)
@@ -711,10 +712,13 @@ class VerticaDriver extends JDBCDriver {
 	 * Convert Oracle table fields to suitable Vertica field types
 	 * @param field source field
 	 */
-	static void ProcessOracleField(Field field) {
+	protected void prepareImportOracleField(Field field) {
 		if (field.type == Field.dateFieldType)
 			field.type = Field.datetimeFieldType
 	}
+
+	@Override
+	protected Boolean lengthTextFieldsAsBytes() { true }
 
 	/**
 	 * Preparing import fields from another dataset<br><br>
@@ -726,7 +730,6 @@ class VerticaDriver extends JDBCDriver {
 	 *     <li>resetDefault: reset default value</li>
 	 *     <li>resetCheck: reset check expression</li>
 	 *     <li>resetCompute: reset compute expression</li>
-	 *     <li>convertToUtf: increase the length of text fields for storage encoded in UTF8 (true by default)</li>
 	 *</ul>
 	 * @param dataset source
 	 * @param importParams import options
@@ -737,13 +740,12 @@ class VerticaDriver extends JDBCDriver {
 		def res = super.prepareImportFields(dataset, importParams)
 
 		if (!(dataset instanceof VerticaTable)) {
-			def convertToUtf = BoolUtils.IsValue(importParams.convertToUtf, true)
 			def isOracle = (dataset.connection.driver instanceof OracleDriver)
 
 			res.each { field ->
-				ProcessField(field, convertToUtf)
+				prepareImportField(field)
 				if (isOracle)
-					ProcessOracleField(field)
+					prepareImportOracleField(field)
 			}
 		}
 

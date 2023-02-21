@@ -16,6 +16,7 @@ import getl.utils.BoolUtils
 import getl.utils.CloneUtils
 import getl.utils.FileUtils
 import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -25,6 +26,7 @@ import groovy.transform.stc.SimpleType
  * Reference files model
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** List of reference files */
@@ -182,7 +184,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         name: "Download reference file \"$fileName\" from \"$source\" to local directory",
                         objectName: 'file', debug: true).run {
                     source.download(modelFile.filePath)
-                    return 1
+                    return 1L
                 }
                 try {
                     dest.changeDirectoryToRoot()
@@ -197,14 +199,14 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                                 name: "Upload reference file \"$fileName\" from local directory to \"$dest\"",
                                 objectName: 'file', debug: true).run {
                             dest.upload(fileName)
-                            return 1
+                            return 1L
                         }
                     }
 
                     if (unpackCommand != null) {
                         def cmdOut = new StringBuilder(), cmdErr = new StringBuilder()
                         def cmdUnpack = FileUtils.TransformFilePath(unpackCommand, false, dslCreator)
-                        def cmdText = StringUtils.EvalMacroString(cmdUnpack, modelVars + modelFile.objectVars + [file: fileName])
+                        def cmdText = StringUtils.EvalMacroString(cmdUnpack, modelVars + modelFile.objectVars + ([file: fileName] as Map<String, Object>))
                         def cmdMan = (!isLocalUnpack)?dest:new FileManager(rootPath: source.localDirectory)
                         if (isLocalUnpack)
                             cmdMan.connect()
@@ -225,7 +227,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                                     dslCreator.logging.dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
                                     throw err
                                 }
-                                return 1
+                                return 1L
                             }
                             cmdMan.removeFile(fileName)
                             if (isLocalUnpack) {
@@ -260,4 +262,14 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
     @Override
     String toString() { "referenceFiles('${dslNameObject?:'unregister'}')" }
+
+    /** Find reference file in model */
+    ReferenceFileSpec findReferenceFile(String name) { findModelObject(name) as ReferenceFileSpec }
+
+    @Override
+    void doneModel() {
+        super.doneModel()
+        if (destinationManagerName != null && destinationManager.connected)
+            destinationManager.disconnect()
+    }
 }

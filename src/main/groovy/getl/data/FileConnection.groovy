@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -88,11 +89,13 @@ class FileConnection extends Connection {
 	String path() { FileUtils.EvalFilePath(path, attributes(), false) }
 	
 	/** Code page for connection files */
-	String getCodePage() { params.codePage as String }
+	String getCodePage() { super.codePage }
 	/** Code page for connection files */
-	void setCodePage(String value) { params.codePage = value }
+	void setCodePage(String value) {
+		super.setCodePage(value)
+	}
 	/** Code page for connection files */
-	String codePage() { codePage?:'utf-8' }
+	String codePage() { super.codePage() }
 
 	/** Auto create path if not exists */
 	Boolean getCreatePath() { ConvertUtils.Object2Boolean(params.createPath) }
@@ -164,14 +167,16 @@ class FileConnection extends Connection {
 	/** Format for datetime fields */
 	void setFormatDateTime(String value) { params.formatDateTime = value }
 	/** Format for datetime fields */
-	String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
+	String formatDateTime(Boolean formatValue = false) { formatDateTime?:((formatValue)?DateUtils.defaultDateTimeMaskFormat:DateUtils.defaultDateTimeMask) }
 
 	/** Format for timestamp with timezone fields */
 	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
 	/** Format for timestamp with timezone fields */
 	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
 	/** Format for timestamp with timezone fields */
-	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzFullMask }
+	String formatTimestampWithTz(Boolean formatValue = false) {
+		return formatTimestampWithTz?:((formatValue)?DateUtils.defaultTimestampWithTzFullMaskFormat:DateUtils.defaultTimestampWithTzFullMask)
+	}
 
 	/** Use the same date and time format */
 	String getUniFormatDateTime() { params.uniFormatDateTime as String }

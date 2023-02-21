@@ -13,6 +13,7 @@ import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import oracle.sql.TIMESTAMPTZ
 import org.h2.value.ValueTimestampTimeZone
+import org.junit.Ignore
 import org.junit.Test
 
 import java.sql.Timestamp
@@ -91,13 +92,19 @@ class OracleDriverTest extends JDBCDriverProto {
 			}
 			ds.retrieveFields()
 			//ds.field.each { println it }
-			assertEquals([name: 'ID', type: 'NUMERIC', typeName: 'NUMBER', length: 38, precision: 0, isNull: false, isKey: true, ordKey: 1], ds.fieldByName('id').toMap())
+			assertEquals([name: 'ID', type: 'NUMERIC', typeName: 'NUMBER', length: 38, precision: 0, isNull: false, isKey: true, ordKey: 1, charOctetLength: 22],
+					ds.fieldByName('id').toMap())
 			assertEquals(6, ds.field.size())
-			assertEquals([name: 'NAME', type: 'STRING', typeName: 'VARCHAR2', length: 50, isNull: false], ds.fieldByName('name').toMap())
-			assertEquals([name: 'D1', type: 'DATETIME', typeName: 'DATE', isNull: false], ds.fieldByName('d1').toMap())
-			assertEquals([name: 'D2', type: 'DATETIME', typeName: 'TIMESTAMP(6)', isNull: false], ds.fieldByName('d2').toMap())
-			assertEquals([name: 'D3', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP(6) WITH TIME ZONE', isNull: false], ds.fieldByName('d3').toMap())
-			assertEquals([name: 'D4', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP(6) WITH LOCAL TIME ZONE', isNull: false], ds.fieldByName('d4').toMap())
+			assertEquals([name: 'NAME', type: 'STRING', typeName: 'VARCHAR2', length: 50, isNull: false, charOctetLength: 50],
+					ds.fieldByName('name').toMap())
+			assertEquals([name: 'D1', type: 'DATETIME', typeName: 'DATE', isNull: false, charOctetLength: 7],
+					ds.fieldByName('d1').toMap())
+			assertEquals([name: 'D2', type: 'DATETIME', typeName: 'TIMESTAMP(6)', isNull: false, charOctetLength: 11],
+					ds.fieldByName('d2').toMap())
+			assertEquals([name: 'D3', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP(6) WITH TIME ZONE', isNull: false, charOctetLength: 13],
+					ds.fieldByName('d3').toMap())
+			assertEquals([name: 'D4', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP(6) WITH LOCAL TIME ZONE', isNull: false, charOctetLength: 11],
+					ds.fieldByName('d4').toMap())
 
 			ds.truncate()
 
@@ -115,12 +122,17 @@ class OracleDriverTest extends JDBCDriverProto {
 			def rows = ds.rows()
 			//ds.field.each { println it }
 			assertEquals(6, ds.field.size())
-			assertEquals([name: 'ID', type: 'NUMERIC', typeName: 'NUMBER', length: 38, precision: 0, isNull: false, columnClassName: 'java.math.BigDecimal'], ds.fieldByName('id').toMap())
-			assertEquals([name: 'NAME', type: 'STRING', typeName: 'VARCHAR2', length: 50, isNull: false, columnClassName: 'java.lang.String'], ds.fieldByName('name').toMap())
+			assertEquals([name: 'ID', type: 'NUMERIC', typeName: 'NUMBER', length: 38, precision: 0, isNull: false, columnClassName: 'java.math.BigDecimal'],
+					ds.fieldByName('id').toMap())
+			assertEquals([name: 'NAME', type: 'STRING', typeName: 'VARCHAR2', length: 50, isNull: false, columnClassName: 'java.lang.String'],
+					ds.fieldByName('name').toMap())
 			assertEquals([name: 'D1', type: 'DATETIME', typeName: 'DATE', isNull: false, columnClassName: 'java.sql.Timestamp'], ds.fieldByName('d1').toMap())
-			assertEquals([name: 'D2', type: 'DATETIME', typeName: 'TIMESTAMP', isNull: false, columnClassName: 'oracle.sql.TIMESTAMP'], ds.fieldByName('d2').toMap())
-			assertEquals([name: 'D3', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP WITH TIME ZONE', isNull: false, columnClassName: 'oracle.sql.TIMESTAMPTZ'], ds.fieldByName('d3').toMap())
-			assertEquals([name: 'D4', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP WITH LOCAL TIME ZONE', isNull: false, columnClassName: 'oracle.sql.TIMESTAMPLTZ'], ds.fieldByName('d4').toMap())
+			assertEquals([name: 'D2', type: 'DATETIME', typeName: 'TIMESTAMP', isNull: false, columnClassName: 'oracle.sql.TIMESTAMP'],
+					ds.fieldByName('d2').toMap())
+			assertEquals([name: 'D3', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP WITH TIME ZONE', isNull: false, columnClassName: 'oracle.sql.TIMESTAMPTZ'],
+					ds.fieldByName('d3').toMap())
+			assertEquals([name: 'D4', type: 'TIMESTAMP_WITH_TIMEZONE', typeName: 'TIMESTAMP WITH LOCAL TIME ZONE', isNull: false, columnClassName: 'oracle.sql.TIMESTAMPLTZ'],
+					ds.fieldByName('d4').toMap())
 
 			(1..9).each { num ->
 				def r = rows[num - 1]
@@ -180,6 +192,38 @@ class OracleDriverTest extends JDBCDriverProto {
 					assertEquals(dt, r.d3)
 					assertEquals(dt, r.d4)
 				}
+			}
+		}
+	}
+
+	@Test
+	@Ignore
+	void testCopyRows() {
+		Getl.Dsl {
+			def tab = oracleTable {
+				useConnection (con as OracleConnection)
+				schemaName = 'DEVELOPER'
+				tableName = 'GETL_TEST_LIMIT'
+				retrieveFields()
+			}
+
+			println '--- TAB ---'
+			tab.eachRow { row ->
+				println row
+			}
+
+			def tab1 = tab.cloneDatasetConnection() as OracleTable
+			tab1.tap {
+				tableName = 'GETL_TEST_LIMIT_NEW'
+				create(ifNotExists: true)
+				truncate()
+			}
+
+			etl.copyRows(tab, tab1)
+
+			println '--- TAB1 ---'
+			tab1.eachRow { row ->
+				println row
 			}
 		}
 	}

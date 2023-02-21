@@ -3,6 +3,7 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.exception.DatasetError
 import getl.exception.ModelError
 import getl.exception.RequiredParameterError
@@ -23,6 +24,7 @@ import getl.utils.EMailer
 import getl.utils.StringUtils
 import groovy.time.Duration
 import groovy.time.TimeCategory
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -163,7 +165,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param queryName
      * @return rule specification
      */
-    MonitorRuleSpec findRule(String queryName) { findModelObject(queryName) }
+    MonitorRuleSpec findRule(String queryName) { findModelObject(queryName) as MonitorRuleSpec }
 
     /**
      * Define monitor source table
@@ -621,4 +623,13 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
     @Override
     String toString() { "monitorRules('${dslNameObject?:'unregister'}')" }
+
+    @Override
+    void doneModel() {
+        super.doneModel()
+        usedRules.each { node ->
+            if (node.queryName != null && node.query.connection.driver.isSupport(Driver.Support.CONNECT))
+                node.query.connection.connected = false
+        }
+    }
 }

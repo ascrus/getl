@@ -136,6 +136,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * @param nullAsValue encoding null as specified value for bulkload copy type
      * @return reference data was copied
      */
+    @SuppressWarnings('DuplicatedCode')
     Boolean copyFromDataset(Boolean onlyForEmpty = true, Dataset source = null, Boolean bulkLoad = false, String nullAsValue = null) {
         bulkLoad = BoolUtils.IsValue(bulkLoad)
         if (source == null && bulkLoad)
@@ -234,6 +235,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * @param nullAsValue encoding null as specified value for bulkload copy type
      * @return reference data was copied
      */
+    @SuppressWarnings('DuplicatedCode')
     Boolean copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, String copyType = etlCopyType, String nullAsValue = null) {
         if (externalConnection == null)
             throw new NullPointerException('Required external connection!')

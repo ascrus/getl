@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.impala
 
 import getl.csv.CSVConnection
@@ -6,7 +7,6 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.DatasetError
-import getl.exception.ExceptionGETL
 import getl.exception.IOFilesError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
@@ -100,8 +100,8 @@ class ImpalaDriver extends JDBCDriver {
         return res
     }
 
-    /** Impala connection */
-    ImpalaConnection getImpalaConnection() { connection as ImpalaConnection } /* TODO: added to all drivers */
+    /** Current Impala connection */
+    ImpalaConnection getCurrentImpalaConnection() { connection as ImpalaConnection }
 
     @Override
     protected String createDatasetAddColumn(Field f, Boolean useNativeDBType) {
@@ -212,7 +212,7 @@ class ImpalaDriver extends JDBCDriver {
     }
 
     @Override
-    String getSysDualTable() { impalaConnection.dualTable?:sqlExpressionValue('sysDualTable') }
+    String getSysDualTable() { currentImpalaConnection.dualTable?:sqlExpressionValue('sysDualTable') }
 
     @Override
     protected void initOpenWrite(JDBCDataset dataset, Map params, String query) {
@@ -428,5 +428,12 @@ class ImpalaDriver extends JDBCDriver {
                 fileMan.disconnect()
             }
         }
+    }
+
+    @Override
+    void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+        super.prepareCsvTempFile(source, csvFile)
+        csvFile.formatDateTime = 'yyyy-MM-dd HH:mm:ss.SSS'
+        csvFile.formatTimestampWithTz = 'yyyy-MM-dd HH:mm:ss.SSSx'
     }
 }

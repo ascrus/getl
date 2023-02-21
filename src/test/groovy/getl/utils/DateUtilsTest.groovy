@@ -1,24 +1,23 @@
 package getl.utils
 
+import getl.test.GetlTest
 import groovy.time.TimeCategory
-import org.apache.groovy.dateutil.extensions.DateUtilExtensions
 import org.junit.Test
-
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import java.time.format.ResolverStyle
 
 /**
  * @author Alexsey Konstantinov
  */
-class DateUtilsTest extends getl.test.GetlTest {
+class DateUtilsTest extends GetlTest {
     final def textDate = '2016-12-31'
     final def textDateTime = '2016-12-31 23:58:59.000'
 
-    Date getExampleDate() { DateUtils.ParseDate(textDate) }
-    Date getExampleDateTime() { DateUtils.ParseDateTime(textDateTime) }
-    Date getExampleDateHour() { DateUtils.ParseDateTime(textDateTime.substring(0, 13) + ':00:00.000') }
-    Date getExampleDateHourMinute() { DateUtils.ParseDateTime(textDateTime.substring(0, 16) + ':00.000') }
+    java.sql.Date getExampleDate() { DateUtils.ParseSQLDate(textDate) }
+    Timestamp getExampleDateTime() { DateUtils.ParseSQLTimestamp(textDateTime) }
+    Timestamp getExampleDateHour() { DateUtils.ParseSQLTimestamp(textDateTime.substring(0, 13) + ':00:00.000') }
+    Timestamp getExampleDateHourMinute() { DateUtils.ParseSQLTimestamp(textDateTime.substring(0, 16) + ':00.000') }
 
     @Test
     void testNow() {

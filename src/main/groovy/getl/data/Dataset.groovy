@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -207,7 +208,7 @@ class Dataset implements GetlRepository, WithConnection {
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
 		if (value != null) {
-			GetlValidate.IsRegister(this)
+			GetlValidate.IsRegister(this, false)
 			def con = dslCreator.connection(value)
 			setConnection(con)
 		}
@@ -1892,16 +1893,18 @@ class Dataset implements GetlRepository, WithConnection {
 	enum EqualFieldStatus {ADDED, CHANGED, DELETED}
 
 	/**
-	 * Compare fields with another dataset
+	 * Compare dataset fields with another fields
 	 * @param compared compared fields
 	 * @param softComparison compare for compatibility of storing values in fields
 	 * @param compareExpressions compare default, check and compute expressions
 	 * @param compareLength compare field length
-	 * @return comparison result (field name: comparison status)
+	 * @return comparison result (field_name: comparison status)
 	 */
 	Map<String, EqualFieldStatus> compareFields(List<Field> compared, Boolean softComparison = false, Boolean compareExpressions = true,
 												Boolean compareLength = true) {
-		def res = new HashMap<String, EqualFieldStatus>()
+		return CompareFields(this, field, compared, softComparison, compareExpressions, compareLength)
+
+		/*def res = new HashMap<String, EqualFieldStatus>()
 		def curDriver = connection?.driver
 		compared.each { field ->
 			def curField = fieldByName(field.name)
@@ -1915,6 +1918,40 @@ class Dataset implements GetlRepository, WithConnection {
 		def comparedNames = compared.collect { field -> field.name.toLowerCase() }
 		_field.findAll { field -> !(field.name.toLowerCase() in comparedNames) }.each { field ->
 			res.put(field.name, EqualFieldStatus.ADDED)
+		}
+
+		return res*/
+	}
+
+	/**
+	 * Compare fields with another fields
+	 * @param dataset original dataset
+	 * @param sourced sourced fields
+	 * @param compared compared fields
+	 * @param softComparison compare for compatibility of storing values in fields
+	 * @param compareExpressions compare default, check and compute expressions
+	 * @param compareLength compare field length
+	 * @return comparison result (field_name: comparison status)
+	 */
+	static Map<String, EqualFieldStatus> CompareFields(Dataset dataset, List<Field> sourced, List<Field> compared, Boolean softComparison = false,
+													   Boolean compareExpressions = true, Boolean compareLength = true) {
+		def res = new HashMap<String, EqualFieldStatus>()
+		def curDriver = dataset?.connection?.driver
+		def comparedNames = [] as List<String>
+		compared.each { field ->
+			def fieldName = field.name.toLowerCase()
+			def curField = sourced.find { sourceField -> sourceField.name.toLowerCase() == fieldName }
+			if (curField == null)
+				res.put(fieldName, EqualFieldStatus.DELETED)
+			else if (!curField.compare(field, softComparison, compareExpressions,
+					compareLength && (curDriver != null)?curDriver.allowCompareLength(dataset, curField, field):true))
+				res.put(fieldName, EqualFieldStatus.CHANGED)
+
+			comparedNames << fieldName
+		}
+
+		sourced.findAll { field -> !(field.name.toLowerCase() in comparedNames) }.each { field ->
+			res.put(field.name.toLowerCase(), EqualFieldStatus.ADDED)
 		}
 
 		return res

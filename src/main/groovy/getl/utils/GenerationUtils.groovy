@@ -235,7 +235,7 @@ $body
 			// Source field
 			def sourceField = destField.clone() as Field
 			// Format field
-			String format = dataset.fieldFormat(destField)
+			String format = dataset.fieldFormat(destField, true)
 
 			// Add using format
 			if (destField.type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
@@ -528,14 +528,36 @@ $body
 						r = "${sourceValue}.toString()"
 						break
 
-					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+					case Field.dateFieldType:
 						formatField = (formatField != null)?formatField:DateFormat(source.type)
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(source.type, formatField)
-							r = "getl.utils.DateUtils.FormatDate($dfn, $sourceValue as Date)"
+							r = "getl.utils.DateUtils.FormatDate($dfn, getl.utils.ConvertUtils.Object2Date($sourceValue))"
 						}
 						else
-							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as Date)"
+							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", getl.utils.ConvertUtils.Object2Time($sourceValue))"
+
+						break
+
+					case Field.timeFieldType:
+						formatField = (formatField != null)?formatField:DateFormat(source.type)
+						if (datetimeFormatterName != null) {
+							def dfn = FormatterName(source.type, formatField)
+							r = "getl.utils.DateUtils.FormatDate($dfn, getl.utils.ConvertUtils.Object2Time($sourceValue))"
+						}
+						else
+							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", getl.utils.ConvertUtils.Object2Time($sourceValue))"
+
+						break
+
+					case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						formatField = (formatField != null)?formatField:DateFormat(source.type)
+						if (datetimeFormatterName != null) {
+							def dfn = FormatterName(source.type, formatField)
+							r = "getl.utils.DateUtils.FormatDate($dfn, getl.utils.ConvertUtils.Object2Timestamp($sourceValue))"
+						}
+						else
+							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", getl.utils.ConvertUtils.Object2Timestamp($sourceValue))"
 
 						break
 
@@ -567,17 +589,17 @@ $body
 						break
 
 					case Field.integerFieldType:
-						r = "($sourceValue as Integer) != 0"
+						r = "getl.utils.ConvertUtils.Object2Int($sourceValue) != 0"
 
 						break
 
 					case Field.bigintFieldType:
-						r = "($sourceValue as Long) != 0"
+						r = "getl.utils.ConvertUtils.Object2Long($sourceValue) != 0L"
 
 						break
 
 					case Field.numericFieldType:
-						r = "($sourceValue as java.math.BigDecimal).toDouble() != 0"
+						r = "getl.utils.ConvertUtils.Object2BigDecimal($sourceValue).toDouble() != 0"
 
 						break
 
@@ -607,15 +629,15 @@ $body
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "Integer.valueOf($sourceValue as String)"
+							r = "Integer.valueOf(${sourceValue}.toString())"
 						else {
 							//noinspection GroovyFallthrough
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard': case 'comma':
-									r = "Integer.valueOf($sourceValue as String)"
+									r = "Integer.valueOf(${sourceValue}.toString())"
 									break
 								case 'report': case 'report_with_comma':
-									r = "Integer.valueOf(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
+									r = "Integer.valueOf((${sourceValue}.toString()).replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -625,22 +647,22 @@ $body
 						break
 
 					case Field.bigintFieldType:
-						r = "($sourceValue as Long).intValue()"
+						r = "getl.utils.ConvertUtils.Object2Long($sourceValue).intValue()"
 
 						break
 
 					case Field.doubleFieldType:
-						r = "($sourceValue as Double).intValue()"
+						r = "getl.utils.ConvertUtils.Object2Double($sourceValue).intValue()"
 
 						break
 
 					case Field.numericFieldType:
-						r = "($sourceValue as java.math.BigDecimal).intValue()"
+						r = "getl.utils.ConvertUtils.Object2BigDecimal($sourceValue).intValue()"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "($sourceValue as Boolean)?1:0"
+						r = "getl.utils.ConvertUtils.Object2Boolean($sourceValue)?1:0"
 
 						break
 
@@ -660,15 +682,15 @@ $body
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "Long.valueOf($sourceValue as String)"
+							r = "Long.valueOf(${sourceValue}.toString())"
 						else {
 							//noinspection GroovyFallthrough
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard': case 'comma':
-									r = "Long.valueOf($sourceValue as String)"
+									r = "Long.valueOf(${sourceValue}.toString())"
 									break
 								case 'report': case 'report_with_comma':
-									r = "Long.valueOf(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
+									r = "Long.valueOf((${sourceValue}.toString()).replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -678,27 +700,37 @@ $body
 						break
 
 					case Field.integerFieldType:
-						r = "Long.valueOf($sourceValue as Integer)"
+						r = "Long.valueOf(getl.utils.ConvertUtils.Object2Int($sourceValue))"
 
 						break
 
 					case Field.doubleFieldType:
-						r = "($sourceValue as Double).longValue()"
+						r = "getl.utils.ConvertUtils.Object2Double($sourceValue).longValue()"
 
 						break
 
 					case Field.numericFieldType:
-						r = "($sourceValue as java.math.BigDecimal).longValue()"
+						r = "getl.utils.ConvertUtils.Object2BigDecimal($sourceValue).longValue()"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "new Long(($sourceValue)?1:0)"
+						r = "new Long((getl.utils.ConvertUtils.Object2Boolean($sourceValue))?1:0)"
 
 						break
 
-					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "($sourceValue as Date).time"
+					case Field.dateFieldType:
+						r = "getl.utils.ConvertUtils.Object2Date($sourceValue).time"
+
+						break
+
+					case Field.timeFieldType:
+						r = "getl.utils.ConvertUtils.Object2Time($sourceValue).time"
+
+						break
+
+					case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						r = "getl.utils.ConvertUtils.Object2Timestamp($sourceValue).time"
 
 						break
 
@@ -718,20 +750,20 @@ $body
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "new BigDecimal($sourceValue as String)"
+							r = "new BigDecimal(${sourceValue}.toString())"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard':
-									r = "new BigDecimal($sourceValue as String)"
+									r = "new BigDecimal(${sourceValue}.toString())"
 									break
 								case 'comma':
-									r = "new BigDecimal(($sourceValue as String).replace(',', '.'))"
+									r = "new BigDecimal((${sourceValue}.toString()).replace(',', '.'))"
 									break
 								case 'report':
-									r = "new BigDecimal(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
+									r = "new BigDecimal((${sourceValue}.toString()).replace(' ', '').replace('\u00A0', ''))"
 									break
 								case 'report_with_comma':
-									r = "new BigDecimal(($sourceValue as String).replace(',', '.').replace(' ', '').replace('\u00A0', ''))"
+									r = "new BigDecimal((${sourceValue}.toString()).replace(',', '.').replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -741,22 +773,22 @@ $body
 						break
 
 					case Field.integerFieldType:
-						r = "new java.math.BigDecimal($sourceValue as Integer)"
+						r = "new java.math.BigDecimal(getl.utils.ConvertUtils.Object2Int($sourceValue))"
 
 						break
 
 					case Field.bigintFieldType:
-						r = "new java.math.BigDecimal($sourceValue as Long)"
+						r = "new java.math.BigDecimal(getl.utils.ConvertUtils.Object2Long($sourceValue as Long))"
 
 						break
 
 					case Field.doubleFieldType:
-						r = "new java.math.BigDecimal($sourceValue as Double)"
+						r = "new java.math.BigDecimal(getl.utils.ConvertUtils.Object2Double($sourceValue))"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "new BigDecimal(($sourceValue as Boolean)?1:0)"
+						r = "new BigDecimal((getl.utils.ConvertUtils.Object2Boolean($sourceValue))?1:0)"
 
 						break
 
@@ -775,20 +807,20 @@ $body
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "Double.valueOf($sourceValue as String)"
+							r = "Double.valueOf(${sourceValue}.toString())"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard':
-									r = "Double.valueOf($sourceValue as String)"
+									r = "Double.valueOf(${sourceValue}.toString())"
 									break
 								case 'comma':
-									r = "Double.valueOf(($sourceValue as String).replace(',', '.'))"
+									r = "Double.valueOf((${sourceValue}.toString()).replace(',', '.'))"
 									break
 								case 'report':
-									r = "Double.valueOf(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
+									r = "Double.valueOf((${sourceValue}.toString()).replace(' ', '').replace('\u00A0', ''))"
 									break
 								case 'report_with_comma':
-									r = "Double.valueOf(($sourceValue as String).replace(',', '.').replace(' ', '').replace('\u00A0', ''))"
+									r = "Double.valueOf((${sourceValue}.toString()).replace(',', '.').replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -798,22 +830,22 @@ $body
 						break
 
 					case Field.integerFieldType:
-						r = "Double.valueOf($sourceValue as Integer)"
+						r = "Double.valueOf(getl.utils.ConvertUtils.Object2Int($sourceValue))"
 
 						break
 
 					case Field.bigintFieldType:
-						r = "Double.valueOf($sourceValue as Long)"
+						r = "Double.valueOf(getl.utils.ConvertUtils.Object2Long($sourceValue))"
 
 						break
 
 					case Field.numericFieldType:
-						r = "($sourceValue as java.math.BigDecimal).doubleValue()"
+						r = "(getl.utils.ConvertUtils.Object2BigDecimal($sourceValue)).doubleValue()"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "new Double(($sourceValue as Boolean)?1:0)"
+						r = "new Double((getl.utils.ConvertUtils.Object2Boolean($sourceValue))?1:0)"
 
 						break
 
@@ -829,30 +861,35 @@ $body
 				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.dateFieldType:
-						r = sourceValue
+						r = "getl.utils.ConvertUtils.Object2Date($sourceValue)"
 
 						break
-					case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "new java.sql.Date(($sourceValue as Date).time)"
+					case Field.timeFieldType:
+						r = "new java.sql.Date(getl.utils.ConvertUtils.Object2Time($sourceValue).time)"
+
+						break
+
+					case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						r = "new java.sql.Date(getl.utils.ConvertUtils.Object2Timestamp($sourceValue).time)"
 
 						break
 
 					case Field.stringFieldType:
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(dest.type, formatField)
-							r = "getl.utils.DateUtils.ParseSQLDate($dfn, $sourceValue as String, false)"
+							r = "getl.utils.DateUtils.ParseSQLDate($dfn, ${sourceValue}.toString(), false)"
 						}
 						else
-							r =  "getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as String, false)"
+							r =  "getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", ${sourceValue}.toString(), false)"
 
 						break
 
 					case Field.bigintFieldType:
 						formatField = (formatField?:'@java').toLowerCase()
 						if (formatField == '@java')
-							r =  "new java.sql.Date(($sourceValue as Long))"
+							r =  "new java.sql.Date(getl.utils.ConvertUtils.Object2Long($sourceValue))"
 						else if (formatField == '@unix')
-							r =  "new java.sql.Date(($sourceValue as Long) * 1000)"
+							r =  "new java.sql.Date(getl.utils.ConvertUtils.Object2Long($sourceValue) * 1000)"
 						else
 							throw new ExceptionGETL("Unknown format value \"$formatField\" for field \"${source.name}\"!")
 
@@ -869,31 +906,36 @@ $body
 
 				//noinspection GroovyFallthrough
 				switch (source.type) {
-					case Field.datetimeFieldType:
-						r = sourceValue
+					case Field.datetimeFieldType:  case Field.timestamp_with_timezoneFieldType:
+						r = "getl.utils.ConvertUtils.Object2Timestamp($sourceValue)"
 
 						break
-					case Field.dateFieldType: case Field.timeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "new java.sql.Timestamp(($sourceValue as Date).time)"
+					case Field.dateFieldType:
+						r = "new java.sql.Timestamp(getl.utils.ConvertUtils.Object2Date($sourceValue).time)"
+
+						break
+
+					case Field.timeFieldType:
+						r = "new java.sql.Timestamp(getl.utils.ConvertUtils.Object2Time($sourceValue).time)"
 
 						break
 
 					case Field.stringFieldType:
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(dest.type, formatField)
-							r = "getl.utils.DateUtils.ParseSQLTimestamp($dfn, $sourceValue as String, false)"
+							r = "getl.utils.DateUtils.ParseSQLTimestamp($dfn, ${sourceValue}.toString(), false)"
 						}
 						else
-							r =  "getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as String, false)"
+							r =  "getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", ${sourceValue}.toString(), false)"
 
 						break
 
 					case Field.bigintFieldType:
 						formatField = (formatField?:'@java').toLowerCase()
 						if (formatField == '@java')
-							r =  "new java.sql.Timestamp(($sourceValue as Long))"
+							r =  "new java.sql.Timestamp(getl.utils.ConvertUtils.Object2Long($sourceValue))"
 						else if (formatField == '@unix')
-							r =  "new java.sql.Timestamp(($sourceValue as Long) * 1000)"
+							r =  "new java.sql.Timestamp(getl.utils.ConvertUtils.Object2Long($sourceValue) * 1000)"
 						else
 							throw new ExceptionGETL("Unknown format value \"$formatField\" for field \"${source.name}\"!")
 
@@ -912,31 +954,36 @@ $body
 				//noinspection GroovyFallthrough
 				switch (source.type) {
 					case Field.timeFieldType:
-						r = sourceValue
+						r = "getl.utils.ConvertUtils.Object2Time($sourceValue)"
 
 						break
 
-					case Field.dateFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "new java.sql.Time(($sourceValue as Date).time)"
+					case Field.dateFieldType:
+						r = "new java.sql.Time(getl.utils.ConvertUtils.Object2Date($sourceValue).time)"
+
+						break
+
+					case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						r = "new java.sql.Time(getl.utils.ConvertUtils.Object2Timestamp($sourceValue).time)"
 
 						break
 
 					case Field.stringFieldType:
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(dest.type, formatField)
-							r = "getl.utils.DateUtils.ParseSQLTime($dfn, $sourceValue as String, false)"
+							r = "getl.utils.DateUtils.ParseSQLTime($dfn, ${sourceValue}.toString(), false)"
 						}
 						else
-							r =  "getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as String, false)"
+							r =  "getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", ${sourceValue}.toString(), false)"
 
 						break
 
 					case Field.bigintFieldType:
 						formatField = (formatField?:'@java').toLowerCase()
 						if (formatField == '@java')
-							r =  "new java.sql.Time(($sourceValue as Long))"
+							r =  "new java.sql.Time(getl.utils.ConvertUtils.Object2Long($sourceValue))"
 						else if (formatField == '@unix')
-							r =  "new java.sql.Time(($sourceValue as Long) * 1000)"
+							r =  "new java.sql.Time(getl.utils.ConvertUtils.Object2Long($sourceValue) * 1000)"
 						else
 							throw new ExceptionGETL("Unknown format value \"$formatField\" for field \"${source.name}\"!")
 
@@ -956,7 +1003,7 @@ $body
 						break
 
 					case Field.stringFieldType:
-						r = "($sourceValue as String).bytes)"
+						r = "(${sourceValue}.toString()).bytes)"
 
 						break
 
@@ -974,7 +1021,7 @@ $body
 						break
 
 					case Field.stringFieldType:
-						r = "java.util.UUID.fromString($sourceValue as String)"
+						r = "java.util.UUID.fromString(${sourceValue}.toString())"
 
 						break
 
@@ -1113,7 +1160,7 @@ $body
 	@CompileStatic
 	static def GenerateValue(Field f, Boolean lengthTextInBytes, def rowID) {
 		def result
-		def l = f.length?:1
+		def l = f.length?:32
 		
 		if (f.isNull && GenerateBoolean())
 			return null
@@ -1180,10 +1227,10 @@ $body
 				result = new java.sql.Timestamp(GenerateDateTime().time)
 				break
             case Field.textFieldType:
-				result = GenerateString((l < 65536)?l:65536)
+				result = GenerateString((l < 8000)?l:8000)
                 break
             case Field.blobFieldType:
-				l = (l?:65536).intdiv(2) as Integer
+				l = ((l < 8000)?l:8000).intdiv(2) as Integer
                 result = GenerateString(l).bytes
                 break
 			case Field.uuidFieldType:
@@ -1198,7 +1245,7 @@ $body
 
 				break
 			default:
-				l = (l?:65536).intdiv(2) as Integer
+				l = ((l < 8000)?l:8000).intdiv(2) as Integer
 				result = GenerateString(l)
 		}
 
@@ -2094,30 +2141,30 @@ sb << """
 		//noinspection GroovyFallthrough
 		switch (fieldType) {
 			case types.BIGINT:
-				res = "if ($value != null) _getl_stat.setLong($paramNum, ($value) as Long) else _getl_stat.setNull($paramNum, java.sql.Types.BIGINT)"
+				res = "if ($value != null) _getl_stat.setLong($paramNum, getl.utils.ConvertUtils.Object2Long($value)) else _getl_stat.setNull($paramNum, java.sql.Types.BIGINT)"
 				break
 				 
 			case types.INTEGER:
-				res = "if ($value != null) _getl_stat.setInt($paramNum, ($value) as Integer) else _getl_stat.setNull($paramNum, java.sql.Types.INTEGER)"
+				res = "if ($value != null) _getl_stat.setInt($paramNum, getl.utils.ConvertUtils.Object2Int($value)) else _getl_stat.setNull($paramNum, java.sql.Types.INTEGER)"
 				break
 			
 			case types.STRING:
-				res = "if ($value != null) _getl_stat.setString($paramNum, ($value) as String) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+				res = "if ($value != null) _getl_stat.setString($paramNum, ($value).toString()) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
 				break
 			
 			case types.BOOLEAN: case types.BIT:
 				if (!driver.isSupport(Driver.Support.BOOLEAN))
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"BOOLEAN\" type in field \"${field.name}\"!")
 
-				res = "if ($value != null) _getl_stat.setBoolean($paramNum, ($value) as Boolean) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
+				res = "if ($value != null) _getl_stat.setBoolean($paramNum, getl.utils.ConvertUtils.Object2Boolean($value)) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
 				break
 				
 			case types.DOUBLE:
-				res = "if ($value != null) _getl_stat.setDouble($paramNum, ($value) as Double) else _getl_stat.setNull($paramNum, java.sql.Types.DOUBLE)"
+				res = "if ($value != null) _getl_stat.setDouble($paramNum, getl.utils.ConvertUtils.Object2Double($value)) else _getl_stat.setNull($paramNum, java.sql.Types.DOUBLE)"
 				break
 				
 			case types.NUMERIC:
-				res = "if ($value != null) _getl_stat.setBigDecimal($paramNum, ($value) as BigDecimal) else _getl_stat.setNull($paramNum, java.sql.Types.DECIMAL)"
+				res = "if ($value != null) _getl_stat.setBigDecimal($paramNum, getl.utils.ConvertUtils.Object2BigDecimal($value)) else _getl_stat.setNull($paramNum, java.sql.Types.DECIMAL)"
 				break
 				
 			case types.BLOB:
@@ -2132,38 +2179,38 @@ sb << """
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"CLOB\" type in field \"${field.name}\"!")
 
 				if (driver.textReadAsObject()) {
-					res = "clobWrite(_getl_con, _getl_stat, $paramNum, ($value) as String)"
+					res = "clobWrite(_getl_con, _getl_stat, $paramNum, ($value)?.toString())"
 				}
 				else {
-					res = "if ($value != null) _getl_stat.setString($paramNum, ($value) as String) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+					res = "if ($value != null) _getl_stat.setString($paramNum, ($value).toString()) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
 				}
 				break
 				
 			case types.DATE:
 				if (!driver.isSupport(Driver.Support.DATE))
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"DATE\" type in field \"${field.name}\"!")
-				res = "if ($value != null) _getl_stat.setDate($paramNum, new java.sql.Date(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.DATE)"
+				res = "if ($value != null) _getl_stat.setDate($paramNum, getl.utils.ConvertUtils.Object2Date(${value})) else _getl_stat.setNull($paramNum, java.sql.Types.DATE)"
 				break
 				
 			case types.TIME:
 				if (!driver.isSupport(Driver.Support.TIME))
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"TIME\" type in field \"${field.name}\"!")
-				res = "if ($value != null) _getl_stat.setTime($paramNum, new java.sql.Time(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIME)"
+				res = "if ($value != null) _getl_stat.setTime($paramNum, getl.utils.ConvertUtils.Object2Time(${value})) else _getl_stat.setNull($paramNum, java.sql.Types.TIME)"
 				break
 				
 			case types.TIMESTAMP:
 				if (!driver.isSupport(Driver.Support.TIMESTAMP))
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"TIMESTAMP\" type in field \"${field.name}\"!")
-				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
+				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, getl.utils.ConvertUtils.Object2Timestamp(${value})) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
 				break
 
 			case types.TIMESTAMP_WITH_TIMEZONE:
 				if (!driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE))
 					throw new ExceptionGETL("${driver.class.simpleName} driver not support \"TIMESTAMP WITH TIMEZONE\" type in field \"${field.name}\"!")
 				if (!driver.timestampWithTimezoneConvertOnWrite())
-					res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
+					res = "if ($value != null) _getl_stat.setTimestamp($paramNum, getl.utils.ConvertUtils.Object2Timestamp(${value})) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
 				else
-					res = "if ($value != null) _getl_stat.setObject($paramNum, ((${value}) as Date).toInstant().atZone(java.time.ZoneId.of('UTC')).toLocalDateTime()) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
+					res = "if ($value != null) _getl_stat.setObject($paramNum, getl.utils.ConvertUtils.Object2Timestamp(${value}).toInstant().atZone(java.time.ZoneId.of('UTC')).toLocalDateTime()) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
 				break
 
 			case types.ARRAY:

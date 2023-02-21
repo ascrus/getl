@@ -267,4 +267,13 @@ class BaseUserCode extends Getl {
     static Object nullIf(def value, def nullValue) {
         return (value != nullValue)?value:null
     }
+
+    /**
+     * Compare value with conditions and return matching condition
+     * @param args list of compared values and conditions and values: compared value, condition1, value1, condition2, value2, ...
+     * @return matching value or null if nothing matched
+     */
+    static Object decode(Object ...args) {
+       return ListUtils.Decode(args)
+    }
 }

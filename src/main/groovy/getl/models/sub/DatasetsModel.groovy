@@ -5,12 +5,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.Field
-import getl.data.FileDataset
 import getl.data.sub.AttachData
+import getl.driver.Driver
+import getl.exception.ExceptionGETL
 import getl.exception.ExceptionModel
-import getl.jdbc.QueryDataset
+import getl.exception.ModelError
+import getl.exception.RequiredParameterError
+import getl.jdbc.HistoryPointManager
 import getl.jdbc.TableDataset
-import getl.jdbc.ViewDataset
+import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
@@ -21,6 +25,7 @@ import groovy.transform.stc.SimpleType
  * Datasets model
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 @InheritConstructors
 class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Repository connection name */
@@ -30,7 +35,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Set the name of the connection */
     protected void useModelConnection(String connectionName) {
         if (connectionName == null)
-            throw new ExceptionModel('Connection name required!')
+            throw new RequiredParameterError(this, 'connectionName')
         dslCreator.connection(connectionName)
 
         saveParamValue('modelConnectionName', connectionName)
@@ -42,9 +47,9 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Set connection */
     protected void useModelConnection(Connection connection) {
         if (connection == null)
-            throw new ExceptionModel('Connection required!')
+            throw new RequiredParameterError(this, 'connection')
         if (connection.dslNameObject == null)
-            throw new ExceptionModel('Connection not registered in repository!')
+            throw new ModelError(this, '#dsl.model.connection_not_registered', [connection: connection])
 
         saveParamValue('modelConnectionName', connection.dslNameObject)
     }
@@ -67,8 +72,77 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Use specified dataset of processing history */
     void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
 
+    @Override
+    TableDataset getStoryTable() { super.storyTable }
+
+    private final Object synchIncrementDataset = new Object()
+
+    /** Dataset name for storing incremental values of model tables */
+    @Synchronized('synchIncrementDataset')
+    String getIncrementDatasetName() { params.incrementDatasetName as String }
+    /** Dataset name for storing incremental values of model tables */
+    @Synchronized('synchIncrementDataset')
+    void setIncrementDatasetName(String value) { useIncrementDatasetName(value) }
+    /** Dataset for storing incremental values of model tables */
+    @SuppressWarnings('DuplicatedCode')
+    @Synchronized('synchIncrementDataset')
+    @JsonIgnore
+    TableDataset getIncrementDataset() {
+        if (incrementDatasetName == null)
+            return null
+
+        checkGetlInstance()
+        def dsName = modelIncrementDatasetName()
+        Dataset res
+        try {
+            res = dslCreator.jdbcTable(dsName)
+        }
+        catch (ExceptionGETL e) {
+            dslCreator.logError("Model \"$this\" has invalid increment dataset \"$dsName\"", e)
+            throw e
+        }
+
+        return res
+    }
+    /** Dataset for storing incremental values of model tables */
+    @Synchronized('synchIncrementDataset')
+    void setIncrementDataset(TableDataset value) { useIncrementDataset(value) }
+    /** Dataset name for storing incremental values of model tables */
+    String modelIncrementDatasetName() {
+        def extVars = (dslCreator?.scriptExtendedVars)?:([:] as Map<String, Object>)
+        return StringUtils.EvalMacroString(incrementDatasetName, modelVars + extVars, false)
+    }
+
+    /** Use the specified dataset to store incremental values of model tables */
+    @Synchronized('synchIncrementDataset')
+    void useIncrementDatasetName(String datasetName) {
+        checkGetlInstance()
+        saveParamValue('incrementDatasetName', datasetName)
+        usedDatasets.each { node ->
+            node._historyPointObject = null
+        }
+    }
+    /** Use the specified dataset to store incremental values of model tables */
+    @Synchronized('synchIncrementDataset')
+    void useIncrementDataset(TableDataset dataset) {
+        if (dataset != null && dataset.dslNameObject == null)
+            throw new ModelError(this, '#dsl.model.dataset_not_registered', [dataset: dataset])
+
+        saveParamValue('incrementDatasetName', dataset?.dslNameObject)
+    }
+
+    /** Return history point manager by table model */
+    @Synchronized('synchIncrementDataset')
+    HistoryPointManager historyPointTable(String modelTableName) {
+        if (incrementDatasetName == null)
+            return null
+
+        def spec = dataset(modelTableName)
+        return spec.historyPointObject
+    }
+
     /** Create new model table */
-    protected DatasetSpec newDataset(String tableName) {
+    DatasetSpec newDataset(String tableName) {
         def modelSpecClass = usedModelClass()
         def constr = modelSpecClass.getConstructor([DatasetsModel, String].toArray([] as Class[]))
         def res = constr.newInstance(this, tableName) as T
@@ -81,7 +155,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * @param datasetName name dataset in repository
      * @param cl parameter description code
      */
-    protected T dataset(String datasetName, Closure cl) {
+    protected T dataset(String datasetName, Closure cl = null) {
         if (datasetName == null) {
             def owner = DetectClosureDelegate(cl)
             if (owner instanceof Dataset)
@@ -89,7 +163,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         }
 
         if (datasetName == null)
-            throw new ExceptionModel("No repository dataset name specified!")
+            throw new RequiredParameterError(this, 'datasetName')
 
         checkModel(false)
 
@@ -97,8 +171,12 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         def dslDatasetName = table.dslNameObject
 
         def parent = (usedDatasets.find { t -> t.datasetName == dslDatasetName })
-        if (parent == null)
-            parent = addSpec(newDataset(dslDatasetName)) as T
+        if (parent == null) {
+            if (cl != null)
+                parent = addSpec(newDataset(dslDatasetName)) as T
+            else
+                throw new ModelError(this, '#dsl.model.table_not_found', [table: datasetName])
+        }
 
         parent.runClosure(cl)
 
@@ -112,7 +190,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      */
     protected T useDataset(Dataset dataset, Closure cl = null) {
         if (dataset.dslNameObject == null)
-            throw new ExceptionModel("The dataset \"$dataset\" is not registered in the repository!")
+            throw new ModelError(this, '#dsl.model.dataset_not_registered', [dataset: dataset])
         this.dataset(dataset.dslNameObject, cl)
     }
 
@@ -132,22 +210,22 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         }
     }
 
-    private final Object synchModel = synchObjects
 
     /**
      * Check model
      * @param checkObjects check model object parameters
      * @param checkNodeCode additional validation code for model objects
      */
-    @Synchronized('synchModel')
+    @Override
     protected void checkModel(Boolean checkObjects = true, Closure cl = null) {
         if (modelConnectionName == null)
-            throw new ExceptionModel("The model connection is not specified!")
+            throw new ModelError(this, '#dsl.model.non_source_connection')
 
         super.checkModel(checkObjects, cl)
+
+        checkDataset(modelIncrementDatasetName())
     }
 
-    @Synchronized('synchModel')
     @Override
     protected void checkObject(BaseSpec obj) {
         super.checkObject(obj)
@@ -157,104 +235,79 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         if (node.parentDatasetName == null)
             checkModelDataset(node.modelDataset)
 
-        def hp = (node.historyPointName != null)?dslCreator.findHistorypoint(node.historyPointName):null
-        if (node.historyPointName != null) {
-            if (hp == null)
-                throw new ExceptionModel("Increment point manager \"${node.historyPointName}\" not found!")
-            hp.checkManager()
-        }
         if (node.incrementFieldName != null) {
+            if (incrementDatasetName == null)
+                throw new ExceptionModel(this, '#dsl.model.datasets.non_increment_dataset', [table: node.datasetName])
+
             def field = node.modelDataset.fieldByName(node.incrementFieldName)
             if (field == null)
-                throw new ExceptionModel("Increment field \"${node.incrementFieldName}\" was not found in dataset \"${node.modelDataset}\"!")
-            if (hp != null) {
-                switch (hp.sourceType) {
-                    case hp.identitySourceType:
-                        if (!(field.type in [Field.integerFieldType, Field.bigintFieldType, Field.numericFieldType]))
-                            throw new ExceptionModel("Field \"${node.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
-                                    "type \"${hp.sourceType}\" of incremental manager \"$hp\" (allowed INTEGER, BIGINT and NUMERIC types)!")
-                        break
-                    case hp.timestampSourceType:
-                        if (!(field.type in [Field.dateFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]))
-                            throw new ExceptionModel("Field \"${node.incrementFieldName}\" has type \"${field.type}\", which is not compatible with " +
-                                    "type \"${hp.sourceType}\" of incremental manager \"$hp\" (allowed DATE, DATETIME and TIMESTAMP_WITH_TIMEZONE types)!")
-                }
-            }
+                throw new ExceptionModel(this, '#dsl.model.datasets.increment_field_not_found', [field: node.incrementFieldName, table: node.datasetName])
+
+            if (!(field.type in [Field.integerFieldType, Field.bigintFieldType, Field.numericFieldType, Field.dateFieldType, Field.datetimeFieldType,
+                                 Field.timestamp_with_timezoneFieldType]))
+                throw new ExceptionModel(this, '#dsl.model.datasets.invalid_increment_field_type',
+                        [field: node.incrementFieldName, type: field.type.toString(), table: node.datasetName])
         }
 
-        if (node.partitionsDatasetName != null) {
-            def ds = dslCreator.findDataset(node.partitionsDatasetName)
-            if (ds == null)
-                throw new ExceptionModel("Dataset of the list of partitions \"${node.partitionsDatasetName}\" not found for model table \"${node.datasetName}\"!")
-
-            checkDataset(node.partitionsDataset)
-        }
+        if (node.partitionsDatasetName != null)
+            checkDataset(node.partitionsDatasetName)
 
         if (node.parentDatasetName != null) {
             if (findModelObject(node.parentDatasetName) == null)
-                throw new ExceptionModel("Parent dataset \"${node.parentDatasetName}\" for model table \"${node.datasetName}\" " +
-                        "not defined in model!")
+                throw new ModelError(this, '#dsl.model.datasets.non_parent_dataset', [table: node.datasetName])
             def parentDataset = node.parentDataset
             checkDataset(parentDataset)
             if (!(node.modelDataset instanceof AttachData))
-                throw new ExceptionModel("Dataset \"${node.datasetName}\" does not support working with local data and cannot be used as a child dataset in a model!")
+                throw new ModelError(this, '#dsl.model.datasets.invalid_child_dataset', [table: node.datasetName])
             if (node.parentLinkFieldName != null) {
                 if (!parentDataset.field.isEmpty() && parentDataset.fieldByName(node.parentLinkFieldName) == null)
-                    throw new ExceptionModel("Link field \"${node.parentLinkFieldName}\" not found in parent dataset \"${node.parentDatasetName}\" " +
-                            "for model table \"${node.datasetName}\"!")
+                    throw new ModelError(this, '#dsl.model.datasets.link_field_not_found',
+                            [field: node.parentLinkFieldName, table: node.datasetName, parent_table: node.parentDatasetName])
             }
         }
         else if (node.parentLinkFieldName != null)
-            throw new ExceptionModel("When specifying the link field \"${node.parentLinkFieldName}\" in \"parentLinkFieldName\", " +
-                    "needed set parent dataset for model table \"${node.datasetName}\"!")
+            throw new ModelError(this, '#dsl.model.datasets.required_parent_table', [table: node.datasetName, field: node.parentLinkFieldName])
     }
 
-    @Synchronized('synchModel')
-    protected checkDataset(Dataset ds) {
-        if (ds == null)
+    @Override
+    protected void checkModelDataset(Dataset ds, String connectionName = null) {
+        super.checkModelDataset(ds, connectionName?:modelConnectionName)
+    }
+
+    /** Clear incremental points for model tables */
+    void clearIncrementDataset(List<String> includedTables = null, List<String> excludedTables = null) {
+        if (incrementDatasetName == null)
             return
 
-        if (dslCreator.findDataset(ds) == null)
-            throw new ExceptionModel("Dataset \"$ds\" is not registered in the repository!")
+        if (!incrementDataset.exists)
+            return
 
-        def dsn = ds.dslNameObject
-        if (ds.connection == null)
-            throw new ExceptionModel("The connection for the dataset \"$dsn\" [$ds] is not specified!")
-
-        if (ds instanceof TableDataset) {
-            def jdbcTable = ds as TableDataset
-            if (jdbcTable.tableName == null)
-                throw new ExceptionModel("Table \"$dsn\" [$ds] does not have a table name!")
-        }
-        else if (ds instanceof ViewDataset) {
-            def viewTable = ds as ViewDataset
-            if (viewTable.tableName == null)
-                throw new ExceptionModel("View \"$dsn\" [$ds] does not have a table name!")
-        }
-        else if (ds instanceof QueryDataset) {
-            def queryTable = ds as QueryDataset
-            if (queryTable.query == null && queryTable.scriptFilePath == null)
-                throw new ExceptionModel("Query \"$dsn\" [$ds] does not have a sql script!")
-        }
-        else if (ds instanceof FileDataset) {
-            def fileTable = ds as FileDataset
-            if (fileTable.fileName == null)
-                throw new ExceptionModel("File dataset \"$dsn\" [$ds] does not have a file name!")
+        def listObjects = findModelObjects(includedTables, excludedTables)
+        listObjects.each { tabName ->
+            def node = this.findModelObject(tabName) as DatasetSpec
+            if (node.incrementFieldName != null)
+                node.historyPointObject.clearValue()
         }
     }
 
-    /**
-     * Check dataset model
-     * @param ds checking dataset
-     * @param connectionName the name of the connection used for the dataset
-     */
-    @Synchronized('synchModel')
-    protected void checkModelDataset(Dataset ds, String connectionName = null) {
-        if (ds == null)
-            throw new ExceptionModel('No dataset specified!')
+    @Override
+    void doneModel() {
+        super.doneModel()
+        usedDatasets.each { node ->
+            if (node.datasetName != null && node.modelDataset.connection.driver.isSupport(Driver.Support.CONNECT))
+                node.modelDataset.connection.connected = false
 
-        def dsn = ds.dslNameObject
-        if (ds.connection.dslNameObject != (connectionName?:modelConnectionName))
-            throw new ExceptionModel("The connection of dataset \"$dsn\" does not match the specified connection to the model connection!")
+            if (node._historyPointObject != null)
+                node._historyPointObject.currentJDBCConnection?.connected = false
+
+            if (node.partitionsDatasetName != null && node.partitionsDataset.connection.driver.isSupport(Driver.Support.CONNECT))
+                node.partitionsDataset.connection.connected = false
+        }
+
+        if (storyDatasetName != null && storyDataset.connection.driver.isSupport(Driver.Support.CONNECT))
+            storyDataset.connection.connected = false
+
+        if (modelConnectionName != null && modelConnection.driver.isSupport(Driver.Support.CONNECT))
+            modelConnection.connected = false
     }
 }

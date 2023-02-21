@@ -252,72 +252,85 @@ class JDBCDriver extends Driver {
 		if (field.type != null && field.type != Field.stringFieldType)
 			return
 
-		Field.Type res
-		
 		def t = field.dbType as Integer
 		switch (t) {
 			case Types.INTEGER: case Types.SMALLINT: case Types.TINYINT:
-				res = Field.integerFieldType
+				field.type = Field.integerFieldType
+				field.length = null
+				field.precision = null
 				break
 				
 			case Types.BIGINT:
-				res = Field.bigintFieldType
+				field.type = Field.bigintFieldType
+				field.length = null
+				field.precision = null
 				break
 			
 			case Types.CHAR: case Types.NCHAR:
 			case Types.VARCHAR: case Types.NVARCHAR:
-				res = Field.stringFieldType
+				field.type = Field.stringFieldType
 				break
 
 			case Types.LONGVARCHAR: case Types.LONGNVARCHAR: case Types.CLOB: case Types.NCLOB: case Types.SQLXML:
-				res = Field.textFieldType
+				field.type = Field.textFieldType
 				break
 
 			case Types.BOOLEAN: case Types.BIT:
-				res = Field.booleanFieldType
+				field.type = Field.booleanFieldType
+				field.length = null
+				field.precision = null
 				break
 				
 			case Types.DOUBLE: case Types.FLOAT: case Types.REAL:
-				res = Field.doubleFieldType
+				field.type = Field.doubleFieldType
 				break
 				
 			case Types.DECIMAL: case Types.NUMERIC:
-				res = Field.numericFieldType
+				field.type = Field.numericFieldType
 				break
 				
 			case Types.BLOB: case Types.VARBINARY:
 			case Types.LONGVARBINARY: case Types.BINARY:
-				res = Field.blobFieldType
+				field.type = Field.blobFieldType
 				break
 				
 			case Types.DATE:
-				res = Field.dateFieldType
+				field.type = Field.dateFieldType
+				field.length = null
+				field.precision = null
 				break
 				
 			case Types.TIME:
-				res = Field.timeFieldType
+				field.type = Field.timeFieldType
+				field.length = null
+				field.precision = null
 				break
 				
 			case Types.TIMESTAMP:
-				res = Field.datetimeFieldType
+				field.type = Field.datetimeFieldType
+				field.length = null
+				field.precision = null
 				break
 
 			case Types.TIMESTAMP_WITH_TIMEZONE:
-				res = Field.timestamp_with_timezoneFieldType
+				field.type = Field.timestamp_with_timezoneFieldType
+				field.length = null
+				field.precision = null
 				break
 
 			case Types.ROWID:
-				res = Field.rowidFieldType
+				field.type = Field.rowidFieldType
+				field.length = null
+				field.precision = null
 				break
 
 			case Types.ARRAY:
-				res = Field.arrayFieldType
+				field.type = Field.arrayFieldType
 				break
 				
 			default:
-				res = Field.objectFieldType
+				field.type = Field.objectFieldType
 		}
-		field.type = res
 	}
 
 	Object type2dbType(Field.Type type) {
@@ -395,7 +408,8 @@ class JDBCDriver extends Driver {
 			DATE: [name: 'date', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			TIME: [name: 'time', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			DATETIME: [name: 'timestamp', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER/*,
+									  format: 'timestamp{(%length%)} with time zone'*/],
 			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65000, usePrecision: sqlTypeUse.NEVER],
 			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65000, usePrecision: sqlTypeUse.NEVER],
 			UUID: [name: 'uuid', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
@@ -431,7 +445,8 @@ class JDBCDriver extends Driver {
 		def defaultLength = rule.defaultLength
 		def usePrecision = rule.usePrecision?:sqlTypeUse.NEVER
 		def defaultPrecision = rule.defaultPrecision
-		
+		def formatField = (rule.format as String)?:'{type}{(%length%)}'
+
 		def length = field.length?:defaultLength
 		def precision = (length == null)?null:(field.precision?:defaultPrecision)
 		
@@ -439,20 +454,19 @@ class JDBCDriver extends Driver {
 			throw new ConnectionError(connection, '#dataset.field_length_required', [type: type, field: name])
 		if (usePrecision == sqlTypeUse.ALWAYS && precision == null)
 			throw new ConnectionError(connection, '#dataset.field_prec_required', [type: type, field: name])
-		
-		StringBuilder res = new StringBuilder()
-		res << name
+
+		def vars = [type: name] as Map<String, Object>
+		if (field.arrayType != null)
+			vars.array = field.arrayType
 		if (useLength != sqlTypeUse.NEVER && length != null) {
-			res << '('
-			res << length
+			def lenStr = length.toString()
 			if (usePrecision != sqlTypeUse.NEVER && precision != null) {
-				res << ', '
-				res << precision
+				lenStr += (', ' + precision)
 			}
-			res << ')'
+			vars.length = lenStr
 		}
 		
-		res.toString()
+		return StringUtils.EvalMacroString(formatField, rule + vars)
 	}
 
 	@Override
@@ -930,6 +944,7 @@ class JDBCDriver extends Driver {
 					f.dbType = rs.getInt("DATA_TYPE")
 					f.typeName = rs.getString("TYPE_NAME")
 					f.length = rs.getInt("COLUMN_SIZE")
+					f.charOctetLength = rs.getInt("CHAR_OCTET_LENGTH")
 					if (f.length <= 0) f.length = null
 					f.precision = rs.getInt("DECIMAL_DIGITS")
 					if (f.precision < 0) f.precision = null
@@ -2241,6 +2256,14 @@ $sql
 		return fields
 	}
 
+	@SuppressWarnings('SpellCheckingInspection')
+	@Override
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		super.prepareCsvTempFile(source, csvFile)
+		csvFile.formatDateTime = 'yyyy-MM-dd HH:mm:ss.SSSSSS'
+		csvFile.formatTimestampWithTz = 'yyyy-MM-dd HH:mm:ss.SSSSSSx'
+	}
+
 	/**
 	 * Prepare on bulk load operator
 	 * @param source
@@ -3371,11 +3394,39 @@ FROM {source} {after_from}'''
 		executeCommand(sqlExpressionValue('ddlRestartSequence', qp))
 	}
 
+	/** For text fields, the size is specified in bytes. */
+	protected Boolean lengthTextFieldsAsBytes() { jdbcConnection.charLengthAsBytes }
+
 	@Override
 	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
 		def res = super.prepareImportFields(dataset, importParams)
+		def curAsBytes = this.lengthTextFieldsAsBytes()
+		def curCharSize = jdbcConnection.codePageMaxBytesPerChar()
 		if (dataset instanceof FileDataset) {
-			res.each { field -> field.alias = null }
+			res.each { field ->
+				field.alias = null
+				if (curAsBytes && (field.type in [Field.stringFieldType, Field.textFieldType]))
+					field.length = field.length * curCharSize
+			}
+		}
+		else if (dataset instanceof JDBCDataset && curAsBytes) {
+			def otherAsBytes = (dataset.connection as JDBCConnection).currentJDBCDriver.lengthTextFieldsAsBytes()
+
+			res.each { field ->
+				if (!(field.type in [Field.stringFieldType, Field.textFieldType]))
+					return
+
+				def len = field.length
+				if (len == null || len == 0)
+					return
+
+				if (field.charOctetLength != null && field.charOctetLength > field.length)
+					len = field.charOctetLength
+				else
+					len = len * ((!otherAsBytes)?curCharSize:1)
+
+				field.length = len
+			}
 		}
 
 		return res

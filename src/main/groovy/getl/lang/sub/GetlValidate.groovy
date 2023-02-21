@@ -7,8 +7,8 @@ import getl.exception.DslError
  * @author Alexsey Konstantinov
  */
 class GetlValidate {
-    static void IsRegister(GetlRepository object) {
-        if (object.dslCreator == null || object.dslNameObject == null)
+    static void IsRegister(GetlRepository object, Boolean checkDslName = true) {
+        if (object.dslCreator == null || (checkDslName && object.dslNameObject == null))
             throw new DslError(object, '#dsl.object.not_register')
     }
 }

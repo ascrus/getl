@@ -8,10 +8,12 @@ import getl.utils.ListUtils
 import getl.utils.MapUtils
 import getl.utils.Path
 import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 
 import java.sql.Timestamp
 
+@CompileStatic
 abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     BaseSpec(BaseModel model) {
         super(model)

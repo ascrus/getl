@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.config
 
 import getl.exception.IOFilesError

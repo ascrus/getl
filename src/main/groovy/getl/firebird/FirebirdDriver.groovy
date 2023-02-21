@@ -84,6 +84,10 @@ class FirebirdDriver extends JDBCDriver {
         }
     }
 
+    /** Current Firebird connection */
+    @SuppressWarnings('unused')
+    FirebirdConnection getCurrentFirebirdConnection() { connection as FirebirdConnection }
+
     @Override
     Boolean blobReadAsObject(Field field = null) { return false }
 }

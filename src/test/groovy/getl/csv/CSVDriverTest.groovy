@@ -1049,8 +1049,8 @@ class CSVDriverTest extends GetlTest {
             csvTemp { ds ->
                 useConnection csvTempConnection {
                     locale = 'ce-RU'
-                    formatDateTime = 'dd MMM yyyy HH:mm:ss'
-                    formatDate = 'dd MMM yyyy'
+                    formatDateTime = 'd MMM yyyy HH:mm:ss'
+                    formatDate = 'd MMM yyyy'
                     decimalSeparator = ','
                     fieldDelimiter = ';'
                 }
@@ -1067,6 +1067,18 @@ class CSVDriverTest extends GetlTest {
                     assertNotNull(r.date)
                     assertNotNull(r.value)
                     assertEquals(i * 100 + i / 1000, r.value)
+
+                    switch (i) {
+                        case 1:
+                            assertEquals(DateUtils.ParseSQLDate('2013-12-31'), r.date)
+                            break
+                        case 2:
+                            assertEquals(DateUtils.ParseSQLDate('2013-11-23'), r.date)
+                            break
+                        case 3:
+                            assertEquals(DateUtils.ParseSQLDate('2014-01-01'), r.date)
+                            break
+                    }
                 }
                 assertEquals(3, readRows)
             }

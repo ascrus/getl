@@ -492,6 +492,7 @@ ORDER BY t1.id"""
                 useConnection con
                 fileName = 'file.split'
                 header = false
+                blobAsPureHex = true
 
                 writeOpts {
                     def count = 0

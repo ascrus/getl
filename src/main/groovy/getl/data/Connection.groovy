@@ -1,11 +1,12 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.exception.ConfigError
 import getl.exception.ConnectionError
-import getl.exception.ExceptionGETL
+import getl.exception.DatasetError
 import getl.exception.IncorrectParameterError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
@@ -15,6 +16,10 @@ import getl.utils.*
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+
+import java.nio.charset.Charset
+import java.nio.charset.IllegalCharsetNameException
+import java.nio.charset.UnsupportedCharsetException
 
 /**
  * Base connection class
@@ -358,17 +363,37 @@ class Connection implements GetlRepository {
 			throw new IncorrectParameterError(this, '#params.great_zero', 'timeoutConnectionAttempts')
 		params.timeoutConnectionAttempts = value
 	}
+
+	/** Code page for connection files */
+	protected String getCodePage() { params.codePage as String }
+	/** Code page for connection files */
+	protected void setCodePage(String value) {
+		if (value != null) {
+			try {
+				def cp = Charset.forName(value)
+				value = cp.name()
+			}
+			catch (IllegalCharsetNameException  ignored) {
+				throw new DatasetError(this, '#connection.invalid_codepage', [code_page: value])
+			}
+			catch (UnsupportedCharsetException ignored) {
+				throw new DatasetError(this, '#connection.illegal_codepage', [code_page: value])
+			}
+		}
+
+		params.codePage = value
+	}
+	/** Code page for connection files */
+	protected String codePage() { codePage?:'utf-8' }
+	/** Max bytes per char with connection code page */
+	Integer codePageMaxBytesPerChar() {
+		return Charset.forName(codePage()).newEncoder().maxBytesPerChar()
+	}
 	
 	/** Print write rows to console */
 	Boolean getLogWriteToConsole() { BoolUtils.IsValue(params.logWriteToConsole, false) }
 	/** Print write rows to console */
 	void setLogWriteToConsole(Boolean value) { params.logWriteToConsole = value }
-	
-	/** Dataset class for auto create by connection */
-	/*@JsonIgnore
-	String getDataset () { params.dataset as String }*/
-	/** Dataset class for auto create by connection */
-	//void setDataset (String value) { params.dataset = value }
 
 	/** Description of connection */
 	String getDescription() { params.description as String }

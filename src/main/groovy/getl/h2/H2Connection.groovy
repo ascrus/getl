@@ -27,6 +27,8 @@ class H2Connection extends JDBCConnection {
 		connectProperty.CASE_INSENSITIVE_IDENTIFIERS = true
 		/* TODO: Now work! */
 		connectProperty.ALIAS_COLUMN_NAME = true
+
+		codePage = 'UTF-8'
 	}
 
 	/** Current H2 connection driver */

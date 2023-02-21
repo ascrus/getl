@@ -1,5 +1,6 @@
 package getl.json
 
+import getl.data.WebServiceConnection
 import getl.lang.Getl
 import getl.lang.sub.RepositoryDatasets
 import getl.test.GetlTest
@@ -10,6 +11,7 @@ import getl.utils.GenerationUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
+import javax.servlet.http.WebConnection
 import java.sql.Time
 
 @InheritConstructors
@@ -41,7 +43,7 @@ class JsonTest extends GetlTest {
                     assertEquals("Customer $i".toString(), row.name)
                     assertTrue(!(row.phones as List).isEmpty())
                     assertEquals(DateUtils.ParseDate('yyyy-MM-dd', "2020-12-13", false), row.date)
-                    assertEquals(DateUtils.ParseSQLTime('HH:mm:ss.SSS', "01:02:03.050", false), row.time)
+                    assertEquals(DateUtils.ParseSQLTime('HH:mm:ss', "01:02:03", false), row.time)
                     assertEquals(DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss.SSS', "2020-12-13T01:02:03.050", false), row.datetime)
                     assertEquals(DateUtils.ParseSQLTimestamp('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ', "2020-12-13T01:02:03.050+0300", false), row.timestamptz)
                 }
@@ -149,11 +151,11 @@ class JsonTest extends GetlTest {
     "date_java": 1609362000000,
     "date_unix": 1609362000,
     
-    "time_str": "12:13:59.000",
+    "time_str": "12:13:59",
     "time_java": 33239000,
     "time_unix": 33239,
     
-    "datetime_str": "2020-12-31 12:13:59.000",
+    "datetime_str": "2020-12-31 12:13:59.123",
     "datetime_java": 1609406039000,
     "datetime_unix": 1609406039, 
 }
@@ -175,22 +177,22 @@ class JsonTest extends GetlTest {
                 field('datetime_java') { type = datetimeFieldType; format = '@java' }
                 field('datetime_unix') { type = datetimeFieldType; format = '@unix' }
 
-                def row=  rows()[0]
+                eachRow(limit: 100) { row ->
+                    assertEquals(1, row.id)
+                    assertEquals('test', row.name)
 
-                assertEquals(1, row.id)
-                assertEquals('test', row.name)
+                    assertEquals('2020-12-31', DateUtils.FormatDate(row.date_str as Date))
+                    assertEquals('2020-12-31', DateUtils.FormatDate(row.date_java as Date))
+                    assertEquals('2020-12-31', DateUtils.FormatDate(row.date_unix as Date))
 
-                assertEquals('2020-12-31', DateUtils.FormatDate(row.date_str as Date))
-                assertEquals('2020-12-31', DateUtils.FormatDate(row.date_java as Date))
-                assertEquals('2020-12-31', DateUtils.FormatDate(row.date_unix as Date))
+                    assertEquals('12:13:59', DateUtils.FormatTime(row.time_str as Time))
+                    assertEquals('12:13:59', DateUtils.FormatTime(row.time_java as Time))
+                    assertEquals('12:13:59', DateUtils.FormatTime(row.time_unix as Time))
 
-                assertEquals('12:13:59.000', DateUtils.FormatTime(row.time_str as Time))
-                assertEquals('12:13:59.000', DateUtils.FormatTime(row.time_java as Time))
-                assertEquals('12:13:59.000', DateUtils.FormatTime(row.time_unix as Time))
-
-                assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_str as Date))
-                assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_java as Date))
-                assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_unix as Date))
+                    assertEquals('2020-12-31 12:13:59.123', DateUtils.FormatDateTime(row.datetime_str as Date))
+                    assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_java as Date))
+                    assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_unix as Date))
+                }
             }
         }
     }
@@ -210,7 +212,7 @@ class JsonTest extends GetlTest {
                 field('customer_type') { length = 10 }
                 field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
 
-                uniFormatDateTime = DateUtils.defaultTimestampWithTzFullMask
+                uniFormatDateTime = WebServiceConnection.defaultTimestampWithTzFullMaskFormat
 
                 fileName = "${TFS.systemPath}/test.json"
                 def file = new File(fileName)

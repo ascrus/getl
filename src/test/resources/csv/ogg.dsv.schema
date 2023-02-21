@@ -10,7 +10,7 @@
             "name": "TIMESTAMP",
             "type": "DATETIME",
             "typeName": "DATE",
-			"format": "yyyy-MM-dd HH:mm:ss.SSS"
+			"format": "yyyy-MM-dd HH:mm:ss.SSSSSS"
         },
 		{
             "name": "SCN",

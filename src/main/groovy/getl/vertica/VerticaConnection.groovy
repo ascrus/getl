@@ -31,6 +31,13 @@ class VerticaConnection extends JDBCConnection {
 	VerticaDriver getCurrentVerticaDriver() { driver as VerticaDriver }
 
 	@Override
+	protected void initParams() {
+		super.initParams()
+		codePage = 'UTF-8'
+		charLengthAsBytes = true
+	}
+
+	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
 		driverName = 'com.vertica.jdbc.Driver'

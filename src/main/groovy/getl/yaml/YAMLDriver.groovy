@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.yaml
 
 import getl.data.Dataset
@@ -9,7 +10,6 @@ import getl.exception.ExceptionGETL
 import getl.utils.ConvertUtils
 import getl.utils.GenerationUtils
 import getl.utils.ListUtils
-import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.yaml.YamlSlurper
@@ -39,6 +39,10 @@ class YAMLDriver extends WebServiceDriver {
     List<Driver.Operation> operations() {
         [Driver.Operation.DROP]
     }
+
+    /** Current YAML connection */
+    @SuppressWarnings('unused')
+    YAMLConnection getCurrentYAMLConnection() { connection as YAMLConnection }
 
     @Override
     List<Field> fields(Dataset dataset) {

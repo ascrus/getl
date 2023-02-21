@@ -93,12 +93,12 @@ class JDBCTest extends GetlTest {
                 sourceName = 'source2'
                 sourceType = timestampSourceType
                 saveMethod = insertSave
-                def dt1 = new Date()
+                def dt1 = DateUtils.ParseSQLTimestamp('yyyy-MM-dd HH:mm:ss.SSSSSS', '2023-01-31 23:59:59.999999')
                 saveValue dt1
                 assertEquals(dt1, lastValue())
                 assertEquals(2, tab.countRow())
 
-                def dt2 = new Date()
+                def dt2 = DateUtils.ParseSQLTimestamp('yyyy-MM-dd HH:mm:ss.SSSSSS', '2023-02-01 01:01:01.123456')
                 saveValue dt2
                 assertEquals(dt2, lastValue())
                 assertEquals(3, tab.countRow())

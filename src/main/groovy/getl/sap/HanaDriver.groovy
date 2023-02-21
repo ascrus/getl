@@ -54,6 +54,10 @@ class HanaDriver extends JDBCDriver {
         return 'jdbc:sap://{host}/{database}'
     }
 
+    /** Current SAP Hana connection */
+    @SuppressWarnings('unused')
+    HanaConnection getCurrentHanaConnection() { connection as HanaConnection }
+
     @Override
     protected String sessionID() {
         String res = null

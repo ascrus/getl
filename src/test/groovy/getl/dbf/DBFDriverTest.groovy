@@ -15,19 +15,19 @@ class DBFDriverTest extends GetlDslTest {
             }
             dbf('dbf:cp1251', true) {
                 useConnection dbfConnection('dbf:con')
-                fileName = 'cp1251'
-                codePage = 'cp1251'
+                it.fileName = 'cp1251'
+                it.codePage = 'cp1251'
             }
 
             dbf('dbf:bdays', true) {
                 useConnection dbfConnection('dbf:con')
-                fileName = 'bdays'
+                it.fileName = 'bdays'
             }
 
             ['8c', '8b', 'f5', '30', '31'].each { n ->
                 dbf("dbf:dbase_$n", true) {
                     useConnection dbfConnection('dbf:con')
-                    fileName = "dbase_$n"
+                    it.fileName = "dbase_$n"
                 }
             }
 

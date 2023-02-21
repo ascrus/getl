@@ -1,10 +1,10 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.exception.ExceptionGETL
 import groovy.time.Duration
 import groovy.transform.CompileStatic
 import java.math.RoundingMode
-import org.apache.groovy.dateutil.extensions.DateUtilExtensions
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
@@ -25,19 +25,27 @@ import java.util.concurrent.TimeUnit
 @CompileStatic
 class DateUtils {
 	/** Zero date */
-	static public final Date zeroDate = ParseDate('0000-00-00')
+	static public final Date zeroDate = ParseDate('0001-01-01')
 
 	/** Default date mask */
 	static public String defaultDateMask = 'yyyy-MM-dd'
 	/** Default time mask */
-	static public String defaultTimeMask = 'HH:mm:ss.SSS'
+	@SuppressWarnings('SpellCheckingInspection')
+	static public String defaultTimeMask = 'HH:mm:ss'
 	/** Default datetime mask */
-	static public String defaultDateTimeMask = 'yyyy-MM-dd HH:mm:ss.SSS'
+	@SuppressWarnings('SpellCheckingInspection')
+	static public String defaultDateTimeMask = 'yyyy-MM-dd HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]'
+	/** Default datetime mask for format */
+	@SuppressWarnings('SpellCheckingInspection')
+	static public String defaultDateTimeMaskFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
 	/** Default timestamp with timezone mask */
 	@SuppressWarnings('SpellCheckingInspection')
-	static public String defaultTimestampWithTzFullMask = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZ'
+	static public String defaultTimestampWithTzFullMask = 'yyyy-MM-dd HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]x'
+	/** Default timestamp with timezone mask for format */
+	@SuppressWarnings('SpellCheckingInspection')
+	static public String defaultTimestampWithTzFullMaskFormat = 'yyyy-MM-dd HH:mm:ss.SSSx'
 	/** Default timestamp with timezone mask */
-	static public String defaultTimestampWithTzSmallMask = 'yyyy-MM-dd HH:mm:ssX'
+	static public String defaultTimestampWithTzSmallMask = 'yyyy-MM-dd HH:mm:ssx'
 	/** Original time zone */
 	static public final String origTimeZone = TimeZone.default.toZoneId().id
 
@@ -60,7 +68,8 @@ class DateUtils {
 	 * @param timeZone time zone properties (using "name")
 	 */
 	static void init(Map timeZone) {
-		if (timeZone == null || timeZone.isEmpty()) return
+		if (timeZone == null || timeZone.isEmpty())
+			return
 
 		if (timeZone.name != null) {
 			setDefaultTimeZone(timeZone.name as String)
@@ -225,6 +234,7 @@ class DateUtils {
 	 * @param locale used region locale
 	 * @return formatter
 	 */
+	@SuppressWarnings('DuplicatedCode')
 	static DateTimeFormatter BuildDateTimeFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT, String locale = null) {
 		def loc = (locale != null)?StringUtils.NewLocale(locale):Locale.getDefault(Locale.Category.FORMAT)
 		return new DateTimeFormatterBuilder()
@@ -243,6 +253,7 @@ class DateUtils {
 	 * @param locale used region locale
 	 * @return formatter
 	 */
+	@SuppressWarnings('DuplicatedCode')
 	static DateTimeFormatter BuildDateFormatter(String format, ResolverStyle resolverStyle = ResolverStyle.STRICT, String locale = null) {
 		def loc = (locale != null)?StringUtils.NewLocale(locale):Locale.getDefault(Locale.Category.FORMAT)
 		return new DateTimeFormatterBuilder()
@@ -467,42 +478,54 @@ class DateUtils {
 
 	/** Convert sql timestamp to date */
 	static Date SQLDate2Date(Timestamp value) {
-		return value
+		if (value == null)
+			return null
+
+		return new Date(value.time)
 	}
 
 	/** Convert date to sql date */
 	static java.sql.Date Date2SQLDate(Date value) {
-		return new java.sql.Date(ClearTime(value).time)
+		if (value == null)
+			return null
+
+		return new java.sql.Date(value.time)
 	}
 
 	/** Convert date to sql timestamp */
 	static Timestamp Date2SQLTimestamp(Date value) {
+		if (value == null)
+			return null
+
 		return new Timestamp(value.time)
 	}
 
 	/** Convert date to sql timestamp */
 	static Time Date2SQLTime(Date value) {
+		if (value == null)
+			return null
+
 		return new Time(value.time)
 	}
 	
 	/** Current date and time */
-	static Date Now() {
-		return new Date()
+	static Timestamp Now() {
+		return new Timestamp(System.currentTimeMillis())
 	}
 
 	/** Current sql timestamp */
 	static Timestamp CurrentSQLTimestamp() {
-		return new Timestamp(new Date().time)
+		return Now()
 	}
 
 	/** Current sql date */
 	static java.sql.Date CurrentSQLDate() {
-		return new java.sql.Date(ClearTime(new Date()).time)
+		return CurrentDate()
 	}
 
 	/** Current date and time */
-	static Date getNow() {
-		return new Date()
+	static Timestamp getNow() {
+		return Now()
 	}
 
 	/** Convert date to original time zone */
@@ -519,8 +542,8 @@ class DateUtils {
 	/**
 	 * Current date without time
 	 */
-	static Date CurrentDate() {
-		return DateUtilExtensions.clearTime(Now())
+	static java.sql.Date CurrentDate() {
+		return ClearTime(new java.sql.Date(System.currentTimeMillis()))
 	}
 
 	/** Current date without time as string */
@@ -529,10 +552,10 @@ class DateUtils {
 	}
 	
 	/**
-	 * Current datetime
+	 * Current time
 	 */
-	static String CurrentTime() {
-		return DateUtilExtensions.getTimeString(Now())
+	static Time CurrentTime() {
+		return new Time(System.currentTimeMillis())
 	}
 	
 	/**
@@ -540,10 +563,18 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	static Date ClearTime(Date date) {
-		if (date == null) return null
-		Date res = new Date(date.time)
-		return DateUtilExtensions.clearTime(res)
+	static java.sql.Date ClearTime(Date date) {
+		if (date == null)
+			return null
+
+		Calendar c = Calendar.getInstance()
+		c.setTime(date)
+		c.set(Calendar.HOUR, 0)
+		c.set(Calendar.MINUTE, 0)
+		c.set(Calendar.SECOND, 0)
+		c.set(Calendar.MILLISECOND, 0)
+
+		return java.sql.Date.valueOf(c.toLocalDateTime().toLocalDate())
 	}
 	
 	/**
@@ -552,7 +583,7 @@ class DateUtils {
 	 * @param date - date value
 	 * @return
 	 */
-	static Date TruncTime(Integer part, Date date) {
+	static Timestamp TruncTime(Integer part, Date date) {
 		if (date == null) return null
 
 		Calendar c = Calendar.getInstance()
@@ -570,7 +601,7 @@ class DateUtils {
 				throw new ExceptionGETL("Unsupported type \"$part\"")
 		}
 
-		return c.getTime()
+		return Timestamp.valueOf(c.toLocalDateTime())
 	}
 
 	/**
@@ -579,7 +610,7 @@ class DateUtils {
 	 * @return modified date
 	 */
 	@SuppressWarnings('GroovyFallthrough')
-	static Date TruncTime(String part, Date date) {
+	static Timestamp TruncTime(String part, Date date) {
 		Integer partNum
 		if (part.toUpperCase() in ['HOUR', 'MINUTE', 'SECOND'])
 			part = part.toUpperCase()
@@ -602,9 +633,15 @@ class DateUtils {
 	}
 
 	/** Truncate the date to the first day of the month */
-	static Date TruncDay(Date date) {
-		if (date == null) return null
-		return ParseDate('yyyy-MM-dd', FormatDate('yyyy-MM', date) + '-01')
+	static Timestamp TruncDay(Date date) {
+		if (date == null)
+			return null
+
+		Calendar c = Calendar.getInstance()
+		c.setTime(date)
+		c.set(Calendar.DAY_OF_MONTH, 1)
+
+		return Timestamp.valueOf(c.toLocalDateTime())
 	}
 	
 	/**
@@ -614,8 +651,27 @@ class DateUtils {
 	 * @return
 	 */
 	static String FormatDate(String format, Date date) {
-		if (date == null) return null
-		return DateUtilExtensions.format(date, format)
+		if (date == null)
+			return null
+
+		def df = DateTimeFormatter.ofPattern(format)
+
+		return df.format(date.toLocalDateTime())
+	}
+
+	/**
+	 * Convert timestamp with timezone to string with format
+	 * @param format
+	 * @param date
+	 * @return
+	 */
+	static String FormatTimestampWithTz(String format, Date date) {
+		if (date == null)
+			return null
+
+		def df = DateTimeFormatter.ofPattern(format)
+
+		return df.format(date.toOffsetDateTime())
 	}
 
 	/**
@@ -625,7 +681,9 @@ class DateUtils {
 	 * @return formatted text
 	 */
 	static String FormatDate(SimpleDateFormat sdf, Date date) {
-		if (date == null) return null
+		if (date == null)
+			return null
+
 		return sdf.format(date)
 	}
 
@@ -636,8 +694,24 @@ class DateUtils {
 	 * @return formatted text
 	 */
 	static String FormatDate(DateTimeFormatter df, Date date) {
-		if (date == null) return null
+		if (date == null)
+			return null
+
 		def ld = date.toLocalDateTime()
+		return df.format(ld)
+	}
+
+	/**
+	 * Convert timestamp with timezone to string with format
+	 * @param df date formatter
+	 * @param date original date
+	 * @return formatted text
+	 */
+	static String FormatTimestampWithTz(DateTimeFormatter df, Date date) {
+		if (date == null)
+			return null
+
+		def ld = date.toOffsetDateTime()
 		return df.format(ld)
 	}
 	
@@ -664,7 +738,7 @@ class DateUtils {
 	 * @return
 	 */
 	static String FormatDateTime(Date date) {
-		return FormatDate(defaultDateTimeMask, date)
+		return FormatDate(defaultDateTimeMaskFormat, date)
 	}
 	
 	/**
@@ -699,31 +773,31 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	static Date AddDate(String dateType, Integer nb, Date date) {
+	static Timestamp AddDate(String dateType, Integer nb, Date date) {
 		if (date == null) return null
 
-		Calendar c1 = Calendar.getInstance()
-		c1.setTime(date)
+		Calendar c = Calendar.getInstance()
+		c.setTime(date)
 
 		if (dateType.equalsIgnoreCase("yyyy")) {
-			c1.add(Calendar.YEAR, nb)
+			c.add(Calendar.YEAR, nb)
 		} else if (dateType == "MM") {
-			c1.add(Calendar.MONTH, nb)
+			c.add(Calendar.MONTH, nb)
 		} else if (dateType.equalsIgnoreCase("dd")) {
-			c1.add(Calendar.DAY_OF_MONTH, nb)
+			c.add(Calendar.DAY_OF_MONTH, nb)
 		} else if (dateType == "HH") {
-			c1.add(Calendar.HOUR, nb)
+			c.add(Calendar.HOUR, nb)
 		} else if (dateType == "mm") {
-			c1.add(Calendar.MINUTE, nb)
+			c.add(Calendar.MINUTE, nb)
 		} else if (dateType.equalsIgnoreCase("ss")) {
-			c1.add(Calendar.SECOND, nb)
+			c.add(Calendar.SECOND, nb)
 		} else if (dateType.equalsIgnoreCase("SSS")) {
-			c1.add(Calendar.MILLISECOND, nb)
+			c.add(Calendar.MILLISECOND, nb)
 		} else {
 			throw new RuntimeException("Can't support the dateType: " + dateType)
 		}
 
-		return c1.getTime()
+		return Timestamp.valueOf(c.toLocalDateTime())
 	}
 	
 	/**
@@ -735,6 +809,9 @@ class DateUtils {
 	 * @return
 	 */
 	static Long DiffDate(Date date1, Date date2, String dateType, Boolean ignoreDST = false) {
+		if (date1 == null || date2 == null)
+			return null
+
 		// ignore DST
 		def addDSTSavings = 0
 		if (ignoreDST) {
@@ -853,7 +930,8 @@ class DateUtils {
 	 * @return
 	 */
 	static BigDecimal Timestamp2Value(Date value) {
-		if (value == null) return null
+		if (value == null)
+			return null
 
 		return (value instanceof Timestamp)?Timestamp2Value(value as Timestamp):Timestamp2Value(new Timestamp(value.time))
 	}
@@ -864,7 +942,8 @@ class DateUtils {
 	 * @return
 	 */
 	static BigDecimal Timestamp2Value(Timestamp value) {
-		if ((Object)value == null) return null
+		if ((Object)value == null)
+			return null
 
         def t = Long.divideUnsigned(value.time, 1000)
 		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
@@ -879,7 +958,8 @@ class DateUtils {
 	 * @return
 	 */
 	static Timestamp Value2Timestamp(BigDecimal value) {
-		if (value == null) return null
+		if (value == null)
+			return null
 		
 		def t = value.longValue() * 1000
 		def n = (value - value.longValue()) * 1000000000
@@ -901,8 +981,10 @@ class DateUtils {
             def iStart = interval.start as Date
             def iFinish = interval.finish as Date
 
-			if (iStart == null) throw new ExceptionGETL("Required start date from interval")
-			if (iFinish == null) throw new ExceptionGETL("Required finish date from interval")
+			if (iStart == null)
+				throw new ExceptionGETL("Required start date from interval")
+			if (iFinish == null)
+				throw new ExceptionGETL("Required finish date from interval")
 
 			if (start == null || iStart < start) {
 				start = iStart
@@ -953,14 +1035,14 @@ class DateUtils {
 	 * @param month specified month
 	 * @return last date of month
 	 */
-	static Date LastDateOfMonth(Integer year, Integer month) {
+	static Timestamp LastDateOfMonth(Integer year, Integer month) {
 		Calendar cal = Calendar.getInstance()
 		cal.set(year, month - 1, 1)
 		cal.clearTime()
 		cal.add(Calendar.MONTH, 1)
 		cal.add(Calendar.DAY_OF_MONTH, -1)
 
-		return cal.time
+		return Timestamp.valueOf(cal.toLocalDateTime())
 	}
 
 	/**
@@ -968,7 +1050,7 @@ class DateUtils {
 	 * @param date specified date
 	 * @return last date of month
 	 */
-	static Date LastDateOfMonth(Date date) {
+	static Timestamp LastDateOfMonth(Date date) {
 		Calendar cal = Calendar.getInstance()
 		cal.setTime(date)
 		cal.clearTime()
@@ -976,7 +1058,7 @@ class DateUtils {
 		cal.add(Calendar.MONTH, 1)
 		cal.add(Calendar.DAY_OF_MONTH, -1)
 
-		return cal.time
+		return Timestamp.valueOf(cal.toLocalDateTime())
 	}
 
 	/**
@@ -984,13 +1066,13 @@ class DateUtils {
 	 * @param date specified date
 	 * @return first date of month
 	 */
-	static Date FirstDateOfMonth(Date date) {
+	static Timestamp FirstDateOfMonth(Date date) {
 		Calendar cal = Calendar.getInstance()
 		cal.setTime(date)
 		cal.clearTime()
 		cal.set(Calendar.DAY_OF_MONTH, 1)
 
-		return cal.time
+		return Timestamp.valueOf(cal.toLocalDateTime())
 	}
 
 	/**

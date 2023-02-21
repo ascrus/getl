@@ -1,6 +1,7 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+import getl.exception.IncorrectParameterError
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 
@@ -344,6 +345,27 @@ class ListUtils {
 		for (int i = 0; i < source.size(); i++)
 			res[i] = source[i]
 
+		return res
+	}
+
+	/**
+	 * Compare value with conditions and return matching condition
+	 * @param args list of compared values and conditions and values: compared value, condition1, value1, condition2, value2, ...
+	 * @return matching value or null if nothing matched
+	 */
+	static Object Decode(Object ...args) {
+		if (args.length < 3 || NumericUtils.IsEven(args.length))
+			throw new IncorrectParameterError('#string.invalid_decode_args', 'args')
+
+		def cur = args[0]
+		Object res = null
+		for (int i = 1; i < args.length; i += 2) {
+			def comp = args[i]
+			if ((comp != null && cur != null && comp == cur) || (cur == null && comp == null)) {
+				res = args[i + 1]
+				break
+			}
+		}
 		return res
 	}
 }

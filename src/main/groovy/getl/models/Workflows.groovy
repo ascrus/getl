@@ -24,6 +24,7 @@ import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -483,10 +484,11 @@ return $className"""
     }
 
     /** Run workflow step */
+    @SuppressWarnings(['DuplicatedCode', 'DuplicatedCode'])
     private Integer stepExecute(WorkflowSpec node, Map addVars, List<Path> include_steps, List<Path> exclude_steps, URLClassLoader userClassLoader,
                                 String parentStep = null) {
         def res = 0
-        def stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
+        String stepLabel = (parentStep != null)?"${parentStep}.${node.stepName}":node.stepName
 
         if ((include_steps != null && !Path.MatchList(node.stepName, include_steps)) ||
                 (exclude_steps != null && Path.MatchList(node.stepName, exclude_steps))) {

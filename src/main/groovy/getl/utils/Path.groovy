@@ -9,6 +9,9 @@ import groovy.transform.CompileStatic
 import getl.utils.opts.PathVarsSpec
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+
+import java.sql.Time
+import java.sql.Timestamp
 import java.time.format.DateTimeFormatter
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -499,6 +502,7 @@ class Path implements GetlRepository {
 								df = 'yyyy-MM-dd HH:mm:ss'
 							}
 							else {
+								//noinspection SpellCheckingInspection
 								df = 'yyyy-MM-dd\'T\'HH:mm:ssZ'
 							}
 
@@ -929,13 +933,13 @@ class Path implements GetlRepository {
 
 		switch (type) {
 			case Field.dateFieldType:
-				value = varDateFormatter.get(varName).format((value as Date).toLocalDate())
+				value = varDateFormatter.get(varName).format(ConvertUtils.Object2Date(value).toLocalDate())
 				break
 			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-				value = varDateFormatter.get(varName).format((value as Date).toLocalDateTime())
+				value = varDateFormatter.get(varName).format(ConvertUtils.Object2Timestamp(value).toLocalDateTime())
 				break
 			case Field.timeFieldType:
-				value = varDateFormatter.get(varName).format((value as Date).toLocalTime())
+				value = varDateFormatter.get(varName).format(ConvertUtils.Object2Time(value).toLocalTime())
 				break
 		}
 
@@ -1003,7 +1007,9 @@ class Path implements GetlRepository {
 	 */
 	@CompileStatic
 	static List<Path> Masks2Paths(List<String> masks, Map<String, Map> vars = null) {
-		if (masks == null) return null
+		if (masks == null)
+			return null
+
 		def res = [] as List<Path>
 		masks.each {mask ->
 			if (mask == null)

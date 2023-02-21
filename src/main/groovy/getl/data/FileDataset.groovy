@@ -1,3 +1,4 @@
+//file:noinspection DuplicatedCode
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -11,6 +12,9 @@ import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import java.nio.charset.Charset
+import java.nio.charset.IllegalCharsetNameException
+import java.nio.charset.UnsupportedCharsetException
 
 /**
  * File dataset class
@@ -58,7 +62,22 @@ class FileDataset extends Dataset implements AttachData {
 	/** Code page for file */
 	String getCodePage() { params.codePage as String }
 	/** Code page for file */
-	void setCodePage(String value) { params.codePage = value }
+	void setCodePage(String value) {
+		if (value != null) {
+			try {
+				def cp = Charset.forName(value)
+				value = cp.name()
+			}
+			catch (IllegalCharsetNameException  ignored) {
+				throw new DatasetError(this, '#connection.invalid_codepage', [code_page: value])
+			}
+			catch (UnsupportedCharsetException ignored) {
+				throw new DatasetError(this, '#connection.illegal_codepage', [code_page: value])
+			}
+		}
+
+		params.codePage = value
+	}
 	/** Code page for file */
 	String codePage() { codePage?:fileConnection?.codePage() }
 
@@ -127,14 +146,14 @@ class FileDataset extends Dataset implements AttachData {
 	/** Format for datetime fields */
 	void setFormatDateTime (String value) { params.formatDateTime = value }
 	/** Format for datetime fields */
-	String formatDateTime() { formatDateTime?:fileConnection?.formatDateTime() }
+	String formatDateTime(Boolean formatValue = false) { formatDateTime?:fileConnection?.formatDateTime(formatValue) }
 
 	/** Format for timestamp with timezone fields */
 	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
 	/** Format for timestamp with timezone fields */
 	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
 	/** Format for timestamp with timezone fields */
-	String formatTimestampWithTz() { formatTimestampWithTz?:fileConnection?.formatTimestampWithTz() }
+	String formatTimestampWithTz(Boolean formatValue = false) { formatTimestampWithTz?:fileConnection?.formatTimestampWithTz(formatValue) }
 
 	/** Use the same date and time format */
 	String getUniFormatDateTime() { params.uniFormatDateTime as String }
@@ -299,7 +318,7 @@ class FileDataset extends Dataset implements AttachData {
 	 * @return format
 	 */
 	@CompileStatic
-	String fieldFormat(Field field) {
+	String fieldFormat(Field field, Boolean formatValue = false) {
 		if (field.format != null)
 			return field.format
 		String dtFormat = null
@@ -312,10 +331,10 @@ class FileDataset extends Dataset implements AttachData {
 				res = dtFormat?:formatDate()
 				break
 			case Field.datetimeFieldType:
-				res = dtFormat?:formatDateTime()
+				res = dtFormat?:formatDateTime(formatValue)
 				break
 			case Field.timestamp_with_timezoneFieldType:
-				res = dtFormat?:formatTimestampWithTz()
+				res = dtFormat?:formatTimestampWithTz(formatValue)
 				break
 			case Field.timeFieldType:
 				res = dtFormat?:formatTime()

@@ -1,6 +1,7 @@
 //file:noinspection SpellCheckingInspection
 package getl.jdbc
 
+import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
@@ -72,8 +73,8 @@ abstract class JDBCDriverProto extends GetlTest {
             [
                 new Field(name: 'ID1', type: 'BIGINT', isKey: true, ordKey: 1),
                 new Field(name: 'ID2', type: 'DATETIME', isKey: true, ordKey: 2),
-                new Field(name: 'Name', type: 'STRING', length: 50, isNull: false),
-				new Field(name: descriptionName, type: 'STRING', length: 250, isNull: false),
+                new Field(name: 'Name', type: 'STRING', length: 80, isNull: false),
+				new Field(name: descriptionName, type: 'STRING', length: 350, isNull: false),
                 new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false),
                 new Field(name: 'DOuble', type: 'DOUBLE', isNull: false, defaultValue: 0),
             ]
@@ -108,6 +109,11 @@ abstract class JDBCDriverProto extends GetlTest {
             table.dbName = defaultDatabase
             table.schemaName = defaultSchema
             table.tableName = useTableName
+
+            def fq = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('id1', table)
+            table.field = fields
+            table.fieldByName('id1').checkValue = "$fq > 0"
+
             prepareTable()
         }
     }
@@ -122,9 +128,6 @@ abstract class JDBCDriverProto extends GetlTest {
     }
 
     protected void createTable() {
-        def fq = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('id1', table)
-        table.field = fields
-        table.fieldByName('id1').checkValue = "$fq > 0"
         table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
 			def indexes = [:]
@@ -331,10 +334,14 @@ abstract class JDBCDriverProto extends GetlTest {
             def fields = table.fieldClone()
             fields*.isNull = false
             fields.find { it.name.toLowerCase() == 'id1' }.isKey = true
+            def dt = DateUtils.ParseSQLTimestamp('2021-01-01 00:00:00')
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(fields, table.currentJDBCConnection.currentJDBCDriver.lengthTextInBytes, num)
-                if(this.sequence != null)
+                if (this.sequence != null)
                     r.id1 = this.sequence.nextValue
+                r.id2 = dt
+
+                dt = DateUtils.AddDate('HH', 1, dt)
 
                 updater(r)
             }
@@ -375,11 +382,11 @@ abstract class JDBCDriverProto extends GetlTest {
             rows.each { r ->
                 Map nr = [:]
                 nr.putAll(r)
-                nr.name = StringUtils.LeftStr(r.name as String, 40) + ' update'
-				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription" as String, 200) + ' update')
+                nr.name = StringUtils.LeftStr(r.name as String, 20) + ' update'
+				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription" as String, 100) + ' update')
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date as Date)
+				if (useDate) nr.date = DateUtils.Date2SQLDate(DateUtils.AddDate('dd', 1, r.date as Date))
 				if (useTime) nr.time = Time.valueOf((r.time as Time).toLocalTime().plusSeconds(100))
                 if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz as Date)
 				if (useBoolean) nr.flag = GenerationUtils.GenerateBoolean()
@@ -446,7 +453,7 @@ abstract class JDBCDriverProto extends GetlTest {
 			assertEquals(StringUtils.LeftStr(rows[i].get(descriptionName) as String, 200) + ' merge', r.get(descriptionName))
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
-			if (useDate) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date as Date), r.date)
+			if (useDate) assertEquals(DateUtils.Date2SQLDate(DateUtils.AddDate('dd', 1, rows[i].date as Date)), r.date)
 			if (useTime) assertEquals(Time.valueOf((rows[i].time as Time).toLocalTime().plusSeconds(100)), r.time)
             if (useTimestampWithZone) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz as Date), r.dtwithtz)
 			if (useBoolean) assertNotNull(r.flag)
@@ -600,11 +607,15 @@ abstract class JDBCDriverProto extends GetlTest {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
         def file = bulkTable.csvTempFile
+        prepareBulkFile(file)
+        def id2Value = DateUtils.ParseSQLTimestamp('2023-01-31 23:59:59.123456')
         def count = new Flow().writeTo(dest: file) { updater ->
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id1 = num
+                r.id2 = id2Value
                 r.name = """'name'\t"$num"${lineFeedChar}test|/,;|\\"""
+                r."desc'ription" = (r."desc'ription".toString()).trim()
 
                 updater(r)
             }
@@ -617,14 +628,19 @@ abstract class JDBCDriverProto extends GetlTest {
         bulkTable.bulkLoadFile(source: file)
         assertEquals(countRows, bulkTable.updateRows)
         assertEquals(countRows, bulkTable.countRow())
+        def fileRow = file.rows(limit: 1)[0]
+        def tableRow = bulkTable.rows(limit: 1, where: 'id1 = 1')[0]
+        assertEquals(fileRow, tableRow)
     }
 
     protected prepareBulkTable(TableDataset table) { }
+    protected prepareBulkFile(CSVDataset file) { file.escaped = true }
 
     protected void copyWithBulkLoad() {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
         def bulkTable = con.newDataset() as TableDataset
+        //noinspection GroovyMissingReturnStatement
         bulkTable.tap {
             tableName = 'getl_test_copy_bulk' + tablePrefix
             field('id') { type = integerFieldType }
@@ -643,9 +659,8 @@ abstract class JDBCDriverProto extends GetlTest {
             create()
         }
 
-        def file = TFS.dataset()
-        file.field = bulkTable.field
-        file.escaped = true
+        def file = bulkTable.csvTempFile
+        prepareBulkFile(file)
         def countFiles = new Flow().writeTo(dest: file) { updater ->
             updater([:])
             (2..countRows).each { num ->
@@ -1035,7 +1050,7 @@ IF ('{support_update}' = 'true') DO {
 
         def curDate = DateUtils.Date2SQLTimestamp(DateUtils.TruncTime('SECOND', new Date()))
         def curDay = DateUtils.Date2SQLDate(DateUtils.ClearTime(curDate))
-        def dates = [curDay, DateUtils.AddDate('dd', 1, curDay), DateUtils.AddDate('dd', 2, curDay)]
+        def dates = [curDay, DateUtils.Date2SQLDate(DateUtils.AddDate('dd', 1, curDay)), DateUtils.Date2SQLDate(DateUtils.AddDate('dd', 2, curDay))]
         new Flow().writeTo(dest: table) { add ->
             (1..count).each {
                 add id: it, name: "test $it", dt: curDate, data: "test $it".bytes,

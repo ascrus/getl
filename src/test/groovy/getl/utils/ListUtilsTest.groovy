@@ -55,4 +55,16 @@ class ListUtilsTest extends GetlTest {
         assertEquals(l.toString(), a.toString())
         assertEquals(l.toArray(new Integer[0]), a)
     }
+
+    @Test
+    void testDecode() {
+        assertEquals(null, ListUtils.Decode(1, 2, 'A', 3, 'B'))
+        assertEquals(null, ListUtils.Decode(null, 2, 'A', 3, 'B'))
+        assertEquals(null, ListUtils.Decode(1, 1, null, 2, 'A'))
+        assertEquals('A', ListUtils.Decode(1, 1, 'A', 2, 'B'))
+        assertEquals('B', ListUtils.Decode(2, 1, 'A', 2, 'B', 3, 'C'))
+        shouldFail { ListUtils.Decode() }
+        shouldFail { ListUtils.Decode(1) }
+        shouldFail { ListUtils.Decode(1, 2) }
+    }
 }

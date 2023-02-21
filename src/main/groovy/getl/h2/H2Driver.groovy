@@ -85,6 +85,10 @@ class H2Driver extends JDBCDriver {
 		return url
 	}
 
+	/** Current H2 connection */
+	@SuppressWarnings('unused')
+	H2Connection getCurrentH2Connection() { connection as H2Connection }
+
 	@Override
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		def p = MapUtils.Copy(params)
@@ -252,12 +256,22 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	}
 
 	@Override
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		super.prepareCsvTempFile(source, csvFile)
+		csvFile.formatDateTime = 'yyyy-MM-dd HH:mm:ss.SSS'
+		csvFile.formatTimestampWithTz = 'yyyy-MM-dd HH:mm:ss.SSSx'
+		csvFile.blobAsPureHex = true
+	}
+
+	@Override
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.validCsvTempFile(source, csvFile)
 		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
-			throw new DatasetError(csvFile, 'file must be encoded in utf-8 for batch download')
+			throw new DatasetError(csvFile, 'file must be encoded in utf-8 for bulk download')
 		if (csvFile.isHeader())
 			throw new DatasetError(csvFile, 'header not allowed for bulk load')
+		if (!csvFile.blobAsPureHex())
+			throw new DatasetError(csvFile, 'sql blob format not supported for bulk load')
 	}
 
 	@Override
