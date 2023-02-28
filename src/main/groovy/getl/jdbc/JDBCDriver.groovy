@@ -28,6 +28,8 @@ import getl.utils.*
 import java.sql.Time
 import java.sql.Timestamp
 import java.sql.Types
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * JDBC driver class
@@ -91,10 +93,11 @@ class JDBCDriver extends Driver {
 		ruleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
 		ruleEscapedText = ['\\': '\\\\', '\n': '\\n', '\'': '\\\'']
 
-		sqlExpressionSqlDateFormat = 'yyyy-MM-dd'
-		sqlExpressionSqlTimeFormat = 'HH:mm:ss.SSS'
-		sqlExpressionSqlTimestampFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
-		sqlExpressionDateFormat = 'yyyy-MM-dd HH:mm:ss'
+		setSqlExpressionSqlDateFormat('yyyy-MM-dd')
+		setSqlExpressionSqlTimeFormat('HH:mm:ss')
+		setSqlExpressionSqlTimestampFormat('yyyy-MM-dd HH:mm:ss.SSSSSS')
+		setSqlExpressionSqlTimestampWithTzFormat('yyyy-MM-dd HH:mm:ss.SSSSSSx')
+		setSqlExpressionDatetimeFormat('yyyy-MM-dd HH:mm:ss')
 
 		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP', 'REPLACE',
 						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY', 'USER', 'ROLE',
@@ -3281,35 +3284,114 @@ FROM {source} {after_from}'''
 	}
 
 	/** Format sql date values for evaluate sql expression */
-	protected String sqlExpressionSqlDateFormat
+	private String sqlExpressionSqlDateFormat
+	/** Format sql date values for evaluate sql expression */
+	String getSqlExpressionSqlDateFormat() { sqlExpressionSqlDateFormat }
+	/** Format sql date values for evaluate sql expression */
+	protected void setSqlExpressionSqlDateFormat(String value) {
+		if (value == null)
+			throw new RequiredParameterError(connection, 'value')
+
+		sqlDateFormatter = DateUtils.BuildDateFormatter(value)
+		sqlExpressionSqlDateFormat = value
+	}
+	/** DateTime formatter for sql date format */
+	private DateTimeFormatter sqlDateFormatter
+	/** DateTime formatter for sql date format */
+	DateTimeFormatter getSqlDateFormatter() { sqlDateFormatter }
+
 	/** Format sql time values for evaluate sql expression */
-	protected String sqlExpressionSqlTimeFormat
+	private String sqlExpressionSqlTimeFormat
+	/** Format sql time values for evaluate sql expression */
+	String getSqlExpressionSqlTimeFormat() { sqlExpressionSqlTimeFormat }
+	/** Format sql time values for evaluate sql expression */
+	protected void setSqlExpressionSqlTimeFormat(String value) {
+		if (value == null)
+			throw new RequiredParameterError(connection, 'value')
+
+		sqlTimeFormatter = DateUtils.BuildTimeFormatter(value)
+		sqlExpressionSqlTimeFormat = value
+	}
+	/** DateTime formatter for sql time format */
+	private DateTimeFormatter sqlTimeFormatter
+	/** DateTime formatter for sql time format */
+	DateTimeFormatter getSqlTimeFormatter() { sqlTimeFormatter }
+
 	/** Format sql timestamp values for evaluate sql expression */
-	protected String sqlExpressionSqlTimestampFormat
+	private String sqlExpressionSqlTimestampFormat
+	/** Format sql timestamp values for evaluate sql expression */
+	String getSqlExpressionSqlTimestampFormat() { sqlExpressionSqlTimestampFormat }
+	/** Format sql timestamp values for evaluate sql expression */
+	protected void setSqlExpressionSqlTimestampFormat(String value) {
+		if (value == null)
+			throw new RequiredParameterError(connection, 'value')
+
+		sqlTimestampFormatter = DateUtils.BuildDateTimeFormatter(value)
+		sqlExpressionSqlTimestampFormat = value
+	}
+	/** DateTime formatter for sql timestamp format */
+	private DateTimeFormatter sqlTimestampFormatter
+	/** DateTime formatter for sql timestamp format */
+	DateTimeFormatter getSqlTimestampFormatter() { sqlTimestampFormatter }
+
+	/** Format sql timestamp with timezone values for evaluate sql expression */
+	private String sqlExpressionSqlTimestampWithTzFormat
+	/** Format sql timestamp with timezone values for evaluate sql expression */
+	String getSqlExpressionSqlTimestampWithTzFormat() { sqlExpressionSqlTimestampWithTzFormat }
+	/** Format sql timestamp with timezone values for evaluate sql expression */
+	protected void setSqlExpressionSqlTimestampWithTzFormat(String value) {
+		if (value == null)
+			throw new RequiredParameterError(connection, 'value')
+
+		sqlTimestampWithTzFormatter = DateUtils.BuildDateTimeFormatter(value)
+		sqlExpressionSqlTimestampWithTzFormat = value
+	}
+	/** DateTime formatter for sql timestamp with timezone format */
+	private DateTimeFormatter sqlTimestampWithTzFormatter
+	/** DateTime formatter for sql timestamp with timezone format */
+	DateTimeFormatter getSqlTimestampWithTzFormatter() { sqlTimestampWithTzFormatter }
+
 	/** Format standard date values for evaluate sql expression */
-	protected String sqlExpressionDateFormat
+	private String sqlExpressionDatetimeFormat
+	/** Format standard date values for evaluate sql expression */
+	String getSqlExpressionDatetimeFormat() { sqlExpressionDatetimeFormat }
+	/** Format standard date values for evaluate sql expression */
+	protected void setSqlExpressionDatetimeFormat(String value) {
+		if (value == null)
+			throw new RequiredParameterError(connection, 'value')
+
+		sqlDatetimeFormatter = DateUtils.BuildDateFormatter(value)
+		sqlExpressionDatetimeFormat = value
+	}
+	/** DateTime formatter for standard date format */
+	private DateTimeFormatter sqlDatetimeFormatter
+	/** DateTime formatter for standard date format */
+	DateTimeFormatter getSqlDatetimeFormatter() { sqlDatetimeFormatter }
+
 
 	/**
 	 * Convert date and time variables to formatted string value
 	 * @param value object value
-	 * @return formatted string value
+	 * @return formatted string value or original value
 	 */
 	String convertDateTime2String(Object value) {
 		if (value == null)
 			return null
 
-		/*if (value instanceof java.sql.Date)
-			value = DateUtils.FormatDate(sqlExpressionSqlDateFormat, value as Date)
-		else if (value instanceof Time)
-			value = DateUtils.FormatDate(sqlExpressionSqlTimeFormat, value as Date)
-		else if (value instanceof Timestamp)
-			value = DateUtils.FormatDate(sqlExpressionSqlTimestampFormat, value as Date)*/
-		if (value instanceof Timestamp || value instanceof java.sql.Date || value instanceof Time)
-			value = value.toString()
-		else if (value instanceof Date)
-			value = DateUtils.FormatDate(sqlExpressionDateFormat, value as Date)
+		String varValue = null
 
-		return value
+		if (value instanceof java.sql.Date)
+			varValue = DateUtils.FormatSQLDate(sqlDateFormatter, value as java.sql.Date)
+		else if (value instanceof Time)
+			varValue = DateUtils.FormatSQLTime(sqlTimeFormatter, value as Time)
+		else if (value instanceof Timestamp)
+			varValue = DateUtils.FormatSQLTimestamp(sqlTimestampFormatter, value as Timestamp)
+		else if (value instanceof OffsetDateTime)
+			varValue = DateUtils.FormatSQLTimestampWithTz(sqlTimestampWithTzFormatter, value as OffsetDateTime)
+		else if (value instanceof Date)
+			varValue = DateUtils.FormatDate(sqlDatetimeFormatter, value as Date)
+
+		return varValue
 	}
 
 	/**

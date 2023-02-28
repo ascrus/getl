@@ -18,7 +18,6 @@ import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.*
 import groovy.transform.Synchronized
-import java.sql.Timestamp
 import java.util.regex.Pattern
 
 /**
@@ -218,8 +217,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	@SuppressWarnings('SpellCheckingInspection')
 	private String evalMacroString(String command, Boolean errorWhenUndefined = true) {
 		return StringUtils.EvalMacroString(command, allVars, errorWhenUndefined) { value ->
-			String res = (value instanceof Timestamp)?DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSSSSS', value as Timestamp):null
-			return res
+			return (connection.driver as JDBCDriver).convertDateTime2String(value)
 		}.trim()
 	}
 
@@ -399,8 +397,6 @@ class SQLScripter implements WithConnection, GetlRepository {
 		query.field.each { Field f ->
 			def fieldName = f.name.toLowerCase()
 			def fieldValue = (!rows.isEmpty())?rows[0].get(fieldName):null
-			if (fieldValue != null && fieldValue instanceof Date)
-				fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
 
 			vars.put(fieldName, fieldValue)
 		}
@@ -442,8 +438,6 @@ class SQLScripter implements WithConnection, GetlRepository {
 			query.field.each { Field f ->
                 def fieldName = f.name.toLowerCase()
                 def fieldValue = row.get(fieldName)
-                if (fieldValue instanceof Date)
-					fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
                 ns.vars.put(fieldName, fieldValue)
 			}
 			try {

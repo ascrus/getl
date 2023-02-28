@@ -73,7 +73,7 @@ class HttpClientUtils {
                 if (value instanceof String || value instanceof GString) {
                     if (isVars)
                         val = StringUtils.EvalMacroString((value as Object).toString(), vars, true) { v ->
-                            String res = null
+                            Object res = null
                             if (v instanceof Timestamp)
                                 res = WebUtils.UrlDateFormatter.format((v as Timestamp).toLocalDateTime()) + 'Z'
                             else if (v instanceof java.sql.Date)
@@ -83,7 +83,7 @@ class HttpClientUtils {
                             else if (v instanceof Date)
                                 res = WebUtils.UrlDateFormatter.format((v as Date).toLocalDateTime()) + 'Z'
 
-                            return res
+                            return res as Object
                         }
                     else
                         val = value.toString()

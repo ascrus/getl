@@ -11,6 +11,7 @@ import javax.crypto.spec.SecretKeySpec
 import java.security.Key
 import java.sql.Time
 import java.sql.Timestamp
+import java.time.OffsetDateTime
 import java.util.regex.Pattern
 
 /**
@@ -89,7 +90,7 @@ class StringUtils {
 	 */
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true,
-								  Closure<String> formatValue = null) {
+								  Closure<Object> formatValue = null) {
 		if (value == null)
 			return null
 
@@ -104,6 +105,12 @@ class StringUtils {
 				.replace('~{~', '\u0002').replace('~}~', '\u0003').replace('~$~', '\u0004')
 
 		def matcher = EvalMacroStringPattern1.matcher(value)
+
+		def sqlDateFormatter = DateUtils.BuildDateFormatter(DateUtils.defaultDateMask)
+		def sqlTimeFormatter = DateUtils.BuildTimeFormatter(DateUtils.defaultTimeMask)
+		def sqlDateTimeFormatter = DateUtils.BuildDateTimeFormatter(DateUtils.defaultDateTimeMaskFormat)
+		def sqlTimestampFormatter = DateUtils.BuildDateTimeFormatter(DateUtils.defaultTimestampMaskFormat)
+		def sqlTimestampTzFormatter = DateUtils.BuildDateTimeFormatter(DateUtils.defaultTimestampWithTzFullMaskFormat)
 
 		def sb = new StringBuilder()
 		def pos = 0
@@ -156,19 +163,21 @@ class StringUtils {
 			if (varValue == null)
 				varValue = ''
 			else {
-				def calcValue = (formatValue != null)?formatValue.call(varValue):null
+				Object calcValue = (formatValue != null)?formatValue.call(varValue):null
 
 				if (calcValue != null)
 					varValue = calcValue
 				else {
 					if (varValue instanceof java.sql.Date)
-						varValue = DateUtils.FormatDate('yyyy-MM-dd', varValue as Date)
+						varValue = DateUtils.FormatSQLDate(sqlDateFormatter, varValue as java.sql.Date)
 					else if (varValue instanceof Time)
-						varValue = DateUtils.FormatDate('HH:mm:ss', varValue as Date)
+						varValue = DateUtils.FormatSQLTime(sqlTimeFormatter, varValue as Time)
 					else if (varValue instanceof Timestamp)
-						varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', varValue as Date)
+						varValue = DateUtils.FormatSQLTimestamp(sqlTimestampFormatter, varValue as Timestamp)
+					else if (varValue instanceof OffsetDateTime)
+						varValue = DateUtils.FormatSQLTimestampWithTz(sqlTimestampTzFormatter, varValue as OffsetDateTime)
 					else if (varValue instanceof Date)
-						varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
+						varValue = DateUtils.FormatDate(sqlDateTimeFormatter, varValue as Date)
 					else if (varValue instanceof Collection) {
 						def list = [] as List<String>
 						(varValue as Collection).each { val ->

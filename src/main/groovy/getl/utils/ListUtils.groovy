@@ -129,7 +129,7 @@ class ListUtils {
 	 * @param formatValue value formatting code
 	 * @return generated list
 	 */
-	static List EvalMacroValues(List value, Map vars, Boolean errorWhenUndefined = true, Closure<String> formatValue = null) {
+	static List EvalMacroValues(List value, Map vars, Boolean errorWhenUndefined = true, Closure<Object> formatValue = null) {
 		if (value == null)
 			return null
 

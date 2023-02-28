@@ -808,6 +808,10 @@ return $className"""
                     ret = DateUtils.FormatDate('HH:mm:ss', v as java.sql.Time)
                     break
 
+                case java.sql.Timestamp:
+                    ret = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', v as java.sql.Timestamp)
+                    break
+
                 case java.util.Date:
                     ret = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', v as java.util.Date)
                     break

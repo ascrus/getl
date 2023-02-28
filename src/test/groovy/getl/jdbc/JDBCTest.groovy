@@ -408,6 +408,33 @@ RUN_FILE resource:/jdbc/script.sql
     }
 
     @Test
+    void testFormatVars() {
+        Getl.Dsl {
+            embeddedConnection {
+                sql {
+                    vars.date = DateUtils.ParseSQLDate('2023-01-31')
+                    println vars.date
+                    vars.time = DateUtils.ParseSQLTime('23:59:59')
+                    println vars.time
+                    vars.timestamp = DateUtils.ParseSQLTimestamp('2023-01-31 23:59:59.123456')
+                    println vars.timestamp
+                    script = '''Echo {date} {time} {timestamp}
+SET SELECT 
+    ('{date}' = '2023-01-31') AS date_correct, 
+    ('{time}' = '23:59:59') AS time_correct,
+    ('{timestamp}' = '2023-01-31 23:59:59.123456') AS timestamp_correct;
+'''
+                    runSql true
+
+                    assertTrue(vars.date_correct as Boolean)
+                    assertTrue(vars.time_correct as Boolean)
+                    assertTrue(vars.timestamp_correct as Boolean)
+                }
+            }
+        }
+    }
+
+    @Test
     void testCloneConnection() {
         Getl.Dsl {
             def con1 = embeddedConnection {

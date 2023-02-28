@@ -155,11 +155,7 @@ end;'''
 		}
 		else if (dl.timestamp != null) {
 			Date timestamp 
-			if (dl.timestamp instanceof String)
-				timestamp = DateUtils.ParseDate("yyyy-MM-dd HH:mm:ss", dl.timestamp)
-			else
-				timestamp = dl.timestamp as Date
-			def ts = DateUtils.FormatDate("yyyy-MM-dd HH:mm:ss.sss", timestamp)
+			def ts = convertDateTime2String(dl.timestamp)?:dl.timestamp.toString()
 			dir.afteralias = "AS OF TIMESTAMP TO_TIMESTAMP('$ts', 'YYYY-MM-DD HH24:MI:SS.FF')"
 		}
 		

@@ -483,7 +483,7 @@ class MapUtils {
 	 * @param formatValue value formatting code
 	 * @return generated map
 	 */
-	static Map EvalMacroValues(Map value, Map vars, Boolean errorWhenUndefined = true, Closure<String> formatValue = null) {
+	static Map EvalMacroValues(Map value, Map vars, Boolean errorWhenUndefined = true, Closure<Object> formatValue = null) {
 		if (value == null)
 			return null
 		

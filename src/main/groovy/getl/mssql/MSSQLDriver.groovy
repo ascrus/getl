@@ -46,6 +46,8 @@ class MSSQLDriver extends JDBCDriver {
 		sqlExpressions.ddlStartTran = 'BEGIN TRANSACTION'
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 
+		sqlExpressionSqlTimestampFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
+
 		ruleQuotedWords.add('DOUBLE')
 
 		ruleEscapedText.put('\'', '\'\'')

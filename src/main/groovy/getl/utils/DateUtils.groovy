@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.ResolverStyle
@@ -38,6 +39,9 @@ class DateUtils {
 	/** Default datetime mask for format */
 	@SuppressWarnings('SpellCheckingInspection')
 	static public String defaultDateTimeMaskFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
+	/** Default timestamp mask for format */
+	@SuppressWarnings('SpellCheckingInspection')
+	static public String defaultTimestampMaskFormat = 'yyyy-MM-dd HH:mm:ss.SSSSSS'
 	/** Default timestamp with timezone mask */
 	@SuppressWarnings('SpellCheckingInspection')
 	static public String defaultTimestampWithTzFullMask = 'yyyy-MM-dd HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]x'
@@ -660,21 +664,6 @@ class DateUtils {
 	}
 
 	/**
-	 * Convert timestamp with timezone to string with format
-	 * @param format
-	 * @param date
-	 * @return
-	 */
-	static String FormatTimestampWithTz(String format, Date date) {
-		if (date == null)
-			return null
-
-		def df = DateTimeFormatter.ofPattern(format)
-
-		return df.format(date.toOffsetDateTime())
-	}
-
-	/**
 	 * Convert date to string with format
 	 * @param sdf date formatter
 	 * @param date original date
@@ -702,6 +691,69 @@ class DateUtils {
 	}
 
 	/**
+	 * Convert date to string with default format
+	 * @param date
+	 * @return
+	 */
+	static String FormatDate(Date date) {
+		return FormatDate(defaultDateMask, date)
+	}
+
+	/**
+	 * Convert date to string with format
+	 * @param df datetime formatter
+	 * @param date original date
+	 * @return formatted text
+	 */
+	static String FormatSQLDate(DateTimeFormatter df, java.sql.Date date) {
+		if (date == null)
+			return null
+
+		return df.format(date.toLocalDate())
+	}
+
+	/**
+	 * Convert time to string with format
+	 * @param df datetime formatter
+	 * @param time original time
+	 * @return formatted text
+	 */
+	static String FormatSQLTime(DateTimeFormatter df, Time time) {
+		if (time == null)
+			return null
+
+		return df.format(time.toLocalTime())
+	}
+
+	/**
+	 * Convert timestamp to string with format
+	 * @param df datetime formatter
+	 * @param timestamp original date
+	 * @return formatted text
+	 */
+	static String FormatSQLTimestamp(DateTimeFormatter df, Timestamp timestamp) {
+		if (timestamp == null)
+			return null
+
+		return df.format(timestamp.toLocalDateTime())
+	}
+
+	/**
+	 * Convert timestamp with timezone to string with format
+	 * @param format
+	 * @param date
+	 * @return
+	 */
+	static String FormatTimestampWithTz(String format, Date date) {
+		if (date == null)
+			return null
+
+		def df = DateTimeFormatter.ofPattern(format)
+
+		return df.format(date.toOffsetDateTime())
+	}
+
+	/**
 	 * Convert timestamp with timezone to string with format
 	 * @param df date formatter
 	 * @param date original date
@@ -711,19 +763,22 @@ class DateUtils {
 		if (date == null)
 			return null
 
-		def ld = date.toOffsetDateTime()
-		return df.format(ld)
+		return df.format(date.toOffsetDateTime())
 	}
-	
+
 	/**
-	 * Convert date to string with default format
-	 * @param date
-	 * @return
+	 * Convert timestamp with timezone to string with format
+	 * @param df date formatter
+	 * @param date original date
+	 * @return formatted text
 	 */
-	static String FormatDate(Date date) {
-		return FormatDate(defaultDateMask, date)
+	static String FormatSQLTimestampWithTz(DateTimeFormatter df, OffsetDateTime timestamp) {
+		if (timestamp == null)
+			return null
+
+		return df.format(timestamp)
 	}
-	
+
 	/**
 	 * Return current date with default format
 	 * @return

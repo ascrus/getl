@@ -15,6 +15,8 @@ import groovy.transform.InheritConstructors
 import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
+
+import java.sql.Time
 import java.sql.Timestamp
 
 /**
@@ -597,7 +599,7 @@ LIMIT 1'''
                 assertEquals(oraTable.field.size(), field.size())
                 assertEquals(oraTable.fieldByName('id'), fieldByName('id'))
                 assertEquals(oraTable.fieldByName('name').isNull, fieldByName('name').isNull)
-                assertEquals(oraTable.fieldByName('name').length * 3, fieldByName('name').length)
+                assertEquals(oraTable.fieldByName('name').length, fieldByName('name').length)
                 assertEquals(oraTable.fieldByName('value'), fieldByName('value'))
                 assertEquals(12, fieldByName('num').length)
                 assertEquals(2, fieldByName('num').precision)
@@ -654,6 +656,23 @@ LIMIT 1'''
                 assertTrue(fieldByName('id').isKey)
                 assertNotNull(fieldByName('name\ntest'))
                 assertEquals(50, fieldByName('name\ntest').length)
+            }
+        }
+    }
+
+    @Test
+    void testDate() {
+        Getl.Dsl {
+            sql(con) {
+                exec true, '''SET SELECT Now()::date AS day;
+ECHO {day}
+SET SELECT Now()::time AS time;
+ECHO {time}
+SET SELECT Now() AS ts;
+ECHO {ts}'''
+                assertTrue(vars.day instanceof java.sql.Date)
+                assertTrue(vars.time instanceof Time)
+                assertTrue(vars.ts instanceof Timestamp)
             }
         }
     }
