@@ -1200,8 +1200,8 @@ class JDBCDriver extends Driver {
 
 		def tableName = fullNameDataset(dataset)
 		def tableType = (dataset as JDBCDataset).type
-		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
-							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
+		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType,
+							JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
 			throw new NotSupportError(connection, 'create table')
         }
 		String tableTypeName = null
@@ -1580,8 +1580,8 @@ class JDBCDriver extends Driver {
         def ds = dataset as TableDataset
 
 		def r = prepareTableNameForSQL(ds.params.tableName as String)?:'unnamed'
-		def dbName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareTableNameForSQL(ds.dbName()):null
-		def schemaName = (ds.type != JDBCDataset.localTemporaryTableType)?prepareTableNameForSQL(ds.schemaName()):null
+		def dbName = (!(ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType]))?prepareTableNameForSQL(ds.dbName()):null
+		def schemaName = (!(ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType]))?prepareTableNameForSQL(ds.schemaName()):null
 		if (schemaName != null)
 			r = schemaName + '.' + r
 		if (dbName != null) {
@@ -3221,6 +3221,8 @@ FROM {source} {after_from}'''
 			throw new NotSupportError(dataset, 'views')
 		if (!isOperation(Operation.CREATE_VIEW))
 			throw new NotSupportError(dataset, 'create views')
+		if (dataset.type == JDBCDataset.localTemporaryViewType && !isSupport(Support.LOCAL_TEMPORARY_VIEW))
+			throw new NotSupportError(dataset, 'local temporary views')
 
 		validTableName(dataset as JDBCDataset)
 

@@ -467,7 +467,7 @@ LIMIT 1'''
                     }
                 }
                 try {
-                    new ViewDataset().tap {
+                    view {
                         useConnection con
                         tableName = 'v_test_view'
                         createView(select: 'SELECT * FROM test_view', privileges: 'exclude')
@@ -492,6 +492,17 @@ LIMIT 1'''
                         finally {
                             drop()
                         }
+                    }
+
+                    view {
+                        useConnection con
+                        tableName = 'v_test_view_temporary'
+                        type = localTemporaryViewType
+                        shouldFail {
+                            createView(select: 'SELECT * FROM test_view', privileges: 'INCLUDE')
+                        }
+                        createView(select: 'SELECT * FROM test_view')
+                        assertEquals(1, countRow())
                     }
                 }
                 finally {

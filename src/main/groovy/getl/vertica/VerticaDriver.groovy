@@ -2,6 +2,7 @@
 //file:noinspection DuplicatedCode
 package getl.vertica
 
+import getl.exception.IncorrectParameterError
 import getl.jdbc.sub.BulkLoadMapping
 import getl.oracle.OracleDriver
 import groovy.transform.CompileStatic
@@ -78,7 +79,7 @@ class VerticaDriver extends JDBCDriver {
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
 				 Support.BULKLOADMANYFILES, Support.BULKESCAPED, Support.BULKGZ, Support.BULKNULLASVALUE,
-				 Support.START_TRANSACTION/*, Support.ARRAY*/]
+				 Support.START_TRANSACTION, Support.LOCAL_TEMPORARY_VIEW /*, Support.ARRAY*/]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -669,9 +670,12 @@ class VerticaDriver extends JDBCDriver {
 		def res = super.createViewParams(dataset, createParams)
 
 		def privileges = createParams.privileges as String
-		if (privileges != null)
-			res.privileges = checkPrivilegesType(privileges, dataset.objectName)
-
+		if (privileges != null) {
+			if (dataset.type != JDBCDataset.localTemporaryViewType)
+				res.privileges = checkPrivilegesType(privileges, dataset.objectName)
+			else
+				throw new IncorrectParameterError(connection, '#vertica.temporary_view_privileges_not_support', 'privileges')
+		}
 		return res
 	}
 

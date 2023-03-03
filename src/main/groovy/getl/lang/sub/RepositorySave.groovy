@@ -135,7 +135,7 @@ class RepositorySave extends Getl {
             throw new DslError(this, '#dsl.repository.non_path')
 
         if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
-            throw new DslError(this, '#dsl.repository.deny_path_resource!')
+            throw new DslError(this, '#dsl.repository.deny_path_resource')
     }
 
     /** Processing declared methods */

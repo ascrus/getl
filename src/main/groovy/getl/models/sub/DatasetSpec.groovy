@@ -226,7 +226,7 @@ class DatasetSpec extends BaseSpec {
                             [table: datasetName, field: incrementFieldName, type: incrementField.type])
             }
 
-            sourceName = ownerDatasetsModel.dslNameObject + '@' + datasetName
+            sourceName = ownerDatasetsModel.historyPointSourceName(datasetName)
         }
 
         _historyPointObject = hp

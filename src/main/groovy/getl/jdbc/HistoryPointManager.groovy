@@ -395,15 +395,32 @@ class HistoryPointManager implements GetlRepository {
 	@JsonIgnore
 	String getObjectName() { historyTable?.objectName?:'HISTORY POINT' }
 
-	@Synchronized('operationLock')
 	/**
 	 * Return last value of history point by source
 	 * @param convertNull if there are no values, then instead of null, return the minimum possible value
-	 * @return value
+	 * @return value last value
 	 */
 	@Synchronized('operationLock')
 	Comparable lastValue(Boolean convertNull = false) {
 		return readLastValue(convertNull)
+	}
+
+	/**
+	 * Return last long value of history point by source
+	 * @param convertNull if there are no values, then instead of null, return the minimum possible value
+	 * @return value last long value
+	 */
+	Long lastValueLong(Boolean convertNull = false) {
+		return lastValue(convertNull) as Long
+	}
+
+	/**
+	 * Return last timestamp value of history point by source
+	 * @param convertNull if there are no values, then instead of null, return the minimum possible value
+	 * @return value last timestamp value
+	 */
+	Timestamp lastValueTimestamp(Boolean convertNull = false) {
+		return lastValue(convertNull) as Timestamp
 	}
 	
 	/**

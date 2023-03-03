@@ -131,6 +131,14 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         saveParamValue('incrementDatasetName', dataset?.dslNameObject)
     }
 
+    /** Source name for history point by model table */
+    String historyPointSourceName(String modelTableName) {
+        if (modelTableName == null)
+            return null
+
+        return dslNameObject + '@' + modelTableName
+    }
+
     /** Return history point manager by table model */
     @Synchronized('synchIncrementDataset')
     HistoryPointManager historyPointTable(String modelTableName) {
@@ -272,6 +280,32 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     @Override
     protected void checkModelDataset(Dataset ds, String connectionName = null) {
         super.checkModelDataset(ds, connectionName?:modelConnectionName)
+    }
+
+    /** Model history point manager */
+    @JsonIgnore
+    HistoryPointManager getModelHistoryPoint() {
+        HistoryPointManager res = null
+        if (incrementDatasetName != null) {
+            res = dslCreator.historypoint { hp ->
+                hp.dslNameObject = '#' + dslNameObject.replace(':', '_')
+                hp.historyTableName = incrementDatasetName
+                hp.sourceName = "${dslNameObject}@*"
+                hp.sourceType = identitySourceType
+                hp.create(true)
+            }
+        }
+        return res
+    }
+
+    /** Clear all model tables increment points*/
+    void clearModelHistoryPoints(String modelName = null) {
+        def hp = modelHistoryPoint
+        if (hp == null)
+            return
+
+        def mName = modelName?:dslNameObject
+        hp.clearValue("source LIKE '${mName}@%'")
     }
 
     /** Clear incremental points for model tables */

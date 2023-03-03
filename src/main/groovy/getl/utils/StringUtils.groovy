@@ -729,7 +729,7 @@ class StringUtils {
 	 * @return formatted string
 	 */
 	static String WithGroupSeparator(Number value) {
-		return String.format('%,d', value)
+		return (value != null)?String.format('%,d', value):null
 	}
 
 	/**

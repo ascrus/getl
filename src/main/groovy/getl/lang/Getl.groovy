@@ -968,7 +968,7 @@ Examples:
     @Synchronized
     void setUnitTestMode(Boolean value) {
         if (value == true && configuration.environment == 'prod')
-            throw new DslError(this, '#dsl.deny_unittest_on_prod!')
+            throw new DslError(this, '#dsl.deny_unittest_on_prod')
         setGetlSystemParameter('unitTestMode', value)
     }
     /** Enable unit test mode */
@@ -991,7 +991,10 @@ Examples:
             }
 
             if (cl != null) {
-                res = this.with(cl)
+                cl.setResolveStrategy(Closure.DELEGATE_FIRST)
+                cl.setDelegate(this)
+                //res = this.with(cl)
+                res = cl.call(this)
             }
         }
         finally {

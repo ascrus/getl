@@ -75,7 +75,8 @@ class MapTablesTest extends TestDsl {
             }
 
             model.tap {
-                clearIncrementDataset()
+                clearModelHistoryPoints()
+                assertEquals(0, incrementDataset.countRow())
                 etl.copyRows(mapTable('file').source, mapTable('file').destination) { fc ->
                     fc.beforeWrite {
                         def sql = mapTable('file').scripts.before

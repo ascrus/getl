@@ -30,6 +30,11 @@ class WorkflowUserCode extends BaseUserCode {
         return currentModel.result(scriptName)
     }
 
+    /** Return result from workflow script by object name */
+    Map result(String scriptName, String objectName) {
+        return (result(scriptName).get(objectName) as Map)?:[:] as Map
+    }
+
     /** Workflow model variables */
     Map<String, Object> getModelVars() { currentModel.modelVars }
 

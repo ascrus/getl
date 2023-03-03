@@ -1018,8 +1018,12 @@ class CSVDriver extends FileDriver {
 	@CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
+		if (row == null)
+			throw new DatasetError(dataset, '#csv.write_map_null')
+		if (row.isEmpty())
+			throw new DatasetError(dataset, '#csv.write_map_empty')
 		WriterParams wp = (dataset._driver_params as WriterParams)
-		wp.rows << row
+		wp.rows.add(row)
 		wp.current++
 		
 		if (wp.batchSize == 0 || wp.current >= wp.batchSize) writeRows(dataset, wp)

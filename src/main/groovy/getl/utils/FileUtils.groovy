@@ -1428,6 +1428,9 @@ class FileUtils {
 	 */
 	@CompileStatic
 	static String SizeBytes(Long bytes) {
+		if (bytes == null)
+			return null
+
 		if (bytes == 0)
 			return '0 byte'
 
