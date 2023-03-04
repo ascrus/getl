@@ -2047,7 +2047,7 @@ class JDBCDriver extends Driver {
 			def f = new File(con.fileNameSqlHistory).newWriter("utf-8", true)
 			try {
 				f.write("""-- ${DateUtils.NowDateTime()}: login: ${con.login} session: ${con.sessionID}
-$sql
+$sql;
 
 """				)
 			}
