@@ -62,6 +62,16 @@ import java.util.logging.Level
  */
 @SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 class Getl extends Script {
+    static {
+        _getlAllowArgs = new ParamMethodValidator().tap { p ->
+            //noinspection SpellCheckingInspection
+            p.register('main', ['config', 'environment', 'initclass', 'runclass',
+                                'workflow', 'workflowfile', 'include_steps', 'exclude_steps',
+                                'unittest', 'vars', 'getlprop', 'loadproperties', 'getl_verbose_mode'])
+            p.register('main.config', ['path', 'filename'])
+        }
+    }
+
     Getl() {
         super()
         initGetlParams()
@@ -196,8 +206,12 @@ Examples:
         if (configuration.environment != 'prod')
             enableUnitTestMode()
 
+        if (jobArgs.getl_verbose_mode != null)
+            setGetlSystemParameter('verboseMode', BoolUtils.IsValue(jobArgs.getl_verbose_mode))
+
         _initGetlProperties(null, jobArgs.getlprop as Map<String, Object>, true)
-        logInfo("### Start script ${getClass().name}")
+        if (!getlVerboseMode)
+            logFine("### Start script ${getClass().name}")
 
         if (jobArgs.vars == null)
             jobArgs.vars = new HashMap()
@@ -210,6 +224,12 @@ Examples:
 
         setGetlSystemParameter('runMode', 'shell')
     }
+
+    /** Allowed console command parameters */
+    static protected ParamMethodValidator _getlAllowArgs
+
+    /** Verbose mode */
+    Boolean isGetlVerboseMode() { BoolUtils.IsValue(getGetlSystemParameter('verboseMode')) }
 
     /**
      * Launch Getl Dsl script<br><br>
@@ -242,16 +262,6 @@ Examples:
         CleanGetl()
 
         def job = new Job() {
-            static ParamMethodValidator allowArgs = {
-                def p = new ParamMethodValidator()
-                //noinspection SpellCheckingInspection
-                p.register('main', ['config', 'environment', 'initclass', 'runclass',
-                                    'workflow', 'workflowfile', 'include_steps', 'exclude_steps',
-                                    'unittest', 'vars', 'getlprop', 'loadproperties'])
-                p.register('main.config', ['path', 'filename'])
-                return p
-            }.call()
-
             public Boolean isMain
             private String className
             private Class runClass
@@ -276,7 +286,7 @@ Examples:
             @Override
             void init() {
                 super.init()
-                allowArgs.validation('main', jobArgs)
+                _getlAllowArgs.validation('main', jobArgs)
                 className = jobArgs.runclass as String
 
                 workflowName = jobArgs.workflow as String
@@ -320,7 +330,12 @@ Examples:
                 eng.configuration.manager.init(jobArgs)
                 if (jobArgs.vars != null)
                     eng.configVars.putAll(jobArgs.vars as Map)
+
+                if (jobArgs.getl_verbose_mode != null)
+                    eng.setGetlSystemParameter('verboseMode', BoolUtils.IsValue(jobArgs.getl_verbose_mode))
+
                 dslCreator = eng
+                verboseMode = eng.getlVerboseMode
             }
 
             @Override
@@ -356,13 +371,14 @@ Examples:
                 if (className == null)
                     eng.setGetlSystemParameter('workflow', workflowName?:FileUtils.FilenameWithoutExtension(FileUtils.FileName(workflowFileName)))
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>, false, loadProperties)
-                if (className != null)
-                    eng.logInfo("### Start script ${eng.getClass().name}")
-                else if (workflowFileName != null)
-                    eng.logInfo("### Start workflow ${(workflowName != null)?"\"$workflowName\" ":''}from file \"$workflowFileName\"")
-
-                else
-                    eng.logInfo("### Start workflow \"$workflowName\"")
+                if (!eng.getlVerboseMode) {
+                    if (className != null)
+                        eng.logInfo("### Start script ${eng.getClass().name}")
+                    else if (workflowFileName != null)
+                        eng.logInfo("### Start workflow ${(workflowName != null) ? "\"$workflowName\" " : ''}from file \"$workflowFileName\"")
+                    else
+                        eng.logInfo("### Start workflow \"$workflowName\"")
+                }
 
                 def isJobError = false
                 try {
@@ -404,23 +420,23 @@ Examples:
                     eng.setGetlSystemParameter('runMode', 'stop')
                     eng.repositoryStorageManager.clearRepositories()
 
-                    if (className != null) {
-                        if (!isJobError)
-                            eng.logInfo("### Job ${eng.getClass().name} completed successfully.")
-                        else
-                            eng.logError("### Job ${eng.getClass().name} completed with errors!")
-                    }
-                    else if (workflowName != null) {
-                        if (!isJobError)
-                            eng.logInfo("### Workflow $workflowName completed successfully.")
-                        else
-                            eng.logError("### Workflow $workflowName completed with errors!")
-                    }
-                    else {
-                        if (!isJobError)
-                            eng.logInfo("### Workflow file \"$workflowFileName\" completed successfully.")
-                        else
-                            eng.logError("### Workflow file \"$workflowFileName\" completed with errors!")
+                    if (!eng.getlVerboseMode) {
+                        if (className != null) {
+                            if (!isJobError)
+                                eng.logInfo("### Job ${eng.getClass().name} completed successfully.")
+                            else
+                                eng.logError("### Job ${eng.getClass().name} completed with errors!")
+                        } else if (workflowName != null) {
+                            if (!isJobError)
+                                eng.logInfo("### Workflow $workflowName completed successfully.")
+                            else
+                                eng.logError("### Workflow $workflowName completed with errors!")
+                        } else {
+                            if (!isJobError)
+                                eng.logInfo("### Workflow file \"$workflowFileName\" completed successfully.")
+                            else
+                                eng.logError("### Workflow file \"$workflowFileName\" completed with errors!")
+                        }
                     }
                 }
             }
@@ -461,12 +477,14 @@ Examples:
                 procs.logging = { Map<String, Object> en ->
                     if (en.logConsoleLevel != null) {
                         logging.logConsoleLevel = Logs.ObjectToLevel(en.logConsoleLevel)
-                        logFine("Logging to console is done starting from level ${logging.logConsoleLevel}")
+                        if (!getlVerboseMode)
+                            logFine("Logging to console is done starting from level ${logging.logConsoleLevel}")
                     }
 
                     if (en.logFileLevel != null) {
                         logging.logFileLevel = Logs.ObjectToLevel(en.logFileLevel)
-                        logFine("Logging to file is done starting from level ${logging.logFileLevel}")
+                        if (!getlVerboseMode)
+                            logFine("Logging to file is done starting from level ${logging.logFileLevel}")
                     }
 
                     if (en.logFileName != null) {
@@ -486,8 +504,9 @@ Examples:
 
                         logging.logFileName = StringUtils.EvalMacroString(en.logFileName as String,
                                 [env: env?:'prod', process: procName], false)
-                        logFine("Logging the process \"${instance.getClass().name}\" to file " +
-                                "\"${FileUtils.TransformFilePath(logging.logFileName, false, this)}\"")
+                        if (!getlVerboseMode)
+                            logFine("Logging the process \"${instance.getClass().name}\" to file " +
+                                    "\"${FileUtils.TransformFilePath(logging.logFileName, false, this)}\"")
                     }
 
                     if (en.printStackTraceError != null)
@@ -502,25 +521,30 @@ Examples:
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false, this)}\"")
+                        if (!getlVerboseMode)
+                            logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false, this)}\"")
                     }
 
                     if (en.filesLogPath != null) {
                         fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false, this)}\"")
+                        if (!getlVerboseMode)
+                            logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false, this)}\"")
                     }
 
                     if (en.tempDBLogFileName != null) {
                         tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false, this)}\"")
+                        if (!getlVerboseMode)
+                            logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false, this)}\"")
                     }
 
                     if (en.sqlEchoLevel != null) {
                         logging.sqlEchoLogLevel = Logs.ObjectToLevel(en.sqlEchoLevel)
-                        if (logging.sqlEchoLogLevel)
-                            logFine("SQL command echo is logged with level ${logging.sqlEchoLogLevel}")
+                        if (!getlVerboseMode) {
+                            if (logging.sqlEchoLogLevel)
+                                logFine("SQL command echo is logged with level ${logging.sqlEchoLogLevel}")
+                        }
                     }
                 }
                 procs.repository = { Map<String, Object> en ->
@@ -533,7 +557,8 @@ Examples:
                             }
 
                             storagePassword = password
-                            logFine('Repository encryption mode: enabled')
+                            if (!getlVerboseMode)
+                                logFine('Repository encryption mode: enabled')
                         }
 
                         if (en.autoLoadFromStorage != null)
@@ -553,7 +578,8 @@ Examples:
                             def csvDataset = new CSVDataset(dslCreator: this, connection: csvCon, fileName: storyDatasetFile.name, header: true,
                                     fieldDelimiter: ',', codePage: 'utf-8', escaped: false)
                             savingStoryDataset = csvDataset
-                            logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
+                            if (!getlVerboseMode)
+                                logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
                         }
 
                         if (en.path != null) {
@@ -567,12 +593,14 @@ Examples:
                                 it.storagePath = sp
 
                             autoLoadFromStorage = true
-                            logFine("Path to repository objects: ${storagePath()}")
+                            if (!getlVerboseMode)
+                                logFine("Path to repository objects: ${storagePath()}")
                         }
 
                         if (en.libs != null) {
                             librariesDirName = en.libs as String
-                            logFine("Using libraries from repository directory \"$librariesDirName\"")
+                            if (!getlVerboseMode)
+                                logFine("Using libraries from repository directory \"$librariesDirName\"")
                             buildLibrariesClassLoader()
                         }
                     }
@@ -583,7 +611,8 @@ Examples:
                     else
                         _onChangeLanguage()
 
-                    logFine("Using \"$language\" language in messages and errors")
+                    if (!getlVerboseMode)
+                        logFine("Using \"$language\" language in messages and errors")
 
                     def ic = en.initClass as String
                     if (ic != null) {
@@ -592,7 +621,8 @@ Examples:
                             if (!Script.isAssignableFrom(initClass))
                                 throw new DslError(this, '#dsl.invalid_script', [className: ic])
                             initClasses << (initClass as Class<Script>)
-                            logFine("Initialization class \"$ic\" is used")
+                            if (!getlVerboseMode)
+                                logFine("Initialization class \"$ic\" is used")
                         }
                         catch (Throwable e) {
                             logError("Init class \"$ic\" not found!", e)
@@ -602,8 +632,10 @@ Examples:
 
                     if (en.useThreadModelCloning != null) {
                         useThreadModelCloning = BoolUtils.IsValue(en.useThreadModelCloning, true)
-                        if (useThreadModelCloning)
-                            logFine("Model of cloning objects in threads is used")
+                        if (!getlVerboseMode) {
+                            if (useThreadModelCloning)
+                                logFine("Model of cloning objects in threads is used")
+                        }
                     }
 
                     if (en.controlDataset != null) {
@@ -611,13 +643,17 @@ Examples:
                         logFine("Process start control uses dataset \"$processControlDataset\"")
                         if (en.controlStart != null) {
                             checkProcessOnStart = BoolUtils.IsValue(en.controlStart, true)
-                            if (checkProcessOnStart)
-                                logFine("Process startup is checked in the process checklist")
+                            if (!getlVerboseMode) {
+                                if (checkProcessOnStart)
+                                    logFine("Process startup is checked in the process checklist")
+                            }
                         }
-                        if (en.controlThreads != null) {
-                            checkProcessForThreads = BoolUtils.IsValue(en.controlThreads)
-                            if (checkProcessForThreads)
-                                logFine("Running processes in threads is checked in the process checklist")
+                        if (!getlVerboseMode) {
+                            if (en.controlThreads != null) {
+                                checkProcessForThreads = BoolUtils.IsValue(en.controlThreads)
+                                if (checkProcessForThreads)
+                                    logFine("Running processes in threads is checked in the process checklist")
+                            }
                         }
                         if (en.controlLogin != null)
                             processControlLogin = en.controlLogin as String
@@ -626,27 +662,35 @@ Examples:
                 procs.profile = { Map<String, Object> en ->
                     if (en.enabled != null) {
                         processTimeTracing = BoolUtils.IsValue(en.enabled, false)
-                        if (processTimeTracing)
-                            logFine("Enabled output of profiling results to the log")
+                        if (!getlVerboseMode) {
+                            if (processTimeTracing)
+                                logFine("Enabled output of profiling results to the log")
+                        }
 
                         if (en.level != null) {
                             processTimeLevelLog = Logs.ObjectToLevel(en.level)
-                            if (processTimeLevelLog && processTimeTracing)
-                                logFine("Output profiling messages with level $processTimeLevelLog")
+                            if (!getlVerboseMode) {
+                                if (processTimeLevelLog && processTimeTracing)
+                                    logFine("Output profiling messages with level $processTimeLevelLog")
+                            }
                         }
 
                         if (en.debug != null) {
                             processTimeDebug = BoolUtils.IsValue(en.debug)
-                            if (processTimeDebug && processTimeTracing)
-                                logFine('Profiling the start of process commands')
+                            if (!getlVerboseMode) {
+                                if (processTimeDebug && processTimeTracing)
+                                    logFine('Profiling the start of process commands')
+                            }
                         }
                     }
                 }
                 procs.sqlscripter = { Map<String, Object> en ->
                     if (en.debug != null) {
                         sqlScripterDebug = BoolUtils.IsValue(en.debug)
-                        if (sqlScripterDebug)
-                            logFine('Enabled logging SQL scripter commands')
+                        if (!getlVerboseMode) {
+                            if (sqlScripterDebug)
+                                logFine('Enabled logging SQL scripter commands')
+                        }
                     }
                 }
                 procs.project = { Map<String, Object> en ->
@@ -704,7 +748,7 @@ Examples:
             }
         }
 
-        if (options.projectConfigParams.project != null) {
+        if (!getlVerboseMode && options.projectConfigParams.project != null) {
             logFine("### Start project \"${options.projectConfigParams.project}\", " +
                     "version ${options.projectConfigParams.version?:'1.0'}, " +
                     "created ${options.projectConfigParams.year?:DateUtils.PartOfDate('YEAR', new Date()).toString()} " +
@@ -847,8 +891,6 @@ Examples:
         _params.models = _models
         _params.fileman = _fileman
 
-        Version.instance.sayInfo(true, this)
-
         if (!IsCurrentProcessInThread() && getGetlSystemParameter('mainClass') == null &&
                 (MainClassName() in ['org.codehaus.groovy.tools.GroovyStarter', 'com.intellij.rt.execution.CommandLineWrapper'/*, 'java.lang.Thread'*/] ||
                         LaunchedFromGroovyConsole))
@@ -898,12 +940,14 @@ Examples:
     static Getl GetlInstance() { return _getl }
 
     /** Set current Getl instance */
-    static void GetlSetInstance(Getl instance) {
+    static void GetlSetInstance(Getl instance, Boolean verboseMode = null) {
         if (instance == null)
             throw new DslError('#params.required', [param: 'instance', detail: 'GetlSetInstance'])
 
         instance.setGetlSystemParameter('mainInstance', instance)
         instance._setGetlInstance()
+        if (verboseMode != null)
+            instance.setGetlSystemParameter('verboseMode', BoolUtils.IsValue(verboseMode))
     }
 
     /** check that Getl instance is created */
@@ -2383,13 +2427,12 @@ Examples:
         def exitCode = 0
         def result = null
 
-        /*if (runScript)
-            _repositoryFilter.pushOptions(true)*/
-
         def isGetlScript = (script instanceof Getl)
+        def scriptVerboseMode = false
         try {
             if (isGetlScript) {
                 def scriptGetl = script as Getl
+                scriptVerboseMode = getlVerboseMode
 
                 synchronized (_lockMainThread) {
                     if (extVars != null)
@@ -2426,9 +2469,11 @@ Examples:
             }
 
             if (runScript) {
-                if (isInitMode)
+                if (isInitMode && !scriptVerboseMode)
                     logInfo("### Start script ${script.getClass().name}")
                 def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
+                if (scriptVerboseMode)
+                    pt.logLevel = Level.OFF
                 try {
                     if (isGetlScript)
                         (script as Getl).prepare()
@@ -2485,7 +2530,7 @@ Examples:
                     }
                 }
                 pt.finish()
-                if (isInitMode)
+                if (isInitMode && !scriptVerboseMode)
                     logInfo("### Finish script ${script.getClass().name}")
             }
         }
@@ -2495,7 +2540,6 @@ Examples:
                     releaseTemporaryObjects(script as Getl)
 
                 this._setGetlInstance()
-                /*_repositoryFilter.pullOptions()*/
             }
         }
 
@@ -3104,7 +3148,7 @@ Examples:
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
         def logFileName = _logOpts.getLogFileName()
         runClosure(_logOpts, cl)
-        if (logFileName != _logOpts.getLogFileName())
+        if (!getlVerboseMode && logFileName != _logOpts.getLogFileName())
             logFine("# Start logging to log file ${_logOpts.getLogFileName()}")
 
         return _logOpts

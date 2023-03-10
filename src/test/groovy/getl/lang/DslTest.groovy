@@ -54,6 +54,7 @@ class DslTest extends TestDsl {
     @Test
     void test00() {
         Dsl(this) {
+            assertTrue(getlVerboseMode)
             assertTrue(unitTestMode)
             assertTrue(BoolUtils.IsValue(configGlobal.inittest))
         }
@@ -985,6 +986,7 @@ ORDER BY t1.id"""
 
         Getl.Module([
                 'runclass=getl.lang.DslTestScriptFields1',
+                'getl_verbose_mode=true',
                 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
                 'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
@@ -992,6 +994,7 @@ ORDER BY t1.id"""
 
         Getl.Module([
                 'runclass=getl.lang.DslTestScriptFields1', 'unittest=true', 'environment=dev',
+                'getl_verbose_mode=true',
                 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
                 'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
@@ -1000,6 +1003,7 @@ ORDER BY t1.id"""
         shouldFail {
             Getl.Module([
                     'runclass=getl.lang.DslTestScriptFields1', 'unittest=true',
+                    'getl_verbose_mode=true',
                     'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                     'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
                     'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
@@ -1015,6 +1019,7 @@ ORDER BY t1.id"""
 
         Getl.Module([
                 'runclass=getl.lang.DslTestAllowProcess',
+                'getl_verbose_mode=true',
                 'vars.enabled=true',
                 'vars.checkOnStart=false',
                 'vars.checkForThreads=false'
@@ -1024,6 +1029,7 @@ ORDER BY t1.id"""
 
         Getl.Module([
                 'runclass=getl.lang.DslTestAllowProcess',
+                'getl_verbose_mode=true',
                 'vars.enabled=true',
                 'vars.checkOnStart=true',
                 'vars.checkForThreads=true'
@@ -1042,6 +1048,7 @@ ORDER BY t1.id"""
         shouldFail {
             Getl.Module([
                     'runclass=getl.lang.DslTestAllowProcess',
+                    'getl_verbose_mode=true',
                     'vars.enabled=false',
                     'vars.checkOnStart=true',
                     'vars.checkForThreads=true'
@@ -1052,6 +1059,7 @@ ORDER BY t1.id"""
 
         Getl.Module([
                 'runclass=getl.lang.DslTestAllowProcess',
+                'getl_verbose_mode=true',
                 'vars.enabled=false',
                 'vars.checkOnStart=false',
                 'vars.checkForThreads=true'
@@ -1064,7 +1072,8 @@ ORDER BY t1.id"""
 
     @Test
     void test99_05RunApplication() {
-        String[] args = ['vars.field1="test application"', 'vars.field2=100', 'getlprop.filename=src/test/resources/getl-properties.conf', 'environment=dev']
+        String[] args = ['vars.field1="test application"', 'getl_verbose_mode=true', 'vars.field2=100',
+                         'getlprop.filename=src/test/resources/getl-properties.conf', 'environment=dev']
         DslApplication.main(args)
         Dsl(this) {
             assertTrue(configContent.init as Boolean)
@@ -1124,7 +1133,7 @@ ORDER BY t1.id"""
 
     @Test
     void test99_99StopScript() {
-        Getl.Module(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
+        Getl.Module(['runclass=getl.lang.DslTestScriptStop', 'getl_verbose_mode=true', 'vars.level=1'])
         assertTrue(BoolUtils.IsValue(Config.content.test_stop))
     }
 }

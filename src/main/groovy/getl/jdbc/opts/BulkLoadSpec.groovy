@@ -278,9 +278,10 @@ class BulkLoadSpec extends BaseSpec {
     String getSourceDatasetName() { sourceDataset?.dslNameObject }
     /** The name of source file prototype in repository for bulk load */
     void setSourceDatasetName(String value) {
-        def own = ownerObject as GetlRepository
-        GetlValidate.IsRegister(own, true)
         if (value != null) {
+            def own = ownerObject as GetlRepository
+            GetlValidate.IsRegister(own, true)
+
             def csv = own.dslCreator.dataset(value)
             if (!(csv instanceof CSVDataset))
                 throw new DatasetError(csv, '#object.non_instance', [className: CSVDataset.name])
@@ -301,9 +302,9 @@ class BulkLoadSpec extends BaseSpec {
     String getStoryDatasetName() { storyDataset?.dslNameObject }
     /** Story dataset name */
     void setStoryDatasetName(String value) {
-        def own = ownerObject as GetlRepository
-        GetlValidate.IsRegister(own, true)
         if (value != null) {
+            def own = ownerObject as GetlRepository
+            GetlValidate.IsRegister(own, true)
             setStoryDataset(own.dslCreator.jdbcTable(value))
         }
         else

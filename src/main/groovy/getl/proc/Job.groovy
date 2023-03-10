@@ -13,6 +13,9 @@ abstract class Job {
 	/** Getl owner */
 	protected Getl dslCreator
 
+	/** Verbose mode */
+	protected Boolean verboseMode = false
+
 	/** Current logger */
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
@@ -25,7 +28,7 @@ abstract class Job {
 	 * @return
 	 */
 	static Map<String, Object> getArgs() { return jobArgs }
-	
+
 	static private void processConfigArgs (def args) {
 		Map<String, Object> m = MapUtils.ProcessArguments(args)
 		if (m.errout != null) Logs.RedirectErrOut(m.errout as String)
@@ -88,9 +91,11 @@ abstract class Job {
 	@SuppressWarnings(["UnnecessaryQualifiedReference", "GroovyVariableNotAssigned", 'GroovyUnusedAssignment'])
 	protected void doRun () {
 		DateUtils.init()
-		//if (dslCreator == null)
 		Logs.Init()
-		getl.deploy.Version.instance.sayInfo()
+
+		if (!verboseMode)
+			getl.deploy.Version.instance.sayInfo()
+
 		prepareRun()
 		def isError = false
         Throwable err
@@ -104,7 +109,10 @@ abstract class Job {
 		}
 		finally {
 			done()
-			logger.info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
+
+			if (!verboseMode)
+				logger.info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
+
 			logger.done()
 			if (isError && ExitOnError) {
 				System.exit(exitCode?:1)

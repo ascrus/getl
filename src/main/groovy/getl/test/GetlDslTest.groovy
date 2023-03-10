@@ -1,13 +1,12 @@
 //file:noinspection DuplicatedCode
+//file:noinspection unused
 package getl.test
 
 import getl.config.ConfigManager
 import getl.config.ConfigSlurper
 import getl.lang.Getl
 import groovy.transform.InheritConstructors
-import org.junit.AfterClass
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.rules.TestRule
 import org.junit.rules.TestWatcher
@@ -99,7 +98,7 @@ class GetlDslTest extends GetlTest {
 
         if (!Getl.GetlInstanceCreated()) {
             def eng = useGetlClass().getConstructor().newInstance()
-            Getl.GetlSetInstance(eng)
+            Getl.GetlSetInstance(eng, true)
             eng.options.autoInitFromConfig = autoLoadProperties()
         }
 
