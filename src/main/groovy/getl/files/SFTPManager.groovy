@@ -333,7 +333,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Invalid directory \"$path\" on source \"$this\"", e)
+				logger.severe("Invalid directory \"$path\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 		_currentPath = channelFtp.pwd()
@@ -358,7 +358,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not download file \"$filePath\" to \"$fn\" on source \"$this\"", e)
+				logger.severe("Can not download file \"$filePath\" to \"$fn\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 		finally {
@@ -384,7 +384,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not upload file \"$fileName\" from \"$fn\" on source \"$this\"", e)
+				logger.severe("Can not upload file \"$fileName\" from \"$fn\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 		finally {
@@ -402,7 +402,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not remove file \"$fileName\" on source \"$this\"", e)
+				logger.severe("Can not remove file \"$fileName\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 	}
@@ -435,7 +435,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not create directory \"$cdDir\" on source \"$this\"", e)
+				logger.severe("Can not create directory \"$cdDir\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 		finally {
@@ -451,7 +451,7 @@ class SFTPManager extends Manager implements UserLogins {
 
         if (!channelFtp.stat(dirName).isDir()) {
 			if (writeErrorsToLog)
-				logger.severe("\"$dirName\" is not directory on source \"$this\"!")
+				logger.severe("\"$dirName\" is not directory on source \"$this\" with path \"$currentPath\"")
 			throw new IOFilesError(this, '#io.dir.not_found', [path: dirName], writeErrorsToLog)
 		}
 		try {
@@ -466,7 +466,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not remove directory \"$dirName\" on source \"$this\"", e)
+				logger.severe("Can not remove directory \"$dirName\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 	}
@@ -510,7 +510,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Can not rename file \"$fileName\" to \"$path\" on source \"$this\"", e)
+				logger.severe("Can not rename file \"$fileName\" to \"$path\" on source \"$this\" with path \"$currentPath\"", e)
 			throw e
 		}
 	}

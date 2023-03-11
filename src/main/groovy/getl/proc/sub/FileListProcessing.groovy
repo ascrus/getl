@@ -933,6 +933,7 @@ abstract class FileListProcessing implements GetlRepository {
                 afterProcessing()
             }
             finally {
+                disconnectFrom([source])
                 cleanProperties()
             }
         }

@@ -1,6 +1,8 @@
+//file:noinspection unused
 package getl.proc
 
 import getl.proc.sub.FileListProcessing
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -15,6 +17,11 @@ class FileCleaner extends FileListProcessing {
         super()
         removeFiles = true
     }
+
+    /** Ignore ile remove error (default false) */
+    Boolean getIgnoreFileRemoveError() { BoolUtils.IsValue(params.ignoreFileRemoveError) }
+    /** Ignore ile remove error (default false) */
+    void setIgnoreFileRemoveError(Boolean value) { params.ignoreFileRemoveError = value }
 
     @Override
     protected List<List<String>> getExtendedIndexes() {
@@ -57,20 +64,31 @@ class FileCleaner extends FileListProcessing {
                     changeDir([source], curDir, false, numberAttempts, timeAttempts)
                 }
 
+                def isError = false
                 Operation([source], numberAttempts, timeAttempts, this) { man ->
-                    man.removeFile(file.filename as String)
+                    try {
+                        man.removeFile(file.filename as String)
+                    }
+                    catch (Exception e) {
+                        if (!ignoreFileRemoveError)
+                            throw e
+                        else
+                            isError = true
+                    }
                 }
 
-                if (!onlyFromStory)
-                    storyWrite(file + [fileloaded: new Date()])
+                if (!isError) {
+                    if (!onlyFromStory)
+                        storyWrite(file + [fileloaded: new Date()])
 
-                fileSize += file.filesize as Long
-                copiedFiles++
+                    fileSize += file.filesize as Long
+                    copiedFiles++
 
-                def curPercent = ((copiedFiles / percentFiles).toInteger()).intdiv(10) * 10
-                if (curPercent > copiedPercent) {
-                    copiedPercent = curPercent
-                    logger.fine("Removed $copiedPercent% (${StringUtils.WithGroupSeparator(copiedFiles)} files)")
+                    def curPercent = ((copiedFiles / percentFiles).toInteger()).intdiv(10) * 10
+                    if (curPercent > copiedPercent) {
+                        copiedPercent = curPercent
+                        logger.fine("Removed $copiedPercent% (${StringUtils.WithGroupSeparator(copiedFiles)} files)")
+                    }
                 }
             }
         }
