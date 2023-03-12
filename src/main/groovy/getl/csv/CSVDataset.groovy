@@ -236,14 +236,14 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	Long prepareCSVForBulk (CSVDataset source, Closure code) {
+	Long prepareCSVForBulk(CSVDataset source, Closure code) {
 		prepareCSVForBulk(source, null, code)
 	}
 	
 	/**
 	 * Decoding prepare for bulk load file
 	 */
-	Long decodeBulkCSV (CSVDataset source) {
+	Long decodeBulkCSV(CSVDataset source) {
 		currentCsvConnection.currentCSVDriver.decodeBulkCSV(this, source)
 	}
 	

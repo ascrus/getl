@@ -86,17 +86,17 @@ class CSVDriver extends FileDriver {
 		p.path = p.params.fn
 		CSVDataset ds = dataset as CSVDataset
 
-		p.quote = ListUtils.NotNullValue([params.quoteStr, ds.quoteStr()]) as String
+		p.quote = StringUtils.UnescapeJava(ListUtils.NotNullValue([params.quoteStr, ds.quoteStr()]) as String)
 		p.quoteStr = p.quote.chars[0]
 		
-		def fieldDelimiter = ListUtils.NotNullValue([params.fieldDelimiter, ds.fieldDelimiter()]) as String
+		def fieldDelimiter = StringUtils.UnescapeJava(ListUtils.NotNullValue([params.fieldDelimiter, ds.fieldDelimiter()]) as String)
 		p.fieldDelimiter = fieldDelimiter.chars[0]
 		
-		p.rowDelimiter = ListUtils.NotNullValue([params.rowDelimiter, ds.rowDelimiter()]) as String
+		p.rowDelimiter = StringUtils.UnescapeJava(ListUtils.NotNullValue([params.rowDelimiter, ds.rowDelimiter()]) as String)
 		p.isHeader = BoolUtils.IsValue([params.header, ds.isHeader()])
 		p.qMode = datasetQuoteMode(ds)
 		p.isSplit = BoolUtils.IsValue(params.isSplit)
-		p.nullAsValue = ListUtils.NotNullValue([params.nullAsValue, ds.nullAsValue()]) as String
+		p.nullAsValue = StringUtils.UnescapeJava(ListUtils.NotNullValue([params.nullAsValue, ds.nullAsValue()]) as String)
 		
 		return p
 	}
@@ -1114,12 +1114,12 @@ class CSVDriver extends FileDriver {
 		target.escaped = false
 
 		String targetRowDelimiter = target.rowDelimiter()
-		String sourceFieldDelimiter = source.fieldDelimiter()
+		String sourceFieldDelimiter = StringUtils.UnescapeJava(source.fieldDelimiter())
 		String sourceFieldDelimiterLast = sourceFieldDelimiter + '\u0001'
-		String targetFieldDelimiter = target.fieldDelimiter()
+		String targetFieldDelimiter = StringUtils.UnescapeJava(target.fieldDelimiter())
 		def source_escaped = source.escaped()
-		String sourceQuoteStr = source.quoteStr()
-		String targetQuoteStr = target.quoteStr()
+		String sourceQuoteStr = StringUtils.UnescapeJava(source.quoteStr())
+		String targetQuoteStr = StringUtils.UnescapeJava(target.quoteStr())
 		
 		String decodeQuote = sourceQuoteStr
 		if (targetQuoteStr == sourceQuoteStr) decodeQuote += sourceQuoteStr
@@ -1279,9 +1279,10 @@ class CSVDriver extends FileDriver {
 		(target.connection as CSVConnection).validPath()
 		
 		target.header = source.isHeader()
-		target.nullAsValue = source.nullAsValue()
-		String targetRowDelimiter = target.rowDelimiter()
-		String targetQuoteStr = target.quoteStr()
+		target.nullAsValue = StringUtils.UnescapeJava(source.nullAsValue())
+		String targetRowDelimiter = StringUtils.UnescapeJava(target.rowDelimiter())
+		String targetFieldDelimiter = StringUtils.UnescapeJava(target.fieldDelimiter())
+		String targetQuoteStr = StringUtils.UnescapeJava(target.quoteStr())
 		
 		Map<String, String> encodeMap = new HashMap<String, String>()
 		if (target.escaped()) {
@@ -1293,7 +1294,7 @@ class CSVDriver extends FileDriver {
 		else {
 			encodeMap."$targetQuoteStr" = "$targetQuoteStr$targetQuoteStr"
 		}
-		encodeMap.putAll(['\u0001': targetRowDelimiter, '\u0002': target.fieldDelimiter(), '\u0003': target.quoteStr()])
+		encodeMap.putAll(['\u0001': targetRowDelimiter, '\u0002': targetFieldDelimiter, '\u0003': target.quoteStr()])
 
 		BufferedReader reader
 		if (source.isGzFile()) {

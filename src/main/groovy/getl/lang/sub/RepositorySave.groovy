@@ -141,7 +141,7 @@ class RepositorySave extends Getl {
     /** Processing declared methods */
     Object _processRepositorySave() {
         try {
-            def methods = new HashMap<String, List<MethodParams>>()
+            def methods = new LinkedHashMap<String, List<MethodParams>>()
             ObjectTypes.each {typeName ->
                 methods.put(typeName, [] as List<MethodParams>)
             }
@@ -225,7 +225,7 @@ class RepositorySave extends Getl {
 
                             if (clearRep) {
                                 def clearMethod = 'clear' + type
-                                thisObject."$clearMethod"()
+                                thisObject."$clearMethod"(mask)
                             }
 
                             def saveMethod = 'save' + type
@@ -278,57 +278,57 @@ class RepositorySave extends Getl {
     }
 
     /** Clear connections */
-    void clearConnections() {
-        repositoryStorageManager.repository(RepositoryConnections).unregister()
+    void clearConnections(String mask) {
+        repositoryStorageManager.repository(RepositoryConnections).unregister(mask)
     }
 
     /** Clear datasets */
-    void clearDatasets() {
-        repositoryStorageManager.repository(RepositoryDatasets).unregister()
+    void clearDatasets(String mask) {
+        repositoryStorageManager.repository(RepositoryDatasets).unregister(mask)
     }
 
     /** Clear files */
-    void clearFiles() {
-        repositoryStorageManager.repository(RepositoryFilemanagers).unregister()
+    void clearFiles(String mask) {
+        repositoryStorageManager.repository(RepositoryFilemanagers).unregister(mask)
     }
 
     /** Clear history points */
-    void clearHistorypoints() {
-        repositoryStorageManager.repository(RepositoryHistorypoints).unregister()
+    void clearHistorypoints(String mask) {
+        repositoryStorageManager.repository(RepositoryHistorypoints).unregister(mask)
     }
 
     /** Clear map tables */
-    void clearMapTables() {
-        repositoryStorageManager.repository(RepositoryMapTables).unregister()
+    void clearMapTables(String mask) {
+        repositoryStorageManager.repository(RepositoryMapTables).unregister(mask)
     }
 
     /** Clear monitor rules */
-    void clearMonitorRules() {
-        repositoryStorageManager.repository(RepositoryMonitorRules).unregister()
+    void clearMonitorRules(String mask) {
+        repositoryStorageManager.repository(RepositoryMonitorRules).unregister(mask)
     }
 
     /** Clear reference files */
-    void clearReferenceFiles() {
-        repositoryStorageManager.repository(RepositoryReferenceFiles).unregister()
+    void clearReferenceFiles(String mask) {
+        repositoryStorageManager.repository(RepositoryReferenceFiles).unregister(mask)
     }
 
     /** Clear reference Vertica tables */
-    void clearReferenceVerticaTables() {
-        repositoryStorageManager.repository(RepositoryReferenceVerticaTables).unregister()
+    void clearReferenceVerticaTables(String mask) {
+        repositoryStorageManager.repository(RepositoryReferenceVerticaTables).unregister(mask)
     }
 
     /** Clear sequences */
-    void clearSequences() {
-        repositoryStorageManager.repository(RepositorySequences).unregister()
+    void clearSequences(String mask) {
+        repositoryStorageManager.repository(RepositorySequences).unregister(mask)
     }
 
     /** Clear set of tables */
-    void clearSetOfTables() {
-        repositoryStorageManager.repository(RepositorySetOfTables).unregister()
+    void clearSetOfTables(String mask) {
+        repositoryStorageManager.repository(RepositorySetOfTables).unregister(mask)
     }
 
-    void clearWorkflow() {
-        repositoryStorageManager.repository(RepositoryWorkflows).unregister()
+    void clearWorkflows(String mask) {
+        repositoryStorageManager.repository(RepositoryWorkflows).unregister(mask)
     }
 
     /** Save connections */

@@ -1132,6 +1132,14 @@ ORDER BY t1.id"""
     }
 
     @Test
+    void test99_08RunGetlFile() {
+        Dsl(this) {
+            runGetlFile(fileName: 'resource:/lang/script1.groovy', vars: [fileName: 'test1.txt'])
+            assertEquals('test1.txt', csv('file1').fileName())
+        }
+    }
+
+    @Test
     void test99_99StopScript() {
         Getl.Module(['runclass=getl.lang.DslTestScriptStop', 'getl_verbose_mode=true', 'vars.level=1'])
         assertTrue(BoolUtils.IsValue(Config.content.test_stop))

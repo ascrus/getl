@@ -48,9 +48,13 @@ import getl.utils.sub.*
 import getl.vertica.*
 import getl.xml.*
 import getl.yaml.*
+import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+
 import java.sql.Time
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
@@ -2285,17 +2289,51 @@ Examples:
     }
 
     /**
+     * Load and run Getl script file
+     * @param fileName script file path
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for public script fields declared
+     * @param extVars extended variables
+     * @param events script events code
+     * @param scriptBaseClass using script base class
+     * @return exit code
+     */
+    @NamedVariant
+    Map<String, Object> runGetlFile(Class<Getl> scriptBaseClass = Getl, String fileName, Boolean runOnce = false, Map vars = new HashMap(), Map extVars = null,
+                                          ScriptEvents events = null) {
+        def compileConfig = new CompilerConfiguration()
+        compileConfig.setScriptBaseClass(scriptBaseClass.name)
+
+        def importCustomizer = new ImportCustomizer()
+        importCustomizer.addStarImports('groovy.transform', 'getl.utils', 'getl.lang.sub')
+        compileConfig.addCompilationCustomizers(importCustomizer)
+
+        return runGroovyScriptFile(fileName, runOnce, vars, extVars, events, compileConfig)
+    }
+
+    /**
      * Load and run groovy script file
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for public script fields declared
      * @param extVars extended variables
      * @param events script events code
+     * @param compileConfig specified compile configuration
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = new HashMap(), Map extVars = null, ScriptEvents events = null) {
-        File sourceFile = new File(fileName)
-        def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = new HashMap(), Map extVars = null, ScriptEvents events = null,
+                                            CompilerConfiguration compileConfig = null) {
+        File sourceFile = new File(FileUtils.TransformFilePath(fileName, true, true, this))
+        if (!sourceFile.exists())
+            throw new DslError(this, '#io.file.not_found', [path: fileName, type: 'Script'])
+
+        GroovyClassLoader classLoader
+        if (compileConfig)
+            classLoader = new GroovyClassLoader(getClass().getClassLoader(), compileConfig)
+        else
+            classLoader = new GroovyClassLoader(getClass().getClassLoader())
+
+        def groovyClass = classLoader.parseClass(sourceFile)
         return runGroovyClass(groovyClass, runOnce, vars, extVars, events)
     }
 
@@ -2305,10 +2343,25 @@ Examples:
      * @param vars set values for public script fields declared
      * @param extVars extended variables
      * @param events script events code
+     * @param compileConfig specified compile configuration
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = new HashMap(), Map extVars = null, ScriptEvents events) {
-        runGroovyScriptFile(fileName, false, vars, extVars, events)
+    Map<String, Object> runGroovyScriptFile(String fileName, Map vars = new HashMap(), Map extVars = null, ScriptEvents events, CompilerConfiguration compileConfig = null) {
+        runGroovyScriptFile(fileName, false, vars, extVars, events, compileConfig)
+    }
+
+    /**
+     * Load and run groovy script file
+     * @param fileName script file path
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for public script fields declared
+     * @param compileConfig specified compile configuration
+     * @return exit code
+     */
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, CompilerConfiguration compileConfig, Closure vars) {
+        def cfg = new groovy.util.ConfigSlurper()
+        def map = cfg.parse(new ClosureScript(closure: vars))
+        return runGroovyScriptFile(fileName, runOnce, MapUtils.ConfigObject2Map(map), null, null, compileConfig)
     }
 
     /**
@@ -2340,24 +2393,26 @@ Examples:
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param configSection set values for public script fields declared from the specified configuration section
+     * @param compileConfig specified compile configuration
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
+    Map<String, Object> runGroovyScriptFile(String fileName, Boolean runOnce, String configSection, CompilerConfiguration compileConfig = null) {
         def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
             throw new DslError(this, '#config.section_not_found', [section: configSection])
 
-        return runGroovyScriptFile(fileName, runOnce, sectParams)
+        return runGroovyScriptFile(fileName, runOnce, sectParams, null, null, compileConfig)
     }
 
     /**
      * Load and run groovy script file
      * @param fileName script file path
      * @param configSection set values for public script fields declared from the specified configuration section
+     * @param compileConfig specified compile configuration
      * @return exit code
      */
-    Map<String, Object> runGroovyScriptFile(String fileName, String configSection) {
-        runGroovyScriptFile(fileName, false, configSection)
+    Map<String, Object> runGroovyScriptFile(String fileName, String configSection, CompilerConfiguration compileConfig = null) {
+        runGroovyScriptFile(fileName, false, configSection, compileConfig)
     }
 
     private final instanceBindingName = '_main_getl'
