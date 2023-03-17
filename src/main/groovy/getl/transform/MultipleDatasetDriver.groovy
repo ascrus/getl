@@ -134,7 +134,7 @@ class MultipleDatasetDriver extends Driver {
 	void clearDataset(Dataset dataset, Map params) { }
 
 	@Override
-	Long executeCommand(String command, Map params) {
+	Long executeCommand(String command, Map params, StringBuffer commandBuffer = null) {
 		throw new ExceptionGETL("Execution command not supported")
 	}
 

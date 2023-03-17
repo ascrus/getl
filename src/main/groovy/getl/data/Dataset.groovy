@@ -1842,10 +1842,6 @@ class Dataset implements GetlRepository, WithConnection {
 				res = Field.datetimeFieldType
 				break
 
-			case Field.numericFieldType:
-				res = Field.doubleFieldType
-				break
-
 			case Field.textFieldType:
 				res = Field.stringFieldType
 				break
@@ -1858,35 +1854,51 @@ class Dataset implements GetlRepository, WithConnection {
 		return res
 	}
 
-	static void CheckTableFields(Dataset dataset, List<Field> fields) {
+	/**
+	 * Check dataset with required fields
+	 * @param dataset checking dataset fields
+	 * @param fields required fields
+	 * @param softCheckType soft type checking
+	 * @param throwErrors throw if error
+	 * @return list of found errors
+	 */
+	static List<String> CheckTableFields(Dataset dataset, List<Field> fields, Boolean softCheckType = true, Boolean throwErrors = true) {
 		if (dataset == null)
 			throw new RequiredParameterError('dataset', 'CheckTableFields')
 
+		def errors = [] as List<String>
+
 		if (dataset.field.isEmpty())
-			return
+			return errors
 
 		fields.each { needField ->
 			def dsField = dataset.fieldByName(needField.name)
 			if (dsField == null)
-				throw new DatasetError(dataset, '#dataset.field_not_found', [field: needField.name])
+				errors.add(Messages.BuildText('#dataset.field_not_found', [field: needField.name]))
 
-			def fieldType = FieldSoftType(dsField.type)
-			def needType = FieldSoftType(needField.type)
-			if (fieldType != needType)
-				throw new DatasetError(dataset, '#dataset.field_type_not_compatible', [field: needField.name, type: needField.type])
+			def fieldType = (softCheckType)?FieldSoftType(dsField.type):dsField.type
+			def needType = (softCheckType)?FieldSoftType(needField.type):needField.type
+			if (!Field.IsCapacityType(fieldType, needType))
+				errors.add(Messages.BuildText('#dataset.field_type_not_compatible',
+						[field: needField.name, source_type: dsField.type, dest_type: needField.type]))
 
-			if (Field.AllowLength(needField) && needField.length != null && (dsField.length?:0) < needField.length)
-				throw new DatasetError(dataset, '#dataset.field_length_not_compatible', [field: needField.name, length: needField.length])
+			if (Field.AllowLength(needField) && Field.AllowLength(dsField) && needField.length != null && (dsField.length?:0) < needField.length)
+				errors.add(Messages.BuildText('#dataset.field_length_not_compatible', [field: needField.name, length: needField.length]))
 
-			if (Field.AllowPrecision(needField) && needField.precision != null && (dsField.precision?:0) < needField.precision)
-				throw new DatasetError(dataset, '#dataset.field_prec_not_compatible', [field: needField.name, precision: needField.precision])
+			if (Field.AllowPrecision(needField) && Field.AllowPrecision(dsField) && needField.precision != null && (dsField.precision?:0) < needField.precision)
+				errors.add(Messages.BuildText('#dataset.field_prec_not_compatible', [field: needField.name, precision: needField.precision]))
 
 			if (!needField.isNull && dsField.isNull)
-				throw new DatasetError(dataset, '#dataset.field_null_not_compatible', [field: needField.name])
+				errors.add(Messages.BuildText('#dataset.field_null_not_compatible', [field: needField.name]))
 
 			if (needField.isKey && !dsField.isKey)
-				throw new DatasetError(dataset, '#dataset.field_key_not_compatible', [field: needField.name])
+				errors.add(Messages.BuildText('#dataset.field_key_not_compatible', [field: needField.name]))
 		}
+
+		if (throwErrors && !errors.isEmpty())
+			throw new DatasetError(dataset, '#dataset.invalid_check_structure', [errors: errors.join(', ')])
+
+		return errors
 	}
 
 	/** Dataset field comparison status */

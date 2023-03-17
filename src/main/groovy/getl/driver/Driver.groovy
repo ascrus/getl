@@ -133,7 +133,7 @@ abstract class Driver {
 
     abstract void clearDataset(Dataset dataset, Map params)
 
-    abstract Long executeCommand(String command, Map params)
+    abstract Long executeCommand(String command, Map params, StringBuffer commandBuffer = null)
 
     abstract Long getSequence(String sequenceName)
 	

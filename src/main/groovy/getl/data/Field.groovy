@@ -418,7 +418,8 @@ class Field implements Serializable, Cloneable {
 	 */
 	@SuppressWarnings('GroovyFallthrough')
 	static Boolean IsConvertibleType(Type source, Type dest) {
-		if (source == dest) return true
+		if (source == dest)
+			return true
 		
 		Boolean res = false
 		switch (dest) {
@@ -448,6 +449,50 @@ class Field implements Serializable, Cloneable {
 				
 		}
 		
+		return res
+	}
+
+	/**
+	 * Check compacity type from other type
+	 * @param source source type
+	 * @param dest destination type
+	 */
+	@SuppressWarnings('GroovyFallthrough')
+	static Boolean IsCapacityType(Type source, Type dest) {
+		if (source == dest)
+			return true
+
+		Boolean res = false
+		switch (dest) {
+			case Type.TEXT:
+				res = (source == Type.STRING)
+				break
+
+			case Type.BIGINT:
+				res = (source == Type.INTEGER)
+				break
+
+			case Type.DATETIME:
+				res = (source in [Type.DATE, Type.TIME])
+				break
+
+			case Type.TIMESTAMP_WITH_TIMEZONE:
+				res = (source in [Type.DATE, Type.TIME, Type.DATETIME])
+				break
+
+			case Type.DOUBLE:
+				res = (source in [Type.NUMERIC, Type.INTEGER, Type.BIGINT])
+				break
+
+			case Type.NUMERIC:
+				res = (source in [Type.INTEGER, Type.BIGINT])
+				break
+
+			case Type.BLOB:
+				res = true
+				break
+		}
+
 		return res
 	}
 

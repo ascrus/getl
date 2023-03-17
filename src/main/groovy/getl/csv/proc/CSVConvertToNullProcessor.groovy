@@ -30,7 +30,8 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 
 	@Override
     <T> T execute(Object value, final CsvContext context) {
-		if (nullValue != null && value != null && value == nullValue) value = null
+		if (value == nullValue)
+			value = null
 		
 		next.execute(value, context)
 	}

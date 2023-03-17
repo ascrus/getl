@@ -267,7 +267,7 @@ class HistoryPointManager implements GetlRepository {
 				field = tableHistoryFields
 			}
 			else {
-				CheckTableFields(it, tableHistoryFields)
+				CheckTableFields(it, tableHistoryFields, false)
 			}
 		}
 	}

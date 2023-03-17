@@ -22,10 +22,15 @@ import getl.utils.*
 import getl.lang.sub.LoginManager
 import getl.lang.sub.StorageLogins
 import groovy.sql.Sql
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+
+import java.sql.Time
+import java.sql.Timestamp
+import java.time.OffsetDateTime
 
 /**
  * JDBC connection class
@@ -318,6 +323,10 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Return session ID (if supported RDBMS driver) */
 	@JsonIgnore
 	String getSessionID() { sysParams.sessionID as String }
+
+	/** Last executed SQL statement */
+	@JsonIgnore
+	String getLastSqlStatement() { sysParams.lastSqlStatement as String }
 
 	/** Current host for connection */
 	String currentConnectHost() { connectHost }
@@ -706,6 +715,7 @@ class JDBCConnection extends Connection implements UserLogins {
 			throw new NotSupportError(this, 'createSchema')
 
 		methodParams.validation('createSchema', createParams, [driver.methodParams.params('createSchema')])
+		tryConnect()
 		currentJDBCDriver.createSchema(schemaName, createParams)
 	}
 
@@ -719,6 +729,7 @@ class JDBCConnection extends Connection implements UserLogins {
 			throw new NotSupportError(this, 'dropSchema')
 
 		methodParams.validation('dropSchema', dropParams, [driver.methodParams.params('dropSchema')])
+		tryConnect()
 		currentJDBCDriver.dropSchema(schemaName, dropParams)
 	}
 
@@ -728,6 +739,51 @@ class JDBCConnection extends Connection implements UserLogins {
 			throw new ExceptionGETL(this, 'Connection not support timestamp fields')
 
 		return currentJDBCDriver.sqlExpressionValue('convertTextToTimestamp', [value: value])
+	}
+
+	/** Format date to string */
+	String formatDate(Date value) {
+		return DateUtils.FormatDate(currentJDBCDriver.sqlDatetimeFormatter, value)
+	}
+
+	/** Format sql date to string */
+	String formatSqlDate(java.sql.Date value) {
+		return DateUtils.FormatSQLDate(currentJDBCDriver.sqlDateFormatter, value)
+	}
+
+	/** Format sql time to string */
+	String formatSqlTime(Time value) {
+		return DateUtils.FormatSQLTime(currentJDBCDriver.sqlTimeFormatter, value)
+	}
+
+	/** Format sql timestamp to string */
+	String formatSqlTimestamp(Timestamp value) {
+		return DateUtils.FormatSQLTimestamp(currentJDBCDriver.sqlTimestampFormatter, value)
+	}
+
+	/** Format sql timestamp with tz to string */
+	String formatSqlTimestampWithTz(OffsetDateTime value) {
+		return DateUtils.FormatSQLTimestampWithTz(currentJDBCDriver.sqlTimestampWithTzFormatter, value)
+	}
+
+	/** Format value to string */
+	@CompileStatic
+	String formatValue(Object value) {
+		String res
+		if (value instanceof Timestamp)
+			res = formatSqlTimestamp(value as Timestamp)
+		else if (value instanceof java.sql.Date)
+			res = formatSqlDate(value as java.sql.Date)
+		else if (value instanceof Time)
+			res = formatSqlTime(value as Time)
+		else if (value instanceof Date)
+			res = formatDate(value as Date)
+		else if (value instanceof OffsetDateTime)
+			res = formatSqlTimestampWithTz(value as OffsetDateTime)
+		else
+			res = value.toString()
+
+		return res
 	}
 
 	/** Name dual system table */

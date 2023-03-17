@@ -86,7 +86,10 @@ class ExecutorTest extends GetlTest {
                 processTimeTracing = false
             }
 
-            def mainCon1 = embeddedConnection('con1', true) { inMemory = true }
+            def mainCon1 = embeddedConnection('con1', true) {
+                inMemory = true
+                connectDatabase = 'TEST_EXECUTOR'
+            }
 
             def mainTable1 = embeddedTable('table1', true) {
                 useConnection mainCon1

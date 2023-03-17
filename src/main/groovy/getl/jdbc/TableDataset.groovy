@@ -807,17 +807,18 @@ class TableDataset extends JDBCDataset {
 	 * Copying table rows to another table
 	 * @param dest destination table
 	 * @param map column mapping when copying (dest col: expression)
+	 * @param copyParams copy parameters
 	 * @return number of copied rows
 	 */
-	Long copyTo(TableDataset dest, Map<String, String> map = new HashMap<String, String>()) {
+	Long copyTo(TableDataset dest, Map<String, String> map = new HashMap<String, String>(), Map copyParams = null) {
 		Long res = 0
 		try {
 			if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
 				currentJDBCConnection.transaction {
-					res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+					res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map, copyParams)
 				}
 			else
-				res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+				res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map, copyParams)
 		}
 		catch (Exception e) {
 			logger.severe("Error copy rows from table \"$objectName\" to \"$dest\"", e)

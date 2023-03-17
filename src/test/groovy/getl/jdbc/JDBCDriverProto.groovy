@@ -614,8 +614,13 @@ abstract class JDBCDriverProto extends GetlTest {
                 Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id1 = num
                 r.id2 = id2Value
-                r.name = """'name'\t"$num"${lineFeedChar}test|/,;|\\"""
-                r."desc'ription" = (r."desc'ription".toString()).trim()
+                r.name = """'name'${(!file.escaped())?'\t':''}"$num"${(!file.escaped())?lineFeedChar:''}test|/,;|\\"""
+                if (num == 1) {
+                    if (r."desc'ription" == null)
+                        r."desc'ription" = GenerationUtils.GenerateString(100)
+                    if (r.data == null)
+                        r.data = GenerationUtils.GenerateString(250).bytes
+                }
 
                 updater(r)
             }
@@ -662,11 +667,11 @@ abstract class JDBCDriverProto extends GetlTest {
         def file = bulkTable.csvTempFile
         prepareBulkFile(file)
         def countFiles = new Flow().writeTo(dest: file) { updater ->
-            updater([:])
+            updater([id:null])
             (2..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, false, num)
                 r.id = num
-                r.name = """'name'\t"$num"${lineFeedChar}test|/,;|\\"""
+                r.name = """'name'"$num"test|/,;|\\"""
                 if (useArray)
                     r.list = [num, num + 1, num + 2]
 
@@ -675,14 +680,14 @@ abstract class JDBCDriverProto extends GetlTest {
         }
         assertEquals(countRows, countFiles)
 
-        def countCopy = new Flow().copy(source: file, dest: bulkTable, bulkLoad: true, bulkEscaped: false)
+        def countCopy = new Flow().copy(source: file, dest: bulkTable, bulkLoad: true)
         assertEquals(countRows, countCopy)
         assertEquals(countRows, bulkTable.countRow())
         def num = 1
         bulkTable.eachRow(order: ['id'], where: 'id IS NOT NULL') { r ->
             num++
             assertEquals(num, r.id)
-            assertEquals("""'name'\t"$num"${lineFeedChar}test|/,;|\\""", r.name)
+            assertEquals("""'name'"$num"test|/,;|\\""", r.name)
             if (useArray)
                 assertEquals([num, num + 1, num + 2], r.list)
         }

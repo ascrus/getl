@@ -135,7 +135,8 @@ class RepositoryStorageManager {
             if (dsField == null)
                 throw new DatasetError(value, '#dataset.field_not_found', [field: needField.name])
             if (needField.type != dsField.type)
-                throw new DatasetError(value, '#dataset.field_type_not_compatible', [field: needField.name, type: needField.type.toString()])
+                throw new DatasetError(value, '#dataset.field_type_not_compatible',
+                        [field: needField.name, source_type: dsField.type, dest_type: needField.type])
             if (needField.length != null && dsField.length < needField.length)
                 throw new DatasetError(value, '#dataset.field_length_not_compatible', [field: needField.name, length: needField.length])
         }

@@ -53,18 +53,17 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 
 	@Override
     String encode(String value, final CsvContext context, final CsvPreference pref) {
+		String val
 		if (context.lineNumber == 1 && header)
-			value = super.encode(value, context, pref)
-		else if (value != nullValue && (nullValue == null || value != nullValue)) {
-			if (this.isEscaped && context.columnNumber in this.escapedColumns) {
-				value = quote + StringUtils.ReplaceMany(value, escapeKeys, escapePattern) + quote
-			}
-			else {
-				value = super.encode(value, context, pref)
-			}
-		}
+			val = super.encode(value, context, pref)
+		else if (!this.isEscaped || (nullValue != null && value == nullValue))
+			val = super.encode(value, context, pref)
+		else if (context.columnNumber in this.escapedColumns)
+			val = quote + StringUtils.ReplaceMany(value, escapeKeys, escapePattern) + quote
+		else
+			val = super.encode(value, context, pref)
 
-		writeSize += value.length()
+		writeSize += val.length()
 		if (context.columnNumber < countFields) {
 			writeSize += fieldDelimiterSize 
 		}
@@ -72,6 +71,6 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 			writeSize += rowDelimiterSize
 		}
 		
-		return value
+		return val
 	}
 }

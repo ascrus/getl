@@ -26,7 +26,7 @@ class CSVConnection extends FileConnection {
 		methodParams.register('Super',
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped',
 				 'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
-				 'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale', 'blobAsPureHex',
+				 'formatDateTime', 'uniFormatDateTime', 'fieldOrderByHeader', 'locale', 'blobAsPureHex', 'blobPrefix',
 				 'constraintsCheck', 'presetMode', 'formatOutput', 'arrayOpeningBracket', 'arrayClosingBracket'])
 	}
 
@@ -171,6 +171,13 @@ class CSVConnection extends FileConnection {
 	void setBlobAsPureHex(Boolean value) { params.blobAsPureHex = value }
 	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
 	Boolean blobAsPureHex() { BoolUtils.IsValue(blobAsPureHex, false) }
+
+	/** Blob prefix for not pure format */
+	String getBlobPrefix() { params.blobPrefix as String }
+	/** Blob prefix for not pure format */
+	void setBlobPrefix(String value) { params.blobPrefix = value }
+	/** Blob prefix for not pure format */
+	String blobPrefix() { blobPrefix?:'0x' }
 
 	@Override
 	String formatTimestampWithTz() { super.formatTimestampWithTz?:DateUtils.defaultTimestampWithTzSmallMask }

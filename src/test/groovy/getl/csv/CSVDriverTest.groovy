@@ -539,7 +539,7 @@ class CSVDriverTest extends GetlTest {
 ''',read())
 
                 escaped = true
-                nullAsValue = '\\\\'
+                nullAsValue = '\\\\\\\\'
                 write()
                 assertEquals('''id,name,v1,v2,v3,v4,v5
 1,"one",1,"\\"string\\"",2019-12-31,123.45,true
@@ -547,7 +547,7 @@ class CSVDriverTest extends GetlTest {
 ''',read())
 
                 escaped = false
-                nullAsValue = '\\\\'
+                nullAsValue = '\\\\\\\\'
                 write()
                 assertEquals('''id,name,v1,v2,v3,v4,v5
 1,one,1,"""string""",2019-12-31,123.45,true

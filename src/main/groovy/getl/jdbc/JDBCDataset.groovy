@@ -77,6 +77,10 @@ class JDBCDataset extends Dataset {
 	@JsonIgnore
 	String getObjectFullName() { fullNameDataset() }
 
+	/** Last executed SQL statement */
+	@JsonIgnore
+	String getLastSqlStatement() { sysParams.lastSqlStatement as String }
+
 	/**
 	 * Name of dataset
 	 */

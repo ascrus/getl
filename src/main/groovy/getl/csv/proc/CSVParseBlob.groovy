@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.csv.proc
 
 import getl.exception.CSVException
@@ -14,17 +15,23 @@ import getl.utils.*
 */
 @CompileStatic
 class CSVParseBlob extends CellProcessorAdaptor {
-	CSVParseBlob(Boolean pureFormat) {
+	CSVParseBlob(Boolean pureFormat, String blobPrefix) {
 		super()
 		this.pureFormat = pureFormat
+		this.blobPrefix = blobPrefix
+		this.prefixLength = blobPrefix.length()
 	}
 
-	CSVParseBlob(Boolean pureFormat, StringCellProcessor next) {
+	CSVParseBlob(Boolean pureFormat, String blobPrefix, StringCellProcessor next) {
 		super(next)
 		this.pureFormat = pureFormat
+		this.blobPrefix = blobPrefix
+		this.prefixLength = blobPrefix.length()
 	}
 
 	private Boolean pureFormat
+	private String blobPrefix
+	private Integer prefixLength
 
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
@@ -36,10 +43,10 @@ class CSVParseBlob extends CellProcessorAdaptor {
 		def str = value as String
 		byte[] result
 		if (!pureFormat) {
-			if (str.length() < 3 || str.substring(0, 2) != '\\x')
+			if (str.length() <= prefixLength || str.substring(0, prefixLength) != blobPrefix)
 				throw new CSVException('#csv.invalid_blob')
 
-			result = StringUtils.HexToRaw(str.substring(2))
+			result = StringUtils.HexToRaw(str.substring(prefixLength))
 		}
 		else
 			result = StringUtils.HexToRaw(str)

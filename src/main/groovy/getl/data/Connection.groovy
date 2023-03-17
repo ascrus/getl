@@ -374,10 +374,10 @@ class Connection implements GetlRepository {
 				value = cp.name()
 			}
 			catch (IllegalCharsetNameException  ignored) {
-				throw new DatasetError(this, '#connection.invalid_codepage', [code_page: value])
+				throw new ConnectionError(this, '#connection.invalid_codepage', [code_page: value])
 			}
 			catch (UnsupportedCharsetException ignored) {
-				throw new DatasetError(this, '#connection.illegal_codepage', [code_page: value])
+				throw new ConnectionError(this, '#connection.illegal_codepage', [code_page: value])
 			}
 		}
 

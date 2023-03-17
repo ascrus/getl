@@ -43,10 +43,13 @@ class FileTextSpec extends BaseSpec {
     /** Append text to exist file */
     void setAppend(Boolean value) { saveParamValue('append', value) }
 
+    /** Delete file if empty  */
+    Boolean getDeleteOnEmpty() { BoolUtils.IsValue(params.deleteOnEmpty) }
+    /** Delete file if empty  */
+    void setDeleteOnEmpty(Boolean value) { saveParamValue('deleteOnEmpty', value) }
+
     /** Text buffer */
-    private final StringBuilder buffer = new StringBuilder()
-    /** Text buffer */
-    String getTextBuffer() { buffer.toString() }
+    private final File buffer = FileUtils.CreateTempFile()
 
     /** Count saved bytes */
     private Long countBytes = 0
@@ -76,6 +79,13 @@ class FileTextSpec extends BaseSpec {
         if (fileName == null && !temporaryFile)
             throw new DslError(getl,'#params.required', [param: 'fileMan', detail: 'save'])
 
+        if (buffer.length() == 0 && deleteOnEmpty && !append) {
+            delete(false)
+            countBytes = 0L
+            clear()
+            return
+        }
+
         File file
         if (!temporaryFile) {
             file = new File(filePath())
@@ -94,20 +104,19 @@ class FileTextSpec extends BaseSpec {
 
         def writer = file.newWriter(codePage?:'UTF-8', append, false)
         try {
-            writer.write(buffer.toString())
+            writer.write(buffer.text)
         }
         finally {
             writer.close()
         }
 
         countBytes = buffer.length()
-
         clear()
     }
 
     /** Clear current text buffer */
     void clear() {
-        buffer.setLength(0)
+        buffer.delete()
     }
 
     /** Write text and line feed */
@@ -128,7 +137,9 @@ class FileTextSpec extends BaseSpec {
      * @param trimMap
      */
     void write(Map data, Boolean convertVars = false, Boolean trimMap = false) {
-        ConfigSlurper.SaveMap(data, buffer, convertVars, trimMap)
+        StringBuilder sb = new StringBuilder()
+        ConfigSlurper.SaveMap(data, sb, convertVars, trimMap)
+        buffer.append(sb.toString())
     }
 
     /**
@@ -169,6 +180,8 @@ class FileTextSpec extends BaseSpec {
             if (!file.delete())
                 throw new DslError(getl, '#io.file.fail_delete', [path: filePath()])
         }
+
+        clear()
     }
 
     /** Check exists file */

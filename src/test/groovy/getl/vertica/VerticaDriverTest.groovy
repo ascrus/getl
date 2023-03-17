@@ -53,8 +53,8 @@ class VerticaDriverTest extends JDBCDriverProto {
         }
     }
 
-    @Override
-    protected prepareBulkFile(CSVDataset file) { file.escaped = false }
+    /*@Override
+    protected prepareBulkFile(CSVDataset file) { file.escaped = true }*/
 
     @Test
     void testLimit() {
@@ -262,10 +262,11 @@ LIMIT 1'''
             }
 
             def dt = new Timestamp(DateUtils.ClearTime(DateUtils.Now()).time)
-            def rows = []
-            rows << [id: 1, name: 'one', dt: dt, value: 1, description: null]
-            rows << [id: 2, name: 'two', dt: dt, value: 2, description: 'desc 2']
-            rows << [id: 3, name: 'three', dt: null, value: 3, description: 'desc 3']
+            def rows = [
+                        [id: 1, name: 'one', dt: dt, value: 1, description: null],
+                        [id: 2, name: 'two', dt: dt, value: 2, description: 'desc 2'],
+                        [id: 3, name: 'three', dt: null, value: 3, description: 'desc 3']
+                    ] as List<Map<String, Object>>
 
             def csv = csvTempWithDataset(verTable) {
                 useConnection csvTempConnection {
@@ -571,6 +572,20 @@ LIMIT 1'''
     @Test
     void testImportFields() {
         Getl.Dsl {
+            def oraCon = oracleConnection {
+                def oraConfig = ConfigFiles.LoadConfigFile(new File('tests/oracle/oracle.conf'))
+                configContent.putAll(oraConfig)
+                setConfig('oracle')
+                try {
+                    connected = true
+                }
+                catch (Exception ignored) {
+
+                }
+            }
+            if (!oraCon.connected)
+                return
+
             def csvFile = csv {
                 useConnection csvConnection {path = '{GETL_TEST}/files' }
                 fileName = 'file1'
@@ -587,12 +602,7 @@ LIMIT 1'''
             }
 
             def oraTable = oracleTable {
-                useConnection oracleConnection {
-                    def oraConfig = ConfigFiles.LoadConfigFile(new File('tests/oracle/oracle.conf'))
-                    configContent.putAll(oraConfig)
-                    setConfig('oracle')
-                    connected = true
-                }
+                useConnection oraCon
                 tableName = 'getl_test_import_fields'
                 field('dt') { typeName = 'date' }
                 importFields(csvFile)

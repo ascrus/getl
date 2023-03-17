@@ -45,6 +45,8 @@ class H2Driver extends JDBCDriver {
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{ %cascade%}'
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 		sqlExpressions.escapedText = 'STRINGDECODE(\'{text}\')'
+		sqlExpressions.convertTextToTimestamp = 'PARSEDATETIME(\'{value}\', \'yyyy-MM-dd HH:mm:ss.SSSSSS\')'
+
 		ruleEscapedText.put('\'', '\'\'')
 	}
 
@@ -267,11 +269,13 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.validCsvTempFile(source, csvFile)
 		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
-			throw new DatasetError(csvFile, 'file must be encoded in utf-8 for bulk download')
+			throw new DatasetError(csvFile, 'File must be encoded in utf-8 for bulk load to table {table}', [table: source])
 		if (csvFile.isHeader())
-			throw new DatasetError(csvFile, 'header not allowed for bulk load')
-		if (!csvFile.blobAsPureHex())
-			throw new DatasetError(csvFile, 'sql blob format not supported for bulk load')
+			throw new DatasetError(csvFile, 'Header not allowed for bulk load to table {table}', [table: source])
+		if (source.field.find { field -> field.type == Field.blobFieldType } != null) {
+			if (!csvFile.blobAsPureHex())
+				throw new DatasetError(csvFile, 'Blob fields is not allowed when used blob as not pure hex option for bulk load to table {table}', [table: source])
+		}
 	}
 
 	@Override

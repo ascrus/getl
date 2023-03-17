@@ -2,9 +2,11 @@
 //file:noinspection DuplicatedCode
 package getl.vertica
 
+import getl.exception.DatasetError
 import getl.exception.IncorrectParameterError
 import getl.jdbc.sub.BulkLoadMapping
 import getl.oracle.OracleDriver
+import getl.vertica.opts.VerticaWriteSpec
 import groovy.transform.CompileStatic
 import getl.csv.CSVDataset
 import getl.data.*
@@ -170,29 +172,29 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@SuppressWarnings('GroovyFallthrough')
-	String copyFormatField(CSVDataset ds, Field field, String fieldName, String formatDate, String formatTime, String formatDateTime) {
+	String copyFormatField(CSVDataset ds, Field field, String formatDate, String formatTime, String formatDateTime) {
 		String res = null
 		switch (field.type) {
 			case Field.blobFieldType:
-				res = "$fieldName format 'hex'"
+				res = "'hex'"
 				break
 
 			case Field.dateFieldType:
-				def format = field.format?:formatDate?:ds.formatDate?:ds.currentCsvConnection.formatDate
+				def format = formatDate
 				if (format != null && format.length() > 0)
-					res = "$fieldName format '$format'"
+					res = "'$format'"
 				break
 
 			case Field.timeFieldType:
-				def format = field.format?:formatTime?:ds.formatTime?:ds.currentCsvConnection.formatTime
+				def format = formatTime
 				if (format != null && format.length() > 0)
-					res = "$fieldName format '$format'"
+					res = "'$format'"
 				break
 
 			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-				def format = field.format?:formatDateTime?:ds.formatDateTime?:ds.currentCsvConnection.formatDateTime
+				def format = formatDateTime
 				if (format != null && format.length() > 0)
-					res = "$fieldName format '$format'"
+					res = "'$format'"
 				break
 
 			/* TODO: Need adding */
@@ -292,7 +294,9 @@ class VerticaDriver extends JDBCDriver {
 		def isGzFile = source.isGzFile()
 
 		def map = params.map as List<BulkLoadMapping>
-		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
+		def loadMethod = params.loadMethod as String
+		if (loadMethod != null && loadMethod.toLowerCase() == VerticaWriteSpec.AUTO)
+			loadMethod = null
 		def enforceLength = (!useExternalParser && BoolUtils.IsValue(params.enforceLength, true))
 		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
@@ -365,16 +369,21 @@ class VerticaDriver extends JDBCDriver {
 		def options = [] as List<String>
 		map.each { rule ->
 			def sourceFieldName = rule.sourceFieldName?.toLowerCase()
-
-			if (sourceFieldName in filledCols) {
-				def fillFieldName = table.sqlObjectName("_filled_$sourceFieldName")
+			if (sourceFieldName != null) {
 				def sourceField = source.fieldByName(sourceFieldName)
-				def sourceType = table.currentJDBCConnection.currentJDBCDriver.type2sqlType(sourceField, false)
-				columns.add("  $fillFieldName FILLER $sourceType")
+				if (sourceFieldName in filledCols) {
+					def fillFieldName = table.sqlObjectName("_filled_$sourceFieldName")
+					def sourceType = table.currentJDBCConnection.currentJDBCDriver.type2sqlType(sourceField, false)
+					columns.add("  $fillFieldName FILLER $sourceType")
 
-				def format = copyFormatField(source, sourceField, fillFieldName, formatDate, formatTime, formatDateTime)
-				if (format != null)
-					options.add('  ' + format)
+					def format = copyFormatField(source, sourceField, formatDate, formatTime, formatDateTime)
+					if (format != null)
+						options.add('  ' + table.sqlObjectName(fillFieldName) + ' format ' + format)
+				} else if (sourceField.type == Field.blobFieldType) {
+					def format = copyFormatField(source, sourceField, formatDate, formatTime, formatDateTime)
+					if (format != null)
+						options.add('  ' + table.sqlObjectName(sourceField.name) + ' format ' + format)
+				}
 			}
 
 			if (rule.destinationFieldName != null) {
@@ -411,7 +420,8 @@ class VerticaDriver extends JDBCDriver {
 			sb.append('ENFORCELENGTH\n')
 		if (abortOnError)
 			sb.append('ABORT ON ERROR\n')
-		sb.append("${loadMethod}\n")
+		if (loadMethod != null)
+			sb.append("${loadMethod}\n")
 		if (streamName != null)
 			sb.append("STREAM NAME '$streamName'\n")
 		if (!autoCommit)
@@ -558,19 +568,30 @@ class VerticaDriver extends JDBCDriver {
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.validCsvTempFile(source, csvFile)
 		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
-			throw new ExceptionGETL('The file must be encoded in utf-8 for batch download!')
+			throw new DatasetError(csvFile, 'The file must be encoded in utf-8 for bulk load to table {table}', [table: source])
 
 		if (csvFile.fieldDelimiter().length() > 1)
-			throw new ExceptionGETL('The field delimiter must have only one character for bulk load!')
+			throw new DatasetError(csvFile, 'The field delimiter must have only one character for bulk load to table {table}', [table: source])
 
 		if (csvFile.quoteStr().length() > 1)
-			throw new ExceptionGETL('The quote must have only one character for bulk load!')
+			throw new DatasetError(csvFile, 'The quote must have only one character for bulk load to table {table}', [table: source])
 
 		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter() != '\r\n')
-			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
+			throw new DatasetError(csvFile, 'The row delimiter must have only one character for bulk load to table {table}', [table: source])
 
-		if (!csvFile.escaped() && csvFile.nullAsValue() != null)
-			throw new ExceptionGETL("When escaped is off, null as value is not allowed!")
+		def isBlobs = (source.field.find { field -> field.type == Field.blobFieldType } != null)
+		if (!csvFile.escaped()) {
+			if (csvFile.nullAsValue() != null)
+				throw new DatasetError(csvFile, 'When escaped is off, null as value is not allowed for bulk load to table {table}', [table: source])
+			if (isBlobs)
+				throw new DatasetError(csvFile, 'When escaped is off, blob fields is not allowed for bulk load to table {table}', [table: source])
+		}
+		if (isBlobs) {
+			if (csvFile.blobAsPureHex())
+				throw new DatasetError(csvFile, 'Blob fields is not allowed when used blob as pure hex option for bulk load to table {table}', [table: source])
+			if (csvFile.blobPrefix() != '0x')
+				throw new DatasetError(csvFile, 'Blob fields is not allowed when prefix not equals "0x" for bulk load to table {table}', [table: source])
+		}
 	}
 
 	@Override
@@ -608,7 +629,7 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	protected void prepareCopyTableDestination(TableDataset dest, Map<String, Object> qParams ) {
-		if (dest.writeDirective.direct != null)
+		if (dest.writeDirective.direct != null && (dest.writeDirective.direct as String).toLowerCase() != VerticaWriteSpec.AUTO)
 			qParams.after_insert = "/*+${dest.writeDirective.direct}*/"
 	}
 
@@ -760,6 +781,8 @@ class VerticaDriver extends JDBCDriver {
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.prepareCsvTempFile(source, csvFile)
 		csvFile.escaped = true
+		csvFile.blobAsPureHex = false
+		csvFile.blobPrefix = '0x'
 	}
 
 	@Override

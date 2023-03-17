@@ -40,12 +40,12 @@ class CSVDriver extends FileDriver {
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header',
 										  'isSplit', 'readAsText', 'escaped', 'processError', 'filter',
 										  'nullAsValue', 'fieldOrderByHeader', 'skipRows', 'limit',
-										  'arrayOpeningBracket', 'arrayClosingBracket', 'blobAsPureHex'])
+										  'arrayOpeningBracket', 'arrayClosingBracket', 'blobAsPureHex', 'blobPrefix'])
 		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize',
 											'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue',
 											'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime',
 											'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'onSplitFile',
-											'arrayOpeningBracket', 'arrayClosingBracket', 'blobAsPureHex'])
+											'arrayOpeningBracket', 'arrayClosingBracket', 'blobAsPureHex', 'blobPrefix'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -338,8 +338,11 @@ class CSVDriver extends FileDriver {
 	static private CellProcessor type2cellProcessor(Dataset dataset, Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
 													String locale, String decimalSeparator, String groupSeparator, String formatDate,
 													String formatTime, String formatDateTime, String formatTimestampWithTz,
-													String formatBoolean, String arrayOpeningBracket, String arrayClosingBracket, Boolean blobAsPureHex,
-													Boolean isValid) {
+													String formatBoolean, String arrayOpeningBracket, String arrayClosingBracket,
+													Boolean blobAsPureHex, String blobPrefix, Boolean isValid) {
+		if (!blobAsPureHex && blobPrefix == null)
+			throw new DatasetError(dataset, 'Need blob prefix for not pure format')
+
 		CellProcessor cp = null
 		if (field.type == null || (field.type in [Field.stringFieldType, Field.objectFieldType, Field.rowidFieldType, Field.uuidFieldType])) {
 			if (field.length != null && isValid)
@@ -453,9 +456,9 @@ class CSVDriver extends FileDriver {
 			}
 		} else if (field.type == Field.Type.BLOB) {
 			if (!isWrite)
-				cp = new CSVParseBlob(blobAsPureHex)
+				cp = new CSVParseBlob(blobAsPureHex, blobPrefix)
 			else
-				cp = new CSVFmtBlob(blobAsPureHex)
+				cp = new CSVFmtBlob(blobAsPureHex, blobPrefix)
 		} else if (field.type == Field.Type.TEXT) {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
@@ -528,6 +531,7 @@ class CSVDriver extends FileDriver {
 		def arrayOpeningBracket = ListUtils.NotNullValue([fParams.arrayOpeningBracket, dataset.arrayOpeningBracket()]) as String
 		def arrayClosingBracket = ListUtils.NotNullValue([fParams.arrayClosingBracket, dataset.arrayClosingBracket()]) as String
 		def blobAsPureHex = ListUtils.NotNullValue([fParams.blobAsPureHex, dataset.blobAsPureHex()]) as Boolean
+		def blobPrefix = ListUtils.NotNullValue([fParams.blobPrefix, dataset.blobPrefix()]) as String
 		
 		if (fields == null)
 			fields = [] as List<String>
@@ -549,7 +553,7 @@ class CSVDriver extends FileDriver {
 					
 					CellProcessor p = type2cellProcessor(dataset, f, isWrite, escaped, nullAsValue, locale, decimalSeparator, groupSeparator,
 							formatDate, formatTime, formatDateTime, formatTimestampWithTz, formatBoolean,
-							arrayOpeningBracket, arrayClosingBracket, blobAsPureHex, isValid)
+							arrayOpeningBracket, arrayClosingBracket, blobAsPureHex, blobPrefix, isValid)
 					cp << p
 				}
 			}
@@ -611,6 +615,8 @@ class CSVDriver extends FileDriver {
 		def uniFormatDateTime = (params.uniFormatDateTime as String)?:cds.uniFormatDateTime()
 		def arrayOpeningBracket = (params.arrayOpeningBracket as String)?:cds.arrayOpeningBracket()
 		def arrayClosingBracket = (params.arrayClosingBracket as String)?:cds.arrayClosingBracket()
+		def blobAsPureHex = params.blobAsPureHex as Boolean
+		def blobPrefix = params.blobPrefix as String
 
 		def skipRows = ConvertUtils.Object2Long(params.skipRows)?:0L
 		def limit = ConvertUtils.Object2Long(params.limit)?:0L
@@ -715,7 +721,8 @@ class CSVDriver extends FileDriver {
 					isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped,
 					nullAsValue: p.nullAsValue, formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime,
 					formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime, locale: locale,
-					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket)
+					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket,
+					blobAsPureHex: blobAsPureHex, blobPrefix: blobPrefix)
 			
 			def cur = 0L
 			def line = 0L
@@ -860,6 +867,8 @@ class CSVDriver extends FileDriver {
 		def uniFormatDateTime = params.uniFormatDateTime as String
 		def arrayOpeningBracket = params.arrayOpeningBracket as String
 		def arrayClosingBracket = params.arrayClosingBracket as String
+		def blobAsPureHex = params.blobAsPureHex as Boolean
+		def blobPrefix = params.blobPrefix as String
 
 		if (params.batchSize != null) wp.batchSize = ConvertUtils.Object2Long(params.batchSize)
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
@@ -881,7 +890,8 @@ class CSVDriver extends FileDriver {
 					isWrite: true, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue,
 					formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime,
 				    formatTimestampWithTz: formatTimestampWithTz, uniFormatDateTime: uniFormatDateTime,
-					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket)
+					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket,
+					blobAsPureHex: blobAsPureHex, blobPrefix: blobPrefix)
 
 		wp.fieldDelimiterSize = p.fieldDelimiter.toString().length()
 		wp.rowDelimiterSize = (p.rowDelimiter as String).length()

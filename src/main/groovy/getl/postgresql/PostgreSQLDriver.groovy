@@ -4,6 +4,7 @@ import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.DatasetError
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.jdbc.sub.BulkLoadMapping
@@ -199,6 +200,19 @@ class PostgreSQLDriver extends JDBCDriver {
 		csvFile.arrayClosingBracket = '}'
 		csvFile.formatDateTime = 'yyyy-MM-dd HH:mm:ss.SSS'
 		csvFile.formatTimestampWithTz = 'yyyy-MM-dd HH:mm:ss.SSSx'
+		csvFile.blobAsPureHex = false
+		csvFile.blobPrefix = '\\x'
+	}
+
+	@Override
+	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
+		super.validCsvTempFile(source, csvFile)
+		if (source.field.find { field -> field.type == Field.blobFieldType } != null) {
+			if (csvFile.blobAsPureHex())
+				throw new DatasetError(csvFile, 'Blob fields is not allowed when used blob as pure hex option for bulk load to table {table}', [table: source])
+			if (csvFile.blobPrefix() != '\\x')
+				throw new DatasetError(csvFile, 'Blob fields is not allowed when prefix not equals "\\x" for bulk load to table {table}', [table: source])
+		}
 	}
 
 	@Override
@@ -273,14 +287,14 @@ class PostgreSQLDriver extends JDBCDriver {
 			def tempFile = TFS.dataset()
 			tempFile.tap {
 				header = true
-				/*fieldDelimiter = '|'
-				rowDelimiter = '\n'*/
 				escaped = false
 				nullAsValue = '<NULL>'
 				quoteStr = '"'
 				isGzFile = true
 				arrayOpeningBracket = '{'
 				arrayClosingBracket = '}'
+				blobAsPureHex = false
+				blobPrefix = '\\x'
 
 				table.field.each { field ->
 					if (loadMap.containsValue(field.name.toLowerCase())) {

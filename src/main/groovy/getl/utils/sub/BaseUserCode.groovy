@@ -7,7 +7,6 @@ import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import groovy.xml.XmlParser
 import groovy.yaml.YamlSlurper
-
 import java.sql.Time
 import java.sql.Timestamp
 
@@ -217,7 +216,7 @@ class BaseUserCode extends Getl {
     }
 
     static Boolean asBoolean(def value, Boolean defaultValue = false) {
-        BoolUtils.IsValue(value, defaultValue)
+        ConvertUtils.Object2Boolean(value, defaultValue)
     }
 
     /** Parse text to xml data */

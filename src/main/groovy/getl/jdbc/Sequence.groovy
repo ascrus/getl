@@ -283,6 +283,10 @@ class Sequence implements GetlRepository, WithConnection {
 		
 		return (current + offs - 1)
 	}
+
+	/** Last executed SQL statement */
+	@JsonIgnore
+	String getLastSqlStatement() { sysParams.lastSqlStatement as String }
 	
 	@Override
 	String toString() {
@@ -302,7 +306,7 @@ class Sequence implements GetlRepository, WithConnection {
 		parent.runClosure(cl)
 		def con = currentJDBCConnection
 		con.tryConnect()
-		con.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
+		con.currentJDBCDriver.createSequence(this, ifNotExists, parent)
 	}
 
 	/**
@@ -318,11 +322,11 @@ class Sequence implements GetlRepository, WithConnection {
 	 * Drop sequence from database
 	 * @param ifExists drop if exists
 	 */
-	void dropSequence(Boolean ifExists = false) {
+	void dropSequence(Boolean ifExists = false, Boolean ddlOnly = false) {
 		validConnection()
 		def con = currentJDBCConnection
 		con.tryConnect()
-		con.currentJDBCDriver.dropSequence(fullName, ifExists)
+		con.currentJDBCDriver.dropSequence(this, ifExists, ddlOnly)
 	}
 
 	/**
@@ -333,6 +337,6 @@ class Sequence implements GetlRepository, WithConnection {
 		validConnection()
 		def con = currentJDBCConnection
 		con.tryConnect()
-		con.currentJDBCDriver.restartSequence(fullName, newValue)
+		con.currentJDBCDriver.restartSequence(this, newValue)
 	}
 }

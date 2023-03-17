@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.csv.proc
 
 import groovy.transform.CompileStatic
@@ -13,17 +14,20 @@ import getl.utils.*
  */
 @CompileStatic
 class CSVFmtBlob extends CellProcessorAdaptor {
-	CSVFmtBlob(Boolean pureFormat) {
+	CSVFmtBlob(Boolean pureFormat, String blobPrefix) {
 		super()
 		this.pureFormat = pureFormat
+		this.blobPrefix = blobPrefix
 	}
 
-	CSVFmtBlob(Boolean pureFormat, StringCellProcessor next) {
+	CSVFmtBlob(Boolean pureFormat, String blobPrefix, StringCellProcessor next) {
 		super(next)
 		this.pureFormat = pureFormat
+		this.blobPrefix = blobPrefix
 	}
 
 	private Boolean pureFormat
+	private String blobPrefix
 
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
@@ -34,7 +38,7 @@ class CSVFmtBlob extends CellProcessorAdaptor {
 			throw new SuperCsvCellProcessorException((b.getClass()), value, context, this)
 		}
 		
-		String result = (!pureFormat)?'\\x' + StringUtils.RawToHex((byte[])value):StringUtils.RawToHex((byte[])value)
+		String result = (!pureFormat)?blobPrefix + StringUtils.RawToHex((byte[])value):StringUtils.RawToHex((byte[])value)
 		return next.execute(result, context)
 	}
 }

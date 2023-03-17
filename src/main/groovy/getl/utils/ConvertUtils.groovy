@@ -165,19 +165,20 @@ class ConvertUtils {
 
 	/**
 	 * Convert object to boolean
-	 * @param value
-	 * @return
+	 * @param value convert object
+	 * @param defaultValue default value for null
+	 * @return boolean value
 	 */
-	static Boolean Object2Boolean(def value) {
+	static Boolean Object2Boolean(def value, Boolean defaultValue = null) {
 		if (value == null)
-			return null
+			return defaultValue
 
 		if (value instanceof Boolean)
 			return value as Boolean
 
 		value = value.toString()
 		if (value.length() == 0)
-			return null
+			return defaultValue
 
 		return (value.toLowerCase() in ['true', '1', 'on'])
 	}

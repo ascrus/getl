@@ -509,7 +509,9 @@ class SalesForceDriver extends Driver {
 	void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-    Long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
+    Long executeCommand(String command, Map params, StringBuffer commandBuffer = null) {
+        throw new ExceptionGETL('Not support this features!')
+    }
 
 	@Override
     Long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }

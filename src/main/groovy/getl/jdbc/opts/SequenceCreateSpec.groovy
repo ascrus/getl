@@ -40,4 +40,9 @@ class SequenceCreateSpec extends BaseSpec {
     Boolean getIsCycle() { ConvertUtils.Object2Boolean(params.isCycle) }
     /** Specifies whether the sequence can wrap when its minimum or maximum values are reached */
     void setIsCycle(Boolean value) { saveParamValue('isCycle', value) }
+
+    /** Only generate ddl statement witout execute */
+    Boolean getDdlOnly() { ConvertUtils.Object2Boolean(params.ddlOnly) }
+    /** Only generate ddl statement witout execute */
+    void setDdlOnly(Boolean value) { saveParamValue('ddlOnly', value) }
 }
