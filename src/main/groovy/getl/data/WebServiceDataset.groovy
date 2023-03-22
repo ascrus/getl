@@ -95,7 +95,7 @@ class WebServiceDataset extends FileDataset {
     /** Automatic data capture from a web service when reading rows */
     void setAutoCaptureFromWeb(Boolean value) { params.autoCaptureFromWeb = value }
     /** Automatic data capture from a web service when reading rows */
-    Boolean autoCaptureFromWeb() { ListUtils.NotNullValue([autoCaptureFromWeb, currentWebServiceConnection.autoCaptureFromWeb, false]) }
+    Boolean autoCaptureFromWeb() { ListUtils.NotNullValue(autoCaptureFromWeb, currentWebServiceConnection.autoCaptureFromWeb, false) }
 
     /**
      * Read data from web service and save to file

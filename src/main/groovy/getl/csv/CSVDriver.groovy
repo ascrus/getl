@@ -76,7 +76,7 @@ class CSVDriver extends FileDriver {
 	}
 
 	@CompileStatic
-	protected ReadParams readParamDataset (Dataset dataset, Map params) {
+	protected ReadParams readParamDataset(Dataset dataset, Map params) {
 		def p = new ReadParams()
 		if (params != null) {
 			def dsp = getDatasetParams(dataset as FileDataset, params)
@@ -93,6 +93,9 @@ class CSVDriver extends FileDriver {
 		p.fieldDelimiter = fieldDelimiter.chars[0]
 		
 		p.rowDelimiter = StringUtils.UnescapeJava(ListUtils.NotNullValue([params.rowDelimiter, ds.rowDelimiter()]) as String)
+		if (!(p.rowDelimiter in ['\n', '\r\n']) && p.rowDelimiter.length() != 1)
+			throw new DatasetError(dataset, '#csv.invalid_row_delimiter')
+
 		p.isHeader = BoolUtils.IsValue([params.header, ds.isHeader()])
 		p.qMode = datasetQuoteMode(ds)
 		p.isSplit = BoolUtils.IsValue(params.isSplit)
@@ -666,8 +669,10 @@ class CSVDriver extends FileDriver {
 		CsvMapReader reader
 		if (escaped)
 			reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
-		else
+		else if (pref.endOfLineSymbols in ['\n', '\n\r'])
 			reader = new CsvMapReader(bufReader, pref)
+		else
+			reader = new CsvMapReader(new CSVTokenizer(bufReader, pref), pref)
 
 		try {
 			String[] header
@@ -811,6 +816,8 @@ class CSVDriver extends FileDriver {
 		public CellProcessor[] cp
 		public Map params
 		public Boolean isHeader = false
+		public Character fieldDelimiter
+		public String rowDelimiter
 		public String quote
 		public String nullAsValue
 		public Boolean escaped
@@ -893,23 +900,27 @@ class CSVDriver extends FileDriver {
 					arrayOpeningBracket: arrayOpeningBracket, arrayClosingBracket: arrayClosingBracket,
 					blobAsPureHex: blobAsPureHex, blobPrefix: blobPrefix)
 
-		wp.fieldDelimiterSize = p.fieldDelimiter.toString().length()
+		wp.fieldDelimiter = p.fieldDelimiter
+		wp.fieldDelimiterSize = 1
+		wp.rowDelimiter = p.rowDelimiter
 		wp.rowDelimiterSize = (p.rowDelimiter as String).length()
 		wp.countFields = listFields.size()
 		wp.isHeader = p.isHeader
 		wp.quote = p.quote
 		wp.nullAsValue = p.nullAsValue
 
+		wp.escapedColumns = new ArrayList<Integer>()
+		def num = 0
+		header.each { fieldName ->
+			num++
+			if (csv_ds.fieldByName(fieldName).type in [Field.Type.STRING, Field.Type.TEXT])
+				wp.escapedColumns << num
+		}
 		if (escaped) {
-			wp.escapedColumns = new ArrayList<Integer>()
-			def num = 0
-			header.each { fieldName ->
-				num++
-				if (csv_ds.fieldByName(fieldName).type in [Field.Type.STRING, Field.Type.TEXT])
-					wp.escapedColumns << num
-			}
 			wp.escaped = !(wp.escapedColumns.isEmpty())
 		}
+		else
+			wp.escaped = false
 
 		wp.splitSize = ConvertUtils.Object2Long(params.splitSize)
 		if (wp.splitSize != null || wp.onSplitFile != null) wp.portion = 1
@@ -1075,7 +1086,7 @@ class CSVDriver extends FileDriver {
 			throw new IOFilesError(dataset, '#io.file.not_found', [path: dataset.fullFileName(), type: 'Text'])
 
 		if (!(dataset.rowDelimiter() in ['\n', '\r\n']))
-			throw new DatasetError(dataset, '#csv.invalid_row_delimiter')
+			throw new DatasetError(dataset, '#csv.need_standard_row_delimiter')
 
 		LineNumberReader reader
 		if (dataset.isGzFile()) {
@@ -1107,7 +1118,7 @@ class CSVDriver extends FileDriver {
 		if (!source.existsFile())
 			throw new IOFilesError(source, '#io.file.not_found', [path: source.fullFileName(), type: 'CSV'])
 		if (!(source.rowDelimiter in ['\n', '\r\n']))
-			throw new DatasetError(source, '#csv.invalid_row_delimiter')
+			throw new DatasetError(source, '#csv.need_standard_row_delimiter')
 
 		def autoSchema = source.isAutoSchema()
 		def header = source.isHeader()

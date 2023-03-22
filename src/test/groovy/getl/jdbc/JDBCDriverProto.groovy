@@ -621,6 +621,8 @@ abstract class JDBCDriverProto extends GetlTest {
                     if (r.data == null)
                         r.data = GenerationUtils.GenerateString(250).bytes
                 }
+                if (r."desc'ription" != null)
+                    r."desc'ription" = r."desc'ription".trim()
 
                 updater(r)
             }

@@ -67,7 +67,7 @@ class CSVDataset extends FileDataset {
 	}
 	/** File has header of fields name */
 	//@JsonIgnore
-	Boolean isHeader() { BoolUtils.IsValue(header, currentCsvConnection?.isHeader()) }
+	Boolean isHeader() { ListUtils.NotNullValue(header, currentCsvConnection?.isHeader(), false) }
 
 	/** The order of the fields is determined by the file header */
 	Boolean getFieldOrderByHeader() { ConvertUtils.Object2Boolean(params.fieldOrderByHeader) }
@@ -75,7 +75,7 @@ class CSVDataset extends FileDataset {
 	void setFieldOrderByHeader(Boolean value) { params.fieldOrderByHeader = value }
 	/** The order of the fields is determined by the file header */
 	//@JsonIgnore
-	Boolean isFieldOrderByHeader() { BoolUtils.IsValue(fieldOrderByHeader, currentCsvConnection?.isFieldOrderByHeader()) }
+	Boolean isFieldOrderByHeader() { ListUtils.NotNullValue(fieldOrderByHeader, currentCsvConnection?.isFieldOrderByHeader()) }
 	
 	/** Required format values for output to file */
 	Boolean getFormatOutput() { ConvertUtils.Object2Boolean(params.formatOutput) }
@@ -83,7 +83,7 @@ class CSVDataset extends FileDataset {
 	void setFormatOutput(Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
 	//@JsonIgnore
-	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, currentCsvConnection?.isFormatOutput()) }
+	Boolean isFormatOutput() { ListUtils.NotNullValue(formatOutput, currentCsvConnection?.isFormatOutput(), false) }
 
 	/** Check constraints during reading and writing */
 	Boolean getConstraintsCheck() { ConvertUtils.Object2Boolean(params.constraintsCheck) }
@@ -91,7 +91,7 @@ class CSVDataset extends FileDataset {
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	/** Check constraints during reading and writing */
 	//@JsonIgnore
-	Boolean isConstraintsCheck() { BoolUtils.IsValue(constraintsCheck, currentCsvConnection?.isConstraintsCheck()) }
+	Boolean isConstraintsCheck() { ListUtils.NotNullValue(constraintsCheck, currentCsvConnection?.isConstraintsCheck(), false) }
 	
 	/** Convert NULL to value */
 	String getNullAsValue() { params.nullAsValue as String }
@@ -108,7 +108,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** Required convert string to escape value */
-	Boolean escaped() { BoolUtils.IsValue(escaped, currentCsvConnection?.isEscaped()) }
+	Boolean escaped() { ListUtils.NotNullValue(escaped, currentCsvConnection?.isEscaped(), false) }
 
 	/** Mode of quote value */
 	QuoteMode getQuoteMode() { ListUtils.NotNullValue([params.quoteMode, currentCsvConnection?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
@@ -154,7 +154,7 @@ class CSVDataset extends FileDataset {
 	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
 	void setBlobAsPureHex(Boolean value) { params.blobAsPureHex = value }
 	/** Read and write BLOB as pure hex numbers or \x<HEX> SQL format (default false) */
-	Boolean blobAsPureHex() { BoolUtils.IsValue(blobAsPureHex, currentCsvConnection?.blobAsPureHex()) }
+	Boolean blobAsPureHex() { ListUtils.NotNullValue(blobAsPureHex, currentCsvConnection?.blobAsPureHex(), false) }
 
 	/** Blob prefix for not pure format */
 	String getBlobPrefix() { params.blobPrefix as String }

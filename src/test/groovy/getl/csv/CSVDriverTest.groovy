@@ -360,15 +360,39 @@ class CSVDriverTest extends GetlTest {
     static def performanceStringValue = StringUtils.Replicate('0', 23) + '"' + '\n' + "'" + StringUtils.Replicate('0', 23)
 
     @Test
+    void testPerformance() {
+        doPerformance('Standard format',
+                conParams + [escaped: false, codePage: 'utf-8', constraintsCheck: false, nullAsValue: null])
+    }
+
+    @Test
     void testPerformanceWindows() {
+        doPerformance('Windows format',
+                conParams + [escaped: false, codePage: 'cp1251', constraintsCheck: false, nullAsValue: '<NULL>'])
+    }
+
+    @Test
+    void testPerformanceWindowsWithConstraints() {
         doPerformance('Windows format with constraints',
                 conParams + [escaped: false, codePage: 'cp1251', constraintsCheck: true, nullAsValue: '<NULL>'])
     }
 
     @Test
     void testPerformanceLinux() {
+        doPerformance('Linux format',
+                conParams + [escaped: true, codePage: 'utf-8', constraintsCheck: false, nullAsValue: '<NULL>'])
+    }
+
+    @Test
+    void testPerformanceLinuxWithConstraints() {
         doPerformance('Linux format with constraints',
                 conParams + [escaped: true, codePage: 'utf-8', constraintsCheck: true, nullAsValue: '<NULL>'])
+    }
+
+    @Test
+    void testPerformanceRowDelim() {
+        doPerformance('Non standard delimiters format', conParams +
+                [escaped: false, codePage: 'utf-8', constraintsCheck: false, nullAsValue: '<NULL>', quoteStr: '\u0001', fieldDelimiter: '\u0007', rowDelimiter: '\u0006'])
     }
 
     @CompileStatic
@@ -1131,6 +1155,44 @@ class CSVDriverTest extends GetlTest {
                 assertEquals('test.1.csv.gz', fileNameWithExt())
                 assertEquals('test.1', fileNameWithoutExt())
                 assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/files/test.1.csv.gz'), fullFileName())
+            }
+        }
+    }
+
+    @Test
+    void testDelimiters() {
+        Getl.Dsl {
+            csv {
+                useConnection csvConnection {
+                    path = '{GETL_TEST}/test_delim'
+                    fieldDelimiter = '\u0007'
+                    rowDelimiter = '\u0006'
+                    quoteStr = '\u0002'
+                    escaped = false
+                    header = false
+                    createPath = true
+                }
+                fileName = 'test.txt'
+
+                field('field1')
+                field('field2')
+                field('field3')
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        (1..10).each { num ->
+                            add([field1: num.toString(), field2: "2: $num", field3: "3: $num"])
+                        }
+                    }
+                }
+
+                def num = 0
+                eachRow { r ->
+                    num++
+                    assertEquals(num.toString(), r.field1)
+                    assertEquals("2: $num".toString(), r.field2)
+                    assertEquals("3: $num".toString(), r.field3)
+                }
             }
         }
     }

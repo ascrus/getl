@@ -195,4 +195,9 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     String getFormatDateTime() { params.formatDateTime as String }
     /** Specifies the format for parsing datetime type columns in file */
     void setFormatDateTime(String value) { saveParamValue('formatDateTime', value) }
+
+    /** Escape character */
+    String getEscapeChar() { params.escapeChar as String }
+    /** Escape character */
+    void setEscapeChar(String value) { saveParamValue('escapeChar', value) }
 }

@@ -266,7 +266,7 @@ class Executor implements GetlRepository {
 	/** Run thread code with list elements */
 	void runWithElements(@ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorListElement']) Closure cl) {
 		if (!(list instanceof List<ExecutorListElement>))
-			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements!')
+			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements')
 		run(null, null, cl)
 	}
 
@@ -274,7 +274,7 @@ class Executor implements GetlRepository {
 	/** Run thread code with list elements */
 	void runWithElements(Integer countThread, @ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorListElement']) Closure cl) {
 		if (!(list instanceof List<ExecutorListElement>))
-			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements!')
+			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements')
 		run(null, countThread, cl)
 	}
 
@@ -289,7 +289,7 @@ class Executor implements GetlRepository {
 	 */
 	void run(List elements = list, Integer countThread = countProc, Closure code) {
 		if (runThreads)
-			throw new ExceptionGETL('Cannot start "run" method when threads are running!')
+			throw new ExceptionGETL('Cannot start "run" method when threads are running')
 
 		hasError = false
 		isInterrupt = false
@@ -302,7 +302,7 @@ class Executor implements GetlRepository {
 		if (elements == null) elements = list
 
 		if (elements == null || elements.isEmpty())
-			throw new ExceptionGETL("List of items to process is empty!")
+			throw new ExceptionGETL('List of items to process is empty')
 
 		if (countThread == null) countThread = countProc?:elements?.size()
 
@@ -397,7 +397,7 @@ class Executor implements GetlRepository {
 						objects.add("[$num] $errorText")
 					}
 				}
-				throw new ExceptionGETL("Thread errors:\n${objects.join('\n')}")
+				throw new ExceptionGETL("Thread errors:\n${objects.join('\n').replace('{', '[').replace('}', ']')}")
 			}
 
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
@@ -423,7 +423,7 @@ class Executor implements GetlRepository {
 	void runSplit(List elements = list, Integer countThread = countProc,
 				  @ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorSplitListElement']) Closure code) {
 		if (runThreads)
-			throw new ExceptionGETL('Cannot start "runSplit" method when threads are running!')
+			throw new ExceptionGETL('Cannot start "runSplit" method when threads are running')
 
 		hasError = false
 		isInterrupt = false
@@ -436,7 +436,7 @@ class Executor implements GetlRepository {
 		if (elements == null) elements = list
 
 		if (elements == null || elements.isEmpty())
-			throw new ExceptionGETL("List of items to process is empty!")
+			throw new ExceptionGETL('List of items to process is empty')
 
 		if (countThread == null) countThread = countProc?:elements?.size()
 
@@ -545,7 +545,7 @@ class Executor implements GetlRepository {
 						objects << "[$num] $errorText"
 					}
 				}
-				throw new ExceptionGETL("Thread errors:\n${objects.join('\n')}")
+				throw new ExceptionGETL("Thread errors:\n${objects.join('\n').replace('{', '[').replace('}', ']')}")
 			}
 
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
@@ -596,7 +596,7 @@ class Executor implements GetlRepository {
 	/** Run thread code with list elements */
 	void exec(List<Closure> elements = listCode, Integer countThread = countProc) {
 		if (runThreads)
-			throw new ExceptionGETL('Cannot start "exec" method when threads are running!')
+			throw new ExceptionGETL('Cannot start "exec" method when threads are running')
 
 		hasError = false
 		isInterrupt = false
@@ -686,7 +686,7 @@ class Executor implements GetlRepository {
 						objects << "[$num] $errorText"
 					}
 				}
-				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n').replace('{', '[').replace('}', ']')}")
 			}
 
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
@@ -711,7 +711,7 @@ class Executor implements GetlRepository {
 	/** Start background process */
 	void startBackground(Closure code) {
 		if (runThreads)
-			throw new ExceptionGETL('Cannot start "startBackground" when threads are running!')
+			throw new ExceptionGETL('Cannot start "startBackground" when threads are running')
 
 		def runCode = {
 			try {
@@ -750,7 +750,7 @@ class Executor implements GetlRepository {
 	@Synchronized
 	void stopBackground () {
 		if (!isRunBackground())
-			throw new ExceptionGETL("Not Background process running")
+			throw new ExceptionGETL('Not Background process running')
 		try {
 			runBackgroundService = false
 			if (threadBackground != null) {
@@ -843,7 +843,7 @@ class Executor implements GetlRepository {
 	@CompileStatic
 	static void runClosureWithTimeout(Long maximumProcessingTime, Closure cl) {
 		if (cl == null)
-			throw new NullPointerException('Execution code not set in parameter "cl"!')
+			throw new NullPointerException('Execution code not set in parameter "cl"')
 
 		if (maximumProcessingTime == null || maximumProcessingTime == 0) {
 			cl.call()
@@ -862,7 +862,7 @@ class Executor implements GetlRepository {
 	@CompileStatic
 	static void runCodeWithTimeout(Long maximumProcessingTime, ExecutorRunCode code) {
 		if (code == null)
-			throw new NullPointerException('Execution code not set in parameter "code"!')
+			throw new NullPointerException('Execution code not set in parameter "code"')
 
 		if (maximumProcessingTime == null || maximumProcessingTime == 0) {
 			try {

@@ -570,7 +570,7 @@ class TableDataset extends JDBCDataset {
 
 		def countRow = 0L
 		def sizeFiles = 0L
-        def abortOnError = BoolUtils.IsValue(parent.abortOnError, true)
+        def abortOnError = BoolUtils.IsValue(parent.abortOnError, true) || currentJDBCConnection.currentJDBCDriver.supportBulkLoadAbortOnError()
 
 		Closure beforeLoad = parent.onBeforeBulkLoadFile
 		Closure afterLoad = parent.onAfterBulkLoadFile

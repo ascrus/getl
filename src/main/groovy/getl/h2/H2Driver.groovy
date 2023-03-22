@@ -45,7 +45,7 @@ class H2Driver extends JDBCDriver {
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{ %cascade%}'
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 		sqlExpressions.escapedText = 'STRINGDECODE(\'{text}\')'
-		sqlExpressions.convertTextToTimestamp = 'PARSEDATETIME(\'{value}\', \'yyyy-MM-dd HH:mm:ss.SSSSSS\')'
+		sqlExpressions.convertTextToTimestamp = '(TIMESTAMP \'{value}\')'
 
 		ruleEscapedText.put('\'', '\'\'')
 	}

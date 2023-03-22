@@ -156,9 +156,9 @@ class FileUtils {
 	}
 	
 	/** 
-	 * Return file name without extension
-	 * @param fullPath
-	 * @return
+	 * Return file path without extension
+	 * @param fullPath  path to file
+	 * @return path and name without extenstion
 	 */
 	static String ExcludeFileExtension(String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)

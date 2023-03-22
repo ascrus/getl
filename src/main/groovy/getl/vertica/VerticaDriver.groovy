@@ -2,10 +2,12 @@
 //file:noinspection DuplicatedCode
 package getl.vertica
 
+import getl.csv.CSVConnection
 import getl.exception.DatasetError
 import getl.exception.IncorrectParameterError
 import getl.jdbc.sub.BulkLoadMapping
 import getl.oracle.OracleDriver
+import getl.proc.Flow
 import getl.vertica.opts.VerticaWriteSpec
 import groovy.transform.CompileStatic
 import getl.csv.CSVDataset
@@ -33,7 +35,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
-				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
+				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath', 'escapeChar',
 				 'location', 'formatDate', 'formatTime', 'formatDateTime', 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
@@ -172,32 +174,34 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@SuppressWarnings('GroovyFallthrough')
-	String copyFormatField(CSVDataset ds, Field field, String formatDate, String formatTime, String formatDateTime) {
+	String copyFormatField(TableDataset dest, Field field, String formatDate, String formatTime, String formatDateTime) {
 		String res = null
+		def destField = dest.fieldByName(field.name)
+		def destFormat = destField?.format
 		switch (field.type) {
 			case Field.blobFieldType:
 				res = "'hex'"
 				break
 
 			case Field.dateFieldType:
-				def format = formatDate
+				def format = destFormat?:formatDate
 				if (format != null && format.length() > 0)
 					res = "'$format'"
 				break
 
 			case Field.timeFieldType:
-				def format = formatTime
+				def format = destFormat?:formatTime
 				if (format != null && format.length() > 0)
 					res = "'$format'"
 				break
 
-			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-				def format = formatDateTime
+			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType: /* TODO: добавить отдельно формат для часовых поясов */
+				def format = destFormat?:formatDateTime
 				if (format != null && format.length() > 0)
 					res = "'$format'"
 				break
 
-			/* TODO: Need adding */
+			/* TODO: Добавить поддержку массивов */
 			/*case Field.arrayFieldType:
 				res = "$fieldName"
 				break*/
@@ -207,14 +211,37 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
+	Boolean supportBulkLoadAbortOnError() { true }
+
+	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
 		def rowDelimiterChar = source.rowDelimiter()
 		if (rowDelimiterChar == '\r\n')
 			rowDelimiterChar = '\n'
+		if (rowDelimiterChar == null || rowDelimiterChar.length() != 1)
+			throw new DatasetError(dest, '#vertica.invalid_row_delimiter')
 
-		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
+		def escapeChar = params.escapeChar as String
+		if (source.escaped() && escapeChar == null)
+			escapeChar = '\\'
+		else if (!source.escaped())
+			escapeChar = null
+		if (escapeChar != null && escapeChar.length() != 1)
+			throw new DatasetError(dest, '#vertica.invalid_escape_char')
+
+		def fieldDelimiterChar = source.fieldDelimiter()
+		if (fieldDelimiterChar == null || fieldDelimiterChar.length() != 1)
+			throw new DatasetError(dest, '#vertica.invalid_field_delimiter')
+
+		def quoteStrChar = source.quoteStr()
+		if (quoteStrChar == null || quoteStrChar.length() != 1)
+			throw new DatasetError(dest, '#vertica.invalid_quote')
+
+		def standardLoad = (source.escaped() || rowDelimiterChar != '\n')
+
+		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = '', escapeCharStr = ''
 		def useExternalParser = (params.parser != null && !(params.parser as Map).isEmpty())
 		if (useExternalParser) {
 			String parserFunc = (params.parser as Map).function
@@ -238,31 +265,33 @@ class VerticaDriver extends JDBCDriver {
 			}
 			def useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
 			if (useCsvOptions) {
-				fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
+				fieldDelimiter = "\nDELIMITER AS ${EscapeString(fieldDelimiterChar)}"
 				rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
-				quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
+				quoteStr = "\nENCLOSED BY ${EscapeString(quoteStrChar)}"
 				if (source.nullAsValue() != null)
 					nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+				if (escapeChar != null)
+					escapeCharStr = "\nESCAPE AS ${EscapeString(escapeChar)}"
+				else
+					escapeCharStr = '\nNO ESCAPE'
 			}
 		}
-		else if (!source.escaped()) {
-			def fd = source.fieldDelimiter()
-			def qs = source.quoteStr()
-			if (fd == '\u0001')
+		else if (!standardLoad) {
+			if (fieldDelimiterChar == '\u0001' && escapeChar == null)
 				throw new ExceptionGETL('Field separator with unicode value 1 is not supported!')
-			if (qs == '\u0001')
+			if (quoteStrChar == '\u0001' && escapeChar == null)
 				throw new ExceptionGETL('Quote separator with unicode value 1 is not supported!')
-			if (rowDelimiterChar == '\u0001')
+			if (rowDelimiterChar == '\u0001' && escapeChar == null)
 				throw new ExceptionGETL('Row separator with unicode value 1 is not supported!')
 			if (source.nullAsValue() != null)
 				throw new ExceptionGETL('Vertica driver not support nullAsValue option, when bulk loading not escaped file!')
 
 			def opts = [
 					'type=\'traditional\'',
-					"delimiter = ${EscapeString(fd)}",
-					"enclosed_by = ${EscapeString(qs)}",
+					"delimiter = ${EscapeString(fieldDelimiterChar)}",
+					"enclosed_by = ${EscapeString(quoteStrChar)}",
 					"record_terminator = ${EscapeString(rowDelimiterChar)}",
-					"escape = ${EscapeString('\u0001')}",
+					"escape = ${EscapeString(escapeChar?:'\u0001')}",
 					"header=${source.isHeader()}",
 					'trim=false'
 			]
@@ -273,21 +302,18 @@ class VerticaDriver extends JDBCDriver {
 		}
 
 		if (parserText.length() == 0) {
-			if (source.fieldDelimiter() == null || source.fieldDelimiter().length() != 1)
-				throw new ExceptionGETL('Required one char field delimiter')
-			if (rowDelimiterChar == null || rowDelimiterChar.length() != 1)
-				throw new ExceptionGETL('Required one char row delimiter')
-			if (source.quoteStr() == null || source.quoteStr().length() != 1)
-				throw new ExceptionGETL('Required one char quote str')
-
 			if (source.fieldDelimiter() != null)
-				fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
+				fieldDelimiter = "\nDELIMITER AS ${EscapeString(fieldDelimiterChar)}"
 			if (rowDelimiterChar != null)
 				rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
 			if (source.quoteStr() != null)
-				quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
+				quoteStr = "\nENCLOSED BY ${EscapeString(quoteStrChar)}"
 			if (source.nullAsValue() != null)
 				nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+			if (escapeChar != null)
+				escapeCharStr = "\nESCAPE AS ${EscapeString(escapeChar)}"
+			else
+				escapeCharStr = '\nNO ESCAPE'
 		}
 
 		def header = source.isHeader()
@@ -300,12 +326,23 @@ class VerticaDriver extends JDBCDriver {
 		def enforceLength = (!useExternalParser && BoolUtils.IsValue(params.enforceLength, true))
 		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
-		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath as String, connection.dslCreator)
-		String rejectedPath = FileUtils.TransformFilePath(params.rejectedPath as String, connection.dslCreator)
+
 		def rejectMax = params.rejectMax as Long
 		def abortOnError = BoolUtils.IsValue(params.abortOnError, true)
 		String location = params.location as String
 		String onNode = (location != null)?(' ON ' + location):''
+
+		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath as String, connection.dslCreator)
+		if (exceptionPath != null && FileUtils.FileExtension(exceptionPath).toLowerCase() == '.gz')
+			exceptionPath = FileUtils.ExcludeFileExtension(exceptionPath)
+		if (location == null && exceptionPath != null)
+			new File(exceptionPath).delete()
+
+		String rejectedPath = FileUtils.TransformFilePath(params.rejectedPath as String, connection.dslCreator)
+		if (rejectedPath != null && FileUtils.FileExtension(rejectedPath).toLowerCase() == '.gz')
+			rejectedPath = FileUtils.ExcludeFileExtension(rejectedPath)
+		if (location == null && rejectedPath != null)
+			new File(rejectedPath).delete()
 
 		String streamName = params.streamName
 
@@ -376,11 +413,11 @@ class VerticaDriver extends JDBCDriver {
 					def sourceType = table.currentJDBCConnection.currentJDBCDriver.type2sqlType(sourceField, false)
 					columns.add("  $fillFieldName FILLER $sourceType")
 
-					def format = copyFormatField(source, sourceField, formatDate, formatTime, formatDateTime)
+					def format = copyFormatField(table, sourceField, formatDate, formatTime, formatDateTime)
 					if (format != null)
 						options.add('  ' + table.sqlObjectName(fillFieldName) + ' format ' + format)
 				} else if (sourceField.type == Field.blobFieldType) {
-					def format = copyFormatField(source, sourceField, formatDate, formatTime, formatDateTime)
+					def format = copyFormatField(table, sourceField, formatDate, formatTime, formatDateTime)
 					if (format != null)
 						options.add('  ' + table.sqlObjectName(sourceField.name) + ' format ' + format)
 				}
@@ -406,16 +443,19 @@ class VerticaDriver extends JDBCDriver {
 			sb.append('\n)\n')
 		}
 
-		sb.append("""FROM ${(location == null)?"LOCAL ":""}$fileName $parserText $fieldDelimiter$nullAsValue$quoteStr$rowDelimiter
-""")
+		sb.append("""FROM ${(location == null)?"LOCAL ":""}$fileName $parserText $fieldDelimiter$nullAsValue$quoteStr$rowDelimiter$escapeCharStr\n""")
 		if (header && parserText.length() == 0)
 			sb.append('SKIP 1\n')
 		if (rejectMax != null)
 			sb.append("REJECTMAX ${rejectMax}\n")
 		if (exceptionPath != null)
 			sb.append("EXCEPTIONS '${exceptionPath}'$onNode\n")
+
+		def convertReject = (location == null && (
+				((int)fieldDelimiterChar.charAt(0)) < 8 || ((int)rowDelimiterChar.charAt(0)) < 8 || ((int)quoteStrChar.charAt(0)) < 8))
 		if (rejectedPath != null)
 			sb.append("REJECTED DATA '${rejectedPath}'$onNode\n")
+
 		if (enforceLength)
 			sb.append('ENFORCELENGTH\n')
 		if (abortOnError)
@@ -433,7 +473,48 @@ class VerticaDriver extends JDBCDriver {
 
 		dest.writeRows = 0L
 		dest.updateRows = 0L
-		def count = executeCommand(sql, [isUpdate: true])
+		Long count = 0
+		try {
+			count = executeCommand(sql, [isUpdate: true])
+		}
+		finally {
+			if (convertReject && rejectedPath != null) {
+				def rejectCurFile = new File(rejectedPath)
+				def rejectNewFile = new File(rejectedPath + '.getltemp')
+				if (rejectCurFile.exists()) {
+					def curFile = (source.cloneDatasetConnection() as CSVDataset).tap { f ->
+						currentCsvConnection.path = rejectCurFile.parent
+						f.fileName = rejectCurFile.name
+						f.isGzFile = false
+						f.readOpts.isSplit = false
+						f.field = source.field
+						f.field.each { it.type = it.stringFieldType }
+						resetFieldToDefault()
+					}
+
+					def newFile = new CSVDataset().tap { f ->
+						useConnection new CSVConnection().tap { con ->
+							con.path = rejectNewFile.parent
+							con.header = false
+							con.fieldDelimiter = '\t'
+							con.rowDelimiter = '\n'
+							con.quoteStr = '"'
+							con.escaped = false
+							con.blobAsPureHex = false
+							con.blobPrefix = '0x'
+						}
+						f.fileName = rejectNewFile.name
+						f.field = source.field
+						f.field.each { it.type = it.stringFieldType }
+						resetFieldToDefault()
+					}
+
+					new Flow().copy(source: curFile, dest: newFile)
+					rejectCurFile.delete()
+					rejectNewFile.renameTo(rejectCurFile)
+				}
+			}
+		}
 		source.readRows = count
 		dest.writeRows = count
 		dest.updateRows = count
@@ -580,7 +661,7 @@ class VerticaDriver extends JDBCDriver {
 			throw new DatasetError(csvFile, 'The row delimiter must have only one character for bulk load to table {table}', [table: source])
 
 		def isBlobs = (source.field.find { field -> field.type == Field.blobFieldType } != null)
-		if (!csvFile.escaped()) {
+		if (!csvFile.escaped() && csvFile.rowDelimiter() in ['\n', '\r\n']) {
 			if (csvFile.nullAsValue() != null)
 				throw new DatasetError(csvFile, 'When escaped is off, null as value is not allowed for bulk load to table {table}', [table: source])
 			if (isBlobs)
@@ -713,19 +794,18 @@ class VerticaDriver extends JDBCDriver {
 				field.length = 65000
 		}
 		else if (field.type == Field.numericFieldType) {
-			if ((field.length?:0) > 0 && (field.precision?:0) == 0) {
-				if (field.length <= 10) {
+			if (field.length > 0 && field.precision == 0) {
+				if (field.length < 10) {
 					field.type = Field.integerFieldType
 					field.length = null
 					field.precision = null
-				} else if (field.length < 20) {
+				} else if (field.length <= 20) {
 					field.type = Field.bigintFieldType
 					field.length = null
 					field.precision = null
 				}
 			}
-
-			if (field.type == Field.numericFieldType && (field.length?:0) == 0) {
+			else if (field.length == null && field.precision == null) {
 				field.type = Field.doubleFieldType
 				field.length = null
 				field.precision = null
@@ -780,7 +860,10 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.prepareCsvTempFile(source, csvFile)
-		csvFile.escaped = true
+		csvFile.escaped = false
+		csvFile.quoteStr = '\u0005'
+		csvFile.fieldDelimiter = '\u0007'
+		csvFile.rowDelimiter = '\u0006'
 		csvFile.blobAsPureHex = false
 		csvFile.blobPrefix = '0x'
 	}

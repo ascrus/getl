@@ -10,6 +10,7 @@ import getl.exception.DatasetError
 import getl.exception.RequiredParameterError
 import getl.utils.ConvertUtils
 import getl.utils.FileUtils
+import getl.utils.ListUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import java.nio.charset.Charset
@@ -87,7 +88,7 @@ class FileDataset extends Dataset implements AttachData {
 	void setAppend (Boolean value) { params.append = value }
 	/** Append if file exists */
 	//@JsonIgnore
-	Boolean isAppend() { append?:fileConnection?.isAppend() }
+	Boolean isAppend() { ListUtils.NotNullValue(append, fileConnection?.isAppend(), false) as Boolean }
 	
 	/** Auto create path for connection */
 	Boolean getCreatePath() { ConvertUtils.Object2Boolean(params.createPath) }
@@ -95,7 +96,7 @@ class FileDataset extends Dataset implements AttachData {
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path for connection */
 	//@JsonIgnore
-	Boolean isCreatePath() { createPath?:fileConnection?.isCreatePath() }
+	Boolean isCreatePath() { ListUtils.NotNullValue(createPath, fileConnection?.isCreatePath(), false) }
 	
 	/** Delete file if empty after write */
 	Boolean getDeleteOnEmpty() { ConvertUtils.Object2Boolean(params.deleteOnEmpty) }
@@ -103,7 +104,7 @@ class FileDataset extends Dataset implements AttachData {
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
 	//@JsonIgnore
-	Boolean isDeleteOnEmpty() { deleteOnEmpty?:fileConnection?.isDeleteOnEmpty() }
+	Boolean isDeleteOnEmpty() { ListUtils.NotNullValue(deleteOnEmpty, fileConnection?.isDeleteOnEmpty(), false) }
 	
 	/** File is pack of GZIP */
 	Boolean getIsGzFile() { ConvertUtils.Object2Boolean(params.isGzFile) }
@@ -111,7 +112,7 @@ class FileDataset extends Dataset implements AttachData {
 	void setIsGzFile(Boolean value) { params.isGzFile = value }
 	/** File is pack of GZIP */
 	@JsonIgnore
-	Boolean isGzFile() { isGzFile?:fileConnection?.isGzFile() }
+	Boolean isGzFile() { ListUtils.NotNullValue(isGzFile, fileConnection?.isGzFile(), false) }
 	
 	/** Extension for file */
 	String getExtension() { params.extension as String }

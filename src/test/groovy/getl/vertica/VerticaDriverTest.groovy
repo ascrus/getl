@@ -53,8 +53,8 @@ class VerticaDriverTest extends JDBCDriverProto {
         }
     }
 
-    /*@Override
-    protected prepareBulkFile(CSVDataset file) { file.escaped = true }*/
+    @Override
+    protected prepareBulkFile(CSVDataset file) { file.escaped = false }
 
     @Test
     void testLimit() {
@@ -234,6 +234,53 @@ LIMIT 1'''
                 assertEquals(4, story.countRow())
 
             story.drop()
+        }
+    }
+
+    @Test
+    void testBulkLoadReject() {
+        Getl.Dsl {
+            def verTable = verticaTable('vertica:testbulkload', true) {
+                connection = this.con
+                tableName = 'testBulkLoad'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50 }
+                field('dt') { type = datetimeFieldType }
+                field('value') { type = integerFieldType }
+                field('description') { length = 50 }
+                createOpts {
+                    onCommit = true
+                }
+                dropOpts {
+                    ifExists = true
+                }
+                bulkLoadOpts {
+                    abortOnError = false
+                }
+                drop()
+                create()
+            }
+
+            def file = csvTemp {
+                verTable.prepareCsvTempFile(it)
+                field = verTable.field
+                fieldByName('dt').type = Field.stringFieldType
+                fieldByName('value').type = Field.stringFieldType
+            }
+
+            etl.rowsTo(file) {
+                writeRow { add ->
+                    add([id: 1, name: 'name 1', dt: '2023-01-31 00:01:02.123456', value: '123', description: 'desc 1'])
+                    add([id: 2, name: 'name 2', dt: 'XXX', value: '234', description: 'desc 2'])
+                    add([id: 3, name: 'name 3', dt: '2023-01-31 00:01:02.123456', value: '345', description: 'desc 3'])
+                    add([id: 4, name: 'name 4', dt: '2023-01-31 00:01:02.123456', value: 'XXX', description: 'desc 1'])
+                }
+            }
+
+            verTable.bulkLoadCsv(file) {
+                rejectedPath = '{GETL_TEST}/vertica/bulk_load_file.rej'
+                exceptionPath = '{GETL_TEST}/vertica/bulk_load_file.err'
+            }
         }
     }
 

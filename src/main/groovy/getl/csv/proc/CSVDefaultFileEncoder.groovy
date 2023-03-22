@@ -28,14 +28,22 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		if (this.isEscaped)
 			this.escapedColumns = wp.escapedColumns
 
+		this.fieldDelimiter = wp.fieldDelimiter
 		this.fieldDelimiterSize = wp.fieldDelimiterSize
+
+		this.rowDelimiter = wp.rowDelimiter
 		this.rowDelimiterSize = wp.rowDelimiterSize
+
+		this.disableEncode = ((int)this.quote.charAt(0)) < 8 && ((int)fieldDelimiter.charValue()) < 8 && ((int)this.rowDelimiter.charAt(0)) < 8
+
 		this.countFields = wp.countFields
 
 		this.escapeKeys.put(this.quote, '\\' + this.quote)
 		this.escapePattern = StringUtils.SearchManyPattern(escapeKeys)
 	}
 
+	private Character fieldDelimiter
+	private String rowDelimiter
 	private Boolean header
 	private String quote
 	private String nullValue
@@ -45,6 +53,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 	private Long fieldDelimiterSize
 	private Long rowDelimiterSize
 	private Integer countFields
+	private Boolean disableEncode
 
 	public Long writeSize = 0L
 
@@ -57,11 +66,11 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		if (context.lineNumber == 1 && header)
 			val = super.encode(value, context, pref)
 		else if (!this.isEscaped || (nullValue != null && value == nullValue))
-			val = super.encode(value, context, pref)
+			val = (!disableEncode)?super.encode(value, context, pref):value
 		else if (context.columnNumber in this.escapedColumns)
 			val = quote + StringUtils.ReplaceMany(value, escapeKeys, escapePattern) + quote
 		else
-			val = super.encode(value, context, pref)
+			val = (!disableEncode)?super.encode(value, context, pref):value
 
 		writeSize += val.length()
 		if (context.columnNumber < countFields) {

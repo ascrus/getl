@@ -1,15 +1,10 @@
 package getl.csv.proc
 
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
-
 import org.supercsv.io.Tokenizer
 import org.supercsv.prefs.CsvPreference
 import java.util.regex.Pattern
-
 import getl.utils.StringUtils
-import getl.csv.CSVDriver
-import getl.csv.CSVDriver.WriterParams
 
 /**
  * CSV tokenizer escape string

@@ -130,7 +130,7 @@ class FileDriver extends Driver {
 		if (fn == null)
 			return null
 
-		def isGz = dataset.isGzFile
+		def isGz = dataset.isGzFile()
 		def ext = FileUtils.FileExtension(fn)
 		def extDs = dataset.extension()
 		if (extDs != null && ext != extDs) {
@@ -308,8 +308,8 @@ class FileDriver extends Driver {
 		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
 		def isAppend = BoolUtils.IsValue(wp.isAppend)
 
-		if (isAppend && isGzFile)
-			throw new DatasetError(dataset, '#dataset.deny_gzip_append')
+		/*if (isWrite && isAppend && isGzFile)
+			throw new DatasetError(dataset, '#dataset.deny_gzip_append')*/
 		
 		InputStream res
 		if (isGzFile) {

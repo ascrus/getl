@@ -2399,6 +2399,9 @@ ${sql.stripTrailing()};
 		throw new NotSupportError(dest, 'bulkLoadFile')
 	}
 
+	/** Database support native option abortOnError */
+	Boolean supportBulkLoadAbortOnError() { false }
+
 	/**
 	 * Use partition key in columns definition for sql statement
 	 */
