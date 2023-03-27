@@ -114,9 +114,11 @@ abstract class Job {
 				logger.info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
 
 			logger.done()
-			if (isError && ExitOnError) {
+			if (isError && ExitOnError)
 				System.exit(exitCode?:1)
-			}
+
+			if (exitCode == 205)
+				System.exit(205)
 		}
 
         if (isError)

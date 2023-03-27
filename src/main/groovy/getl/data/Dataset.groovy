@@ -469,9 +469,7 @@ class Dataset implements GetlRepository, WithConnection {
 		getField().each { Field f -> if (f.isKey) f.isKey = false }
 	}
 	
-	/**
-	 * Remove field by name
-	 */
+	/** Remove field by name */
 	void removeField(String name) {
 		def i = indexOfField(name)
 		if (i == -1)
@@ -479,40 +477,48 @@ class Dataset implements GetlRepository, WithConnection {
 
 		getField().remove(i)
 	}
-	
+
+	/** Remove field by name */
 	void removeField(Field field) {
 		removeField(field.name)
 	}
 
-	/**
-	 * Remove all fields
-	 */
+	/** Remove all fields */
 	void removeFields() { _field.clear() }
 	
-	/**
-	* Remove field by list of name
-	*/
-   void removeFields(List<String> fieldList) {
-	   List<Field> rf = []
-	   fieldList?.each { String name ->
-		   def f = fieldByName(name)
-		   if (f != null) rf << f
+	/** Remove field by list of name */
+   void removeFields(List fieldNameList) {
+	   def delFields = [] as List<Field>
+	   fieldNameList?.each { elem ->
+		   if (elem == null)
+			   return
+
+		   if (elem instanceof Field)
+			   delFields.add(elem as Field)
+		   else {
+			   def field = fieldByName(elem.toString())
+			   if (field != null)
+				   delFields.add(field)
+		   }
 	   }
-	   def l = getField()
-	   rf.each { Field f -> l.remove(f) }
+	   if (!delFields.isEmpty()) {
+		   def fl = getField()
+		   delFields.each { Field field ->
+			   fl.remove(field)
+		   }
+	   }
    }
-	
+
 	/**
 	 * Remove fields by user filter
 	 */
 	void removeFields(@ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure<Boolean> where) {
-		def l = []
+		def rf = [] as List<Field>
 		getField().each {
-			if (where(it)) l << it
+			if (where(it))
+				rf << it
 		}
-		l.each {
-			this.field.remove(it)
-		}
+		removeFields(rf)
 	}
 	
 	/**
@@ -1915,24 +1921,6 @@ class Dataset implements GetlRepository, WithConnection {
 	Map<String, EqualFieldStatus> compareFields(List<Field> compared, Boolean softComparison = false, Boolean compareExpressions = true,
 												Boolean compareLength = true) {
 		return CompareFields(this, field, compared, softComparison, compareExpressions, compareLength)
-
-		/*def res = new HashMap<String, EqualFieldStatus>()
-		def curDriver = connection?.driver
-		compared.each { field ->
-			def curField = fieldByName(field.name)
-			if (curField == null)
-				res.put(field.name, EqualFieldStatus.DELETED)
-			else if (!curField.compare(field, softComparison, compareExpressions,
-					compareLength && (curDriver != null)?curDriver.allowCompareLength(this, curField, field):true))
-				res.put(field.name, EqualFieldStatus.CHANGED)
-		}
-
-		def comparedNames = compared.collect { field -> field.name.toLowerCase() }
-		_field.findAll { field -> !(field.name.toLowerCase() in comparedNames) }.each { field ->
-			res.put(field.name, EqualFieldStatus.ADDED)
-		}
-
-		return res*/
 	}
 
 	/**
@@ -1956,7 +1944,7 @@ class Dataset implements GetlRepository, WithConnection {
 			if (curField == null)
 				res.put(fieldName, EqualFieldStatus.DELETED)
 			else if (!curField.compare(field, softComparison, compareExpressions,
-					compareLength && (curDriver != null)?curDriver.allowCompareLength(dataset, curField, field):true))
+					compareLength && ((curDriver != null)?curDriver.allowCompareLength(dataset, curField, field):true)))
 				res.put(fieldName, EqualFieldStatus.CHANGED)
 
 			comparedNames << fieldName

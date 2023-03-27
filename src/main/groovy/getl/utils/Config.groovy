@@ -1,9 +1,11 @@
+//file:noinspection unused
 package getl.utils
 
 import getl.config.ConfigFiles
 import getl.config.ConfigManager
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -196,11 +198,18 @@ class Config {
 	 * Return system properties and environment OS variables
 	 * @return list of environment variables
 	 */
+	@CompileStatic
 	static Map<String, String> SystemProps() {
 		def res = new HashMap<String, String>()
 		res.putAll(System.getenv())
 		System.properties.each { prop ->
-			res.put(prop.key.toString(), prop.value as String)
+			def name = prop.key.toString()
+			if (name.matches('sun[.].+') || name.matches('awt[.].+') || name.matches('java[.].+') || name.matches('user[.].+') ||
+					name.matches('os[.].+') || name.matches('jdk[.].+') || name.matches('file[.].+') || name.matches('line[.].+') ||
+					name.matches('path[.].+') || name.matches('groovy[.].+'))
+				return
+
+			res.put(name, prop.value.toString())
 		}
 
 		return res

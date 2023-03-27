@@ -22,7 +22,7 @@ else if (level == 2) {
     assert 0 == 1
 }
 else {
-    classRunSTOP('Stop class!', 3)
+    classRunSTOP('Stop class', 3)
     assert 0 == 1
 }
 

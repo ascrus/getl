@@ -46,6 +46,9 @@ class ParseObjectName {
         if (groupName == null)
             return null
 
+        if (groupName.indexOf('..') != -1)
+            return false
+
         return (isMaskName)?groupName.matches(patternGroupMask):groupName.matches(patternGroupName)
     }
 

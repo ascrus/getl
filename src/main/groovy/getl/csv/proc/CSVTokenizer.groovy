@@ -32,7 +32,7 @@ class CSVTokenizer extends Tokenizer {
     @Override
     protected String readLine() {
         StringBuilder sb = new StringBuilder()
-        int c = 0
+        int c
         int i = 0
         while ((c = reader.read()) != -1) {
             i++

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.lang.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -41,14 +42,13 @@ class ConfigSpec extends BaseSpec {
     /** Configuration files full path */
     String fullPath() { manager.path() }
 
-    /**
-     * Code page in configuration files
-     */
+    /** Code page in configuration files */
     String getCodePage() { manager.codePage }
-    /**
-     * Code page in configuration files
-     */
+    /** Code page in configuration files */
     void setCodePage(String value) { manager.codePage = value }
+
+    /** Configuration variables*/
+    Map<String, Object> getVars() { manager.vars }
 
     /**
      * Load configuration file

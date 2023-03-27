@@ -2,6 +2,7 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.AbortDsl
 import getl.exception.ExceptionModel
 import getl.exception.ModelError
 import getl.exception.RequiredParameterError
@@ -376,7 +377,9 @@ class Workflows extends BaseModel<WorkflowSpec> {
                 res = +stepExecute(node, addVars, including, excluding, userClassLoader)
             }
             catch (Throwable e) {
-                dslCreator.logError("Error execution step \"${node.stepName}\"", e)
+                if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
+                    dslCreator.logError("Error execution step \"${node.stepName}\"!", e)
+
                 throw e
             }
         }
@@ -499,7 +502,9 @@ return $className"""
                     res += stepExecute(subNode, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable e) {
-                    dslCreator.logError("Error execution step \"${subNode.stepName}\"", e)
+                    if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
+                        dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+
                     throw e
                 }
             }
@@ -668,9 +673,11 @@ return $className"""
                             scriptResult = dslCreator.callScript(runClass, execVars, macroVars, modelScriptEvents.get(scriptName.toUpperCase()))
                         }
                         catch (Throwable e) {
-                            Logs.Severe(this, '#dsl.model.workflows.error_executing', [step: stepLabel, script: scriptName, className: runClass.name], e)
-                            if (generatedUserCode != null)
-                                dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel].[$scriptName]", scriptUserCode)
+                            if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP) {
+                                Logs.Severe(this, '#dsl.model.workflows.error_executing', [step: stepLabel, script: scriptName, className: runClass.name], e)
+                                if (generatedUserCode != null)
+                                    dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel].[$scriptName]", scriptUserCode)
+                            }
                             throw e
                         }
                         if (scriptResult.result != null && scriptResult.result instanceof Map) {
@@ -704,7 +711,10 @@ return $className"""
                     res += stepExecute(subNode, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable e) {
-                    dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+                    if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
+                        dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+
+
                     throw e
                 }
             }
@@ -716,7 +726,9 @@ return $className"""
                     stepExecute(errStep, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable err) {
-                    dslCreator.logError("Error execution step \"${errStep.stepName}\"!", err)
+                    if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
+                        dslCreator.logError("Error execution step \"${errStep.stepName}\"!", err)
+
                     throw err
                 }
             }

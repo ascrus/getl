@@ -22,11 +22,12 @@ import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositoryWorkflows
 import getl.proc.Executor
 import getl.proc.Flow
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
+import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
-
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -259,6 +260,9 @@ class RepositoryStorageManager {
     /** Register repository in list */
     @Synchronized("synchRepository")
     void registerRepository(String name, RepositoryObjects repository, Integer priority = null) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         if (_listRepositories.containsKey(name))
             throw new DslError(dslCreator, '#dsl.repository.already_register', [repository: name])
 
@@ -274,7 +278,7 @@ class RepositoryStorageManager {
     /** Register repository in list */
     void registerRepository(Class<RepositoryObjects> classRepository, Integer priority = null) {
         if (classRepository == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'classRepository', detail: 'registerRepository'])
+            throw new NullPointerException('Class of repository is null!')
 
         def parent = classRepository.getConstructor().newInstance()
         registerRepository(classRepository.name, parent, priority)
@@ -302,7 +306,7 @@ class RepositoryStorageManager {
      */
     RepositoryObjects repository(Class<RepositoryObjects> repositoryClass) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'repository'])
+            throw new NullPointerException('Repository class is null!')
 
         return repository(repositoryClass.name)
     }
@@ -331,13 +335,16 @@ class RepositoryStorageManager {
 
     /** Repository storage path */
     String repositoryStoragePath(RepositoryObjects repository, String env = 'all') {
-        repositoryStoragePath(repository.getClass(), env)
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
+        return repositoryStoragePath(repository.getClass(), env)
     }
 
     /** Repository storage path */
     String repositoryStoragePath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'repositoryStoragePath'])
+            throw new NullPointerException('Repository class is null!')
 
         if (storagePath == null)
             throw new DslError(dslCreator, '#dsl.repository.non_path')
@@ -352,7 +359,7 @@ class RepositoryStorageManager {
     /** Repository directory path */
     String repositoryPath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'repositoryPath'])
+            throw new NullPointerException('Repository class is null!')
 
         if (storagePath == null)
             throw new DslError(dslCreator, '#dsl.repository.non_path')
@@ -366,7 +373,10 @@ class RepositoryStorageManager {
 
     /** Repository directory path */
     String repositoryPath(RepositoryObjects repository, String env = 'all') {
-        repositoryPath(repository.getClass(), env)
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
+        return repositoryPath(repository.getClass(), env)
     }
 
     /**
@@ -378,6 +388,9 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     Integer saveRepository(String repositoryName, String mask = null, String env = null, Date changeTime = null) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         if (isResourceStoragePath)
             throw new DslError(dslCreator, '#dsl.repository.deny_path_resource')
 
@@ -407,7 +420,7 @@ class RepositoryStorageManager {
      */
     Integer saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Date changeTime = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'saveRepository'])
+            throw new NullPointerException('Repository class is null!')
 
         saveRepository(repositoryClass.name, mask, env, changeTime)
     }
@@ -421,6 +434,9 @@ class RepositoryStorageManager {
      * @return sign that the object has been saved
      */
     protected Boolean saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env, Date changeTime = null) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         if (isResourceStoragePath)
             throw new DslError(dslCreator, '#dsl.repository.deny_path_resource')
 
@@ -449,6 +465,9 @@ class RepositoryStorageManager {
 
     /** Save information to saving story dataset */
     private void saveToStoryDataset(String repositoryName, String objectName, String env, Date changeTime) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         if (savingStoryDataset == null)
             return
 
@@ -473,6 +492,9 @@ class RepositoryStorageManager {
      * @param env used environment
      */
     void saveObjectToFile(RepositoryObjects repository, GetlRepository obj, String fileName) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         def objParams = repository.exportConfig(obj)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
@@ -491,6 +513,9 @@ class RepositoryStorageManager {
      * @param env used environment
      */
     void saveObject(String repositoryName, String name, String env = null) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         def repository = repository(repositoryName)
         def objName = ParseObjectName.Parse(name, false)
         saveObjectToStorage(repository, objName, env)
@@ -504,7 +529,7 @@ class RepositoryStorageManager {
      */
     void saveObject(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'saveObject'])
+            throw new NullPointerException('Repository class is null!')
 
         saveObject(repositoryClass.name, name, env)
     }
@@ -514,12 +539,14 @@ class RepositoryStorageManager {
      * @param mask object name mask
      * @param env used environment
      * @param ignoreExists don't load existing ones (default true)
+     * @param softLoad load only a list of names, load objects only when they are accessed (default false)
      * @return count loaded objects
      */
-    Integer loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true) {
+    @NamedVariant
+    Integer loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true, Boolean softLoad = false) {
         def res = 0
         listRepositories.each { name ->
-            res += loadRepository(name, mask, env, ignoreExists)
+            res += loadRepository(name, mask, env, ignoreExists, softLoad)
         }
 
         return res
@@ -544,6 +571,9 @@ class RepositoryStorageManager {
      * @return list of files
      */
     TableDataset repositoryFiles(String repositoryName, String env = null, String group = null) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         def repository = repository(repositoryName)
         repositoryFiles(repository, env, group)
     }
@@ -555,6 +585,9 @@ class RepositoryStorageManager {
      * @return list of files
      */
     TableDataset repositoryFiles(RepositoryObjects repository, String env = null, String group = null) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         env = envFromRep(repository, env)
         def repFilePath = repositoryPath(repository, env)
         def isEnvConfig = repository.needEnvConfig()
@@ -610,7 +643,7 @@ class RepositoryStorageManager {
      */
     void removeRepositoryFiles(Class<RepositoryObjects> repositoryClass, String env = null, String group = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'removeRepositoryFiles'])
+            throw new NullPointerException('Repository class is null!')
 
         removeRepositoryFiles(repositoryClass.name, env, group)
     }
@@ -622,6 +655,9 @@ class RepositoryStorageManager {
      * @param group object group name
      */
     void removeRepositoryFiles(String repositoryName, String env = null, String group = null) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         def repository = repository(repositoryName)
         def files = repositoryFiles(repository, env, group)
         def repFilePath = repositoryPath(repository, env)
@@ -645,9 +681,20 @@ class RepositoryStorageManager {
      * @param mask object name mask
      * @param env used environment
      * @param ignoreExists don't load existing ones (default true)
+     * @param softLoad loading only object name without creating object (default false)
      * @return count of saved objects
      */
-    Integer loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
+    @NamedVariant
+    Integer loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true, Boolean softLoad = false) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
+        ignoreExists = BoolUtils.IsValue(ignoreExists, true)
+        softLoad = BoolUtils.IsValue(softLoad)
+
+        if (softLoad && !autoLoadFromStorage)
+            throw new DslError(dslCreator, '#dsl.repository.need_auto_loading')
+
         def res = 0
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
@@ -711,19 +758,25 @@ class RepositoryStorageManager {
                                 fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
                                         ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
                             }
-                            def file = new File(fileName)
-                            try {
-                                def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
-                                        configVars: this.dslCreator.configVars, owner: dslCreator)
-                                GetlRepository obj
-                                obj = repository.importConfig(objParams, null, name)
-                                runWithLoadMode(true) {
-                                    repository.registerObject(this.dslCreator, obj, name, true)
+
+                            if (!softLoad) {
+                                def file = new File(fileName)
+                                try {
+                                    def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
+                                            configVars: this.dslCreator.configVars, owner: dslCreator)
+                                    GetlRepository obj
+                                    obj = repository.importConfig(objParams, null, name)
+                                    runWithLoadMode(true) {
+                                        repository.registerObject(this.dslCreator, obj, name, true)
+                                    }
+                                }
+                                finally {
+                                    if (isResourceStoragePath)
+                                        file.delete()
                                 }
                             }
-                            finally {
-                                if (isResourceStoragePath)
-                                    file.delete()
+                            else {
+                                repository.addToLazyLoad(name)
                             }
 
                             res++
@@ -746,13 +799,14 @@ class RepositoryStorageManager {
      * @param mask object name mask
      * @param env used environment
      * @param ignoreExists don't load existing ones (default true)
+     * @param softLoad loading only object name without creating object (default false)
      * @return count of saved objects
      */
-    Integer loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
+    Integer loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true, Boolean softLoad = false) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'loadRepository'])
+            throw new NullPointerException('Repository class is null!')
 
-        loadRepository(repositoryClass.name, mask, env)
+        loadRepository(repositoryClass.name, mask, env, ignoreExists, softLoad)
     }
 
     /**
@@ -766,6 +820,9 @@ class RepositoryStorageManager {
      */
     GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true,
                               Boolean overloading = false, Boolean register = true) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         def objName = ParseObjectName.Parse(name, false)
         def fileName = objectFilePathInStorage(repository, objName, env)
         def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName, otherResourcePaths):new File(fileName)
@@ -774,7 +831,7 @@ class RepositoryStorageManager {
                 return null
 
             throw new DslError(dslCreator, (!isResourceStoragePath)?'#dsl.repository.fail_load_object_from_file':'#dsl.repository.fail_load_object_from_resource',
-                    [file: (!isResourceStoragePath)?file.path:file.name, repname: name, className: repository.getClass().name])
+                    [file: (!isResourceStoragePath)?file?.path:file?.name, repname: name, className: repository.getClass().name])
         }
 
         GetlRepository obj = null
@@ -819,9 +876,9 @@ class RepositoryStorageManager {
      */
     void readObjectFromFile(RepositoryObjects repository, String fileName, String env, GetlRepository obj) {
         if (repository == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repository', detail: 'readObjectFromFile'])
+            throw new NullPointerException('Repository is null!')
         if (fileName == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'fileName', detail: 'readObjectFromFile'])
+            throw new NullPointerException('File name is null!')
 
         def file = new File(fileName)
         if (!file.exists())
@@ -868,6 +925,9 @@ class RepositoryStorageManager {
      * @param register registering object in repository (default true)
      */
     GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false, Boolean register = true) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         GetlRepository obj = null
         runWithLoadMode(true) {
             def repository = repository(repositoryName)
@@ -887,7 +947,7 @@ class RepositoryStorageManager {
      */
     GetlRepository loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false, Boolean register = true) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'loadObject'])
+            throw new NullPointerException('Repository class is null!')
 
         loadObject(repositoryClass.name, name, env, overloading, register)
     }
@@ -898,6 +958,9 @@ class RepositoryStorageManager {
      */
     @Synchronized("synchRepository")
     Boolean removeStorage(String repositoryName, String env = null) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
         if (isResourceStoragePath)
             throw new DslError(dslCreator, '#dsl.repository.fail_delete_resource', [className: repositoryName])
 
@@ -917,7 +980,7 @@ class RepositoryStorageManager {
      */
     Boolean removeStorage(Class<RepositoryObjects> repositoryClass, String env = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'removeStorage'])
+            throw new NullPointerException('Repository class is null!')
 
         removeStorage(repositoryClass.name, env)
     }
@@ -929,6 +992,9 @@ class RepositoryStorageManager {
      * @return file extension
      */
     protected String envFromRep(RepositoryObjects repository, String env) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         if (!repository.needEnvConfig()) {
             env = 'all'
         }
@@ -949,6 +1015,9 @@ class RepositoryStorageManager {
      * @return file path
      */
     protected String objectFilePathInStorage(RepositoryObjects repository, ParseObjectName objName, String env) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
         env = envFromRep(repository, env)
         def fileName = repositoryStoragePath(repository, env) + '/'
         if (objName.groupName != null)
@@ -982,7 +1051,7 @@ class RepositoryStorageManager {
      */
     String objectFilePath(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'objectFilePath'])
+            throw new NullPointerException('Repository class is null!')
 
         objectFilePathInStorage(repository(repositoryClass.name), ParseObjectName.Parse(name, false), env)
     }
@@ -1007,7 +1076,7 @@ class RepositoryStorageManager {
      */
     File objectFile(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'objectFile'])
+            throw new NullPointerException('Repository class is null!')
 
         return new File(objectFilePath(repositoryClass, name, env))
     }
@@ -1023,7 +1092,7 @@ class RepositoryStorageManager {
     void renameObject(Class<RepositoryObjects> repositoryClass, String name, String newName, Boolean saveToStorage = false,
                       List<String> envs = null) {
         if (repositoryClass == null)
-            throw new DslError(dslCreator, '#params.required', [param: 'repositoryClass', detail: 'renameObject'])
+            throw new NullPointerException('Repository class is null!')
 
         renameObject(repositoryClass.name, name, newName, saveToStorage, envs)
     }
@@ -1038,6 +1107,9 @@ class RepositoryStorageManager {
      */
     void renameObject(String repositoryClassName, String name, String newName, Boolean saveToStorage = false,
                       List<String> envs = null) {
+        if (repositoryClassName == null)
+            throw new NullPointerException('Repository class name is null!')
+
         if (name == null)
             throw new DslError(dslCreator, '#params.required', [param: 'name', detail: 'renameObject'])
         if (newName == null)

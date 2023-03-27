@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.config
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -67,7 +68,7 @@ abstract class ConfigManager {
     }
 
     /**	Variables */
-    Map<String, Object> getVars() { content.vars as Map<String, Object> }
+    Map getVars() { content.vars as Map<String, Object> }
     /**	Variables */
     @Synchronized
     void setVars(Map value) {

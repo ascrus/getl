@@ -2071,7 +2071,7 @@ class JDBCDriver extends Driver {
 			def f = new File(con.fileNameSqlHistory).newWriter("utf-8", true)
 			try {
 				f.write("""-- ${DateUtils.NowDateTime()}: login: ${con.login} session: ${con.sessionID}
-${sql.stripTrailing()};
+${sql.stripTrailing()}
 
 """				)
 			}
@@ -3158,12 +3158,17 @@ ${sql.stripTrailing()};
 )
 SELECT {after_select}
 {source_cols}
-FROM {source} {after_from}'''
+FROM {source} {after_from}
+{%for_update%}'''
 
 		if (source.readOpts.where != null) {
 			sql += '\nWHERE {where}'
 			qParams.where = evalSqlParameters(source.readOpts.where, source.queryParams())
 		}
+
+		if (source.readOpts.forUpdate)
+			qParams.for_update = 'FOR UPDATE'
+
 		source.currentJDBCConnection.currentJDBCDriver.prepareCopyTableSource(source, qParams)
 		dest.currentJDBCConnection.currentJDBCDriver.prepareCopyTableDestination(dest, qParams)
 

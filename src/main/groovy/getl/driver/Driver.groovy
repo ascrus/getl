@@ -7,7 +7,9 @@ import getl.data.*
 import getl.exception.RequiredParameterError
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
+import getl.utils.GenerationUtils
 import getl.utils.ParamMethodValidator
+import groovy.transform.CompileStatic
 
 /**
  * Base driver class
@@ -78,7 +80,7 @@ abstract class Driver {
 		methodParams.register("openWrite", [])
 		methodParams.register("executeCommand", [])
 		methodParams.register('prepareImportFields', ['resetTypeName', 'resetKey', 'resetNotNull',
-													  'resetDefault', 'resetCheck', 'resetCompute'])
+													  'resetDefault', 'resetCheck', 'resetCompute', 'excludeTypes', 'rules'])
 	}
 
 	/**
@@ -177,11 +179,14 @@ abstract class Driver {
 	 *     <li>resetDefault: reset default value</li>
 	 *     <li>resetCheck: reset check expression</li>
 	 *     <li>resetCompute: reset compute expression</li>
+	 *     <li>excludeTypes: list of types for exclude field (if return 'IGNORE', when field not added to imported fields)</li>
+	 *     <li>rules: field conversion rules code</li>
 	 *</ul>
 	 * @param dataset source
 	 * @param importParams import options
 	 * @return list of prepared field
 	 */
+	@CompileStatic
 	List<Field> prepareImportFields(Dataset dataset, Map importParams = new HashMap()) {
 		if (dataset == null)
 			throw new RequiredParameterError('dataset', 'prepareImportFields')
@@ -198,10 +203,41 @@ abstract class Driver {
 		def resetCheck = BoolUtils.IsValue(importParams.resetCheck)
 		def resetCompute = BoolUtils.IsValue(importParams.resetCompute)
 		def isCompatibleDataset = getClass().isInstance(dataset)
+		def excludeParamTypes = importParams.excludeTypes as List
+		def rules = importParams.rules
 
-		def res = dataset.fieldClone()
+		def res = [] as List<Field>
 
-		res.each { field ->
+		def excludeTypes = [] as List<Field.Type>
+		excludeParamTypes?.each { type ->
+			Field.Type t
+			if (type instanceof Field.Type)
+				t = type as Field.Type
+			else
+				t = Field.Type.valueOf(type.toString()) as Field.Type
+
+			excludeTypes.add(t)
+		}
+		Closure<Boolean> removeByType = { Field.Type type -> type in excludeTypes }
+
+		Closure codeRule
+		if (rules != null) {
+			if (rules instanceof Closure)
+				codeRule = rules
+			else {
+				def sb = new StringBuilder('Closure code = { getl.data.Field field ->\n')
+				sb.append(rules.toString())
+				sb.append('\n}\nreturn code')
+				codeRule = GenerationUtils.EvalGroovyClosure(value: sb.toString(), owner: dataset.dslCreator)
+			}
+		}
+
+		dataset.field.each { origField ->
+			if (removeByType.call(origField.type))
+				return
+
+			def field = origField.copy()
+
 			if (resetTypeName || !isCompatibleDataset) {
 				field.typeName = null
 				field.columnClassName = null
@@ -218,6 +254,14 @@ abstract class Driver {
 				field.checkValue = null
 			if (resetCompute || !isCompatibleDataset || !dataset.connection.driver.isSupport(Support.COMPUTE_FIELD))
 				field.compute = null
+
+			if (codeRule != null) {
+				def ignore = field.with(codeRule)
+				if (ignore != null && ignore.toString().toUpperCase() == 'IGNORE')
+					return
+			}
+
+			res.add(field)
 		}
 
 		return res

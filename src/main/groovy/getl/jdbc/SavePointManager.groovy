@@ -112,7 +112,7 @@ class SavePointManager implements GetlRepository, WithConnection {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
-			throw new ExceptionGETL('Only work with JDBC connections is supported!')
+			throw new ExceptionGETL('Only work with JDBC connections is supported')
 
 		useConnection(value as JDBCConnection)
 	}

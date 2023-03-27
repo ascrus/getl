@@ -636,7 +636,7 @@ LIMIT 1'''
             def csvFile = csv {
                 useConnection csvConnection {path = '{GETL_TEST}/files' }
                 fileName = 'file1'
-                field('id') { type = integerFieldType; isKey = true }
+                field('id') { type = integerFieldType; isKey = true; ordKey = 1 }
                 field('name') { length = 50; isNull = false }
                 field('value') { type = doubleFieldType }
                 field('num') { type = numericFieldType; length = 12; precision = 2 }
@@ -652,7 +652,21 @@ LIMIT 1'''
                 useConnection oraCon
                 tableName = 'getl_test_import_fields'
                 field('dt') { typeName = 'date' }
+
+                importFields(csvFile, [resetKey: true, resetNotNull: true, excludeTypes: ['DATE', 'DATETIME'],
+                                       rules: '''if (name.matches('(?i)^num[_].+') && type == numericFieldType) type = doubleFieldType'''])
+                assertFalse(fieldByName('id').isKey)
+                assertNull(fieldByName('id').ordKey)
+                assertTrue(fieldByName('name').isNull)
+                assertNull(fieldByName('dt'))
+                assertNull(fieldByName('ts'))
+                assertEquals(Field.doubleFieldType, fieldByName('num_small').type)
+                assertEquals(Field.doubleFieldType, fieldByName('num_medium').type)
+                assertEquals(Field.doubleFieldType, fieldByName('num_large').type)
+
                 importFields(csvFile)
+                assertEquals(csvFile.field.size(), field.size())
+
                 drop(ifExists: true)
                 create()
                 retrieveFields()

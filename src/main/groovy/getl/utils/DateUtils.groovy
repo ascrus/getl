@@ -637,15 +637,15 @@ class DateUtils {
 	}
 
 	/** Truncate the date to the first day of the month */
-	static Timestamp TruncDay(Date date) {
+	static java.sql.Date TruncDay(Date date) {
 		if (date == null)
 			return null
 
 		Calendar c = Calendar.getInstance()
-		c.setTime(date)
+		c.setTime(ClearTime(date))
 		c.set(Calendar.DAY_OF_MONTH, 1)
 
-		return Timestamp.valueOf(c.toLocalDateTime())
+		return java.sql.Date.valueOf(c.toLocalDateTime().toLocalDate())
 	}
 	
 	/**

@@ -5,6 +5,7 @@ import getl.lang.Getl
 import getl.utils.*
 import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 import groovy.xml.XmlParser
 import groovy.yaml.YamlSlurper
 import java.sql.Time
@@ -14,17 +15,18 @@ import java.sql.Timestamp
  * Base class for extending custom code
  * @author Alexsey Konstantinov
  */
+@CompileStatic
 class BaseUserCode extends Getl {
     static Timestamp addDate(String dateType, Integer nb, Date date) {
-        new Timestamp(DateUtils.AddDate(dateType, nb, date).time)
+        DateUtils.AddDate(dateType, nb, date)
     }
 
     static java.sql.Date clearTime(Date date) {
-        new java.sql.Date(DateUtils.ClearTime(date).time)
+        DateUtils.ClearTime(date)
     }
 
     static java.sql.Date currentDate() {
-        new java.sql.Date(DateUtils.CurrentDate().time)
+        DateUtils.CurrentDate()
     }
 
     static Long diffDate(Date date1, Date date2, String dateType, Boolean ignoreDST = false) {
@@ -32,7 +34,7 @@ class BaseUserCode extends Getl {
     }
 
     static Timestamp firstDateOfMonth(Date date) {
-        new Timestamp(DateUtils.FirstDateOfMonth(date).time)
+        DateUtils.FirstDateOfMonth(date)
     }
 
     static String formatDate(String format, Date date) {
@@ -60,15 +62,15 @@ class BaseUserCode extends Getl {
     }
 
     static Timestamp lastDateOfMonth(Date date) {
-        new Timestamp(DateUtils.LastDateOfMonth(date).time)
+        DateUtils.LastDateOfMonth(date)
     }
 
     static Date lastDateOfMonth(Integer year, Integer month) {
-        new Timestamp(DateUtils.LastDateOfMonth(year, month).time)
+        DateUtils.LastDateOfMonth(year, month)
     }
 
     static Timestamp now() {
-        new Timestamp(DateUtils.Now().time)
+        DateUtils.Now()
     }
 
     static Integer partOfDate(String partName, Date date) {
@@ -76,11 +78,23 @@ class BaseUserCode extends Getl {
     }
 
     static java.sql.Date truncDay(Date date) {
-        new java.sql.Date(DateUtils.TruncDay(date).time)
+        DateUtils.TruncDay(date)
     }
 
     static Timestamp parseDate(String format, Object value, Boolean ignoreError = true) {
         new Timestamp(DateUtils.ParseDate(format, value, ignoreError).time)
+    }
+
+    static java.sql.Date ParseSQLDate(Object value, Boolean ignoreError = true) {
+        DateUtils.ParseSQLDate(value, ignoreError)
+    }
+
+    static Time ParseSQLTime(Object value, Boolean ignoreError = true) {
+        DateUtils.ParseSQLTime(value, ignoreError)
+    }
+
+    static Timestamp ParseSQLTimestamp(Object value, Boolean ignoreError = true) {
+        DateUtils.ParseSQLTimestamp(value, ignoreError)
     }
 
     static Map periodCrossing(List<Map> intervals) {

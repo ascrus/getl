@@ -40,7 +40,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     /** Destination directory path mask */
     void setDestinationPath(Path value) {
         if (sourcePath == null)
-            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source')
 
         def parent = value.clonePath()
         MapUtils.MergeMap(parent.maskVariables, CloneUtils.CloneMap(sourcePath.maskVariables), false, false)
@@ -52,7 +52,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     void useDestinationPath(@DelegatesTo(Path)
                             @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         if (sourcePath == null)
-            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source')
 
         def parent = new Path()
         parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
@@ -68,7 +68,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     @SuppressWarnings('SpellCheckingInspection')
     void setRenamePath(Path value) {
         if (sourcePath == null)
-            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source')
 
         def parent = value.clonePath()
         def sm = new HashMap<String, Object>()
@@ -90,7 +90,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     void useRenamePath(@DelegatesTo(Path)
                        @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         if (sourcePath == null)
-            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source')
 
         def parent = new Path()
         parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
@@ -195,9 +195,9 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         super.initProcess()
 
         if (destinations.isEmpty())
-            throw new ExceptionFileListProcessing('Destination file manager required!')
+            throw new ExceptionFileListProcessing('Destination file manager required')
 
-        if (destinationPath == null)
+        if (destinationPath == null) /* TODO: Убрать везде ! с throw */
             throw new ExceptionFileListProcessing('Destination mask path required!')
 
         tmpDestPath = destinationPath

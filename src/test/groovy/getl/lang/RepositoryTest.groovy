@@ -1,22 +1,28 @@
 package getl.lang
 
+import getl.csv.CSVConnection
+import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
+import getl.jdbc.QueryDataset
 import getl.jdbc.Sequence
 import getl.jdbc.TableDataset
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositorySequences
+import getl.models.sub.RepositoryMonitorRules
 import getl.test.Config
 import getl.test.TestDsl
 import getl.tfs.TDS
+import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import getl.vertica.VerticaTable
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -1294,6 +1300,99 @@ fileName = 'test1.csv'
                 shouldFail {
                     exec true, 'RUN_FILE sql/script1.txt'
                 }
+            }
+        }
+    }
+
+    @Test
+    void testRepositoryLazyLoad() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'resource:/repository'
+
+                profile('Load connections', 'object') {
+                    countRow = loadRepository(repositoryName: RepositoryConnections.name, softLoad: true)
+                }
+                assertEquals(4, repository(RepositoryConnections).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+
+                profile('Load datasets', 'object') {
+                    countRow = loadRepository(repositoryName: RepositoryDatasets.name, softLoad: true)
+                }
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(8, repository(RepositoryDatasets).countLazyLoadObjects())
+
+                profile('Load models of monitor rules ', 'object') {
+                    countRow = loadRepository(repositoryName: RepositoryMonitorRules.name, softLoad: true)
+                }
+                assertEquals(1, repository(RepositoryMonitorRules).countObjects())
+                assertEquals(1, repository(RepositoryMonitorRules).countLazyLoadObjects())
+            }
+
+            assertEquals(4, listConnections().size())
+            repositoryStorageManager {
+                assertEquals(4, repository(RepositoryConnections).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+            }
+
+            assertEquals(8, listDatasets().size)
+            repositoryStorageManager {
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(8, repository(RepositoryDatasets).countLazyLoadObjects())
+            }
+
+            def listDs = listDatasets('h2:*', [TDSTable.name])
+            assertEquals(2, listDs.size())
+            repositoryStorageManager {
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(6, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(3, repository(RepositoryConnections).countLazyLoadObjects())
+            }
+
+            def validTable1 = dataset('ver:table1')
+            assertNotNull(validTable1)
+            assertTrue(validTable1 instanceof VerticaTable)
+            repositoryStorageManager {
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(5, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(2, repository(RepositoryConnections).countLazyLoadObjects())
+            }
+
+            def processesFile = it.findDataset('csv:processes')
+            assertNotNull(processesFile)
+            assertTrue(processesFile instanceof CSVDataset)
+            repositoryStorageManager {
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(4, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(1, repository(RepositoryConnections).countLazyLoadObjects())
+            }
+
+            repositoryStorageManager {
+                assertEquals(1, repository(RepositoryMonitorRules).countObjects())
+                assertEquals(1, repository(RepositoryMonitorRules).countLazyLoadObjects())
+            }
+            def monitorModel = models.monitorRules('monitor:rules')
+            assertNotNull(monitorModel)
+            repositoryStorageManager {
+                assertEquals(1, repository(RepositoryMonitorRules).countObjects())
+                assertEquals(0, repository(RepositoryMonitorRules).countLazyLoadObjects())
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(4, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(1, repository(RepositoryConnections).countLazyLoadObjects())
+            }
+
+            monitorModel.checkModel(true)
+            repositoryStorageManager {
+                assertEquals(1, repository(RepositoryMonitorRules).countObjects())
+                assertEquals(0, repository(RepositoryMonitorRules).countLazyLoadObjects())
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(2, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(0, repository(RepositoryConnections).countLazyLoadObjects())
             }
         }
     }

@@ -281,7 +281,7 @@ Examples:
                 super.doRun()
                 StackTraceElement[] stack = Thread.currentThread().getStackTrace()
                 def obj = stack[stack.length - 1]
-                if (obj.getClassName() == 'getl.lang.Getl' && this.isMain) {
+                if ((obj instanceof Getl) && this.isMain) {
                     dslCreator.logFiner("System exit ${exitCode?:0}")
                     System.exit(exitCode?:0)
                 }
@@ -333,7 +333,7 @@ Examples:
                 eng = runClass.getConstructor().newInstance() as Getl
                 eng.configuration.manager.init(jobArgs)
                 if (jobArgs.vars != null)
-                    eng.configVars.putAll(jobArgs.vars as Map)
+                    eng.configuration.manager.vars.putAll(jobArgs.vars as Map)
 
                 if (jobArgs.getl_verbose_mode != null)
                     eng.setGetlSystemParameter('verboseMode', BoolUtils.IsValue(jobArgs.getl_verbose_mode))
@@ -388,7 +388,7 @@ Examples:
                 try {
                     if (className != null) {
                         eng.setGetlSystemParameter('runMode', 'class')
-                        eng.runGroovyInstance(eng, true, eng.configuration.manager.vars)
+                        eng.runGroovyInstance(eng, true, eng.configVars)
                     }
                     else if (workflowFileName != null) {
                         eng.setGetlSystemParameter('runMode', 'workflow')
@@ -397,11 +397,11 @@ Examples:
                         eng.repositoryStorageManager {
                             readObjectFromFile(repository(RepositoryWorkflows), workflowFileName, null, workflow)
                         }
-                        workflow.execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
+                        workflow.execute(eng.configVars, workflow_include_steps, workflow_exclude_steps)
                     }
                     else {
                         eng.setGetlSystemParameter('runMode', 'workflow')
-                        eng.models.workflow(workflowName).execute(eng.configuration.manager.vars, workflow_include_steps, workflow_exclude_steps)
+                        eng.models.workflow(workflowName).execute(eng.configVars, workflow_include_steps, workflow_exclude_steps)
                     }
                 }
                 catch (AbortDsl e) {
@@ -2456,11 +2456,13 @@ Examples:
     }
 
     /** Extended script variables */
-    private final Map scriptExtendedVars = new HashMap()
+    protected final Map _scriptExtendedVars = new HashMap()
     /** Extended script variables */
     @JsonIgnore
-    @Synchronized('scriptExtendedVars')
-    Map getScriptExtendedVars() { this.scriptExtendedVars }
+    @Synchronized('_scriptExtendedVars')
+    Map getScriptExtendedVars() {
+        this._scriptExtendedVars
+    }
 
     /** Script events code */
     private final ScriptEvents scriptEvents = new ScriptEvents()
@@ -2490,8 +2492,11 @@ Examples:
                 scriptVerboseMode = getlVerboseMode
 
                 synchronized (_lockMainThread) {
-                    if (extVars != null)
-                        scriptGetl.scriptExtendedVars.putAll(extVars)
+                    if (extVars != null) {
+                        //scriptGetl._scriptExtendedVars.putAll(Config.SystemProps())
+                        scriptGetl._scriptExtendedVars.putAll(['#TEMPDIR': FileUtils.SystemTempDir(), '#REPOSITORY': repositoryStorageManager?.storagePath()])
+                        scriptGetl._scriptExtendedVars.putAll(extVars)
+                    }
 
                     if (events != null)
                         scriptGetl.scriptEvents.putAll(events)
@@ -3102,7 +3107,7 @@ Examples:
     Map<String, Object> getConfigContent() { configuration.manager.content }
 
     /** Configuration variables */
-    Map<String, Object> getConfigVars() { configuration.manager.vars }
+    Map<String, Object> getConfigVars() { configuration.vars }
 
     /** Init section configuration options */
     Map<String, Object> getConfigInit() { configuration.manager.content.init as Map<String, Object> }

@@ -4,6 +4,8 @@ package getl.data
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.RequiredParameterError
 import getl.utils.*
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -13,6 +15,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 class Field implements Serializable, Cloneable {
 	/**
 	 * Data type
@@ -89,7 +92,7 @@ class Field implements Serializable, Cloneable {
 	
 	private Boolean isNull = true
 	/** Value can not be null */
-	Boolean getIsNull() { return this.isNull }
+	Boolean getIsNull() { BoolUtils.IsValue(this.isNull, true) }
 	/** Value can not be null */
 	void setIsNull(Boolean value) { this.isNull = value }
 	
@@ -114,7 +117,7 @@ class Field implements Serializable, Cloneable {
 	
 	private Boolean isKey = false
 	/** Field is primary key */
-	Boolean getIsKey() { return this.isKey }
+	Boolean getIsKey() { BoolUtils.IsValue(this.isKey) }
 	/** Field is primary key */
 	void setIsKey(Boolean value) {
 		this.isKey = value
@@ -132,7 +135,7 @@ class Field implements Serializable, Cloneable {
 
 	private Boolean isPartition = false
 	/** Use field in partition key */
-	Boolean getIsPartition() { return this.isPartition}
+	Boolean getIsPartition() { BoolUtils.IsValue(this.isPartition) }
 	/** Use field in partition key */
 	void setIsPartition(Boolean value) { this.isPartition = value }
 
@@ -144,13 +147,13 @@ class Field implements Serializable, Cloneable {
 	
 	private Boolean isAutoincrement = false
 	/** Field is auto increment */
-	Boolean getIsAutoincrement() { return this.isAutoincrement }
+	Boolean getIsAutoincrement() { BoolUtils.IsValue(this.isAutoincrement) }
 	/** Field is auto increment */
 	void setIsAutoincrement(Boolean value) { this.isAutoincrement = value }
 	
 	private Boolean isReadOnly = false
 	/** Field can not write */
-	Boolean getIsReadOnly() { return this.isReadOnly }
+	Boolean getIsReadOnly() { BoolUtils.IsValue(this.isReadOnly) }
 	/** Field can not write */
 	void setIsReadOnly(Boolean value) { this.isReadOnly = value }
 	
@@ -206,7 +209,7 @@ class Field implements Serializable, Cloneable {
 	
 	private Boolean trim = false
 	/** Trim space (used for reading datasource) */
-	Boolean getTrim() { return this.trim }
+	Boolean getTrim() { BoolUtils.IsValue(this.trim) }
 	/** Trim space (used for reading datasource) */
 	void setTrim(Boolean value) { this.trim = value }
 	
@@ -349,7 +352,72 @@ class Field implements Serializable, Cloneable {
 	 */
 	@Override
 	String toString() {
-		return MapUtils.RemoveKeys(toMap()) { key, value -> return value == null }
+		//return MapUtils.RemoveKeys(toMap()) { key, value -> return value == null }
+		def sb = new StringBuilder(name)
+
+		sb.append(' ')
+		sb.append(type)
+		if (type == arrayFieldType) {
+			sb.append(' ARRAY')
+			if (arrayType != null) {
+				sb.append(' ')
+				sb.append(arrayType)
+			}
+			if (length != null && length > 0) {
+				sb.append('[')
+				sb.append(length)
+				sb.append(']')
+			}
+		}
+		else if (AllowLength(this) && length != null && length > 0) {
+			sb.append('(')
+			sb.append(length)
+			if (AllowPrecision(this) && precision != null && precision > 0) {
+				sb.append(', ')
+				sb.append(precision)
+			}
+			sb.append(')')
+		}
+
+		if (isKey) {
+			sb.append(' KEY')
+			if (ordKey != null) {
+				sb.append('[')
+				sb.append(ordKey)
+				sb.append(']')
+			}
+		}
+		else if (!isNull)
+			sb.append(' NOT NULL')
+
+		if (defaultValue != null) {
+			sb.append(' DEFAULT(')
+			sb.append(defaultValue)
+			sb.append(')')
+		}
+
+		if (checkValue != null)  {
+			sb.append(' CHECK(')
+			sb.append(checkValue)
+			sb.append(')')
+		}
+
+		if (compute != null)  {
+			sb.append(' COMPUTE(')
+			sb.append(compute)
+			sb.append(')')
+		}
+
+		if (isPartition) {
+			sb.append('  IN PARTITION')
+			if (ordPartition != null) {
+				sb.append('[')
+				sb.append(ordPartition)
+				sb.append(']')
+			}
+		}
+
+		return sb.toString()
 	}
 	
 	/**
@@ -453,7 +521,7 @@ class Field implements Serializable, Cloneable {
 	}
 
 	/**
-	 * Check compacity type from other type
+	 * Check capacity type from other type
 	 * @param source source type
 	 * @param dest destination type
 	 */
@@ -507,10 +575,9 @@ class Field implements Serializable, Cloneable {
 		if (other == null) return false
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false
+		def o = other as Field
 		//noinspection UnnecessaryQualifiedReference
-		if (!other.canEqual(this)) return false
-
-        def o = other as Field
+		if (!o.canEqual(this)) return false
 
         if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
         if (this.type != o.type) return false
@@ -550,7 +617,7 @@ class Field implements Serializable, Cloneable {
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false
 		//noinspection UnnecessaryQualifiedReference
-		if (!other.canEqual(this)) return false
+		if (!(other as Field).canEqual(this)) return false
 
 		return compare(other as Field)
 	}
@@ -588,15 +655,15 @@ class Field implements Serializable, Cloneable {
 				return false
 		}
 
-		if (this.isAutoincrement != o.isAutoincrement)
-			return false
+		/*if (this.getIsAutoincrement() != o.getIsAutoincrement())
+			return false*/
 
 		if (!softComparison) {
-			if (this.isNull != o.isNull)
+			if (this.getIsNull() != o.getIsNull())
 				return false
-			if (this.isKey != o.isKey)
+			if (this.getIsKey() != o.getIsKey())
 				return false
-			if (this.isAutoincrement != o.isAutoincrement)
+			if (this.getIsAutoincrement() != o.getIsAutoincrement())
 				return false
 			if (compareLength && AllowLength(this) && (this.length ?: -1) != (o.length ?: -1))
 				return false
@@ -604,7 +671,7 @@ class Field implements Serializable, Cloneable {
 				return false
 		}
 		else {
-			if (BoolUtils.IsValue(this.isNull) && !BoolUtils.IsValue(o.isNull))
+			if (this.getIsNull() && !o.getIsNull())
 				return false
 			/*if (!BoolUtils.IsValue(this.isKey) && BoolUtils.IsValue(o.isKey))
 				return false*/
@@ -612,13 +679,14 @@ class Field implements Serializable, Cloneable {
 				return false
 			if (compareLength && AllowPrecision(this) && (this.precision ?: -1) > (o.precision ?: -1))
 				return false
+
+			if (this.getIsPartition() != o.getIsPartition())
+				return false
+			if (this.type == arrayFieldType && this.arrayType != o.arrayType)
+				return false
+			if (this.getIsReadOnly() != o.getIsReadOnly())
+				return false
 		}
-		if (this.isPartition != o.isPartition)
-			return false
-		if (this.type == arrayFieldType && this.arrayType != o.arrayType)
-			return false
-		if (this.isReadOnly != o.isReadOnly)
-			return false
 
 		if (compareExpressions) {
 			if (this.defaultValue != o.defaultValue)
@@ -643,6 +711,7 @@ class Field implements Serializable, Cloneable {
 	 * @param cl initialization code
 	 * @return created field
 	 */
+	@CompileDynamic
 	static Field New(String name,
 					 @DelegatesTo(Field) @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
 		def parent = new Field(name: name)

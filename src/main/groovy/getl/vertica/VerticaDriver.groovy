@@ -794,7 +794,7 @@ class VerticaDriver extends JDBCDriver {
 				field.length = 65000
 		}
 		else if (field.type == Field.numericFieldType) {
-			if (field.length > 0 && field.precision == 0) {
+			if (field.length > 0 && (field.precision?:0) == 0) {
 				if (field.length < 10) {
 					field.type = Field.integerFieldType
 					field.length = null
@@ -805,7 +805,7 @@ class VerticaDriver extends JDBCDriver {
 					field.precision = null
 				}
 			}
-			else if (field.length == null && field.precision == null) {
+			else if (field.length == null) {
 				field.type = Field.doubleFieldType
 				field.length = null
 				field.precision = null

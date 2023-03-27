@@ -1,8 +1,8 @@
+//file:noinspection unused
 package getl.driver
 
 import getl.data.sub.FileWriteOpts
 import getl.exception.ConnectionError
-import getl.exception.DatasetError
 import getl.exception.IOFilesError
 import getl.exception.NotSupportError
 import groovy.transform.CompileStatic
@@ -306,7 +306,7 @@ class FileDriver extends Driver {
 		
 		def fn = wp.fn as String
 		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
-		def isAppend = BoolUtils.IsValue(wp.isAppend)
+		//def isAppend = BoolUtils.IsValue(wp.isAppend)
 
 		/*if (isWrite && isAppend && isGzFile)
 			throw new DatasetError(dataset, '#dataset.deny_gzip_append')*/

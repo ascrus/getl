@@ -45,13 +45,13 @@ class CSVParseArray extends  CellProcessorAdaptor{
         def str = value as String
         if (openBracket != null) {
             if (str.length() < openBracket.length() + closeBracket.length())
-                throw new SuperCsvCellProcessorException('Invalid array field value!', context, this)
+                throw new SuperCsvCellProcessorException('Invalid array field value', context, this)
 
             if (str.substring(0, openBracket.length()) != openBracket)
-                throw new SuperCsvCellProcessorException('Array field value does not start with an opening bracket!', context, this)
+                throw new SuperCsvCellProcessorException('Array field value does not start with an opening bracket', context, this)
 
             if (str.substring(str.length() - closeBracket.length()) != closeBracket)
-                throw new SuperCsvCellProcessorException('Array field value does not finish with an closing bracket!', context, this)
+                throw new SuperCsvCellProcessorException('Array field value does not finish with an closing bracket', context, this)
 
             str = '[' + str.substring(openBracket.length(), str.length() - closeBracket.length()) + ']'
         }

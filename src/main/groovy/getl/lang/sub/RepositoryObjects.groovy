@@ -1,4 +1,6 @@
 //file:noinspection unused
+//file:noinspection GroovyMissingReturnStatement
+//file:noinspection DuplicatedCode
 package getl.lang.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -9,6 +11,8 @@ import getl.proc.sub.ExecutorThread
 import getl.utils.BoolUtils
 import getl.utils.Logs
 import getl.utils.Path
+import groovy.transform.CompileStatic
+import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -20,11 +24,43 @@ import groovy.transform.stc.SimpleType
 @SuppressWarnings("GrMethodMayBeStatic")
 abstract class RepositoryObjects<T extends GetlRepository> implements GetlRepository {
     RepositoryObjects() {
-        this.objects = new HashMap<String, T>()
+        this._lazyLoadObjects = new ArrayList<String>()
+        this._objects = new ObjectsMap(this._lazyLoadObjects)
     }
 
     static public final byte[] _storage_key = [71, 69, 84, 76, 33, 114, 101, 112, 111, 115, 105, 116, 111, 114, 121, 35,
                                                115, 116, 111, 114, 97, 103, 101, 36, 65, 83, 67, 82, 85, 83]
+
+    @CompileStatic
+    class ObjectsMap extends HashMap<String, T> {
+        ObjectsMap(List<String> lazyLoad) {
+            super()
+            this.lazyLoad = lazyLoad
+        }
+
+        private List<String> lazyLoad
+
+        @Override
+        boolean containsKey(Object key) {
+            if (super.containsKey(key))
+                return true
+
+            return (lazyLoad.indexOf(key) != -1)
+        }
+
+        @Override
+        T put(String key, T value) {
+            def res = super.put(key, value) as T
+            lazyLoad.remove(key)
+            return res
+        }
+
+        @Override
+        void putAll(Map values) {
+            super.putAll(values)
+            lazyLoad.removeAll(values.keySet().toList())
+        }
+    }
 
     /** Repository priority order */
     private Integer _priority
@@ -64,15 +100,23 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     protected final Object synchObjects = new Object()
 
     /** Repository objects */
-    private Map<String, T> objects
+    private ObjectsMap _objects
+    /** Repository objects */
+    ObjectsMap getObjects() { _objects }
     /** Repository objects */
     @Synchronized('synchObjects')
-    Map<String, T> getObjects() { objects }
-    /** Repository objects */
-    @Synchronized('synchObjects')
-    void setObjects(Map<String, T> value) {
-        this.objects = value
+    void setObjects(ObjectsMap value) {
+        if (value == null)
+            throw new NullPointerException('Null value!')
+
+        this._objects.clear()
+        this._objects.putAll(value)
     }
+
+    /** Not full loaded repository objects */
+    private List<String> _lazyLoadObjects
+    /** Not full loaded repository objects */
+    protected List<String> getLazyLoadObjects() { _lazyLoadObjects }
 
     /** List of supported classes for objects */
     abstract List<String> getListClasses()
@@ -86,6 +130,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return list of names repository objects according to specified conditions
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
+    @CompileStatic
     List<String> list(String mask = null, List<String> classes = null, Boolean loadFromStorage = true,
                       @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                             Closure<Boolean> filter = null) {
@@ -94,11 +139,11 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 throw new DslError(dslCreator, '#dsl.invalid_object_class', [className: it, type: typeObject])
         }
 
-        _dslCreator.repositoryStorageManager.with {
-            if (loadFromStorage && autoLoadForList && autoLoadFromStorage && storagePath != null)
-                loadRepository(this.getClass(), mask)
+        loadFromStorage = BoolUtils.IsValue(loadFromStorage, true)
 
-            return true
+        _dslCreator.repositoryStorageManager.tap {
+            if (loadFromStorage && autoLoadForList && autoLoadFromStorage && storagePath != null)
+                loadRepository(this.getClass() as Class<RepositoryObjects>, mask, null, true, (classes == null && filter == null))
         }
 
         def res = [] as List<String>
@@ -109,18 +154,42 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         def groupPath = (maskGroup != null)?new Path(mask: maskGroup):null
         def objectPath = (maskObject != null)?new Path(mask: maskObject):null
 
-        synchronized (objects) {
-            objects.each { name, obj ->
-                def names = ParseObjectName.Parse(name, false)
-                if (groupPath != null) {
-                    if (names.groupName != null && groupPath.match(names.groupName))
-                        if (objectPath == null || objectPath.match(names.objectName))
+        List<String> objectsName
+        synchronized (synchObjects) {
+            objectsName = (objects.keySet().toList() + lazyLoadObjects).unique()
+        }
+
+        objectsName.each { name ->
+            def names = ParseObjectName.Parse(name, false)
+            if (groupPath != null) {
+                if (names.groupName != null && groupPath.match(names.groupName)) {
+                    if (objectPath == null || objectPath.match(names.objectName)) {
+                        if (classes != null || filter != null) {
+                            def obj = objects.get(name)
+                            if (obj == null)
+                                obj = register(creator: dslCreator, name: name)
+
                             if (classes == null || obj.getClass().name in classes)
-                                if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                } else {
-                    if (objectPath == null || (names.groupName == null && objectPath.match(names.objectName)))
+                                if (filter == null || BoolUtils.IsValue(filter.call(name, obj)))
+                                    res.add(name)
+                        }
+                        else
+                            res.add(name)
+                    }
+                }
+            } else {
+                if (objectPath == null || (names.groupName == null && objectPath.match(names.objectName))) {
+                    if (classes != null || filter != null) {
+                        def obj = objects.get(name)
+                        if (obj == null)
+                            obj = register(creator: dslCreator, name: name)
+
                         if (classes == null || obj.getClass().name in classes)
-                            if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+                            if (filter == null || BoolUtils.IsValue(filter.call(name, obj)))
+                                res.add(name)
+                    }
+                    else
+                        res.add(name)
                 }
             }
         }
@@ -164,13 +233,17 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     }
 
     /** Count registered object from repository */
-    Integer countObjects() { objects.size() }
+    Integer countObjects() { this._objects.size() + this.lazyLoadObjects.size() }
+
+    /** Count lazy object from repository */
+    Integer countLazyLoadObjects() { this.lazyLoadObjects.size() }
 
     /**
      * Search for an object in the repository
      * @param obj object
      * @return name of the object in the repository or null if not found
      */
+    @CompileStatic
     String find(T obj) {
         if (obj == null)
             throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'find'])
@@ -184,7 +257,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return null
 
         //noinspection GroovySynchronizationOnNonFinalField
-        synchronized (objects) {
+        synchronized (synchObjects) {
             T repObj = objects.get(_dslCreator.repObjectName(repName))
             if (repObj == null || repObj.getClass().name != className)
                 repName = null
@@ -199,18 +272,21 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param findInStorage find for an object in the repository file storage
      * @return found object or null if not found
      */
+    @CompileStatic
     T find(String name, Boolean findInStorage = true) {
         if (name == null)
             throw new DslError(dslCreator, '#params.required', [param: 'name', detail: 'find'])
 
+        findInStorage = BoolUtils.IsValue(findInStorage, true)
+
         T obj
         def repName = _dslCreator.repObjectName(name)
         //noinspection GroovySynchronizationOnNonFinalField
-        synchronized (objects) {
+        synchronized (synchObjects) {
             obj = objects.get(repName)
             if (obj == null && findInStorage) {
                 def repClass = this.getClass().name
-                _dslCreator.with {
+                _dslCreator.tap {
                     if (obj == null && options.validRegisterObjects &&
                             repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
                             repName[0] != '#') {
@@ -220,11 +296,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                         catch (DslError ignored) {
                         }
                     }
-
-                    return true
                 }
             }
         }
+
         return obj
     }
 
@@ -244,9 +319,14 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param validExist checking if an object is registered in the repository (default true)
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
+    @NamedVariant
+    @CompileStatic
     T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true, Boolean encryptPasswords = true) {
         if (obj == null)
             throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'registerObject'])
+
+        validExist = BoolUtils.IsValue(validExist, true)
+        encryptPasswords = BoolUtils.IsValue(encryptPasswords, true)
 
         def className = obj.getClass().name
         if (!(className in listClasses))
@@ -257,15 +337,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        validExist = BoolUtils.IsValue(validExist, true)
         def repName = _dslCreator.repObjectName(name)
 
-        synchronized (objects) {
-            if (validExist) {
-                def exObj = objects.get(repName)
-                if (exObj != null)
-                    throw new DslError(dslCreator, '#dsl.object.already_register_by_name', [type: typeObject, repname: name, className: exObj.getClass().name])
-            }
+        synchronized (synchObjects) {
+            def isExists = objects.get(repName)
+            if (validExist && isExists)
+                    throw new DslError(dslCreator, '#dsl.object.already_register_by_name', [type: typeObject, repname: name, className: obj.getClass().name])
 
             obj.dslNameObject = repName
             obj.dslRegistrationTime = new Date()
@@ -278,6 +355,19 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         }
 
         return obj
+    }
+
+    /**
+     * Add name to list of lazy loading objects
+     * @param objectName added object name
+     */
+    @CompileStatic
+    void addToLazyLoad(String objectName) {
+        if (objectName == null)
+            throw new NullPointerException('objectName null value!')
+
+        if (lazyLoadObjects.indexOf(objectName) == -1 && !_objects.containsKey(objectName))
+            lazyLoadObjects.add(objectName)
     }
 
     /**
@@ -332,9 +422,13 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return repository object
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    T register(Getl creator, String className, String name = null, Boolean registration = false,
+    @NamedVariant
+    @CompileStatic
+    T register(Getl creator, String className = null, String name = null, Boolean registration = false,
                Boolean cloneInThread = true, Map params = null) {
+
         registration = BoolUtils.IsValue(registration)
+        cloneInThread = BoolUtils.IsValue(cloneInThread, true)
 
         if (className == null && registration)
             throw new DslError(dslCreator, '#params.required', [param: 'className', detail: 'register'])
@@ -362,12 +456,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         }
 
         T obj = null
-        synchronized (objects) {
+        synchronized (synchObjects) {
             if (!registration || _dslCreator.options.validRegisterObjects) {
                 obj = objects.get(repName)
 
                 def repClass = this.getClass().name
-                _dslCreator.with {
+                _dslCreator.tap {
                     if (!registration && obj == null && options.validRegisterObjects &&
                             repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
                             !isTemporary) {
@@ -379,8 +473,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                             throw e
                         }
                     }
-
-                    return true
                 }
             }
 
@@ -451,17 +543,21 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param process processing object before unregister
      */
     @Synchronized('synchObjects')
+    @CompileStatic
     void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {
-        def list = list(mask, classes, false, filter)
+        def autoLoadStorage = (classes != null || filter != null)
+        def list = list(mask, classes, autoLoadStorage, filter)
         list.each { name ->
             def obj = objects.get(name)
             if (obj != null) {
                 processUnregisteringObject(obj)
                 obj.dslCleanProps()
+                objects.remove(name)
             }
-            objects.remove(name)
+            else if (!autoLoadStorage)
+                lazyLoadObjects.remove(name)
         }
     }
 
@@ -516,7 +612,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     void processObjects(String mask,
                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        processObjects(mask, null, false, cl)
+        processObjects(mask, null, true, cl)
     }
 
     /**

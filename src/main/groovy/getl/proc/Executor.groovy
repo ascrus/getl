@@ -3,6 +3,7 @@
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.AbortDsl
 import getl.exception.IncorrectParameterError
 import getl.exception.NotSupportError
 import getl.lang.Getl
@@ -388,6 +389,9 @@ class Executor implements GetlRepository {
 				def objects = []
 				def num = 0
 				exceptions.each { obj, Throwable e ->
+					if (e instanceof AbortDsl && (e as AbortDsl).typeCode == AbortDsl.STOP_APP)
+						throw e
+
 					num++
 					def errorText = "  <${e.getClass().name}> " + e.message
 					if (debugElementOnError) {
@@ -396,6 +400,7 @@ class Executor implements GetlRepository {
 					} else {
 						objects.add("[$num] $errorText")
 					}
+
 				}
 				throw new ExceptionGETL("Thread errors:\n${objects.join('\n').replace('{', '[').replace('}', ']')}")
 			}

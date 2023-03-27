@@ -435,13 +435,13 @@ class ConvertUtils {
 				return ((elem.type as Lexer.TokenType) in [Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION]) && (elem.value as String).indexOf(':') != -1
 			}
 			if (i == -1)
-				throw new ExceptionGETL('The name in the map structure is not specified!')
+				throw new ExceptionGETL('The name in the map structure is not specified')
 
 			def item = list[i]
 			def itemType = item.type as Lexer.TokenType
 			def findColon = (item.value as String)
 			if (i == 0 && findColon[0] == ':')
-				throw new ExceptionGETL('The name in the map structure is not specified!')
+				throw new ExceptionGETL('The name in the map structure is not specified')
 			if (itemType == Lexer.TokenType.SINGLE_WORD && i == list.size() - 1 && findColon[findColon.length() - 1] == ':') {
 				def name = lexer.script.substring(list[0].first as Integer, (item.last as Integer) + 1)
 				res.put(name.substring(0, name.lastIndexOf(':')), null)
