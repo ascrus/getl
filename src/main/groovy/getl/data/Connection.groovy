@@ -160,13 +160,6 @@ class Connection implements GetlRepository {
 	}
 	/** Extended attributes */
 	Map<String, Object> attributes() { attributes }
-	/** Read extended attribute value */
-	Object attribute(String name) {
-		if (name == null)
-			throw new RequiredParameterError(this, 'name', 'attribute')
-
-		return attributes().get(name)
-	}
 	/** Write value to extended attribute */
 	@Synchronized
 	void saveAttribute(String name, Object value) {
@@ -174,6 +167,21 @@ class Connection implements GetlRepository {
 			throw new RequiredParameterError(this, 'name', 'attribute')
 
 		attributes.put(name, value)
+	}
+	/** Extended attribute value */
+	Object attribute(String name) {
+		if (name == null)
+			throw new RequiredParameterError(this, 'name', 'attribute')
+
+		return attributes().get(name)
+	}
+	/** Extended attribute value with evaluate variables */
+	String attributeValue(String name, Map vars = null) {
+		def val = attribute(name)
+		if (val == null)
+			return null
+
+		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
 	}
 
 	/** Create a new dataset object for the current connection */

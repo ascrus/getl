@@ -369,6 +369,29 @@ abstract class Manager implements GetlRepository {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
+	/** Extended attribute value */
+	Object attribute(String name) {
+		if (name == null)
+			throw new RequiredParameterError(this, 'name')
+
+		return attributes.get(name)
+	}
+	/** Write value to extended attribute */
+	@Synchronized
+	void saveAttribute(String name, Object value) {
+		if (name == null)
+			throw new RequiredParameterError(this, 'name')
+
+		attributes.put(name, value)
+	}
+	/** Extended attribute value with evaluate variables */
+	String attributeValue(String name, Map vars = null) {
+		def val = attribute(name)
+		if (val == null)
+			return null
+
+		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
+	}
 
 	/**
 	 * Name section parameters value in config file

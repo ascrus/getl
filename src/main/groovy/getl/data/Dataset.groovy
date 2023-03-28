@@ -226,13 +226,6 @@ class Dataset implements GetlRepository, WithConnection {
 	}
 	/** Extended attributes */
 	Map<String, Object> attributes() { (connection?.attributes()?:new HashMap<String, Object>()) + attributes }
-	/** Read extended attribute value */
-	Object attribute(String name) {
-		if (name == null)
-			throw new RequiredParameterError(this, 'name')
-
-		return attributes().get(name)
-	}
 	/** Write value to extended attribute */
 	@Synchronized
 	void saveAttribute(String name, Object value) {
@@ -240,6 +233,21 @@ class Dataset implements GetlRepository, WithConnection {
 			throw new RequiredParameterError(this, 'name')
 
 		attributes.put(name, value)
+	}
+	/** Extended attribute value */
+	Object attribute(String name) {
+		if (name == null)
+			throw new RequiredParameterError(this, 'name')
+
+		return attributes().get(name)
+	}
+	/** Extended attribute value with evaluate variables */
+	String attributeValue(String name, Map vars = null) {
+		def val = attribute(name)
+		if (val == null)
+			return null
+
+		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
 	}
 
 

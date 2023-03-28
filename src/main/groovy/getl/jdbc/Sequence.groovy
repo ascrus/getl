@@ -16,6 +16,7 @@ import getl.lang.sub.GetlValidate
 import getl.utils.CloneUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
+import getl.utils.StringUtils
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -68,6 +69,29 @@ class Sequence implements GetlRepository, WithConnection {
 	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
+	}
+	/** Write value to extended attribute */
+	@Synchronized
+	void saveAttribute(String name, Object value) {
+		if (name == null)
+			throw new RequiredParameterError(this, 'name')
+
+		attributes.put(name, value)
+	}
+	/** Extended attribute value */
+	Object attribute(String name) {
+		if (name == null)
+			throw new RequiredParameterError(this, 'name')
+
+		return attributes.get(name)
+	}
+	/** Extended attribute value with evaluate variables */
+	String attributeValue(String name, Map vars = null) {
+		def val = attribute(name)
+		if (val == null)
+			return null
+
+		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
 	}
 
 	/** System parameters */
