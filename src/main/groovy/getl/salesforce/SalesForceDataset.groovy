@@ -17,9 +17,9 @@ class SalesForceDataset extends Dataset {
 	protected void registerParameters() {
 		super.registerParameters()
 
-		methodParams.register('bulkUnload', ['limit', 'where', 'orderBy', 'chunkSize'])
-		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
-		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
+		methodParams.register('bulkUnload', ['limit', 'where', 'orderBy', 'chunkSize', 'bulkJobId'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize', 'bulkJobId'])
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize', 'bulkJobId'])
 	}
 
 	@Override
