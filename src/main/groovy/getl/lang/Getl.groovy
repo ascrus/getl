@@ -462,7 +462,7 @@ Examples:
         File configFile
         String configFilePath
 
-        options {
+        options { opts ->
             if (autoInitFromConfig) {
                 if (loadProperties) {
                     configFile = loadProjectProperties(instance.configuration.environment, extProp.filename as String)
@@ -523,21 +523,21 @@ Examples:
                         logging.printErrorToConsole = BoolUtils.IsValue(en.printErrorToConsole)
 
                     if (en.jdbcLogPath != null) {
-                        jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
+                        opts.jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         if (!getlVerboseMode)
                             logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false, this)}\"")
                     }
 
                     if (en.filesLogPath != null) {
-                        fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
+                        opts.fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         if (!getlVerboseMode)
                             logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false, this)}\"")
                     }
 
                     if (en.tempDBLogFileName != null) {
-                        tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
+                        opts.tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         if (!getlVerboseMode)
                             logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false, this)}\"")
@@ -552,7 +552,7 @@ Examples:
                     }
                 }
                 procs.repository = { Map<String, Object> en ->
-                    instance.repositoryStorageManager {
+                    instance.repositoryStorageManager { rm ->
                         if (en.encryptKey != null) {
                             def password = en.encryptKey as String
                             if (password.length() > 2 && password[0] == '#' && password[password.length() - 1] == '#') {
@@ -560,18 +560,18 @@ Examples:
                                         new String(RepositoryObjects._storage_key))
                             }
 
-                            storagePassword = password
+                            rm.storagePassword = password
                             if (!getlVerboseMode)
                                 logFine('Repository encryption mode: enabled')
                         }
 
                         if (en.autoLoadFromStorage != null)
-                            autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
+                            rm.autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
                         else
-                            autoLoadFromStorage = (storagePath != null)
+                            rm.autoLoadFromStorage = (storagePath != null)
 
                         if (en.autoLoadForList != null)
-                            autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
+                            rm.autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
 
                         if (en.savingStoryDataset != null) {
                             def storyDatasetFilePath = new File(FileUtils.TransformFilePath(en.savingStoryDataset as String, this)).canonicalPath
@@ -581,7 +581,7 @@ Examples:
                             def csvCon = new CSVConnection(dslCreator: this, path: storyDatasetFile.parent)
                             def csvDataset = new CSVDataset(dslCreator: this, connection: csvCon, fileName: storyDatasetFile.name, header: true,
                                     fieldDelimiter: ',', codePage: 'utf-8', escaped: false)
-                            savingStoryDataset = csvDataset
+                            rm.savingStoryDataset = csvDataset
                             if (!getlVerboseMode)
                                 logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
                         }
@@ -589,20 +589,20 @@ Examples:
                         if (en.path != null) {
                             def sp = en.path as String
                             if (sp == '.')
-                                it.storagePath = configFilePath
+                                rm.storagePath = configFilePath
                             else //noinspection RegExpSimplifiable
                             if (sp.matches('[.][/].+'))
-                                it.storagePath = configFilePath + sp.substring(1)
+                                rm.storagePath = configFilePath + sp.substring(1)
                             else
-                                it.storagePath = sp
+                                rm.storagePath = sp
 
-                            autoLoadFromStorage = true
+                            rm.autoLoadFromStorage = true
                             if (!getlVerboseMode)
                                 logFine("Path to repository objects: ${storagePath()}")
                         }
 
                         if (en.libs != null) {
-                            librariesDirName = en.libs as String
+                            rm.librariesDirName = en.libs as String
                             if (!getlVerboseMode)
                                 logFine("Using libraries from repository directory \"$librariesDirName\"")
                             buildLibrariesClassLoader()
@@ -611,7 +611,7 @@ Examples:
                 }
                 procs.engine = { Map<String, Object> en ->
                     if (en.language != null)
-                        language = en.language as String
+                        opts.language = en.language as String
                     else
                         _onChangeLanguage()
 
@@ -635,7 +635,7 @@ Examples:
                     }
 
                     if (en.useThreadModelCloning != null) {
-                        useThreadModelCloning = BoolUtils.IsValue(en.useThreadModelCloning, true)
+                        opts.useThreadModelCloning = BoolUtils.IsValue(en.useThreadModelCloning, true)
                         if (!getlVerboseMode) {
                             if (useThreadModelCloning)
                                 logFine("Model of cloning objects in threads is used")
@@ -643,7 +643,7 @@ Examples:
                     }
 
                     if (en.controlDataset != null) {
-                        processControlDataset = instance.dataset(en.controlDataset as String)
+                        opts.processControlDataset = instance.dataset(en.controlDataset as String)
                         logFine("Process start control uses dataset \"$processControlDataset\"")
                         if (en.controlStart != null) {
                             checkProcessOnStart = BoolUtils.IsValue(en.controlStart, true)
@@ -654,25 +654,31 @@ Examples:
                         }
                         if (!getlVerboseMode) {
                             if (en.controlThreads != null) {
-                                checkProcessForThreads = BoolUtils.IsValue(en.controlThreads)
+                                opts.checkProcessForThreads = BoolUtils.IsValue(en.controlThreads)
                                 if (checkProcessForThreads)
                                     logFine("Running processes in threads is checked in the process checklist")
                             }
                         }
                         if (en.controlLogin != null)
-                            processControlLogin = en.controlLogin as String
+                            opts.processControlLogin = en.controlLogin as String
+                    }
+
+                    if (en.countThreadsLoadRepository != null) {
+                        opts.countThreadsLoadRepository = ConvertUtils.Object2Int(en.countThreadsLoadRepository)
+                        if (!getlVerboseMode)
+                            logFine("Repository objects are loaded into $countThreadsLoadRepository threads")
                     }
                 }
                 procs.profile = { Map<String, Object> en ->
                     if (en.enabled != null) {
-                        processTimeTracing = BoolUtils.IsValue(en.enabled, false)
+                        opts.processTimeTracing = BoolUtils.IsValue(en.enabled, false)
                         if (!getlVerboseMode) {
                             if (processTimeTracing)
                                 logFine("Enabled output of profiling results to the log")
                         }
 
                         if (en.level != null) {
-                            processTimeLevelLog = Logs.ObjectToLevel(en.level)
+                            opts.processTimeLevelLog = Logs.ObjectToLevel(en.level)
                             if (!getlVerboseMode) {
                                 if (processTimeLevelLog && processTimeTracing)
                                     logFine("Output profiling messages with level $processTimeLevelLog")
@@ -680,7 +686,7 @@ Examples:
                         }
 
                         if (en.debug != null) {
-                            processTimeDebug = BoolUtils.IsValue(en.debug)
+                            opts.processTimeDebug = BoolUtils.IsValue(en.debug)
                             if (!getlVerboseMode) {
                                 if (processTimeDebug && processTimeTracing)
                                     logFine('Profiling the start of process commands')
@@ -690,7 +696,7 @@ Examples:
                 }
                 procs.sqlscripter = { Map<String, Object> en ->
                     if (en.debug != null) {
-                        sqlScripterDebug = BoolUtils.IsValue(en.debug)
+                        opts.sqlScripterDebug = BoolUtils.IsValue(en.debug)
                         if (!getlVerboseMode) {
                             if (sqlScripterDebug)
                                 logFine('Enabled logging SQL scripter commands')
@@ -1201,10 +1207,10 @@ Examples:
      * @param filter object filtering code
      * @return list of connection names according to specified conditions
      */
-    List<String> listConnections(String mask = null, List connectionClasses = null,
+    List<String> listConnections(String mask = null, List connectionClasses = null, /* TODO: Сделать всем листам и процессингам еще параметр loadLazyObjects */
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                          Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryConnections).list(mask, connectionClasses, true, filter)
+        _repositoryStorageManager.repository(RepositoryConnections).list(mask, connectionClasses, true, null, filter)
     }
 
     /**
@@ -1423,7 +1429,7 @@ Examples:
     List<String> listDatasets(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryDatasets).list(mask, datasetClasses, true, filter)
+        _repositoryStorageManager.repository(RepositoryDatasets).list(mask, datasetClasses, true, null, filter)
     }
 
     /**
@@ -1885,7 +1891,7 @@ Examples:
     List<String> listHistorypoints(String mask = null,
                                    @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.HistoryPointManager'])
                                            Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryHistorypoints).list(mask, null, true, filter)
+        _repositoryStorageManager.repository(RepositoryHistorypoints).list(mask, null, true, null, filter)
     }
 
     /**
@@ -2008,7 +2014,7 @@ Examples:
     List<String> listSequences(String mask = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
                                        Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositorySequences).list(mask, null, true, filter)
+        _repositoryStorageManager.repository(RepositorySequences).list(mask, null, true, null, filter)
     }
 
     /**
@@ -2132,7 +2138,7 @@ Examples:
     List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                           Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryFilemanagers).list(mask, filemanagerClasses, true, filter)
+        _repositoryStorageManager.repository(RepositoryFilemanagers).list(mask, filemanagerClasses, true, null, filter)
     }
 
     /**

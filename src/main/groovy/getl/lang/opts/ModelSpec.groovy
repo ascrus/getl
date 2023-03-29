@@ -89,7 +89,7 @@ class ModelSpec extends BaseSpec {
     List<String> listReferenceVerticaTables(String mask = null,
                                             @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.ReferenceVerticaTables'])
                                              Closure<Boolean> filter = null) {
-        repository(RepositoryReferenceVerticaTables).list(mask, null, true, filter)
+        repository(RepositoryReferenceVerticaTables).list(mask, null, true, null, filter)
     }
 
     /**
@@ -160,7 +160,7 @@ class ModelSpec extends BaseSpec {
     List<String> listReferenceFiles(String mask = null,
                                     @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.ReferenceFiles'])
                                             Closure<Boolean> filter = null) {
-        repository(RepositoryReferenceFiles).list(mask, null, true, filter)
+        repository(RepositoryReferenceFiles).list(mask, null, true, null, filter)
     }
 
     /**
@@ -230,7 +230,7 @@ class ModelSpec extends BaseSpec {
     List<String> listMonitorRules(String mask = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.MonitorRules'])
                                           Closure<Boolean> filter = null) {
-        repository(RepositoryMonitorRules).list(mask, null, true, filter)
+        repository(RepositoryMonitorRules).list(mask, null, true, null, filter)
     }
 
     /**
@@ -298,7 +298,7 @@ class ModelSpec extends BaseSpec {
     List<String> listMapTables(String mask = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.MapTables'])
                                        Closure<Boolean> filter = null) {
-        repository(RepositoryMapTables).list(mask, null, true, filter)
+        repository(RepositoryMapTables).list(mask, null, true, null, filter)
     }
 
     /**
@@ -366,7 +366,7 @@ class ModelSpec extends BaseSpec {
     List<String> listSetOfTables(String mask = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.SetOfTables'])
                                         Closure<Boolean> filter = null) {
-        repository(RepositorySetOfTables).list(mask, null, true, filter)
+        repository(RepositorySetOfTables).list(mask, null, true, null, filter)
     }
 
     /**
@@ -437,7 +437,7 @@ class ModelSpec extends BaseSpec {
     List<String> listWorkflows(String mask = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.Workflows'])
                                        Closure<Boolean> filter = null) {
-        repository(RepositoryWorkflows).list(mask, null, true, filter)
+        repository(RepositoryWorkflows).list(mask, null, true, null, filter)
     }
 
     /**

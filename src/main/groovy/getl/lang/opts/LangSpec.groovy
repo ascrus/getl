@@ -34,7 +34,7 @@ class LangSpec extends BaseSpec {
         if (params.projectConfigParams == null)
             saveParamValue('projectConfigParams', new ConcurrentHashMap<String, Object>())
         if (params.countThreadsLoadRepository == null)
-            saveParamValue('countThreadsLoadRepository', 16)
+            saveParamValue('countThreadsLoadRepository', 8)
         if (params.defaultEmbeddedConnection == null)
             params.defaultEmbeddedConnection = new TDS(dslCreator: getl, connectDatabase: TDS.storageDatabaseName)
     }

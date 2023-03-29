@@ -1,13 +1,11 @@
 package getl.lang
 
-import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
-import getl.jdbc.QueryDataset
 import getl.jdbc.Sequence
 import getl.jdbc.TableDataset
 import getl.lang.sub.RepositoryConnections
@@ -1391,6 +1389,25 @@ fileName = 'test1.csv'
                 assertEquals(0, repository(RepositoryMonitorRules).countLazyLoadObjects())
                 assertEquals(8, repository(RepositoryDatasets).countObjects())
                 assertEquals(2, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(0, repository(RepositoryConnections).countLazyLoadObjects())
+            }
+
+            repositoryStorageManager.repository(RepositoryDatasets).list(null, null, false, false)
+            repositoryStorageManager {
+                assertEquals(1, repository(RepositoryMonitorRules).countObjects())
+                assertEquals(0, repository(RepositoryMonitorRules).countLazyLoadObjects())
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(2, repository(RepositoryDatasets).countLazyLoadObjects())
+                assertEquals(4, repository(RepositoryConnections).countObjects())
+                assertEquals(0, repository(RepositoryConnections).countLazyLoadObjects())
+            }
+            repositoryStorageManager.repository(RepositoryDatasets).list(null, null, false, true)
+            repositoryStorageManager {
+                assertEquals(1, repository(RepositoryMonitorRules).countObjects())
+                assertEquals(0, repository(RepositoryMonitorRules).countLazyLoadObjects())
+                assertEquals(8, repository(RepositoryDatasets).countObjects())
+                assertEquals(0, repository(RepositoryDatasets).countLazyLoadObjects())
                 assertEquals(4, repository(RepositoryConnections).countObjects())
                 assertEquals(0, repository(RepositoryConnections).countLazyLoadObjects())
             }

@@ -15,6 +15,7 @@ class ParseObjectNameTest extends GetlDslTest {
             assertEquals('group1:object1', parseName('Group1:Object1').name)
             assertEquals('group1.group2:object1.object2 test', parseName('Group1.Group2:Object1.Object2 test').name)
             shouldFail { parseName('group1:object:1').name }
+            shouldFail { parseName('group1..group2:object:1').name }
             shouldFail { parseName('group1/group2:object 1').name }
             shouldFail { parseName('group1.group2:object1\\object2').name }
 

@@ -440,14 +440,18 @@ class RepositoryStorageManager {
         if (isResourceStoragePath)
             throw new DslError(dslCreator, '#dsl.repository.deny_path_resource')
 
-        def obj = repository.find(objName.name)
-        if (obj == null)
-            throw new DslError(dslCreator, '#dsl.object.not_found', [repname: objName.name, repository: repository.getClass().name])
+        GetlRepository obj
+        Map objParams
+        synchronized (repository.lockByObjectName(objName.name)) {
+            obj = repository.find(objName.name)
+            if (obj == null)
+                throw new DslError(dslCreator, '#dsl.object.not_found', [repname: objName.name, repository: repository.getClass().name])
 
-        if (changeTime != null && obj.dslRegistrationTime != null && obj.dslRegistrationTime < changeTime)
-            return false
+            if (changeTime != null && obj.dslRegistrationTime != null && obj.dslRegistrationTime < changeTime)
+                return false
 
-        def objParams = repository.exportConfig(obj)
+            objParams = repository.exportConfig(obj)
+        }
 
         def fileName = objectFilePathInStorage(repository, objName, env)
         FileUtils.ValidFilePath(fileName)
@@ -765,9 +769,11 @@ class RepositoryStorageManager {
                                     def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
                                             configVars: this.dslCreator.configVars, owner: dslCreator)
                                     GetlRepository obj
-                                    obj = repository.importConfig(objParams, null, name)
-                                    runWithLoadMode(true) {
-                                        repository.registerObject(this.dslCreator, obj, name, true)
+                                    synchronized (repository.lockByObjectName(name)) {
+                                        obj = repository.importConfig(objParams, null, name)
+                                        runWithLoadMode(true) {
+                                            repository.registerObject(this.dslCreator, obj, name, true)
+                                        }
                                     }
                                 }
                                 finally {
@@ -838,24 +844,25 @@ class RepositoryStorageManager {
         try {
             def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
                     configVars: this.dslCreator.configVars, owner: dslCreator)
-            if (register) {
-                obj = repository.find(name, false)
-                if (obj != null && !overloading)
-                    throw new DslError(dslCreator, '#dsl.repository.fail_reload_object', [repname: name, className: repository.getClass().name, file: file.path])
-            }
-            def isExists = (obj != null)
-            obj = repository.importConfig(objParams, obj, name)
-            if (register) {
-                if (!isExists)
-                    repository.registerObject(this.dslCreator, obj, name, true)
-                else
-                    repository.initRegisteredObject(obj)
-            }
-            else {
-                runWithLoadMode(false) {
-                    obj.dslCreator = this.dslCreator
-                    obj.dslNameObject = name
-                    obj.dslRegistrationTime = new Date()
+            synchronized (repository.lockByObjectName(name)) {
+                if (register) {
+                    obj = repository.find(name, false)
+                    if (obj != null && !overloading)
+                        throw new DslError(dslCreator, '#dsl.repository.fail_reload_object', [repname: name, className: repository.getClass().name, file: file.path])
+                }
+                def isExists = (obj != null)
+                obj = repository.importConfig(objParams, obj, name)
+                if (register) {
+                    if (!isExists)
+                        repository.registerObject(this.dslCreator, obj, name, true)
+                    else
+                        repository.initRegisteredObject(obj)
+                } else {
+                    runWithLoadMode(false) {
+                        obj.dslCreator = this.dslCreator
+                        obj.dslNameObject = name
+                        obj.dslRegistrationTime = new Date()
+                    }
                 }
             }
         }
@@ -1124,41 +1131,45 @@ class RepositoryStorageManager {
         def repNewName = dslCreator.repObjectName(newName)
 
         def rep = repository(repositoryClassName)
-        def obj = rep.find(repName, true)
-        if (obj == null)
-            throw new DslError(dslCreator, '#dsl.object.not_found', [repname: name, repository: repositoryClassName])
+        GetlRepository obj
 
-        if (rep.find(repNewName, true))
-            throw new DslError(dslCreator, '#dsl.repository.fail_rename_exists', [repname: newName, origName: name, className: repositoryClassName])
+        synchronized (rep.lockByObjectName(repName)) {
+            obj = rep.find(repName, true)
+            if (obj == null)
+                throw new DslError(dslCreator, '#dsl.object.not_found', [repname: name, repository: repositoryClassName])
 
-        synchronized (rep.synchObjects) {
-            try {
-                if (saveToStorage) {
-                    def renameFile = { String env ->
-                        def objFile = objectFile(repositoryClassName, repName, env)
-                        if (objFile.exists()) {
-                            def objNewFile = objectFile(repositoryClassName, repNewName, env)
-                            FileUtils.ValidFilePath(objNewFile)
-                            if (!objFile.renameTo(objNewFile))
-                                throw new DslError(dslCreator, '#io.file.fail_rename', [path: objFile.path, dir: objNewFile.path, detail: name])
+            synchronized (rep.lockByObjectName(repNewName)) {
+                if (rep.find(repNewName, true))
+                    throw new DslError(dslCreator, '#dsl.repository.fail_rename_exists', [repname: newName, origName: name, className: repositoryClassName])
+
+                try {
+                    if (saveToStorage) {
+                        def renameFile = { String env ->
+                            def objFile = objectFile(repositoryClassName, repName, env)
+                            if (objFile.exists()) {
+                                def objNewFile = objectFile(repositoryClassName, repNewName, env)
+                                FileUtils.ValidFilePath(objNewFile)
+                                if (!objFile.renameTo(objNewFile))
+                                    throw new DslError(dslCreator, '#io.file.fail_rename', [path: objFile.path, dir: objNewFile.path, detail: name])
+                            }
                         }
-                    }
-                    renameFile.call(dslCreator.configuration.environment)
+                        renameFile.call(dslCreator.configuration.environment)
 
-                    if (envs != null) {
-                        ((envs*.toLowerCase()) - [dslCreator.configuration.environment.toLowerCase()]).each { env ->
-                            renameFile.call(env)
+                        if (envs != null) {
+                            ((envs*.toLowerCase()) - [dslCreator.configuration.environment.toLowerCase()]).each { env ->
+                                renameFile.call(env)
+                            }
                         }
                     }
                 }
+                catch (Exception e) {
+                    obj.dslNameObject = repName
+                    throw e
+                }
+                rep.objects.remove(repName)
+                rep.objects.put(repNewName, obj)
+                obj.dslNameObject = repNewName
             }
-            catch (Exception e) {
-                obj.dslNameObject = repName
-                throw e
-            }
-            rep.objects.remove(repName)
-            rep.objects.put(repNewName, obj)
-            obj.dslNameObject = repNewName
         }
     }
 
