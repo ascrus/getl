@@ -21,7 +21,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
     static void InitTest() {
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
-		connection = new SalesForceConnection(config: 'salesforce')
+		connection = new SalesForceConnection(config: 'salesforce_stage')
 	}
 
     @Test
@@ -69,6 +69,22 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
         def result = dataset.rows(limit: 100, readAsBulk: true)
         assertEquals(result.size(), 100)
+    }
+
+    @Test
+    void testRowsAsBulkWithJobId() {
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        dataset.retrieveFields()
+        dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
+        def result = dataset.bulkUnload(readAsBulk: true, bulkJobId: '7507d00000DxQj7')
+        assertTrue(result.size() > 2)
+
+        def totalRows = 0
+        result.forEach {
+            totalRows += it.rows().size()
+        }
+
+        assertTrue(totalRows > 100_000)
     }
 
     @Test
@@ -126,7 +142,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
     @Test
     void testBulkConnectionWithBatch() {
         connection.connected = false
-        connection = new SalesForceConnection(config: 'salesforce', batchSize: 500)
+        connection = new SalesForceConnection(config: 'salesforce_stage', batchSize: 500)
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
@@ -137,7 +153,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
     @Test
     void testRowsWithBatch() {
         connection.connected = false
-        connection = new SalesForceConnection(config: 'salesforce', batchSize: 500)
+        connection = new SalesForceConnection(config: 'salesforce_stage', batchSize: 500)
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
@@ -148,7 +164,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
     @Test
     void testQueryDataset() {
         connection.connected = false
-        connection = new SalesForceConnection(config: 'salesforce')
+        connection = new SalesForceConnection(config: 'salesforce_stage')
         SalesForceQueryDataset queryDataset = new SalesForceQueryDataset(connection: connection, sfObjectName: 'Lead')
         queryDataset.query = """
 select
@@ -156,7 +172,7 @@ select
   CALENDAR_MONTH(CreatedDate) month_id,
   count(Id) cnt
 from Lead
-where CreatedDate >= 2018-10-01T00:00:00.000Z
+where CreatedDate >= 2023-01-01T00:00:00.000Z
 group by CALENDAR_YEAR(CreatedDate), CALENDAR_MONTH(CreatedDate)
 """
         queryDataset.field << new Field(name: 'year_id')

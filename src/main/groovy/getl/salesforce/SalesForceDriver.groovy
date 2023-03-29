@@ -240,8 +240,11 @@ class SalesForceDriver extends Driver {
             soqlQuery = dataset.params.query
         } else {
             if (dataset.field.isEmpty()) dataset.retrieveFields()
+            if (prepareCode != null) {
+                prepareCode.call(dataset.field)
+            }
+
             fields = dataset.field*.name
-            if (prepareCode != null) fields = (ArrayList<String>)prepareCode.call(dataset.field)
 
             // SOQL Query generation
             soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
@@ -314,6 +317,7 @@ class SalesForceDriver extends Driver {
         String sfObjectName = dataset.params.sfObjectName
         def limit = ListUtils.NotNullValue([ConvertUtils.Object2Int(params.limit), dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
+        String bulkJobId = params.bulkJobId
         Map<String, String> orderBy = ((params.orderBy)?:new HashMap<String, String>()) as Map<String, String>
 
         Integer chunkSize = ListUtils.NotNullValue([params.chunkSize, dataset.params.chunkSize, 0]) as Integer
@@ -328,11 +332,18 @@ class SalesForceDriver extends Driver {
         if (dataset.field.isEmpty()) dataset.retrieveFields()
         List<String> fields = dataset.field*.name
 
-        JobInfo job = createJob(bulkConnection, sfObjectName)
+        JobInfo job = getOrCreateJob(bulkConnection, sfObjectName, bulkJobId)
+        if (bulkJobId == null) {
+            connection.logger.info("Job '${job.id}' created.")
+        } else {
+            connection.logger.info("Reusing Job '${job.id}'.")
+        }
+
         List<TFSDataset> tfsDatasetList = []
 
         try {
             job = bulkConnection.getJobStatus(job.id)
+            Boolean isJobClosed = job.state == JobStateEnum.Closed
 
             // SOQL Query generation
             String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
@@ -341,10 +352,19 @@ class SalesForceDriver extends Driver {
             if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
             ByteArrayInputStream bout = new ByteArrayInputStream(soqlQuery.bytes)
-            BatchInfo mainBatch = bulkConnection.createBatchFromStream(job, bout)
+
+            BatchInfo mainBatch
+            if (!isJobClosed) {
+                mainBatch = bulkConnection.createBatchFromStream(job, bout)
+            } else {
+                def batches = bulkConnection.getBatchInfoList(job.id).batchInfo
+                mainBatch = batches.find { it.state === BatchStateEnum.NotProcessed } ?:
+                        batches.find { it.state === BatchStateEnum.Completed } ?:
+                                batches[0]
+            }
 
             // Trick to get the real number of batches because of async API
-            if (chunkSize > 0) {
+            if (chunkSize > 0 && !isJobClosed) {
                 def batchCounter = 0
                 while (bulkConnection.getBatchInfo(job.id, mainBatch.id).state != BatchStateEnum.NotProcessed) {
                     batchCounter++
@@ -364,62 +384,71 @@ class SalesForceDriver extends Driver {
                 for (Integer bn = 0; bn < batchInfos.length; bn++) {
                     BatchInfo info = batchInfos[bn]
                     if (info.id == mainBatch.id) continue
-
-                    TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: info.id)
-                    tDataset.field = dataset.field
-                    processBatch(job, info, tDataset.fullFileName())
-                    tfsDatasetList.add(tDataset)
+                    tfsDatasetList.addAll(processBatch(job, info, tfsArea, dataset.field))
                 }
             } else {
                 BatchInfo info = batchInfos[0]
-                TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: info.id)
-                tDataset.field = dataset.field
-                processBatch(job, info, tDataset.fullFileName())
-                tfsDatasetList.add(tDataset)
+                tfsDatasetList.addAll(processBatch(job, info, tfsArea, dataset.field))
             }
         } catch (e) {
             throw new DatasetError(dataset, 'SalesForceError', e)
         } finally {
-            closeJob(bulkConnection, job.getId())
+            if (job.state === JobStateEnum.Open) {
+                closeJob(bulkConnection, job.getId())
+            }
         }
 
         return tfsDatasetList
     }
 
-    private void processBatch(JobInfo job, BatchInfo info, String pathToFile) {
+    private List<TFSDataset> processBatch(JobInfo job, BatchInfo info, TFS tfsArea, List<Field> fields) {
         String[] queryResults = null
+        String batchId = info.id
 
         for (Integer i = 0; i < 10000; i++) {
-            info = bulkConnection.getBatchInfo(job.id, info.id)
+            info = bulkConnection.getBatchInfo(job.id, batchId)
 
             if (info.state == BatchStateEnum.Completed) {
-                QueryResultList list = bulkConnection.getQueryResultList(job.id, info.id)
+                QueryResultList list = bulkConnection.getQueryResultList(job.id, batchId)
                 queryResults = list.result
-                connection.logger.info("Batch ID: ${info.id}, Batch Status: ${info.state}")
+                connection.logger.info("Batch ID: ${batchId}, Batch Status: ${info.state}")
                 break
             } else if (info.state == BatchStateEnum.Failed) {
                 throw new ExceptionGETL(info.toString())
             } else {
-                connection.logger.info("Batch ID: ${info.id}, Batch Status: ${info.state}")
+                connection.logger.info("Batch ID: ${batchId}, Batch Status: ${info.state}")
                 Thread.sleep(10000) // 10 sec
             }
         }
 
-        queryResults.each { String resultId ->
-            InputStream inputStream = bulkConnection.getQueryResultStream(job.id, info.id, resultId)
+        List<TFSDataset> tfsDatasetList = []
+        int queryResultsSize = queryResults.size()
+        connection.logger.info("Batch ID: ${batchId}. Found Query Result(s): ${queryResultsSize}")
+
+        queryResults.eachWithIndex { String resultId, int idx ->
+            connection.logger.info("Batch ID: ${batchId}. Working on Query Result: ${resultId}")
+            InputStream inputStream = bulkConnection.getQueryResultStream(job.id, batchId, resultId)
+            TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: resultId, field: fields)
+
             try {
-                new File(pathToFile).withOutputStream { outputStream ->
+                new File(tDataset.getObjectFullName()).withOutputStream { outputStream ->
                     inputStream.eachByte(1024 * 8) { byte[] data, Integer len ->
                         outputStream.write(data, 0, len)
                     }
                 }
             } finally {
                 inputStream.close()
+                tfsDatasetList.add(tDataset)
             }
+
+            connection.logger.info("Batch ID: ${batchId}. Query Result '${resultId}' is processed.")
+            connection.logger.info("Batch ID: ${batchId}. Processed ${idx + 1} of ${queryResults.size()} Query Results.")
         }
+
+        return tfsDatasetList
     }
 
-    static private JobInfo createJob(BulkConnection connection, String sfObjectName) {
+    private static JobInfo getOrCreateJob(BulkConnection bulkConnection, String sfObjectName, String jobId) {
         JobInfo job = new JobInfo()
 
         job.object = sfObjectName
@@ -427,7 +456,12 @@ class SalesForceDriver extends Driver {
         job.concurrencyMode = ConcurrencyMode.Parallel
         job.contentType = ContentType.CSV
 
-        job = connection.createJob(job)
+        if (jobId != null) {
+            job = bulkConnection.getJobStatus(jobId)
+        } else {
+            job = bulkConnection.createJob(job)
+        }
+
         assert job.id != null
 
         return job
