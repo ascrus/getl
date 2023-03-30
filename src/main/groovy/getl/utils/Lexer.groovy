@@ -574,8 +574,11 @@ class Lexer {
 			error("unexpected comma")
 
 		Map m = [type: TokenType.COMMA, value: ((char)(c as int)).toString()]
-		def token = tokens[tokens.size() - 1]
-		token.delimiter = m
+
+		if (!tokens.isEmpty()) {
+			def token = tokens[tokens.size() - 1]
+			token.delimiter = m
+		}
 	}
 
 	private void semicolon(Integer c) {

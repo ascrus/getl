@@ -583,7 +583,7 @@ Examples:
                                     fieldDelimiter: ',', codePage: 'utf-8', escaped: false)
                             rm.savingStoryDataset = csvDataset
                             if (!getlVerboseMode)
-                                logFine("The history of saving repository objects is written to file ${savingStoryDataset.fullFileName()}")
+                                logFine("The history of saving repository objects is written to file ${csvDataset.fullFileName()}")
                         }
 
                         if (en.path != null) {

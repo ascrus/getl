@@ -44,7 +44,12 @@ class Logs {
 	/** Global instance log */
 	@JsonIgnore
 	@Synchronized
-	static Logs getGlobal() { global }
+	static Logs getGlobal() {
+		if (global == null)
+			Init()
+
+		return global
+	}
 	/** Global instance log */
 	@Synchronized
 	static void setGlobal(Logs value) {
