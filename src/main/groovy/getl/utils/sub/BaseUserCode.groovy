@@ -85,15 +85,15 @@ class BaseUserCode extends Getl {
         new Timestamp(DateUtils.ParseDate(format, value, ignoreError).time)
     }
 
-    static java.sql.Date ParseSQLDate(Object value, Boolean ignoreError = true) {
+    static java.sql.Date parseSQLDate(Object value, Boolean ignoreError = true) {
         DateUtils.ParseSQLDate(value, ignoreError)
     }
 
-    static Time ParseSQLTime(Object value, Boolean ignoreError = true) {
+    static Time parseSQLTime(Object value, Boolean ignoreError = true) {
         DateUtils.ParseSQLTime(value, ignoreError)
     }
 
-    static Timestamp ParseSQLTimestamp(Object value, Boolean ignoreError = true) {
+    static Timestamp parseSQLTimestamp(Object value, Boolean ignoreError = true) {
         DateUtils.ParseSQLTimestamp(value, ignoreError)
     }
 

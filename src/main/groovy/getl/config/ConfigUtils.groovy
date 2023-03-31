@@ -48,7 +48,7 @@ class ConfigUtils extends Job {
             return
         }
 
-        logger.info("config: load ${Config.content.size()} parameters for source")
+        this.getLogger().info("config: load ${Config.content.size()} parameters for source")
 
         def destMan = Class.forName((jobArgs.dest as Map).manager as String).getConstructor().newInstance() as ConfigManager
         Config.params.clear()
@@ -60,7 +60,7 @@ class ConfigUtils extends Job {
         Config.ClearConfig()
         Config.LoadConfig()
 
-        logger.info("config: save ${Config.content.size()} parameters to destination")
+        this.getLogger().info("config: save ${Config.content.size()} parameters to destination")
 //        println MapUtils.ToJson(Config.content)
     }
 }

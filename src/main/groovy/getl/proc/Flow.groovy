@@ -8,6 +8,7 @@ import getl.data.*
 import getl.data.sub.AttachData
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.exception.IncorrectParameterError
 import getl.lang.Getl
 import getl.proc.sub.FieldStatistic
 import getl.proc.sub.FlowCopyChild
@@ -58,7 +59,7 @@ class Flow {
 		methodParams.register('copy',
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
-				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
+				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'saveSourceFieldsInErrorsDataset', 'excludeFields', 'mirrorCSV',
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
 				 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing', 'process', 'onBeforeWrite', 'onAfterWrite',
 				 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
@@ -699,8 +700,11 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 
 		def clear = BoolUtils.IsValue(params.clear, false)
 		def saveErrors = BoolUtils.IsValue(params.saveErrors, false)
+		def saveSourceFieldsInErrorsDataset = BoolUtils.IsValue(params.saveSourceFieldsInErrorsDataset, false)
 		def saveExprErrors = BoolUtils.IsValue(params.saveExprErrors, false)
-		
+		if (saveSourceFieldsInErrorsDataset && saveExprErrors)
+			throw new IncorrectParameterError('#flow.copy.incorrect_saveSourceFieldsInErrorsDataset', 'saveExprErrors')
+
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
 		Closure filterCode = params.onFilter as Closure
@@ -871,9 +875,9 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 			}
 			
 			if (saveErrors || saveExprErrors) {
-				errorsDataset.field = writer.field
+				errorsDataset.field = (!saveSourceFieldsInErrorsDataset)?writer.field:source.field
 				errorsDataset.resetFieldToDefault()
-				if (autoMap) {
+				if (autoMap && !saveSourceFieldsInErrorsDataset) {
 					errorsDataset.removeFields { Field f ->
 						generateResult.destFields.find { String n -> n.toLowerCase() == f.name.toLowerCase() } == null
 					}
@@ -952,7 +956,11 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 							}
 							isError = true
 							Map errorRow = new HashMap()
-							errorRow.putAll(outRow)
+							if (!saveSourceFieldsInErrorsDataset)
+								errorRow.putAll(outRow)
+							else
+								errorRow.putAll(inRow)
+
 							errorRow.error = (e instanceof AssertionError)?StringUtils.ProcessAssertionError(e as AssertionError):e.message
 							errorsDataset.write(errorRow)
 						}

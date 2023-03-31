@@ -295,4 +295,66 @@ class FlowTest extends GetlDslTest {
             file.drop()
         }
     }
+
+    @Test
+    void testSaveErrors() {
+        Getl.Dsl {
+            def csv = csvTemp {
+                field('id') { type = integerFieldType; isNull = false; isKey = true }
+                field('name') { isNull = false; length = 10 }
+                field('value') { type = numericFieldType; length = 6; precision = 2 }
+            }
+
+            etl.rowsTo(csv) {
+                writeRow { add ->
+                    (1..10).each { num ->
+                        add([id: num, name: "name $num", value: num * 100 + 0.123])
+                    }
+                }
+            }
+
+            def dest = csvTemp {
+                field = csv.field
+                fieldByName('id').name = 'd_id'
+                fieldByName('name').name = 'd_name'
+                fieldByName('value').name = 'd_value'
+                field('d_name_upper')
+            }
+
+            etl.copyRows(csv, dest) {
+                map.d_id = 'id'
+                map.d_name = 'name'
+                map.d_value = 'value'
+                map.d_name_upper = '${source.name?.toUpperCase()}'
+
+                saveErrors = true
+
+                copyRow { s, d ->
+                    assert s.id <= 7
+                }
+
+                assertEquals(7, dest.countRow())
+                assertEquals(3, errorsDataset.countRow())
+                def errRow = errorsDataset.rows(limit: 1)[0]
+                assertEquals(8, errRow.d_id)
+                assertEquals('name 8', errRow.d_name)
+                assertEquals(800.12, errRow.d_value)
+                assertEquals('NAME 8', errRow.d_name_upper)
+
+                saveSourceFieldsInErrorsDataset = true
+
+                copyRow { s, d ->
+                    assert s.id <= 7
+                }
+
+                assertEquals(7, dest.countRow())
+                assertEquals(3, errorsDataset.countRow())
+                errRow = errorsDataset.rows(limit: 1)[0]
+                assertEquals(8, errRow.id)
+                assertEquals('name 8', errRow.name)
+                assertEquals(800.12, errRow.value)
+                assertNull(errRow.d_name_upper)
+            }
+        }
+    }
 }

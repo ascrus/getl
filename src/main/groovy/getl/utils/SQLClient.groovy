@@ -99,6 +99,6 @@ END FOR;"""
 		scripter.vars.putAll(Config.content."vars" as Map)
 		scripter.loadFile(args."script" as String, "utf-8")
 		scripter.runSql(true)
-		logger.info("Finish, ${scripter.rowCount} rows processed")
+		this.getLogger().info("Finish, ${scripter.rowCount} rows processed")
 	}
 }

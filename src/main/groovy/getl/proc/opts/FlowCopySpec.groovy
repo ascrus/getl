@@ -129,6 +129,11 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Save row processing errors to temporary dataset "errorsDataset" */
     void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 
+    /** Save source fields to errors dataset (default writing destination fields ) */
+    Boolean getSaveSourceFieldsInErrorsDataset() { ConvertUtils.Object2Boolean(params.saveSourceFieldsInErrorsDataset) }
+    /** Save source fields to errors dataset (default writing destination fields ) */
+    void setSaveSourceFieldsInErrorsDataset(Boolean value) { saveParamValue('saveSourceFieldsInErrorsDataset', value) }
+
     /** Save expression errors to temporary dataset "errorsDataset" */
     Boolean getSaveExprErrors() { ConvertUtils.Object2Boolean(params.saveExprErrors) }
     /** Save expression errors to temporary dataset "errorsDataset" */

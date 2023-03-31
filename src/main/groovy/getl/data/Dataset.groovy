@@ -1876,6 +1876,7 @@ class Dataset implements GetlRepository, WithConnection {
 	 * @param throwErrors throw if error
 	 * @return list of found errors
 	 */
+	@CompileStatic
 	static List<String> CheckTableFields(Dataset dataset, List<Field> fields, Boolean softCheckType = true, Boolean throwErrors = true) {
 		if (dataset == null)
 			throw new RequiredParameterError('dataset', 'CheckTableFields')
@@ -1887,8 +1888,10 @@ class Dataset implements GetlRepository, WithConnection {
 
 		fields.each { needField ->
 			def dsField = dataset.fieldByName(needField.name)
-			if (dsField == null)
+			if (dsField == null) {
 				errors.add(Messages.BuildText('#dataset.field_not_found', [field: needField.name]))
+				return
+			}
 
 			def fieldType = (softCheckType)?FieldSoftType(dsField.type):dsField.type
 			def needType = (softCheckType)?FieldSoftType(needField.type):needField.type

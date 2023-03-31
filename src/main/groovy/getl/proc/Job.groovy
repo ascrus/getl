@@ -103,7 +103,7 @@ abstract class Job {
 			process()
 		}
 		catch (Throwable e) {
-			logger.exception(e, getClass().name, "JOB.RUN")
+			this.getLogger().exception(e, getClass().name, "JOB.RUN")
 			isError = true
             err = e
 		}
@@ -111,9 +111,9 @@ abstract class Job {
 			done()
 
 			if (!verboseMode)
-				logger.info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
+				this.getLogger().info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
 
-			logger.done()
+			this.getLogger().done()
 			if (isError && ExitOnError)
 				System.exit(exitCode?:1)
 
