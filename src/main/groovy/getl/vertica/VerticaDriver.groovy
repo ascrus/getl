@@ -31,7 +31,7 @@ class VerticaDriver extends JDBCDriver {
 	protected void registerParameters() {
 		super.registerParameters()
 
-		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy', 'checkPrimaryKey'])
+		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy', 'checkPrimaryKey', 'privileges'])
 		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
@@ -140,6 +140,8 @@ class VerticaDriver extends JDBCDriver {
 			result += "UNSEGMENTED ALL NODES\n"
 		if (params.partitionBy != null)
 			result += "PARTITION BY ${params.partitionBy}\n"
+		if (params.privileges != null)
+			result += "${params.privileges} SCHEMA PRIVILEGES\n"
 
 		return result
 	}

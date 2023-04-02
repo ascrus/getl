@@ -758,4 +758,37 @@ ECHO {ts}'''
             }
         }
     }
+
+    @Test
+    void testCreateTableWithPrivileges() {
+        Getl.Dsl {
+            verticaTable {
+                useConnection con as VerticaConnection
+                tableName = 'getl_tables_privileges'
+                field('id') { type = integerFieldType; isKey: true }
+                field('name') { length = 50 }
+                createOpts {
+                    privileges = includeSchemaPrivileges
+                }
+                dropOpts {
+                    ifExists = true
+                }
+
+                drop()
+                create()
+                def lines = lastSqlStatement.trim().readLines()
+                assertEquals('INCLUDE SCHEMA PRIVILEGES;', lines[lines.size() - 1])
+
+                createOpts {
+                    privileges = excludeSchemaPrivileges
+                }
+                drop()
+                create()
+                lines = lastSqlStatement.trim().readLines()
+                assertEquals('EXCLUDE SCHEMA PRIVILEGES;', lines[lines.size() - 1])
+
+                drop()
+            }
+        }
+    }
 }

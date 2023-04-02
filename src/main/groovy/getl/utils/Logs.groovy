@@ -34,11 +34,6 @@ class Logs {
 	/** Messages manager */
 	static Messages getMessages() { Messages.manager }
 
-	static {
-		messages.attachResourceFile('getl-logs')
-		messages.attachResourceFile('getl-errors')
-	}
-
 	/** Global instance log */
 	static private Logs global
 	/** Global instance log */

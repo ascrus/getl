@@ -83,8 +83,13 @@ class ConvertUtils {
 		if (value instanceof Integer)
 			return value
 
-		if (value instanceof Number)
-			return (value as Number).toInteger()
+		if (value instanceof Number) {
+			def num = (value as Number)
+			if (num > Integer.MAX_VALUE || num < Integer.MIN_VALUE)
+				throw new ExceptionGETL('#convert.number.overflow', [value: value, min_value: Integer.MIN_VALUE, max_value: Integer.MAX_VALUE])
+
+			return num.intValue()
+		}
 
 		value = value.toString()
 		if (value.length() == 0)
@@ -106,8 +111,13 @@ class ConvertUtils {
 		if (value instanceof Short)
 			return value
 
-		if (value instanceof Number)
-			return (value as Number).toInteger().shortValue()
+		if (value instanceof Number) {
+			def num = (value as Number)
+			if (num > Short.MAX_VALUE || num < Short.MIN_VALUE)
+				throw new ExceptionGETL('#convert.number.overflow', [value: value, min_value: Short.MIN_VALUE, max_value: Short.MAX_VALUE])
+
+			return num.shortValue()
+		}
 
 		value = value.toString()
 		if (value.length() == 0)
@@ -129,8 +139,13 @@ class ConvertUtils {
 		if (value instanceof Long)
 			return value
 
-		if (value instanceof Number)
-			return (value as Number).toLong()
+		if (value instanceof Number) {
+			def num = (value as Number)
+			if (num > Long.MAX_VALUE || num < Long.MIN_VALUE)
+				throw new ExceptionGETL('#convert.number.overflow', [value: value, min_value: Long.MIN_VALUE, max_value: Long.MAX_VALUE])
+
+			return num.longValue()
+		}
 
 		value = value.toString()
 		if (value.length() == 0)
@@ -152,8 +167,13 @@ class ConvertUtils {
 		if (value instanceof Double)
 			return value
 
-		if (value instanceof Number)
-			return (value as Number).toDouble()
+		if (value instanceof Number) {
+			def num = (value as Number)
+			if (num > Double.MAX_VALUE || num < Double.MIN_VALUE)
+				throw new ExceptionGETL('#convert.number.overflow', [value: value, min_value: Double.MIN_VALUE, max_value: Double.MAX_VALUE])
+
+			return num.doubleValue()
+		}
 
 		value = value.toString()
 		if (value.length() == 0)
@@ -195,8 +215,13 @@ class ConvertUtils {
 		if (value instanceof Float)
 			return value
 
-		if (value instanceof Number)
-			return (value as Number).toFloat()
+		if (value instanceof Number) {
+			def num = (value as Number)
+			if (num > Float.MAX_VALUE || num < Float.MIN_VALUE)
+				throw new ExceptionGETL('#convert.number.overflow', [value: value, min_value: Float.MIN_VALUE, max_value: Float.MAX_VALUE])
+
+			return num.floatValue()
+		}
 
 		value = value.toString()
 		if (value.length() == 0)

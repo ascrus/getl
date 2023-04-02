@@ -268,15 +268,22 @@ class ParseObjectName {
     }
 
     /**
-     * Return the last name of a subgroup
-     * @return last name of sub group
+     * Last name of a subgroup
      */
-    String lastSubgroup() {
+    String getLastSubgroup() {
         if (groupName == null)
             return null
 
         def s = groupName.split('[.]')
         return s[s.length - 1]
+    }
+
+    /** List of sub groups in group name */
+    List<String> getSubGroups() {
+        if (groupName == null)
+            return [] as List<String>
+
+        return groupName.split('[.]').toList()
     }
 
     /**

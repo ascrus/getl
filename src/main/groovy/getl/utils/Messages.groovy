@@ -25,6 +25,11 @@ class Messages {
         files.each {fileName -> attachFile(fileName) }
     }
 
+    static {
+        manager.attachResourceFile('getl-logs')
+        manager.attachResourceFile('getl-errors')
+    }
+
     /** Global messages */
     static public final Messages manager = new Messages()
 

@@ -470,6 +470,7 @@ $body
 	 * @param params convert parameters
 	 * @return parsing code
 	 */
+	@SuppressWarnings('GroovyFallthrough')
 	static String GenerateConvertValue(Map params) {
 		String r
 
@@ -646,18 +647,8 @@ $body
 
 						break
 
-					case Field.bigintFieldType:
-						r = "getl.utils.ConvertUtils.Object2Long($sourceValue).intValue()"
-
-						break
-
-					case Field.doubleFieldType:
-						r = "getl.utils.ConvertUtils.Object2Double($sourceValue).intValue()"
-
-						break
-
-					case Field.numericFieldType:
-						r = "getl.utils.ConvertUtils.Object2BigDecimal($sourceValue).intValue()"
+					case Field.bigintFieldType: case Field.doubleFieldType: case Field.numericFieldType:
+						r = "getl.utils.ConvertUtils.Object2Int($sourceValue)"
 
 						break
 
@@ -699,18 +690,8 @@ $body
 
 						break
 
-					case Field.integerFieldType:
-						r = "Long.valueOf(getl.utils.ConvertUtils.Object2Int($sourceValue))"
-
-						break
-
-					case Field.doubleFieldType:
-						r = "getl.utils.ConvertUtils.Object2Double($sourceValue).longValue()"
-
-						break
-
-					case Field.numericFieldType:
-						r = "getl.utils.ConvertUtils.Object2BigDecimal($sourceValue).longValue()"
+					case Field.integerFieldType: case Field.doubleFieldType: case Field.numericFieldType:
+						r = "getl.utils.ConvertUtils.Object2Long($sourceValue)"
 
 						break
 
@@ -743,7 +724,6 @@ $body
 			case Field.numericFieldType:
 				switch (source.type) {
 					case Field.numericFieldType:
-						//r = "new BigDecimal(($sourceValue as BigDecimal).toString())" // ?
 						r = sourceValue
 
 						break
@@ -772,18 +752,8 @@ $body
 
 						break
 
-					case Field.integerFieldType:
-						r = "new java.math.BigDecimal(getl.utils.ConvertUtils.Object2Int($sourceValue))"
-
-						break
-
-					case Field.bigintFieldType:
-						r = "new java.math.BigDecimal(getl.utils.ConvertUtils.Object2Long($sourceValue as Long))"
-
-						break
-
-					case Field.doubleFieldType:
-						r = "new java.math.BigDecimal(getl.utils.ConvertUtils.Object2Double($sourceValue))"
+					case Field.integerFieldType: case Field.bigintFieldType: case Field.doubleFieldType:
+						r = "getl.utils.ConvertUtils.Object2BigDecimal($sourceValue)"
 
 						break
 
@@ -829,18 +799,8 @@ $body
 
 						break
 
-					case Field.integerFieldType:
-						r = "Double.valueOf(getl.utils.ConvertUtils.Object2Int($sourceValue))"
-
-						break
-
-					case Field.bigintFieldType:
-						r = "Double.valueOf(getl.utils.ConvertUtils.Object2Long($sourceValue))"
-
-						break
-
-					case Field.numericFieldType:
-						r = "(getl.utils.ConvertUtils.Object2BigDecimal($sourceValue)).doubleValue()"
+					case Field.integerFieldType: case Field.bigintFieldType: case Field.numericFieldType:
+						r = "getl.utils.ConvertUtils.Object2Double($sourceValue)"
 
 						break
 
@@ -1095,13 +1055,10 @@ $body
 		if (intSize == 0) {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()), precision)
 		}
-		else { //if (intSize < 15) {
+		else {
 			def lSize = ((Double)Math.pow(10, intSize)).intValue() - 1
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(lSize), precision)
 		}
-		/*else {
-			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextLong(), precision)
-		}*/
 
         return res
 	}

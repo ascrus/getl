@@ -1911,8 +1911,8 @@ class JDBCDriver extends Driver {
 			}
 			copyToMap = (rowCopy.code as Closure)
 		}
-		int offs = (ConvertUtils.Object2Int(params.offs)?:1).intValue()
-		int max = (ConvertUtils.Object2Int(params.limit)?:0).intValue()
+		int offs = (int)(ConvertUtils.Object2Int(params.offs)?:1)
+		int max = (int)(ConvertUtils.Object2Int(params.limit)?:0)
 		Map<String, Object> sp = (Map)(params.sqlParams as Map)
 		Map<String, Object> sqlParams
 		if (sp != null) {

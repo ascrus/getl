@@ -1,6 +1,9 @@
 //file:noinspection unused
 package getl.vertica.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
+import getl.exception.DatasetError
 import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
 
@@ -39,4 +42,21 @@ class VerticaCreateSpec extends CreateSpec {
     Boolean getCheckPrimaryKey() { params.checkPrimaryKey as Boolean }
     /** Enabled check primary key */
     void setCheckPrimaryKey(Boolean value) { saveParamValue('checkPrimaryKey', value) }
+
+    @JsonIgnore
+    /** Include table privileges */
+    static public final String includeSchemaPrivileges = 'INCLUDE'
+    @JsonIgnore
+    /** Exclude table privileges */
+    static public final String excludeSchemaPrivileges = 'EXCLUDE'
+
+    /** Table privileges */
+    String getPrivileges() { params.privileges as String }
+    /** Table privileges */
+    void setPrivileges(String value) {
+        if (value != null && !(value.toUpperCase() in [includeSchemaPrivileges, excludeSchemaPrivileges]))
+            throw new DatasetError(ownerObject as Dataset, '#vertica.invalid_table_schema_privileges', [value: value])
+
+        saveParamValue('privileges', value)
+    }
 }

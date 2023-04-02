@@ -303,7 +303,7 @@ class Field implements Serializable, Cloneable {
 		def charOctetLength = ConvertUtils.Object2Int(map.charOctetLength)
 		def precision = ConvertUtils.Object2Int(map.precision)
 		def isKey = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isKey), false)
-		def ordKey = NumericUtils.Obj2Integer(map.ordKey)
+		def ordKey = ConvertUtils.Object2Int(map.ordKey)
 		def isPartition = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isPartition), false)
 		def ordPartition = ConvertUtils.Object2Int(map.ordPartition)
 		def isAutoincrement = BoolUtils.IsValue(ConvertUtils.Object2Boolean(map.isAutoincrement), false)

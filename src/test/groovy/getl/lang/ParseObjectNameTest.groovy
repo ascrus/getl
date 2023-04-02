@@ -41,9 +41,9 @@ class ParseObjectNameTest extends GetlDslTest {
     @Test
     void testLastSubsgroupName() {
         Getl.Dsl {
-            assertEquals('subgroup', parseName('root_group.group_1.subgroup:').lastSubgroup())
-            assertEquals('group', parseName('group:object').lastSubgroup())
-            assertNull(parseName('object').lastSubgroup())
+            assertEquals('subgroup', parseName('root_group.group_1.subgroup:').lastSubgroup)
+            assertEquals('group', parseName('group:object').lastSubgroup)
+            assertNull(parseName('object').lastSubgroup)
         }
     }
 
@@ -51,7 +51,7 @@ class ParseObjectNameTest extends GetlDslTest {
     void testSubgroup2Name() {
         Getl.Dsl {
             assertEquals('root_group.group_1:subgroup', ParseObjectName.Subgroup2Object('root_group.group_1.subgroup'))
-            assertNull(parseName(null).lastSubgroup())
+            assertNull(parseName(null).lastSubgroup)
             shouldFail { ParseObjectName.Subgroup2Object('root_group.group_1.subgroup:object') }
         }
     }
