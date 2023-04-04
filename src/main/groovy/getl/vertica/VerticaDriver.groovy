@@ -65,12 +65,15 @@ class VerticaDriver extends JDBCDriver {
 		ruleQuotedWords.add('NEW')
 	}
 
-    @Override
+	@SuppressWarnings('UnnecessaryQualifiedReference')
+	@Override
 	Map<String, Map<String, Object>> getSqlType () {
         def res = super.getSqlType()
         res.DOUBLE.name = 'double precision'
         res.BLOB.name = 'varbinary'
+		res.BLOB.useLength = JDBCDriver.sqlTypeUse.SOMETIMES
         res.TEXT.name = 'long varchar'
+		res.TEXT.useLength = JDBCDriver.sqlTypeUse.SOMETIMES /* TODO: проверить что работает без указания длины */
 
         return res
     }

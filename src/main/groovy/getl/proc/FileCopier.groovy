@@ -316,7 +316,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
     @Override
     protected void processFiles() {
-        initStoryWrite()
+        if (!onlyFromStory)
+            initStoryWrite()
 
         try {
             if (segmented.isEmpty() || destinations.size() == 1) {
@@ -364,17 +365,20 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         }
         catch (Exception e) {
             try {
-                if (!isCachedMode)
-                    doneStoryWrite()
-                else
-                    rollbackStoryWrite()
+                if (!onlyFromStory) {
+                    if (!isCachedMode)
+                        doneStoryWrite()
+                    else
+                        rollbackStoryWrite()
+                }
             }
             catch (Exception err) {
                 logger.severe("Failed to save file history", err)
             }
             throw e
         }
-        doneStoryWrite()
+        if (!onlyFromStory)
+            doneStoryWrite()
         if (cacheTable != null)
             saveCacheStory()
 
@@ -480,7 +484,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 if (afterCopy != null)
                     afterCopy.call(infile, outfile)
 
-                storyWrite(infile + [fileloaded: new Date()])
+                if (!onlyFromStory)
+                    storyWrite(infile + [fileloaded: new Date()])
 
                 if (isRemoveFile) {
                     Operation([src], numberAttempts, timeAttempts, this) { man ->

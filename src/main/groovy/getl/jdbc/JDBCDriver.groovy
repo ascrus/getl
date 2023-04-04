@@ -1548,7 +1548,7 @@ class JDBCDriver extends Driver {
 	 * @return String	- full name SQL object
 	 */
 	String fullNameDataset (Dataset dataset) {
-		if (!dataset instanceof TableDataset) return 'noname'
+		if (!(dataset instanceof TableDataset)) return 'noname'
 
         def ds = dataset as TableDataset
 		
@@ -1582,8 +1582,8 @@ class JDBCDriver extends Driver {
 	}
 
 	String nameDataset(JDBCDataset dataset) {
-		if (!dataset instanceof TableDataset) {
-			if (!dataset instanceof QueryDataset)
+		if (!(dataset instanceof TableDataset)) {
+			if (!(dataset instanceof QueryDataset))
 				return 'jdbcdataset'
 			else
 				return 'query'
@@ -2818,7 +2818,9 @@ ${sql.stripTrailing()}
 	
 	protected String unionDatasetMergeSyntax () {
 		'''MERGE INTO {target} t
-  USING {source} s ON ({join})
+  USING 
+  	{source} s 
+  		ON ({join})
   WHEN MATCHED THEN UPDATE SET 
     {set}
   WHEN NOT MATCHED THEN INSERT ({fields})
@@ -2840,8 +2842,8 @@ ${sql.stripTrailing()}
 	 * @return
 	 */
 	protected String unionDatasetMerge(JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
-		if (!source instanceof TableDataset)
-			throw new DatasetError(source, '#jdbc.need_table', [detail: 'unionDatasetMerge'])
+		if (!(source instanceof JDBCDataset))
+			throw new DatasetError(source, '#jdbc.need_jdbc_dataset', [detail: 'unionDatasetMerge'])
 		if (keyField.isEmpty())
 			throw new DatasetError(target, '#dataset.non_key_fields')
 		
@@ -2866,13 +2868,25 @@ ${sql.stripTrailing()}
 		
 		String sql = unionDatasetMergeSyntax()
 		Map p = unionDatasetMergeParams(source, target, procParams)
-		p."target" = target.fullNameDataset()
-		p."source" = source.fullNameDataset()
-		p."join" = join.join(" AND ") + condition
-		p."set" = updateFields.join(", ")
-		p."fields" = insertFields.join(", ")
-		p."values" = insertValues.join(", ")
-		p."keys" = keys.join(", ")
+		p.put('target', target.fullNameDataset())
+		if (source instanceof TableDataset)
+			p.put('source', (source as TableDataset).fullNameDataset())
+		else if (source instanceof QueryDataset) {
+			def query = (source as QueryDataset)
+			if (query.scriptFilePath != null)
+				query.loadFile()
+
+			def script = query.query
+			if (script == null)
+				throw new DatasetError(source, '#jdbc.query.non_script')
+
+			p.put('source', '(' + script.trim() + ')')
+		}
+		p.put('join', join.join(" AND ") + condition)
+		p.put('set', updateFields.join(", "))
+		p.put('fields', insertFields.join(", "))
+		p.put('values', insertValues.join(", "))
+		p.put('keys', keys.join(", "))
 		
 		return evalSqlParameters(sql, p, false)
 	}
@@ -2887,8 +2901,8 @@ ${sql.stripTrailing()}
 		def source = procParams.source as JDBCDataset
 		if (source == null)
 			throw new RequiredParameterError(target, 'source', 'unionDataset')
-		if (!source instanceof JDBCDataset)
-			throw new DatasetError(source, '#jdbc.need_table', [detail: 'unionDataset'])
+		if (!(source instanceof JDBCDataset))
+			throw new DatasetError(source, '#jdbc.need_jdbc_dataset', [detail: 'unionDataset'])
 		
 		if (procParams.operation == null)
 			throw new RequiredParameterError(source, 'operation', 'unionDataset')

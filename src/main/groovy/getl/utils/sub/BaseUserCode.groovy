@@ -1,6 +1,10 @@
 //file:noinspection unused
 package getl.utils.sub
 
+import getl.data.Dataset
+import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
+import getl.jdbc.ViewDataset
 import getl.lang.Getl
 import getl.utils.*
 import groovy.json.JsonParserType
@@ -288,5 +292,20 @@ class BaseUserCode extends Getl {
      */
     static Object decode(Object ...args) {
        return ListUtils.Decode(args)
+    }
+
+    /** Check if dataset is table */
+    static Boolean isTable(Dataset ds) {
+        return (ds instanceof TableDataset)
+    }
+
+    /** Check if dataset is view */
+    static Boolean isView(Dataset ds) {
+        return (ds instanceof ViewDataset)
+    }
+
+    /** Check if dataset is query */
+    static Boolean isQuery(Dataset ds) {
+        return (ds instanceof QueryDataset)
     }
 }

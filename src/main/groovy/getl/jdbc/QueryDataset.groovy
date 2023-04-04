@@ -2,6 +2,7 @@ package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 
@@ -53,8 +54,8 @@ class QueryDataset extends JDBCDataset {
 	 * @param filePath file name sql batch file
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
-	void loadFile(String filePath, String codePage = null) {
-		setQuery(readFile(filePath, codePage))
+	void loadFile(String filePath = null, String codePage = null) {
+		setQuery(readFile(filePath?:scriptFilePath, codePage?:scriptFileCodePage))
 	}
 
 	/**
@@ -64,6 +65,9 @@ class QueryDataset extends JDBCDataset {
 	 * @return script text
 	 */
 	String readFile(String filePath, String codePage = null) {
+		if (filePath == null)
+			throw new RequiredParameterError('filePath', 'readFile')
+
 		def file = new File(FileUtils.TransformFilePath(filePath, dslCreator))
 		if (!file.exists())
 			throw new IOFilesError(this, '#io.file.not_found', [path: filePath, type: 'SQL'])
