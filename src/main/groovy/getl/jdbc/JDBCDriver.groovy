@@ -417,8 +417,8 @@ class JDBCDriver extends Driver {
 			DATETIME: [name: 'timestamp', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER/*,
 									  format: 'timestamp{(%length%)} with time zone'*/],
-			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65000, usePrecision: sqlTypeUse.NEVER],
-			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65000, usePrecision: sqlTypeUse.NEVER],
+			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, /*defaultLength: 65000, */usePrecision: sqlTypeUse.NEVER],
+			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, /*defaultLength: 65000, */usePrecision: sqlTypeUse.NEVER],
 			UUID: [name: 'uuid', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
 			ARRAY: [name: 'array', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.NEVER],
 			OBJECT: [name: 'object', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER]

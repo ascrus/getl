@@ -50,6 +50,8 @@ class VerticaDriverTest extends JDBCDriverProto {
         (table as VerticaTable).tap {
             readOpts {label = 'test_getl'}
             writeOpts {direct = 'DIRECT'}
+            /*fieldByName('text').length = null
+            fieldByName('data').length = null*/
         }
     }
 

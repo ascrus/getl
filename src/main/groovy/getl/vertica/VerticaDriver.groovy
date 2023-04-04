@@ -71,9 +71,7 @@ class VerticaDriver extends JDBCDriver {
         def res = super.getSqlType()
         res.DOUBLE.name = 'double precision'
         res.BLOB.name = 'varbinary'
-		res.BLOB.useLength = JDBCDriver.sqlTypeUse.SOMETIMES
         res.TEXT.name = 'long varchar'
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.SOMETIMES /* TODO: проверить что работает без указания длины */
 
         return res
     }
@@ -795,7 +793,7 @@ class VerticaDriver extends JDBCDriver {
 				field.length = 255
 		}
 		else if (field.type in [Field.textFieldType, Field.blobFieldType]) {
-			if (field.length <= 65000)
+			if (field.length != null && field.length <= 65000)
 				field.length = 65000
 		}
 		else if (field.type == Field.numericFieldType) {
