@@ -259,7 +259,7 @@ class FileConnection extends Connection {
 
 	@Override
 	@JsonIgnore
-	String getObjectName() { (path != null)?"file:${currentPath()}":'[NONE]' }
+	String getObjectName() { (path != null)?currentPath():'<NONE>' }
 
 	/** File manager for the connection path */
 	private FileManager _connectionFileManager

@@ -867,7 +867,4 @@ return $className"""
 
         return res
     }
-
-    @Override
-    String toString() { "workflow('${dslNameObject?:'unregister'}')" }
 }

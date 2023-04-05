@@ -1296,7 +1296,7 @@ class JDBCDriver extends Driver {
 				defFields.add(s)
 			}
 			catch (Exception e) {
-				connection.logger.severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\"", e)
+				connection.logger.severe("Error create table $dataset for field \"${f.name}\"", e)
 				throw e
 			}
 		}

@@ -427,7 +427,7 @@ abstract class Manager implements GetlRepository {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { (rootPath != null)?"file:${FileUtils.TransformFilePath(rootPath, false, dslCreator)}":'file' }
+	String getObjectName() { (rootPath != null)?"${FileUtils.TransformFilePath(rootPath, false, dslCreator)}":'file' }
 	
 	/** Write errors to log */
 	@JsonIgnore
@@ -2617,7 +2617,9 @@ WHERE
 	}
 
 	@Override
-	String toString() { objectName }
+	String toString() {
+		return (dslNameObject != null)?(dslNameObject + ' [' + objectName + ']'):(getClass().simpleName + ' [' + objectName + ']')
+	}
 
 	@Override
 	Object clone() {

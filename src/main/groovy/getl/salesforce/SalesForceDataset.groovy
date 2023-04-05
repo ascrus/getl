@@ -48,7 +48,7 @@ class SalesForceDataset extends Dataset {
 	@Override
 	@JsonIgnore
 	String getObjectName() {
-		return sfObjectName
+		return sfObjectName?:'NONE'
 	}
 
 	@Override

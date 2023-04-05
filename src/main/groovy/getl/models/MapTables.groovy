@@ -225,9 +225,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         }
     }
 
-    @Override
-    String toString() { "mapTables('${dslNameObject?:'unregister'}')" }
-
     /**
      * Add linked tables to mapping
      * @param listOfLinkTables list of linked tables

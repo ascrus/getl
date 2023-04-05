@@ -127,4 +127,8 @@ class SalesForceConnection extends Connection implements UserLogins {
 		def passwords = o.loginManager.decryptObject()
 		loginManager.encryptObject(passwords)
 	}
+
+	@JsonIgnore
+	@Override
+	String getObjectName() { connectURL?:'NONE' }
 }

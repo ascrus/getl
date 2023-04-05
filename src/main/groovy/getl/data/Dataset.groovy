@@ -1572,7 +1572,7 @@ class Dataset implements GetlRepository, WithConnection {
 
 	@Override
 	String toString() {
-		return dslNameObject?:objectName
+		return (dslNameObject != null)?(dslNameObject + ' [' + objectName + ']'):(getClass().simpleName + ' [' + objectName + ']')
 	}
 
 	/** Format for reading and writing schema files */

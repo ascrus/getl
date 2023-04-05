@@ -527,7 +527,9 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     }
 
     @Override
-    String toString() { "Model \"${dslNameObject?:'unnamed'}\"" }
+    String toString() {
+        return ((dslNameObject != null)?dslNameObject:(getClass().simpleName)) + " [${StringUtils.WithGroupSeparator(countUsedModelObjects)} objects]"
+    }
 
     /**
      * Check the presence of a object in the model by its name

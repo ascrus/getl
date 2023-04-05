@@ -461,7 +461,7 @@ class Connection implements GetlRepository {
 			res = driver.retrieveObjects(params, filter)
 		}
 		catch (Exception e) {
-			logger.severe("Error read objects list from server \"$objectName\"", e)
+			logger.severe("Error read objects list from server $this", e)
 			throw e
 		}
 
@@ -659,7 +659,7 @@ class Connection implements GetlRepository {
 			driver.rollbackTran(useSqlOperator)
 		}
 		catch (Exception e) {
-			logger.severe("Error rollback transaction on connection \"$objectName\"", e)
+			logger.severe("Error rollback transaction on connection $this", e)
 			throw e
 		}
 		finally {
@@ -694,10 +694,12 @@ class Connection implements GetlRepository {
 	 * @return
 	 */
 	@JsonIgnore
-	String getObjectName() { (driver != null)?driver.getClass().name:null }
+	String getObjectName() { 'NONE' }
 
 	@Override
-	String toString() { dslNameObject?:objectName }
+	String toString() {
+		return (dslNameObject != null)?(dslNameObject + ' [' + objectName + ']'):(getClass().simpleName + ' [' + objectName + ']')
+	}
 	
 	/**
 	 * Clone current connection

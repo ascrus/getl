@@ -1,5 +1,6 @@
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.driver.WebServiceDriver
 import getl.exception.ConnectionError
@@ -181,5 +182,19 @@ class WebServiceConnection extends FileConnection implements UserLogins {
     protected void onLoadConfig(Map configSection) {
         super.onLoadConfig(configSection)
         loginManager.encryptObject()
+    }
+
+    @Override
+    @JsonIgnore
+    String getObjectName() {
+        def res = super.getObjectName()
+        if (webUrl != null) {
+            try {
+                def url = new URL(webUrl)
+                res += " /${url.protocol}://${url.host}:${url.port?:url.defaultPort}/"
+            }
+            catch (Exception ignored) { }
+        }
+        return res
     }
 }

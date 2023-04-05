@@ -162,5 +162,5 @@ class KafkaConnection extends Connection {
     }
 
     @Override
-    String getObjectName() { (bootstrapServers != null)?"Kafka:[$bootstrapServers]":'Kafka' }
+    String getObjectName() { bootstrapServers?:'NONE' }
 }

@@ -260,9 +260,6 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         return res
     }
 
-    @Override
-    String toString() { "referenceFiles('${dslNameObject?:'unregister'}')" }
-
     /** Find reference file in model */
     ReferenceFileSpec findReferenceFile(String name) { findModelObject(name) as ReferenceFileSpec }
 

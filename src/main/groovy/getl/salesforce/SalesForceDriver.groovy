@@ -118,9 +118,9 @@ class SalesForceDriver extends Driver {
 		sObjectResults.each { DescribeGlobalSObjectResult row ->
 			def t = new HashMap()
 
-			t.'objectName' = row.name
-			t.'label' = row.label
-			t.'isCustom' = row.custom
+			t.objectName = row.name
+			t.label = row.label
+			t.isCustom = row.custom
 
 			if (filter == null || filter(t)) objects << t
 		}

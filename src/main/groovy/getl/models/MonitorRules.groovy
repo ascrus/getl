@@ -622,9 +622,6 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     @Override
-    String toString() { "monitorRules('${dslNameObject?:'unregister'}')" }
-
-    @Override
     void doneModel() {
         super.doneModel()
         usedRules.each { node ->

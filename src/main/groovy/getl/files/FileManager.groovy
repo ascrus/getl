@@ -35,7 +35,7 @@ class FileManager extends Manager {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
-		methodParams.register("super", ["codePage", "createRootPath"])
+		methodParams.register('super', ['codePage', 'createRootPath'])
 	}
 	
 	/** Code page on command console */

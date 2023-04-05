@@ -829,7 +829,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 	@Override
 	String toString() {
-		def res ='sqlscripter'
+		def res ='sql'
 		def name = (dslNameObject?:connection?.toString())
 		return (name != null)?(res + ' ' + name?:''):res
 	}

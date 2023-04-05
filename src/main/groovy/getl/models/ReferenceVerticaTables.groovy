@@ -483,7 +483,4 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
     /** Find reference table in model */
     ReferenceVerticaTableSpec findReferenceTable(String name) { findModelObject(name) as ReferenceVerticaTableSpec }
-
-    @Override
-    String toString() { "referenceVerticaTables('${dslNameObject?:'unregister'}')" }
 }

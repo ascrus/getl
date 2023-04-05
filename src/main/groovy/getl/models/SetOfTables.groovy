@@ -141,7 +141,4 @@ class SetOfTables extends DatasetsModel<TableSpec> {
 
     /** Find table in model */
     TableSpec findTable(String name) { findModelObject(name) as TableSpec }
-
-    @Override
-    String toString() { "setOfTable('${dslNameObject?:'unregister'}')" }
 }

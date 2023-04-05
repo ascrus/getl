@@ -417,7 +417,16 @@ class HistoryPointManager implements GetlRepository {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { historyTable?.objectName?:'HISTORY POINT' }
+	String getObjectName() {
+		def res = historyTable?.objectName?:'HISTORY POINT'
+		if (sourceName != null) {
+			res += "/$sourceName"
+			if (sourceType != null)
+				res += " $sourceType"
+		}
+
+		return res
+	}
 
 	/**
 	 * Return last value of history point by source
@@ -585,8 +594,6 @@ class HistoryPointManager implements GetlRepository {
 
 	@Override
 	String toString() {
-		def res ='historypoint'
-		def name = (dslNameObject?:historyTableName?.toString())
-		return (name != null)?(res + ' ' + name?:''):res
+		return (dslNameObject != null)?(dslNameObject + ' [' + objectName + ']'):(getClass().simpleName + ' [' + objectName + ']')
 	}
 }

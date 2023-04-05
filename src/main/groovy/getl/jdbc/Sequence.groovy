@@ -314,7 +314,7 @@ class Sequence implements GetlRepository, WithConnection {
 	
 	@Override
 	String toString() {
-		return fullName
+		return (dslNameObject != null)?(dslNameObject + ' [' + fullName + ']'):(getClass().simpleName + ' [' + fullName + ']')
 	}
 
 	/**

@@ -1069,7 +1069,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				}
 				catch (Exception e) {
 					if (debug && logger.fileNameHandler != null) {
-						def dn = "${logger.dumpFolder()}/${dest.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
+						def dn = "${logger.dumpFolder()}/${dest.objectName.replace(':', '_')}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 						if (bulkDS.isGzFile)
 							dn += ".gz"
 						FileUtils.CopyToFile((bulkParams.source as CSVDataset).fullFileName(), dn, true)
@@ -1357,7 +1357,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 			catch (Exception e) {
 				isError = true
 				writer.isWriteError = true
-				logger.severe("Error writing rows to \"${writer.objectName}\"", e)
+				logger.severe("Error writing rows to $writer", e)
 
 				throw e
 			}
@@ -1404,7 +1404,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				dest.bulkLoadFile(bulkParams)
 			}
 			catch (Exception e) {
-				logger.severe("Error loading CSV file \"${bulkDS.fullFileName()}\" to \"${writer.objectName}\"", e)
+				logger.severe("Error loading CSV file $bulkDS to $writer", e)
 				
 				if (autoTran && dest.connection.isTran()) {
 					Executor.RunIgnoreErrors(dslCreator) {
@@ -1553,7 +1553,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 						useFields.each { String fn ->
 							def f = d.fieldByName(fn)
 							if (f == null)
-								throw new ExceptionGETL("Can not find field \"${fn}\" in \"${d.objectName}\" for list result of prepare code")
+								throw new ExceptionGETL("Can not find field \"${fn}\" in $d for list result of prepare code")
 							lf << f
 						}
 						bulkDS.setField(lf)
@@ -1641,7 +1641,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 							d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
 					}
 					catch (Exception e) {
-						logger.severe("Error writing rows to \"${d.objectName}\"", e)
+						logger.severe("Error writing rows to $d", e)
 						closeDestinations(true)
 						rollbackTrans(['ALL', 'COPY'])
 						throw e
@@ -1658,7 +1658,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				writer.each { String n, Dataset d ->
 					d.isWriteError = true
 				}
-				logger.severe("Error writing rows to \"${writer.collect { name, ds -> '"' + ds.objectName + '"' }}\"", e)
+				logger.severe("Error writing rows to ${writer.collect { name, ds -> ds }}", e)
 				closeDestinations(true)
 				throw e
 			}
