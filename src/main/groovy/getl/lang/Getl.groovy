@@ -2907,7 +2907,7 @@ Examples:
                     def v = (value as Object).toString()
                     if (v.indexOf('{') != -1)
                         value = StringUtils.EvalMacroString(v,
-                                [environment: configuration.environment, unitmode: unitTestMode] + (script as Getl).scriptExtendedVars, false)
+                                [environment: configuration.environment, unittestmode: unitTestMode] + (script as Getl).scriptExtendedVars, false)
                 }
 
                 switch (prop.type) {

@@ -831,6 +831,26 @@ class Lexer {
 	}
 
 	/**
+	 * Find token by types
+	 * @param tokens list of tokens
+	 * @param types list of token types
+	 * @param start start position in tokens
+	 * @return token number
+	 */
+	static Integer FindByType(List<Map> tokens, List<TokenType> types, Integer start = 0) {
+		if (tokens == null)
+			return null
+
+		def size = tokens.size()
+		for (Integer i = start; i < size; i++) {
+			if ((tokens[i].type as TokenType) in types)
+				return i
+		}
+
+		return -1
+	}
+
+	/**
 	 * Convert tokens with comma separate to list
 	 * @param tokens list of tokens
 	 * @param start start position in tokens

@@ -135,7 +135,7 @@ class SQLParser {
 						if (newPos > curPos)
 							addToRes.call(lexer.script.substring(curPos, newPos))
 
-						i = lexer.FindByType(tokens, Lexer.TokenType.LINE_FEED, i)
+						i = lexer.FindByType(tokens, [Lexer.TokenType.LINE_FEED, Lexer.TokenType.SINGLE_COMMENT], i)
 						if (i == -1)
 							i = countTokens - 1
 

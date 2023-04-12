@@ -397,12 +397,41 @@ RUN_FILE resource:/jdbc/script.sql
     @Test
     void testEcho() {
         Getl.Dsl {
-            embeddedConnection {
+            embeddedConnection { con ->
+                def tab = embeddedTable {
+                    useConnection con
+                    tableName = 'test_sqlscripter_echo'
+                    field('id') { type = integerFieldType; isKey = true }
+                    create()
+                }
+
+                etl.rowsTo(tab) {
+                    writeRow { add ->
+                        add([id: 1])
+                    }
+                }
+                assertEquals(1, tab.countRow())
+
                 sql {
                     vars.var1 = 'test1'
-                    script = 'Echo {var1}'
+                    vars.table = tab.fullTableName
+                    script = '''SET SELECT Count(*) AS before_rows FROM {table};
+/*
+  Comment
+*/
+Echo {var1} -- Comment
+TRUNCATE TABLE {table};
+
+-- Comment
+SET SELECT Count(*) AS after_rows FROM {table};'''
                     runSql true
+                    assertEquals(1, vars.before_rows)
+                    assertEquals(0, vars.after_rows)
                 }
+
+                assertEquals(0, tab.countRow())
+
+                tab.drop()
             }
         }
     }
