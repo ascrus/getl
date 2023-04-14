@@ -520,4 +520,9 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         counter.addCount(files.readRows)
         logger.info("[Thread ${segment + 1}]: complete copied ${files.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
+
+    @Override
+    String getDescription() { params.description as String }
+    @Override
+    void setDescription(String value) { params.description = value }
 }

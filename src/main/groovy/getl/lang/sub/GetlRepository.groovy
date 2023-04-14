@@ -29,6 +29,11 @@ interface GetlRepository extends Cloneable {
     /** Clean Dsl properties */
     void dslCleanProps()
 
+    /** Description of object */
+    String getDescription()
+    /** Description of object */
+    void setDescription(String value)
+
     @Override
     Object clone()
 }

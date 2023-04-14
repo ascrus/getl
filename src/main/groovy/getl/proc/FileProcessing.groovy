@@ -295,6 +295,11 @@ class FileProcessing extends FileListProcessing {
         return res
     }
 
+    @Override
+    String getDescription() { params.description as String }
+    @Override
+    void setDescription(String value) { params.description = value }
+
     /** Source element */
     class ListPoolElement {
         ListPoolElement(FileProcessing owner, Manager man) {

@@ -170,7 +170,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     @CompileStatic
     List<String> list(String mask = null, List<String> classes = null, Boolean loadFromStorage = true, Boolean loadLazyObjects = null,
-                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.lang.sub.GetlRepository'])
                             Closure<Boolean> filter = null) {
         (classes as List<String>)?.each {
             if (!(it in listClasses))
@@ -179,7 +179,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         loadFromStorage = BoolUtils.IsValue(loadFromStorage, true)
         loadLazyObjects = BoolUtils.IsValue(loadLazyObjects, !(classes == null && filter == null))
-        if (!loadLazyObjects && !(classes == null && filter == null))
+
+        if (!loadLazyObjects && !(classes == null && filter == null) && !_lazyLoadObjects.isEmpty())
             throw new DslError(dslCreator, '#dsl.repository.invalid_list_lazy_option')
 
         _dslCreator.repositoryStorageManager.tap {
@@ -251,7 +252,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return list of names repository objects according to specified conditions
      */
     List<String> list(String mask, List<String> classes,
-                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.lang.sub.GetlRepository'])
                               Closure<Boolean> filter) {
         return list(mask, classes, true, null, filter)
     }
@@ -263,7 +264,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return list of names repository objects according to specified conditions
      */
     List<String> list(String mask,
-                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.lang.sub.GetlRepository'])
                               Closure<Boolean> filter) {
         return list(mask, null, true, null, filter)
     }
@@ -273,7 +274,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param filter object filtering code
      * @return list of names repository objects according to specified conditions
      */
-    List<String> list(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+    List<String> list(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.lang.sub.GetlRepository'])
                               Closure<Boolean> filter) {
         return list(null, null, true, null, filter)
     }
@@ -686,4 +687,11 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
     /** Repository objects require configuration storage separately for different environments */
     Boolean needEnvConfig() { false }
+
+    /** Description */
+    private String description
+    @Override
+    String getDescription() { this.description as String }
+    @Override
+    void setDescription(String value) { this.description = value }
 }

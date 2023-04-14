@@ -2133,7 +2133,7 @@ ${sql.stripTrailing()}
 			}
 		}
 		catch (SQLException e) {
-			con.logger.dump(e, getClass().name + ".exec", con.objectName, "statement:\n${command}")
+			con.logger.dump(e, getClass().name + ".exec", con.objectName, "statement:\n${sql}")
 			throw e
 		}
 		

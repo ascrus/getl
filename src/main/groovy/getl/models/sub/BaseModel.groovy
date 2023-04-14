@@ -66,8 +66,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     String getRepositoryModelName() { _dslNameObject?:'noname' }
 
     /** Description of model */
+    @Override
     String getDescription() { params.description as String }
     /** Description of model */
+    @Override
     void setDescription(String value) { saveParamValue('description', value) }
 
     @Override

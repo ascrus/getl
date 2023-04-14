@@ -53,6 +53,13 @@ class SQLScripter implements WithConnection, GetlRepository {
 		_dslRegistrationTime = null
 	}
 
+	/** Description */
+	private String description
+	@Override
+	String getDescription() { this.description as String }
+	@Override
+	void setDescription(String value) { this.description = value }
+
 	/** Current logger*/
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }

@@ -207,8 +207,10 @@ class SavePointManager implements GetlRepository, WithConnection {
 	}
 
 	/** Description of manager */
+	@Override
 	String getDescription() { params.description as String }
 	/** Description of manager */
+	@Override
 	void setDescription(String value) { params.description = value }
 
 	/** Preparing map fields */

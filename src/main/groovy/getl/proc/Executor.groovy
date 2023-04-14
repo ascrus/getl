@@ -835,7 +835,14 @@ class Executor implements GetlRepository {
 		_dslRegistrationTime = null
 	}
 
-	/** Current logger */
+	/** Description */
+	private String description
+	@Override
+	String getDescription() { this.description }
+	@Override
+	void setDescription(String value) { this.description = value }
+
+/** Current logger */
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 

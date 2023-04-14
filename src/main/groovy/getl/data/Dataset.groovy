@@ -252,8 +252,10 @@ class Dataset implements GetlRepository, WithConnection {
 
 
 	/** Description of dataset */
+	@Override
 	String getDescription() { params.description as String }
 	/** Description of dataset */
+	@Override
 	void setDescription(String value) { params.description = value }
 
 	/** Name in config from section "datasets" */

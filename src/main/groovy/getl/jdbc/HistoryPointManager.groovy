@@ -238,8 +238,10 @@ class HistoryPointManager implements GetlRepository {
 	}
 
 	/** Description of manager */
+	@Override
 	String getDescription() { params.description as String }
 	/** Description of manager */
+	@Override
 	void setDescription(String value) { params.description = value }
 
 	/** Clone current manager */

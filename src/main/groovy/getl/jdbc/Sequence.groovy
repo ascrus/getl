@@ -211,8 +211,10 @@ class Sequence implements GetlRepository, WithConnection {
 	void setCache(Long value) { params.cache = value } /* TODO: automatic read metadata if cache is not set */
 
 	/** Description of sequence */
+	@Override
 	String getDescription() { params.description as String }
 	/** Description of sequence */
+	@Override
 	void setDescription(String value) { params.description = value }
 
 	/** last received sequence value */

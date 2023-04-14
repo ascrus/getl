@@ -1052,8 +1052,10 @@ abstract class Manager implements GetlRepository {
 	void setCreateStory(Boolean value) { params.createStory = value }
 
 	/** Description of manager */
+	@Override
 	String getDescription() { params.description as String }
 	/** Description of manager */
+	@Override
 	void setDescription(String value) { params.description = value }
 
 	/** Count of found files */

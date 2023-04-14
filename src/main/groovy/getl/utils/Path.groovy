@@ -350,6 +350,13 @@ class Path implements GetlRepository {
 		sysParams.dslRegistrationTime = null
 	}
 
+	/** Description */
+	private String description
+	@Override
+	String getDescription() { this.description as String }
+	@Override
+	void setDescription(String value) { this.description = value }
+
 	/** Define variable options */
 	PathVarsSpec variable(String name,
 				 @DelegatesTo(PathVarsSpec) @ClosureParams(value = SimpleType, options = ['getl.utils.opts.PathsVarSpec'])

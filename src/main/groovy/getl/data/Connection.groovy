@@ -404,8 +404,10 @@ class Connection implements GetlRepository {
 	void setLogWriteToConsole(Boolean value) { params.logWriteToConsole = value }
 
 	/** Description of connection */
+	@Override
 	String getDescription() { params.description as String }
 	/** Description of connection */
+	@Override
 	void setDescription(String value) { params.description = value }
 
 	/**	 Current transaction count */

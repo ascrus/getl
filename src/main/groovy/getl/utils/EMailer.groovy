@@ -287,7 +287,12 @@ class EMailer implements GetlRepository {
 		_dslRegistrationTime = null
 	}
 
-	/** Current logger */
+	@Override
+	String getDescription() { params.description as String }
+	@Override
+	void setDescription(String value) { params.description = value }
+
+/** Current logger */
 	@JsonIgnore
 	Logs getLogger() { (dslCreator?.logging?.manager != null)?dslCreator.logging.manager:Logs.global }
 

@@ -115,4 +115,9 @@ class FileCleaner extends FileListProcessing {
         counter.addCount(tmpProcessFiles.readRows)
         logger.info("Removed ${tmpProcessFiles.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
+
+    @Override
+    String getDescription() { params.description as String }
+    @Override
+    void setDescription(String value) { params.description = value }
 }

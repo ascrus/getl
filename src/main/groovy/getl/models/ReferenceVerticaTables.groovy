@@ -18,6 +18,7 @@ import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -322,7 +323,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * @param exclude list of tables excluded from processing
      * @param return count of tables copied
      */
-    Integer copyFromSourceTables(Boolean onlyForEmpty = true, List<String> include = null, List<String> exclude = null) {
+    Integer copyFromSourceTables(Boolean onlyForEmpty = true, List<String> include = null, List<String> exclude = null) { /* TODO: сделать копирование партициями */
         checkModel()
 
         dslCreator.logFinest("Copy source tables to reference model [$repositoryModelName] ...")
@@ -364,6 +365,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * @param usePartitions using partition functions
      * @return count of tables filled
      */
+    @NamedVariant
     Integer fill(List<String> include = null, List<String> exclude = null, Boolean usePartitions = true) {
         checkModel()
 
