@@ -9,6 +9,7 @@ import getl.data.sub.WithConnection
 import getl.driver.Driver
 import getl.exception.ConnectionError
 import getl.exception.DslError
+import getl.exception.ExceptionGETL
 import getl.exception.IOFilesError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
@@ -18,6 +19,10 @@ import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.*
 import groovy.transform.Synchronized
+
+import java.nio.charset.Charset
+import java.nio.charset.IllegalCharsetNameException
+import java.nio.charset.UnsupportedCharsetException
 import java.util.regex.Pattern
 
 /**
@@ -150,23 +155,52 @@ class SQLScripter implements WithConnection, GetlRepository {
 	Boolean getDebugMode() { debugMode }
 	/** Print scripts to console */
 	void setDebugMode(Boolean value) { debugMode = value }
+
+	/** Script file code page by default */
+	private String defaultCodePage = null
+	/** Script file code page by default */
+	String getDefaultCodePage() { this.defaultCodePage }
+	/** Script file code page by default */
+	void setDefaultCodePage(String value) {
+		if (value != null) {
+			try {
+				def cp = Charset.forName(value)
+				value = cp.name()
+			}
+			catch (IllegalCharsetNameException  ignored) {
+				throw new ExceptionGETL(this, '#connection.invalid_codepage', [code_page: value])
+			}
+			catch (UnsupportedCharsetException ignored) {
+				throw new ExceptionGETL(this, '#connection.illegal_codepage', [code_page: value])
+			}
+		}
+
+		this.defaultCodePage = value
+	}
+	/** Script file code page by default */
+	String defaultCodePage() { this.defaultCodePage?:'utf-8' }
 	
 	/** 
 	 * Load script from file
-	 * @param fileName file name sql batch file
+	 * @param filePath file name sql batch file
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
 	@Synchronized
-	void loadFile(String fileName, String codePage = 'utf-8') {
-		def fn = FileUtils.TransformFilePath(fileName, dslCreator)
-		if (fn == null)
-			throw new RequiredParameterError(this,'fileName', 'loadFile')
-		def file = new File(fn)
-		if (!file.exists())
-			throw new IOFilesError(this,'#io.file.not_found', [path: fileName, type: 'Script'])
+	void loadFile(String filePath, String codePage = null) {
+		if (filePath == null)
+			throw new RequiredParameterError(this,'filePath', 'loadFile')
+
+		def file = FileUtils.FindFileByDefault(filePath, ['sql'], dslCreator)
+		if (file == null)
+			throw new IOFilesError(this,'#io.file.not_found', [path: filePath, type: 'Script'])
+
 		if (debugMode)
 			Logs.Finest(this, '#sqlscripter.script_loading', [path: file.path])
-		setScript(file.getText(codePage?:'utf-8'))
+
+		setScript(file.getText(codePage?:defaultCodePage()))
+
+		if (codePage != null && this.defaultCodePage == null)
+			defaultCodePage = codePage
 	}
 
 	/**
@@ -280,30 +314,17 @@ class SQLScripter implements WithConnection, GetlRepository {
 		if (posParam.length() == 0)
 			throw new SQLScripterError(this, '#sqlscripter.run_file_non_filename')
 
-		if (!FileUtils.IsResourceFileName(posParam, true)) {
-			if (!FileUtils.ExistsFile(posParam)) {
-				if (dslCreator != null) {
-					if (FileUtils.FileExtension(posParam) == '')
-						posParam += '.sql'
-
-					def rn = FileUtils.TransformFilePath('repository:' + ((posParam[0] != '/')?'/':'') + posParam, false, dslCreator)
-					if (FileUtils.ExistsFile(rn))
-						posParam = rn
-					else
-						throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
-				}
-				else
-					throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
-			}
-		}
+		def scriptFile = FileUtils.FindFileByDefault(posParam, ['sql'], dslCreator)
+		if (scriptFile == null)
+			throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
 
 		if (debugMode)
-			Logs.Finest(this, '#sqlscripter.run_file_start', [path: posParam])
+			Logs.Finest(this, '#sqlscripter.run_file_start', [path: scriptFile.path])
 
 		SQLScripter ns = new SQLScripter(connection: connection, logEcho: logEcho, debugMode: debugMode,
 				vars: vars, extVars: extVars, dslCreator: dslCreator)
 		try {
-			ns.runFile(true, posParam)
+			ns.runFile(true, scriptFile.path)
 			vars.putAll(ns.vars)
 		}
 		finally {
@@ -743,12 +764,23 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 	/**
 	 * Run the script for the specified file
-	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
+	 * @param fileName file path (use the prefix "resource:/" to load from the resource file or prefix "repository:/" to load from the repository file)
 	 * @param codePage text encoding (default utf-8)
 	 */
 	@Synchronized
-	void runFile(String fileName, String codePage = 'utf-8') {
+	void runFile(String fileName, String codePage = null) {
 		loadFile(fileName, codePage)
+		runSql()
+	}
+
+	/**
+	 * Run the script for the specified file
+	 * @param file script file
+	 * @param codePage text encoding (default utf-8)
+	 */
+	@Synchronized
+	void runFile(File file, String codePage = null) {
+		loadFile(file.path, codePage)
 		runSql()
 	}
 
@@ -759,7 +791,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	 * @param codePage text encoding (default utf-8)
 	 */
 	@Synchronized
-	void runFile(Boolean useParsing, String fileName, String codePage = 'utf-8') {
+	void runFile(Boolean useParsing, String fileName, String codePage = null) {
 		loadFile(fileName, codePage)
 		runSql(useParsing)
 	}

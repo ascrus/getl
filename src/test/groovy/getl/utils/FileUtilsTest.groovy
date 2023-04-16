@@ -504,4 +504,28 @@ println time() + 'finish' '''
     void testJarPath() {
         assertTrue(new File(FileUtils.JarPath(Getl)).exists())
     }
+
+    @Test
+    void testFindFileByDefault() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'build/resources/test/repository'
+            }
+
+            def script1 = FileUtils.FindFileByDefault('build/resources/test/repository/sql/script1.sql')
+            assertTrue(script1.exists())
+
+            script1 = FileUtils.FindFileByDefault('build/resources/test/repository/sql/script1', ['sql'])
+            assertTrue(script1.exists())
+
+            script1 = FileUtils.FindFileByDefault('repository:/sql/script1.sql', null, it)
+            assertTrue(script1.exists())
+
+            script1 = FileUtils.FindFileByDefault('sql/script1.sql', null, it)
+            assertTrue(script1.exists())
+
+            script1 = FileUtils.FindFileByDefault('sql/script1', ['sql'], it)
+            assertTrue(script1.exists())
+        }
+    }
 }

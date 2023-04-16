@@ -5246,7 +5246,13 @@ Examples:
     /** SQL scripter */
     SQLScripter sql(@DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
-        sql(null, cl)
+        sql(null as JDBCConnection, cl)
+    }
+
+    /** SQL scripter */
+    SQLScripter sql(String connectionName,
+                    @DelegatesTo(SQLScripter) @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
+        sql((connectionName != null)?jdbcConnection(connectionName):null, cl)
     }
 
     /** Exist file manager */

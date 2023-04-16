@@ -1,7 +1,9 @@
 //file:noinspection unused
+//file:noinspection DuplicatedCode
 package getl.utils
 
 import getl.exception.IOFilesError
+import getl.exception.RequiredParameterError
 
 //@GrabConfig(systemClassLoader=true)
 
@@ -1592,5 +1594,63 @@ class FileUtils {
 			throw new NullPointerException("Required classInJar parameter!")
 
 		return PathFromFile(new File(classInJar.protectionDomain.codeSource.location.toURI()).getPath())
+	}
+
+	/**
+	 * Find file in file path by default extensions or found in repository files
+	 * @param filePath file path
+	 * @param extensions default extensions
+	 * @param getl Getl instance
+	 * @return found file or null if not found
+	 */
+	static File FindFileByDefault(String filePath, List<String> extensions = null, Getl getl = null) {
+		File res = null
+
+		def isRep = IsRepositoryFileName(filePath)
+		if (isRep && getl == null)
+			throw new RequiredParameterError('getl')
+
+		// Full path to file
+		def fn = ConvertToDefaultOSPath(TransformFilePath(filePath, false, getl))
+
+		// Check not repository file
+		if (!isRep) {
+			res = new File(fn)
+			if (res.exists())
+				return res
+
+			// Check default extensions
+			if (FileExtension(fn) == '' && extensions != null) {
+				for (ext in extensions) {
+					res = new File(fn + '.' + ext)
+					if (res.exists())
+						return res
+				}
+			}
+
+			// Switch to check repository file
+			if (getl != null && filePath.charAt(0) != (char)'/') {
+				isRep = true
+				fn = ConvertToDefaultOSPath(TransformFilePath('repository:/' + filePath, false, getl))
+			}
+		}
+
+		// Check repository file
+		if (isRep) {
+			res = new File(fn)
+			if (res.exists())
+				return res
+
+			// Check default extensions
+			if (FileExtension(fn) == '' && extensions != null) {
+				for (ext in extensions) {
+					res = new File(fn + '.' + ext)
+					if (res.exists())
+						return res
+				}
+			}
+		}
+
+		return res
 	}
 }
