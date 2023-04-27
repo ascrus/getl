@@ -10,6 +10,7 @@ import getl.jdbc.*
 import getl.jdbc.sub.BulkLoadMapping
 import getl.proc.Flow
 import getl.tfs.TFS
+import getl.utils.BoolUtils
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -28,6 +29,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
+		methodParams.register('createDataset', ['unlogged'])
 		methodParams.register('bulkLoadFile', ['format', 'where', 'forceNotNull', 'forceNull'])
 	}
 
@@ -62,7 +64,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
-		return super.operations() + [Driver.Operation.BULKLOAD]
+		return super.operations() + [Driver.Operation.BULKLOAD, Driver.Operation.UNION]
 	}
 	
 	@Override
@@ -191,6 +193,15 @@ class PostgreSQLDriver extends JDBCDriver {
 		}
 
 		return super.type2sqlType(field, useNativeDBType)
+	}
+
+	@Override
+	protected String tableTypeName(JDBCDataset dataset) {
+		def res = super.tableTypeName(dataset)
+		if (res == null && BoolUtils.IsValue((dataset as TableDataset).createDirective.unlogged))
+			res = 'UNLOGGED'
+
+		return res
 	}
 
 	@Override
@@ -380,5 +391,15 @@ WITH (
 		source.readRows = count
 		table.writeRows = count
 		table.updateRows = count
+	}
+
+	@Override
+	protected String unionDatasetMergeSyntax () {
+		return '''MERGE INTO {target} t
+  USING {source} s ON {join}
+  WHEN MATCHED THEN UPDATE SET 
+    {set}
+  WHEN NOT MATCHED THEN INSERT ({fields})
+    VALUES ({values})'''
 	}
 }

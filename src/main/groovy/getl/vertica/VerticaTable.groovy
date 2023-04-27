@@ -8,7 +8,6 @@ import getl.data.Connection
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.jdbc.opts.*
-import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.vertica.opts.*
 import groovy.transform.InheritConstructors

@@ -51,7 +51,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowExpressions'])
-		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
+		methodParams.register('unionDataset', ['source', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
 		methodParams.register('executeCommand', ['historyText'])
 		methodParams.register('deleteRows', ['where', 'queryParams', 'ddlOnly'])
@@ -67,7 +67,7 @@ class JDBCDriver extends Driver {
 	protected void initParams() {
 		super.initParams()
 
-		addPKFieldsToUpdateStatementFromMerge = false
+		addPKFieldsToUpdateStatementInUnionDataset = false
 		startTransactionDDL = false
 		commitDDL = false
 		transactionalDDL = false
@@ -1197,95 +1197,105 @@ class JDBCDriver extends Driver {
 	/** Name of current date time function */
 	String getNowFunc() { sqlExpressionValue('now') }
 
-	@Synchronized
-	@Override
-	void createDataset(Dataset dataset, Map params) {
-		validTableName(dataset as JDBCDataset)
+	/** Return table type name from create dataset */
+	protected String tableTypeName(JDBCDataset dataset) {
+		String res = null
 
-        params = params?:new HashMap()
-
-		def tableName = fullNameDataset(dataset)
 		def tableType = (dataset as JDBCDataset).type
-		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType,
-							JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
-			throw new NotSupportError(connection, 'create table')
-        }
-		String tableTypeName = null
 		switch (tableType) {
 			case JDBCDataset.globalTemporaryTableType:
-                if (!isSupport(Support.GLOBAL_TEMPORARY))
+				if (!isSupport(Support.GLOBAL_TEMPORARY))
 					throw new NotSupportError(dataset, 'global temporary tables')
-				tableTypeName = globalTemporaryTablePrefix
+				res = globalTemporaryTablePrefix
 				break
 			case JDBCDataset.localTemporaryTableType:
-                if (!isSupport(Support.LOCAL_TEMPORARY))
+				if (!isSupport(Support.LOCAL_TEMPORARY))
 					throw new NotSupportError(dataset, 'local temporary tables')
-				tableTypeName = localTemporaryTablePrefix
+				res = localTemporaryTablePrefix
 				break
 			case JDBCDataset.memoryTable:
-                if (!isSupport(Support.MEMORY))
+				if (!isSupport(Support.MEMORY))
 					throw new NotSupportError(dataset, 'memory temporary tables')
-				tableTypeName = memoryTablePrefix
+				res = memoryTablePrefix
 				break
 			case JDBCDataset.externalTable:
 				if (!isSupport(Support.EXTERNAL))
 					throw new NotSupportError(dataset, 'external tables')
-				tableTypeName = externalTablePrefix
+				res = externalTablePrefix
 				break
 		}
 
+		return res
+	}
+
+	@Synchronized
+	@Override
+	void createDataset(Dataset dataset, Map params) {
+		def ds = dataset as JDBCDataset
+		validTableName(ds)
+
+        params = params?:new HashMap()
+
+		def tableName = fullNameDataset(ds)
+		def tableType = ds.type
+		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType,
+							JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
+			throw new NotSupportError(connection, 'create table')
+        }
+		def tableTypeName = tableTypeName(ds)
+
 		def validExists = ConvertUtils.Object2Boolean(params.ifNotExists, false)
 		if (validExists && !isSupport(Support.CREATEIFNOTEXIST)) {
-			if (!isTable(dataset))
-				throw new NotSupportError(dataset, 'create if not exists')
-			if ((dataset as TableDataset).exists)
+			if (!isTable(ds))
+				throw new NotSupportError(ds, 'create if not exists')
+			if ((ds as TableDataset).exists)
 				return
 		}
 		def ifNotExists = (validExists && isSupport(Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':null
 		def useNativeDBType = ConvertUtils.Object2Boolean(params.useNativeDBType, false)
 		
 		def p = MapUtils.CleanMap(params, ['ifNotExists', 'indexes', 'hashPrimaryKey', 'useNativeDBType'])
-		def extend = createDatasetExtend(dataset as JDBCDataset, p)
+		def extend = createDatasetExtend(ds, p)
 		
 		def defFields = [] as List<String>
-		dataset.field.each { Field f ->
+		ds.field.each { Field f ->
 			try {
 				switch (f.type) {
 					case Field.Type.BOOLEAN:
 						if (!isSupport(Support.BOOLEAN))
-							throw new NotSupportError(dataset, 'boolean fields')
+							throw new NotSupportError(ds, 'boolean fields')
 						break
 					case Field.Type.DATE:
 						if (!isSupport(Support.DATE))
-							throw new NotSupportError(dataset, 'date fields')
+							throw new NotSupportError(ds, 'date fields')
 						break
 					case Field.Type.TIME:
 						if (!isSupport(Support.TIME))
-							throw new NotSupportError(dataset, 'time fields')
+							throw new NotSupportError(ds, 'time fields')
 						break
 					case Field.Type.DATETIME:
 						if (!isSupport(Support.TIMESTAMP))
-							throw new NotSupportError(dataset, 'timestamp fields')
+							throw new NotSupportError(ds, 'timestamp fields')
 						break
 					case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						if (!isSupport(Support.TIMESTAMP_WITH_TIMEZONE))
-							throw new NotSupportError(dataset, 'timestamp with timezone fields')
+							throw new NotSupportError(ds, 'timestamp with timezone fields')
 						break
 					case Field.Type.BLOB:
 						if (!isSupport(Support.BLOB))
-							throw new NotSupportError(dataset, 'blob fields')
+							throw new NotSupportError(ds, 'blob fields')
 						break
 					case Field.Type.TEXT:
 						if (!isSupport(Support.CLOB))
-							throw new NotSupportError(dataset, 'clob fields')
+							throw new NotSupportError(ds, 'clob fields')
 						break
 					case Field.Type.UUID:
 						if (!isSupport(Support.UUID))
-							throw new NotSupportError(dataset, 'uuid fields')
+							throw new NotSupportError(ds, 'uuid fields')
 						break
 						case Field.Type.ARRAY:
 						if (!isSupport(Support.ARRAY))
-							throw new NotSupportError(dataset, 'array fields')
+							throw new NotSupportError(ds, 'array fields')
 						break
 				}
 
@@ -1296,14 +1306,14 @@ class JDBCDriver extends Driver {
 				defFields.add(s)
 			}
 			catch (Exception e) {
-				connection.logger.severe("Error create table $dataset for field \"${f.name}\"", e)
+				connection.logger.severe("Error create table $ds for field \"${f.name}\"", e)
 				throw e
 			}
 		}
 		def fields = '  ' + defFields.join(",\n  ")
 		def pk = "" 
-		if (isSupport(Support.PRIMARY_KEY) && dataset.field.find { it.isKey } != null) {
-			pk = '  ' + generatePrimaryKeyDefinition(dataset as JDBCDataset, params)
+		if (isSupport(Support.PRIMARY_KEY) && ds.field.find { it.isKey } != null) {
+			pk = '  ' + generatePrimaryKeyDefinition(ds, params)
 			fields += ","
 		}
 
@@ -1331,14 +1341,14 @@ class JDBCDriver extends Driver {
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
 				if (!isSupport(Support.INDEX))
-					throw new NotSupportError(dataset, 'indexes')
+					throw new NotSupportError(ds, 'indexes')
 				if (tableType in [JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType] && !isSupport(Support.INDEXFORTEMPTABLE))
-					throw new NotSupportError(dataset, 'temporary table indexes')
+					throw new NotSupportError(ds, 'temporary table indexes')
 				(params.indexes as Map<String, Map>).each { name, value ->
 					def idxCols = []
 					def orderFields = GenerationUtils.PrepareSortFields(value.columns as List<String>)
 					orderFields?.each { nameCol, sortMethod ->
-						idxCols.add(((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) +
+						idxCols.add(((ds.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, ds):nameCol) +
 								((sortMethod != 'ASC')?(' ' + sortMethod):''))
 					}
 					
@@ -1366,7 +1376,7 @@ class JDBCDriver extends Driver {
 			throw e
 		}
 		finally {
-			dataset.sysParams.lastSqlStatement = sbCommands.toString()
+			ds.sysParams.lastSqlStatement = sbCommands.toString()
 		}
 		
 		if (needTran)
@@ -1764,7 +1774,7 @@ class JDBCDriver extends Driver {
 				}
 			}
 
-			def order = GenerationUtils.PrepareSortFields(ListUtils.ToList(params.order) as List<String>)
+			def order = GenerationUtils.PrepareSortFields(ConvertUtils.Object2List(params.order) as List<String>)
 			String orderBy = null
 			if (order != null && !order.isEmpty()) {
 				def orderFields = [] as List<String>
@@ -1846,8 +1856,8 @@ class JDBCDriver extends Driver {
 
 		def isTable = isTable(dataset)
 		if (isTable) {
-			def onlyFields = ListUtils.ToLowerCase(params.onlyFields as List<String>)
-			def excludeFields = ListUtils.ToLowerCase(params.excludeFields as List<String>)
+			def onlyFields = ListUtils.ToLowerCase(ConvertUtils.Object2List(params.onlyFields))
+			def excludeFields = ListUtils.ToLowerCase(ConvertUtils.Object2List(params.excludeFields))
 			
 			def lf = (dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
 			lf.each { prepareField(it) }
@@ -2495,11 +2505,9 @@ ${sql.stripTrailing()}
 		
 		def fields = prepareFieldFromWrite(dataset as JDBCDataset, prepareCode)
 		
-		def updateField = [] as List<String>
-		if (params.updateField != null && !(params.updateField as List).isEmpty()) {
-			updateField = params.updateField as List<String>
-		}
-		else {
+		def updateField = ConvertUtils.Object2List(params.updateField) as List<String>
+		if (updateField == null || updateField.isEmpty()) {
+			updateField = [] as List<String>
 			fields.each { Field f ->
 				if (f.isAutoincrement || f.isReadOnly || f.compute != null)
 					return
@@ -2827,10 +2835,8 @@ ${sql.stripTrailing()}
     VALUES ({values})'''
 	}
 
-    /**
-     * Add PK fields to update statement from merge operator
-     */
-    protected Boolean addPKFieldsToUpdateStatementFromMerge
+    /** Add PK fields to update statement from merge operator */
+    protected Boolean addPKFieldsToUpdateStatementInUnionDataset
 
 	/**
 	 * Generate merge statement
@@ -2861,7 +2867,9 @@ ${sql.stripTrailing()}
 		def insertFields = []
 		def insertValues = []
 		map.each { targetField, sourceField ->
-			if (addPKFieldsToUpdateStatementFromMerge || !target.fieldByName(targetField).isKey) updateFields << "${target.sqlObjectName(targetField)} = $sourceField"
+			if (addPKFieldsToUpdateStatementInUnionDataset || !target.fieldByName(targetField).isKey)
+				updateFields << "${target.sqlObjectName(targetField)} = $sourceField"
+
 			insertFields << target.sqlObjectName(targetField)
 			insertValues << sourceField
 		}
@@ -2898,17 +2906,14 @@ ${sql.stripTrailing()}
 	 * @return
 	 */
 	Long unionDataset(JDBCDataset target, Map procParams) {
+		if (!isOperation(Operation.UNION))
+			throw new NotSupportError(connection, 'merge datasets')
+
 		def source = procParams.source as JDBCDataset
 		if (source == null)
 			throw new RequiredParameterError(target, 'source', 'unionDataset')
 		if (!(source instanceof JDBCDataset))
 			throw new DatasetError(source, '#jdbc.need_jdbc_dataset', [detail: 'unionDataset'])
-		
-		if (procParams.operation == null)
-			throw new RequiredParameterError(source, 'operation', 'unionDataset')
-		def oper = (procParams.operation as String).toUpperCase()
-		if (!(oper in ['INSERT', 'UPDATE', 'DELETE', 'MERGE']))
-			throw new DatasetError(target, '#jdbc.invalid_write_oper', [operation: oper])
 		
 		if (target.connection != source.connection)
 			throw new DatasetError(target, '#jdbc.different_connections', [source: source.dslNameObject?:source.objectFullName])
@@ -2964,14 +2969,7 @@ ${sql.stripTrailing()}
 			if (autoKeyField && field.isKey) keyField << targetField 
 		}
 		
-		String sql
-		switch (oper) {
-			case "MERGE":
-				sql = unionDatasetMerge(source, target, mapField as Map<String, String>, keyField, procParams)
-				break
-			default:
-				throw new DatasetError(target, '#jdbc.invalid_write_oper', [operation: oper])
-		}
+		String sql = unionDatasetMerge(source, target, mapField as Map<String, String>, keyField, procParams)
 //		println sql
 
 		def ddlOnly = ConvertUtils.Object2Boolean(procParams.ddlOnly, false)
@@ -2992,10 +2990,12 @@ ${sql.stripTrailing()}
 				target.updateRows = 0L
 				target.updateRows = executeCommand(sql,
 						[isUpdate: true, queryParams: target.queryParams() + ((procParams.queryParams as Map) ?: new HashMap())])
+				target.writeRows = target.updateRows
 			}
 			catch (Exception e) {
 				if (autoTran)
 					con.rollbackTran()
+
 				throw e
 			}
 

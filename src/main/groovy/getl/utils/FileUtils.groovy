@@ -1604,7 +1604,8 @@ class FileUtils {
 	 * @return found file or null if not found
 	 */
 	static File FindFileByDefault(String filePath, List<String> extensions = null, Getl getl = null) {
-		File res = null
+		if (IsResourceFileName(filePath, false))
+			return new File(ResourceFileName(filePath, getl))
 
 		def isRep = IsRepositoryFileName(filePath)
 		if (isRep && getl == null)
@@ -1612,6 +1613,8 @@ class FileUtils {
 
 		// Full path to file
 		def fn = ConvertToDefaultOSPath(TransformFilePath(filePath, false, getl))
+
+		File res = null
 
 		// Check not repository file
 		if (!isRep) {

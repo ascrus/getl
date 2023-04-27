@@ -4,6 +4,7 @@ package getl.jdbc
 import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
+import getl.lang.Getl
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.test.GetlTest
@@ -1103,6 +1104,66 @@ IF ('{support_update}' = 'true') DO {
             vars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
             exec(true, 'SET SELECT {text} AS result{ %from%};')
             assertEquals(testText, vars.result)
+        }
+    }
+
+    @Test
+    void testUnionDataset() {
+        if (!con.currentJDBCDriver.isOperation(Driver.Operation.UNION))
+            return
+
+        Getl.Dsl {
+            def o = [
+                    [id: 1, name: 'name 1', value: 123.45],
+                    [id: 2, name: 'name 2', value: null],
+                    [id: 3, name: 'name 3', value: 234.56]
+            ]
+            def n = [
+                    [id: 2, name: 'name 2', value: 345.67],
+                    [id: 4, name: 'name 4', value: null]
+            ]
+
+            def d = (con.newDataset() as TableDataset).tap {
+                setConnection(con)
+                tableName = 'test_merge'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('value') { type = numericFieldType; length = 12; precision = 2 }
+
+                drop(ifExists: true)
+                create()
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        add o[0]
+                        add o[1]
+                        add o[2]
+                    }
+                }
+            }
+
+            def b = (con.newDataset() as TableDataset).tap {
+                setConnection(con)
+                tableName = 'test_merge_buffer'
+                field = d.field
+
+                drop(ifExists: true)
+                create()
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        add n[0]
+                        add n[1]
+                    }
+                }
+            }
+
+            d.unionDataset(b)
+            def r = d.rows(order: ['id'])
+            assertEquals(o[0], r[0])
+            assertEquals(n[0], r[1])
+            assertEquals(o[2], r[2])
+            assertEquals(n[1], r[3])
         }
     }
 }

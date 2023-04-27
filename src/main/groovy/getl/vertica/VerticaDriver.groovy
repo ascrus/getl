@@ -52,7 +52,6 @@ class VerticaDriver extends JDBCDriver {
 		tempSchemaName = 'v_temp_schema'
 		allowExpressions = true
 		lengthTextInBytes = true
-        addPKFieldsToUpdateStatementFromMerge = true
 		defaultBatchSize = 10000L
 
 		sqlExpressions.ddlCreatePrimaryKey = 'PRIMARY KEY ({columns}) {check_pk}'
@@ -90,7 +89,7 @@ class VerticaDriver extends JDBCDriver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
-		return super.operations() + [Driver.Operation.BULKLOAD]
+		return super.operations() + [Driver.Operation.BULKLOAD, Driver.Operation.UNION]
     }
 
 	@Override
@@ -136,12 +135,12 @@ class VerticaDriver extends JDBCDriver {
 		if (params.segmentedBy != null && BoolUtils.IsValue(params.unsegmented))
 			throw new ExceptionGETL('Invalid segmented options')
 		if (params.segmentedBy != null)
-			result += "SEGMENTED BY ${params.segmentedBy}\n"
+			result += "SEGMENTED BY ${params.segmentedBy} ALL NODES\n"
 		else if (BoolUtils.IsValue(params.unsegmented))
 			result += "UNSEGMENTED ALL NODES\n"
-		if (params.partitionBy != null)
+		if (params.partitionBy != null && !temporary)
 			result += "PARTITION BY ${params.partitionBy}\n"
-		if (params.privileges != null)
+		if (params.privileges != null && !temporary)
 			result += "${params.privileges} SCHEMA PRIVILEGES\n"
 
 		return result

@@ -147,7 +147,7 @@ class TableDataset extends JDBCDataset {
 		return (!ds.isEmpty())
 	}
 
-	/** Insert/Update/Delete/Merge records from other dataset */
+	/** Merge rows from other dataset */
 	Long unionDataset(Map procParams = new HashMap()) {
 		validConnection()
 		validTableName()
@@ -166,6 +166,11 @@ class TableDataset extends JDBCDataset {
 		}
 
 		return res
+	}
+
+	/** Merge rows from source dataset to current table */
+	Long unionDataset(JDBCDataset source, Map procParams = new HashMap()) {
+		unionDataset((procParams?:[:]) + [source: source])
 	}
 
 	/**
@@ -861,7 +866,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/**
-	 * Load specified csv files to Vertica table
+	 * Load specified csv files to table
 	 * @param source file to load
 	 * @param cl bulk option settings
 	 * @return bulk options
@@ -874,7 +879,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/**
-	 * Load specified csv files to Vertica table
+	 * Load specified csv files to table
 	 * @param cl bulk option settings
 	 * @return bulk options
 	 */
@@ -882,5 +887,11 @@ class TableDataset extends JDBCDataset {
 							 @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.BulkLoadSpec'])
 									 Closure cl) {
 		doBulkLoadCsv(null, cl)
+	}
+
+	/** Set optimal options for working as a buffer table */
+	void optimizeAsBuffer() {
+		dropOpts.ifExists = true
+		createOpts.ifNotExists = true
 	}
 }
