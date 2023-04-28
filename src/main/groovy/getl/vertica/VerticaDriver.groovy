@@ -134,8 +134,12 @@ class VerticaDriver extends JDBCDriver {
 			result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
 		if (params.segmentedBy != null && BoolUtils.IsValue(params.unsegmented))
 			throw new ExceptionGETL('Invalid segmented options')
-		if (params.segmentedBy != null)
-			result += "SEGMENTED BY ${params.segmentedBy} ALL NODES\n"
+		if (params.segmentedBy != null) {
+			def sb = (params.segmentedBy as String).trim()
+			if (!sb.matches('(?i)^[\\w\\W]+\\s+(ALL\\s+NODES){1}(\\s+.+)*$'))
+				sb += ' ALL NODES'
+			result += "SEGMENTED BY $sb\n"
+		}
 		else if (BoolUtils.IsValue(params.unsegmented))
 			result += "UNSEGMENTED ALL NODES\n"
 		if (params.partitionBy != null && !temporary)
