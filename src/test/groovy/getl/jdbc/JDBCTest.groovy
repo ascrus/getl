@@ -353,6 +353,44 @@ IF (${count_del_dates} <> 1) DO {
             }
 
             tab.drop()
+
+            sql {
+                exec '''ECHO Creating test_table t
+    
+    create local temporary table test_table (
+      id int,
+      descr varchar(10)
+    );
+    
+    -- insert /*+direct*/ into tableName
+    -- select /*+ syntactic_join,verbatim */
+    --     'date_id'::date as activity_dt,
+    --     t1.account_type,
+    --     coalesce(t1.segment, 'No segment') as segment,
+    --     null,
+    --     t1.territory_id,
+    --     time_frame time_frame_id,
+    --     38 as kpi_id,
+    --     sum(opportunity_amount) as val
+    -- from bi.sf_funnel f
+    --     left join marketing.scorecard_src t1 on hash(coalesce(f.contact_id, f.lead_id)) = t1.person_id
+    -- where 1=1
+    --   and coalesce(t1.status, '') <> 'Suspect\'
+    --   and date_trunc('date_part', f.sqo_date)::date = date_trunc('date_part', 'date_id'::date)::date
+    --   and f.sqo_date < date_trunc('day', now())::date
+    --   and f.sqo
+    --   and (f.mql or f.ml)
+    --   and f.opportunity_id is not null
+    --   and not f.is_deleted
+    -- group by 1, 2, 3, 4, 5;
+    
+    /*:inserted*/
+    insert into test_table (id, descr) values (1, 'test1'), (2, 'test2'), (3, 'test3');
+    
+    ECHO Rows inserted into test_table: {inserted}
+'''
+                assertEquals(3, vars.inserted)
+            }
         }
     }
 

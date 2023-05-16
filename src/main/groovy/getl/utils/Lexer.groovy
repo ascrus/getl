@@ -202,14 +202,19 @@ class Lexer {
 					def nextChar = input.read()
 					input.reset()
 
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT] && nextChar != 47) {
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT] && nextChar != 47) {
 						addChar(c)
-					} else if (command.type == CommandType.COMMENT && nextChar == 47) {
+					}
+					else if (command.type == CommandType.SINGLE_COMMENT) {
+						addChar(c)
+					}
+					else if (command.type == CommandType.COMMENT && nextChar == 47) {
 						appendToScript(input.read())
 						curNum++
 						curPosition++
 						comment_finish()
-					} else if (scriptType == sqlScriptType && command.type == CommandType.WORD &&
+					}
+					else if (scriptType == sqlScriptType && command.type == CommandType.WORD &&
 							sb.length() > 0 && sb.charAt(sb.length() - 1) == (char)'.') {
 						addChar(c)
 					}
@@ -255,7 +260,8 @@ class Lexer {
 
 					if (command.type in [CommandType.QUOTE, CommandType.COMMENT, CommandType.SINGLE_COMMENT]) {
 						addChar(c)
-					} else if (nextChar == 42 && scriptType != null) {
+					}
+					else if (nextChar == 42 && scriptType != null) {
 						appendToScript(input.read())
 						curNum++
 						comment_start(false)
