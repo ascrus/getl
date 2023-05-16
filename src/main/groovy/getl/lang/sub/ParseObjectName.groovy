@@ -248,7 +248,10 @@ class ParseObjectName {
 
     /** Convert string value to object name */
     static String toObjectName(String value) {
-        value = value.replace('\n', '_newline_').replace('\r', '_return_').replace('\t', '_tab_')
+        if (value == null)
+            return null
+
+        value = value.trim().replace('\n', '_newline_').replace('\r', '_return_').replace('\t', '_tab_')
         def pattern = com.google.re2j.Pattern.compile('([' + incorrectChars + '])+')
         def matcher = pattern.matcher(value)
         def sb = new StringBuilder()
