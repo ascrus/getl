@@ -1065,7 +1065,9 @@ Examples:
     }
 
     /** Engine parameters */
-    protected final Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+    protected final Map<String, Object> _params = new ConcurrentHashMap<String, Object>().tap {
+        put('systemProperties', [:] as Map<String, Object>)
+    }
     /** Get engine parameter */
     Object getGetlSystemParameter(String key) { _params.get(key) }
     /** Set engine parameter */
@@ -3121,8 +3123,11 @@ Examples:
     /** Global section configuration options */
     Map<String, Object> getConfigGlobal() { configuration.manager.content.global as Map<String, Object> }
 
-    /** OS variables */
-    Map<String, Object> getSysVars() { Config.SystemProps() }
+    /** Getl system properties */
+    Map<String, Object> getGetlSystemProperties() { getGetlSystemParameter('systemProperties') as Map<String, Object> }
+
+    /** OS environment variables */
+    Map<String, Object> getSysVars() { Config.SystemProps() + getlSystemProperties }
 
     /** Execute a synchronized sequence of logging commands */
     void logConsistently(Closure cl) { logging.manager.consistently(cl) }

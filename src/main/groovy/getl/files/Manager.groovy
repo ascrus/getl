@@ -21,6 +21,7 @@ import getl.jdbc.*
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
+import getl.lang.sub.ObjectTags
 import getl.lang.sub.ParseObjectName
 import getl.proc.Executor
 import getl.proc.Flow
@@ -37,7 +38,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @SuppressWarnings('unused')
-abstract class Manager implements GetlRepository {
+abstract class Manager implements GetlRepository, ObjectTags {
 	Manager() {
 		registerParameters()
 
@@ -58,7 +59,7 @@ abstract class Manager implements GetlRepository {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles', 'useDateSizeInBuildList',
-				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
+				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory', 'objectTags',
 				 'attributes', 'story', 'storyName', 'description', 'config', 'readOnlyMode', 'isTempLocalDirectory'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder', 'processModified', 'useDateSizeInBuildList',
@@ -90,6 +91,7 @@ abstract class Manager implements GetlRepository {
 
 		params.rootPath = '/'
 		params.attributes = new HashMap<String, Object>()
+		params.objectTags = new ArrayList<String>()
 		params.fileListSortOrder = [] as List<String>
 	}
 
@@ -391,6 +393,17 @@ abstract class Manager implements GetlRepository {
 			return null
 
 		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
+	}
+
+	/** Object tags */
+	@Override
+	List<String> getObjectTags() { params.objectTags as List<String> }
+	/** Object tags */
+	@Override
+	void setObjectTags(List<String> value) {
+		objectTags.clear()
+		if (value != null)
+			objectTags.addAll(value)
 	}
 
 	/**

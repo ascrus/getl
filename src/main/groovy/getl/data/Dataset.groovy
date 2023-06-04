@@ -14,6 +14,7 @@ import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
+import getl.lang.sub.ObjectTags
 import getl.proc.sub.ExecutorThread
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
@@ -32,7 +33,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @SuppressWarnings('unused')
-class Dataset implements GetlRepository, WithConnection {
+class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	Dataset () {
 		registerParameters()
 		initParams()
@@ -86,6 +87,7 @@ class Dataset implements GetlRepository, WithConnection {
 		params.clear()
 
 		params.attributes = new HashMap<String, Object>()
+		params.objectTags = new ArrayList<String>()
 
 		def dirs = new HashMap<String, Object>()
 		params.directive = dirs
@@ -250,6 +252,16 @@ class Dataset implements GetlRepository, WithConnection {
 		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
 	}
 
+	/** Object tags */
+	@Override
+	List<String> getObjectTags() { params.objectTags as List<String> }
+	/** Object tags */
+	@Override
+	void setObjectTags(List<String> value) {
+		objectTags.clear()
+		if (value != null)
+			objectTags.addAll(value)
+	}
 
 	/** Description of dataset */
 	@Override

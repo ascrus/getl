@@ -13,6 +13,8 @@ import java.sql.Time
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.regex.Pattern
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
 /**
  * String functions
@@ -841,5 +843,47 @@ class StringUtils {
 	 */
 	static String NullIsEmpty(String value) {
 		return (value != null && value.length() == 0)?null:value
+	}
+
+	/** Compress string as GZIP to byte array */
+	static byte[] GZip(final String str) {
+		if ((str == null) || (str.length() == 0))
+			return null
+
+		ByteArrayOutputStream obj = new ByteArrayOutputStream()
+		try (def gzip = new GZIPOutputStream(obj)) {
+			gzip.write( str.getBytes("UTF-8"))
+			gzip.flush()
+		}
+
+		return obj.toByteArray()
+	}
+
+	/** Decompress byte array as GZIP to string */
+	static String UnGZip(final byte[] compressed) {
+		final StringBuilder outStr = new StringBuilder()
+		if ((compressed == null) || (compressed.length == 0))
+			return null
+
+		if (IsGzCompressed(compressed)) {
+			final GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(compressed))
+			try (def bufferedReader = new BufferedReader(new InputStreamReader(gis, "UTF-8"))) {
+				String line
+				while ((line = bufferedReader.readLine()) != null) {
+					outStr.append(line)
+					outStr.append('\n')
+				}
+			}
+		}
+		else {
+			outStr.append(compressed)
+		}
+
+		return outStr.toString()
+	}
+
+	/** Check what array byte is string GZ compressed*/
+	static boolean IsGzCompressed(final byte[] compressed) {
+		return (compressed[0] == (byte)(GZIPInputStream.GZIP_MAGIC)) && (compressed[1] == (byte)(GZIPInputStream.GZIP_MAGIC >> 8))
 	}
 }

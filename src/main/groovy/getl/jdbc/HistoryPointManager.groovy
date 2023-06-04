@@ -11,6 +11,7 @@ import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
+import getl.lang.sub.ObjectTags
 import getl.proc.Flow
 import getl.utils.CloneUtils
 import getl.utils.DateUtils
@@ -27,7 +28,7 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
-class HistoryPointManager implements GetlRepository {
+class HistoryPointManager implements GetlRepository, ObjectTags {
 	HistoryPointManager() {
 		initParams()
 	}
@@ -36,6 +37,7 @@ class HistoryPointManager implements GetlRepository {
 	protected void initParams() {
 		params.clear()
 		params.attributes = new HashMap<String, Object>()
+		params.objectTags = new ArrayList<String>()
 	}
 
 	/**
@@ -235,6 +237,17 @@ class HistoryPointManager implements GetlRepository {
 			return null
 
 		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
+	}
+
+	/** Object tags */
+	@Override
+	List<String> getObjectTags() { params.objectTags as List<String> }
+	/** Object tags */
+	@Override
+	void setObjectTags(List<String> value) {
+		objectTags.clear()
+		if (value != null)
+			objectTags.addAll(value)
 	}
 
 	/** Description of manager */

@@ -13,6 +13,7 @@ import getl.jdbc.opts.SequenceCreateSpec
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
+import getl.lang.sub.ObjectTags
 import getl.utils.CloneUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
@@ -26,7 +27,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Sequence implements GetlRepository, WithConnection {
+class Sequence implements GetlRepository, WithConnection, ObjectTags {
 	Sequence() {
 		initParams()
 	}
@@ -36,6 +37,7 @@ class Sequence implements GetlRepository, WithConnection {
 		params.clear()
 
 		params.attributes = new HashMap<String, Object>()
+		params.objectTags = new ArrayList<String>()
 	}
 
 	/**
@@ -92,6 +94,17 @@ class Sequence implements GetlRepository, WithConnection {
 			return null
 
 		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
+	}
+
+	/** Object tags */
+	@Override
+	List<String> getObjectTags() { params.objectTags as List<String> }
+	/** Object tags */
+	@Override
+	void setObjectTags(List<String> value) {
+		objectTags.clear()
+		if (value != null)
+			objectTags.addAll(value)
 	}
 
 	/** System parameters */

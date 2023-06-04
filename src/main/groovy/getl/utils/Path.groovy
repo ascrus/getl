@@ -926,6 +926,9 @@ class Path implements GetlRepository {
 		if (!vars.containsKey(varName))
 			throw new ExceptionGETL("Variable ${varName} not found in filepath mask [$maskStr}]!")
 
+		if (value == null)
+			return 'none'
+
 		def v = vars.get(varName) as Map<String, Object>
 		def varType = v.type
 		Field.Type type

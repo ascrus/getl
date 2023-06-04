@@ -297,4 +297,11 @@ SET SELECT * FROM table; -- test
         def result = StringUtils.Decrypt(encrypt, password)
         assertEquals(text, result)
     }
+
+    @Test
+    void testGzCompress() {
+        def text = 'Original text from testing method\ngzip and ungzip\n'
+        def b = StringUtils.GZip(text)
+        assertEquals(text, StringUtils.UnGZip(b))
+    }
 }

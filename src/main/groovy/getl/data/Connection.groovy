@@ -6,17 +6,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.exception.ConfigError
 import getl.exception.ConnectionError
-import getl.exception.DatasetError
 import getl.exception.IncorrectParameterError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.ObjectTags
 import getl.utils.*
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-
 import java.nio.charset.Charset
 import java.nio.charset.IllegalCharsetNameException
 import java.nio.charset.UnsupportedCharsetException
@@ -26,7 +25,7 @@ import java.nio.charset.UnsupportedCharsetException
  * @author Alexsey Konstantinov
  *
  */
-class Connection implements GetlRepository {
+class Connection implements GetlRepository, ObjectTags {
 	/** Create new connection with class of driver and parameters */
 	Connection(Map parameters = null) {
 		registerParameters()
@@ -72,6 +71,7 @@ class Connection implements GetlRepository {
 		params.clear()
 
 		params.attributes = new HashMap<String, Object>()
+		params.objectTags = new ArrayList<String>()
 	}
 
 	/** Validation parameters */
@@ -85,7 +85,7 @@ class Connection implements GetlRepository {
 	protected void registerParameters() {
 		methodParams.register('Super',
 				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
-				 'timeoutConnectionAttempts', 'attributes', 'description', 'logWriteToConsole'])
+				 'timeoutConnectionAttempts', 'attributes', 'description', 'logWriteToConsole', 'objectTags'])
 		methodParams.register('retrieveObjects', [])
 		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
@@ -182,6 +182,17 @@ class Connection implements GetlRepository {
 			return null
 
 		return StringUtils.EvalMacroString(val.toString(), vars?:[:], true)
+	}
+
+	/** Object tags */
+	@Override
+	List<String> getObjectTags() { params.objectTags as List<String> }
+	/** Object tags */
+	@Override
+	void setObjectTags(List<String> value) {
+		objectTags.clear()
+		if (value != null)
+			objectTags.addAll(value)
 	}
 
 	/** Create a new dataset object for the current connection */

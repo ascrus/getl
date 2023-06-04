@@ -13,6 +13,7 @@ import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.ObjectTags
 import getl.lang.sub.ParseObjectName
 import getl.utils.DateUtils
 import getl.utils.MapUtils
@@ -32,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 @SuppressWarnings(['UnnecessaryQualifiedReference', 'unused'])
 @CompileStatic
 @InheritConstructors
-class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
+class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository, ObjectTags {
     private String _dslNameObject
     @JsonIgnore
     @Override
@@ -75,6 +76,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     @Override
     protected void initSpec() {
         super.initSpec()
+
+        params.objectTags = new ArrayList<String>()
 
         if (params.modelVars == null)
             params.modelVars = new LinkedHashMap<String, Object>()
@@ -125,6 +128,17 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /** Model objects */
     @Synchronized('synchObjects')
     List<BaseSpec> listModelObjects() { params.usedObjects as List<BaseSpec> }
+
+    /** Object tags */
+    @Override
+    List<String> getObjectTags() { params.objectTags as List<String> }
+    /** Object tags */
+    @Override
+    void setObjectTags(List<String> value) {
+        objectTags.clear()
+        if (value != null)
+            objectTags.addAll(value)
+    }
 
     private final Object synchVars = new Object()
 

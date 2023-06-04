@@ -1481,9 +1481,13 @@ class FileUtils {
 				return ResourceFileName(path)
 		}
 
-		def p = ['#TEMPDIR': SystemTempDir()] + Config.SystemProps()
-		if (getl != null && getl.repositoryStorageManager.storagePath != null)
-			p.put('#REPOSITORY', getl.repositoryStorageManager.storagePath())
+		def p = (['#TEMPDIR': SystemTempDir()] + Config.SystemProps()) as Map<String, Object>
+		if (getl != null) {
+			if (getl.repositoryStorageManager.storagePath != null)
+				p.put('#REPOSITORY', getl.repositoryStorageManager.storagePath())
+
+			p.putAll(getl.getlSystemProperties)
+		}
 		return StringUtils.EvalMacroString(path, p, errorWhenUndefined)
 	}
 
