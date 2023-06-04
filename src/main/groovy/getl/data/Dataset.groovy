@@ -346,17 +346,31 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	/**
 	 * Add list of fields
 	 * @param fields field description list
+	 * @param index position in list (when null then added to last position)
 	 */
-	void addFields(List<Field> fields) {
+	void addFields(List<Field> fields, Integer index = null) {
 		def l = getField()
-		fields.each { Field f -> l << f.copy() }
+		fields.each { Field f ->
+			def n = f.copy()
+			if (index == null)
+				l.add(n)
+			else {
+				l.add(index, n)
+				index++
+			}
+		}
 	}
 
 	/**
 	 * Add field to list of fields dataset
+	 * @param added added field
+	 * @param index position in list (when null then added to last position)
 	 */
-	void addField(Field added) {
-		getField().add(added)
+	void addField(Field added, Integer index = null) {
+		if (index == null)
+			getField().add(added)
+		else
+			getField().add(index, added)
 	}
 	
 	/** Auto load schema with meta file */

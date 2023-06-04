@@ -207,8 +207,11 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         s.each { name ->
             d.addField Field.New(name.replace('"', ''))
         }
+        s.add('LAST')
+        d.addField Field.New('LAST'), 4
+
         def f = GenerationUtils.Fields2List(d)
-        assertTrue(s.equals(f))
+        assertEquals(s, f)
     }
 
     @Test

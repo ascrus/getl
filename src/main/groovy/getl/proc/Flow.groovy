@@ -1224,7 +1224,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	static protected void PrepareBulkDsFields(Dataset dataset, TFSDataset bulkDS, Map<String, String> map) {
 		dataset.field.each {f ->
 			if (map.containsKey(f.name.toLowerCase()))
-				bulkDS.addField Field.New(f.name) { type = f.type; length = f.length; precision = f.precision }
+				bulkDS.addField(Field.New(f.name) { type = f.type; length = f.length; precision = f.precision })
 		}
 	}
 
