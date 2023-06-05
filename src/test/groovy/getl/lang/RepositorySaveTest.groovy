@@ -39,7 +39,10 @@ import groovy.transform.Field
 void connections() {
     cloneConnection('test:con', con)
     assert embeddedConnection('test:con').password == repositoryStorageManager.encryptText('12345')
-    embeddedConnection('test:con').attributes.a1 = 1
+    embeddedConnection('test:con'){
+        attributes.a1 = 1
+        objectTags = ['test']
+    }
 }
 
 @SaveToRepository(type = 'Datasets', retrieve = true, mask = 'test:*')
@@ -47,11 +50,15 @@ void datasets() {
     table.create()
     // added from connection
     addTables(embeddedConnection('test:con'), 'public', 'test')
-    embeddedTable('test:table1').attributes.a1 = 1
+    embeddedTable('test:table1') {
+        attributes.a1 = 1
+        objectTags = ['test']
+    }
 
     embeddedTable('test:table_points', true) {
         useConnection embeddedConnection('test:con')
         HistoryPointManager.prepareTable(it)
+        objectTags = ['test', 'sys']
     }
 }
 
@@ -59,6 +66,7 @@ void datasets() {
 void filemanagers1() {
     files('test:file1', true) {
         rootPath = '/test1'
+        objectTags = ['test']
     }
 }
 
@@ -72,6 +80,7 @@ void filemanagers_ftp() {
         assert password == repositoryStorageManager.encryptText('12345')
         storedLogins.user2 = '12345'
         assert storedLogins.user2 == repositoryStorageManager.encryptText('12345')
+        objectTags = ['test']
     }
 }
 
@@ -79,6 +88,7 @@ void filemanagers_ftp() {
 void filemanagers2_dev() {
     files('test:file2', true) {
         rootPath = '/test2.dev'
+        objectTags = ['test']
     }
 }
 
@@ -86,6 +96,7 @@ void filemanagers2_dev() {
 void filemanagers2_prod() {
     files('test:file2', true) {
         rootPath = '/test2.prod'
+        objectTags = ['test']
     }
 }
 
@@ -96,6 +107,7 @@ void historypoints() {
         sourceName = 'source1'
         sourceType = identitySourceType
         saveMethod = mergeSave
+        objectTags = ['test']
     }
 }
 
@@ -104,6 +116,7 @@ void sequences() {
     sequence('test:seq', true) {
         useConnection embeddedConnection('test:con')
         name = 'public.s_sequence'
+        objectTags = ['test']
     }
 }
 
@@ -119,12 +132,15 @@ void setOfTables() {
             modelAttrs.a1 = 3
             modelAttrs.a2 = [a:1, b:2, c:3]
         }
+
+        objectTags = ['test', 'elt']
     }
 }
 
 @SaveToRepository(type = 'Workflows')
 void workflows() {
     models.workflow('test:workflow', true) {
+        objectTags = ['test', 'workflow']
         start('Start 1') {
             countThreads = 2
 

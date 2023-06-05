@@ -1,3 +1,4 @@
+//file:noinspection SpellCheckingInspection
 package getl.lang
 
 import getl.csv.CSVDataset
@@ -11,8 +12,11 @@ import getl.jdbc.TableDataset
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
+import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
 import getl.models.sub.RepositoryMonitorRules
+import getl.models.sub.RepositorySetOfTables
+import getl.models.sub.RepositoryWorkflows
 import getl.test.Config
 import getl.test.TestDsl
 import getl.tfs.TDS
@@ -939,12 +943,23 @@ class RepositoryTest extends TestDsl {
                     storagePath = rootPath + '/repository.test'
                     storagePassword = '1234567890123456'
                     savingStoryDataset = csvHistory
+                    autoSaveRepositoryTags = true
                 }
                 createDir 'repository.test'
             }
 
             try {
                 callScript RepositorySaveTest
+
+                repositoryStorageManager {
+                    assertEquals(['test'], repository(RepositoryConnections.name).repositoryTags)
+                    assertEquals(['test', 'sys'], repository(RepositoryDatasets.name).repositoryTags)
+                    assertEquals(['test'], repository(RepositoryFilemanagers.name).repositoryTags)
+                    assertEquals(['test'], repository(RepositorySequences.name).repositoryTags)
+                    assertEquals(['test'], repository(RepositoryHistorypoints.name).repositoryTags)
+                    assertEquals(['test', 'elt'], repository(RepositorySetOfTables.name).repositoryTags)
+                    assertEquals(['test', 'workflow'], repository(RepositoryWorkflows.name).repositoryTags)
+                }
 
                 assertEquals(12, csvHistory.countRow())
                 //csvHistory.eachRow { println it }
@@ -964,9 +979,25 @@ class RepositoryTest extends TestDsl {
                 }
 
                 repositoryStorageManager {
-                    clearRepositories()
+                    clearRepositories(null, true)
+                    assertTrue(repository(RepositoryConnections.name).repositoryTags.isEmpty())
+                    assertTrue(repository(RepositoryDatasets.name).repositoryTags.isEmpty())
+                    assertTrue(repository(RepositoryFilemanagers.name).repositoryTags.isEmpty())
+                    assertTrue(repository(RepositorySequences.name).repositoryTags.isEmpty())
+                    assertTrue(repository(RepositoryHistorypoints.name).repositoryTags.isEmpty())
+                    assertTrue(repository(RepositorySetOfTables.name).repositoryTags.isEmpty())
+                    assertTrue(repository(RepositoryWorkflows.name).repositoryTags.isEmpty())
+
                     loadRepositories()
+                    assertEquals(['test'], repository(RepositoryConnections.name).repositoryTags)
+                    assertEquals(['test', 'sys'], repository(RepositoryDatasets.name).repositoryTags)
+                    assertEquals(['test'], repository(RepositoryFilemanagers.name).repositoryTags)
+                    assertEquals(['test'], repository(RepositorySequences.name).repositoryTags)
+                    assertEquals(['test'], repository(RepositoryHistorypoints.name).repositoryTags)
+                    assertEquals(['test', 'elt'], repository(RepositorySetOfTables.name).repositoryTags)
+                    assertEquals(['test', 'workflow'], repository(RepositoryWorkflows.name).repositoryTags)
                 }
+
                 def con = embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals(1, attributes.a1)
@@ -1333,7 +1364,7 @@ fileName = 'test1.csv'
                 assertEquals(4, repository(RepositoryConnections).countObjects())
             }
 
-            assertEquals(8, listDatasets().size)
+            assertEquals(8, listDatasets().size())
             repositoryStorageManager {
                 assertEquals(8, repository(RepositoryDatasets).countObjects())
                 assertEquals(8, repository(RepositoryDatasets).countLazyLoadObjects())

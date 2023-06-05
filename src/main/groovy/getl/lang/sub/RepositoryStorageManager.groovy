@@ -23,6 +23,7 @@ import getl.models.sub.RepositoryWorkflows
 import getl.proc.Executor
 import getl.proc.Flow
 import getl.utils.BoolUtils
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
@@ -77,11 +78,11 @@ class RepositoryStorageManager {
         return currentStoragePath
     }
 
-    /** Autoload objects from the repository when accessing them */
+    /** Auto load objects from the repository when accessing them */
     private Boolean autoLoadFromStorage = true
-    /** Autoload objects from the repository when accessing them */
+    /** Auto load objects from the repository when accessing them */
     Boolean getAutoLoadFromStorage() { autoLoadFromStorage }
-    /** Autoload objects from the repository when accessing them */
+    /** Auto load objects from the repository when accessing them */
     void setAutoLoadFromStorage(Boolean value) { autoLoadFromStorage = value }
 
     /** Search the repository when retrieving object lists */
@@ -90,6 +91,13 @@ class RepositoryStorageManager {
     Boolean getAutoLoadForList() { autoLoadForList }
     /** Search the repository when retrieving object lists */
     void setAutoLoadForList(Boolean value) { autoLoadForList = value }
+
+    /** Auto save object tags to repository */
+    private Boolean autoSaveRepositoryTags = false
+    /** Auto save object tags to repository */
+    Boolean getAutoSaveRepositoryTags() { autoSaveRepositoryTags }
+    /** Auto save object tags to repository */
+    void setAutoSaveRepositoryTags(Boolean value) { autoSaveRepositoryTags = value }
 
     /** Additional search resource path */
     private final List<String> otherResourcePaths = [] as List<String>
@@ -314,10 +322,16 @@ class RepositoryStorageManager {
     /**
      * Clear objects in all Getl repositories
      * @param mask object name mask
+     * @param clearConfig clear repository configuration (default false)
      */
-    void clearRepositories(String mask = null) {
+    void clearRepositories(String mask = null, Boolean clearConfig = false) {
         listRepositories.each { name ->
-            repository(name).unregister(mask)
+            def rep = repository(name)
+            if (clearConfig) {
+                rep.description = null
+                rep.repositoryTags.clear()
+            }
+            rep.unregister(mask)
         }
     }
 
@@ -399,14 +413,29 @@ class RepositoryStorageManager {
         env = envFromRep(repository, env)
         def repFilePath = repositoryStoragePath(repository, env)
         FileUtils.ValidPath(repFilePath)
+        def tags = [] as List<String>
         repository.processObjects(mask, null, false) { name ->
             def objName = ParseObjectName.Parse(name, false)
             if (objName.groupName == null && objName.objectName[0] == '#')
                 return
 
-            if (saveObjectToStorage(repository, objName, env, changeTime))
+            if (saveObjectToStorage(repository, objName, env, changeTime)) {
                 res++
+                if (this.autoSaveRepositoryTags) {
+                    def obj = repository.find(objName.name, false) as ObjectTags
+                    def addedTags = obj.objectTags - tags
+                    tags.addAll(addedTags)
+                }
+            }
         }
+        if (this.autoSaveRepositoryTags && !tags.isEmpty()) {
+            synchronized (repository) {
+                def addedTags = tags - repository.repositoryTags
+                repository.repositoryTags.addAll(addedTags)
+                saveRepositoryConfig(repositoryName)
+            }
+        }
+
         return res
     }
 
@@ -522,7 +551,16 @@ class RepositoryStorageManager {
 
         def repository = repository(repositoryName)
         def objName = ParseObjectName.Parse(name, false)
-        saveObjectToStorage(repository, objName, env)
+        if (saveObjectToStorage(repository, objName, env) && autoSaveRepositoryTags) {
+            synchronized (repository) {
+                def obj = repository.find(objName.name, false) as ObjectTags
+                def addedTags = obj.objectTags - repository.repositoryTags
+                if (!addedTags.isEmpty()) {
+                    repository.repositoryTags.addAll(addedTags)
+                    saveRepositoryConfig(repositoryName)
+                }
+            }
+        }
     }
 
     /**
@@ -707,6 +745,10 @@ class RepositoryStorageManager {
         env = envFromRep(repository, env)
         def repFilePath = repositoryPath(repository, env)
         def isEnvConfig = repository.needEnvConfig()
+
+        // Load repository configuration
+        if (autoSaveRepositoryTags)
+            loadRepositoryConfig(repositoryName)
 
         TableDataset dirs
         Long countObjects = 0
@@ -924,6 +966,79 @@ class RepositoryStorageManager {
     }
 
     /**
+     * Save repository configuration
+     * @param repositoryName repository name
+     */
+    void saveRepositoryConfig(String repositoryName) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
+        def rep = repository(repositoryName)
+        def fileName = repositoryFilePathInStorage(rep)
+
+        def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName, otherResourcePaths):new File(fileName)
+        if (file == null)
+            throw new DslError(dslCreator, '#dsl.repository.invalid_config_file', [file: fileName, repository: repositoryName])
+
+        synchronized (rep) {
+            def map = [:] as Map<String, Object>
+            if (rep.description != null)
+                map.description = rep.description
+            if (!rep.repositoryTags.isEmpty())
+                map.tags = rep.repositoryTags
+
+            ConfigSlurper.SaveConfigFile(data: map, file: new File(fileName), codePage: 'utf-8', convertVars: false,
+                    trimMap: true, smartWrite: true, owner: dslCreator)
+        }
+    }
+
+    /**
+     * Save repository configuration
+     * @param repositoryClass repository class
+     */
+    void saveRepositoryConfig(Class<RepositoryObjects> repositoryClass) {
+        if (repositoryClass == null)
+            throw new NullPointerException('Repository class is null!')
+
+        saveRepositoryConfig(repositoryClass.name)
+    }
+
+    /**
+     * Load repository configuration
+     * @param repositoryName repository name
+     */
+    void loadRepositoryConfig(String repositoryName) {
+        if (repositoryName == null)
+            throw new NullPointerException('Repository name is null!')
+
+        def rep = repository(repositoryName)
+        def fileName = repositoryFilePathInStorage(rep)
+
+        def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName, otherResourcePaths):new File(fileName)
+        if (file == null || !file.exists())
+            return
+
+        synchronized (rep) {
+            def map = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8', configVars: this.dslCreator.configVars, owner: dslCreator)
+            if (map.containsKey('description'))
+                rep.description = ConvertUtils.Object2String(map.description)
+            if (map.containsKey('tags'))
+                rep.repositoryTags = ConvertUtils.Object2List(map.tags)
+        }
+    }
+
+    /**
+     * Load repository configuration
+     * @param repositoryClass repository class
+     */
+    void loadRepositoryConfig(Class<RepositoryObjects> repositoryClass) {
+        if (repositoryClass == null)
+            throw new NullPointerException('Repository class is null!')
+
+        loadRepositoryConfig(repositoryClass.name)
+    }
+
+    /**
      * Load object to repository from storage
      * @param repositoryName repository name
      * @param name object name
@@ -1012,6 +1127,27 @@ class RepositoryStorageManager {
             env = env.trim().toLowerCase()
 
         return env
+    }
+
+    /**
+     * The file name in the storage for the repository system configuration
+     * @param repository repository
+     * @return file path
+     */
+    protected String repositoryFilePathInStorage(RepositoryObjects repository) {
+        if (repository == null)
+            throw new NullPointerException('Repository is null!')
+
+        return repositoryStoragePath(repository, 'all') + '/getl_repository.sys-conf'
+    }
+
+    /**
+     * The file name in the storage for the repository system configuration
+     * @param repositoryName repository name
+     * @return file path
+     */
+    protected String repositoryFilePath(String repositoryName) {
+        return repositoryFilePathInStorage(repository(repositoryName))
     }
 
     /**

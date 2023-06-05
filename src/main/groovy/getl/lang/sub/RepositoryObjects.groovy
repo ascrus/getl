@@ -694,4 +694,15 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     String getDescription() { this.description as String }
     @Override
     void setDescription(String value) { this.description = value }
+
+    /** Repository tags */
+    private final List<String> repositoryTags = [] as List<String>
+    /** Repository tags */
+    List<String> getRepositoryTags() { this.repositoryTags }
+    /** Repository tags */
+    void setRepositoryTags(List<String> value) {
+        this.repositoryTags.clear()
+        if (value != null)
+            this.repositoryTags.addAll(value)
+    }
 }

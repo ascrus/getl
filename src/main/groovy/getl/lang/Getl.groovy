@@ -573,6 +573,11 @@ Examples:
                         if (en.autoLoadForList != null)
                             rm.autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
 
+                        if (en.autoSaveRepositoryTags != null)
+                            rm.autoSaveRepositoryTags = BoolUtils.IsValue(en.autoSaveRepositoryTags)
+                        if (rm.autoSaveRepositoryTags)
+                            logFine('Save object tags to repository configuration enabled')
+
                         if (en.savingStoryDataset != null) {
                             def storyDatasetFilePath = new File(FileUtils.TransformFilePath(en.savingStoryDataset as String, this)).canonicalPath
                             def storyDatasetFile = new File(storyDatasetFilePath)
