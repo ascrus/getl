@@ -30,6 +30,9 @@ class FlowCopyChild {
     /** Map columns */
     public Map<String, String> map
 
+    /** Calculated columns */
+    public List<String> calcFields
+
     /** Source dataset */
     public Dataset linkSource
 
@@ -108,7 +111,7 @@ class FlowCopyChild {
 
                 if (calcCode != null) {
                     try {
-                        calcCode.processRow(inRow, outRow, processVars)
+                        calcCode.processRow(inRow, outRow)
                     }
                     catch (Exception e) {
                         flow.logger.severe("Virtual column calc code error for child \"$childName\"", e)

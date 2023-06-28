@@ -1,5 +1,6 @@
 //file:noinspection unused
 //file:noinspection DuplicatedCode
+//file:noinspection RegExpRedundantEscape
 package getl.proc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -338,6 +339,15 @@ class Flow {
 		return scriptMap
 	}
 
+	// Calculated field
+	public final Pattern patternCalculated = Pattern.compile('^\\$\\{(.+)\\}$')
+	// Virtual field
+	public final Pattern patternVirtual = Pattern.compile('^([*]+)(.+)')
+	// Numeric constant
+	public final Pattern patternNumeric = Pattern.compile('^([+-]*\\d+[.]?\\d*)$')
+	// String constant
+	public final Pattern patternString = Pattern.compile('^(\'.*\')$')
+
 	/**
 	 * <p>Generate code for calculating receiver fields based on source fields and variables according to the specified mapping</p>
 	 * <p>To create virtual fields in the source, precede the field name with an asterisk. A virtual field can only refer to an expression.
@@ -354,7 +364,7 @@ class Flow {
 	 * @param sb generated script
 	 * @return calculation code
 	 */
-	private CalcMapVarsScript generateCalculateMapScript(Map<String, String> map, String cacheName, StringBuilder sb) {
+	private CalcMapVarsScript generateCalculateMapScript(Map<String, String> map, String cacheName, List<String> calcFields, StringBuilder sb) {
 		if (map == null)
 			return null
 
@@ -367,21 +377,9 @@ class Flow {
 		sb.append """import getl.utils.*
 class {GETL_FLOW_CALC_CLASS_NAME} extends getl.utils.sub.CalcMapVarsScript {
 @Override
-void processRow(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) {
-  if (vars == null) vars = new HashMap<String, Object>()
+void processRow(Map<String, Object> source, Map<String, Object> dest) {
+  	def vars = calcVars
 """
-
-		//noinspection RegExpRedundantEscape
-		// Calculated field
-		//noinspection RegExpRedundantEscape
-		def pCalculated = Pattern.compile('^\\$\\{(.+)\\}$')
-		// Virtual field
-		def pVirtual = Pattern.compile('^([*]+)(.+)')
-		// Numeric constant
-		//noinspection RegExpSimplifiable
-		def pNumeric = Pattern.compile('^([+-]*\\d+[.]{0,1}\\d*)$')
-		// String constant
-		def pString = Pattern.compile('^(\'.*\')$')
 
 		def removeKeys = [] as List<String>
 		def clearKeys = [] as List<String>
@@ -391,22 +389,22 @@ void processRow(Map<String, Object> source, Map<String, Object> dest, Map<String
 		map.each { destName, sourceName ->
 			String destValue = null
 			if (sourceName != null && sourceName.length() > 0) {
-				def mNumeric = pNumeric.matcher(sourceName)
+				def mNumeric = patternNumeric.matcher(sourceName)
 				if (mNumeric.find())
 					destValue = mNumeric.group(1)
 				else {
-					def mString = pString.matcher(sourceName)
+					def mString = patternString.matcher(sourceName)
 					if (mString.find())
 						destValue = mString.group(1)
 					else {
-						def mCalculated = pCalculated.matcher(sourceName)
+						def mCalculated = patternCalculated.matcher(sourceName)
 						if (mCalculated.find())
 							destValue = mCalculated.group(1)
 					}
 				}
 			}
 
-			def mVirtual = pVirtual.matcher(destName)
+			def mVirtual = patternVirtual.matcher(destName)
 			def isVirtual = mVirtual.find()
 			def virtualLevel = (isVirtual)?mVirtual.group(1).length():null
 			def virtualName = (isVirtual)?mVirtual.group(2):null
@@ -475,6 +473,9 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				res = useScript(classGenerated) as CalcMapVarsScript
 			}
 		res.calcVars.putAll(calcVars)
+
+		calcFields.clear()
+		calcFields.addAll(clearKeys)
 
 		return res
 	}
@@ -613,11 +614,12 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				throw new ExceptionGETL("The children dataset \"$name\" does not support writing data!")
 
 			def childMap = (CloneUtils.CloneMap(childParams.map as Map)?:[:]) as Map<String, String>
+			def childCalcFields = [] as List<String>
 			CalcMapVarsScript childCalcCode = null
 			String childScriptExpr = null
 			if (!childMap.isEmpty()) {
 				def calcMapScriptCode = new StringBuilder()
-				childCalcCode = generateCalculateMapScript(childMap, cacheName, calcMapScriptCode)
+				childCalcCode = generateCalculateMapScript(childMap, cacheName, childCalcFields, calcMapScriptCode)
 				if (childCalcCode != null)
 					childScriptExpr = calcMapScriptCode.toString()
 			}
@@ -648,7 +650,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 			def childDone = childParams.onDone as Closure
 
 			def child = new FlowCopyChild(flow: this, flowCacheName: cacheName, dataset: dataset, childName: name, processVars: processVars, map: childMap,
-					linkSource: linkSource, linkField: linkField?.toLowerCase(), process: process,
+					calcFields: childCalcFields, linkSource: linkSource, linkField: linkField?.toLowerCase(), process: process,
 					calcCode: childCalcCode, scriptExpr: childScriptExpr, writeSynch: writeSynch, datasetParams: datasetParams,
 					autoTran: autoTranChild, onInit: childInit, onDone: childDone)
 			childs.put(name, child)
@@ -675,13 +677,16 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 
 		Map<String, String> map = CloneUtils.CloneMap(params.map as Map) as Map<String, String>
+		def calcFields = [] as List<String>
         CalcMapVarsScript calcCode = null
 		scriptExpr = null
 		if (map != null && !map.isEmpty()) {
 			def calcMapScriptCode = new StringBuilder()
-			calcCode = generateCalculateMapScript(map, cacheName, calcMapScriptCode)
-			if (calcCode != null)
+			calcCode = generateCalculateMapScript(map, cacheName, calcFields, calcMapScriptCode)
+			if (calcCode != null) {
+				calcCode.calcVars.putAll(processVars)
 				scriptExpr = calcMapScriptCode.toString()
+			}
 		}
 		else
 			map = new HashMap<String, String>()
@@ -813,7 +818,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 			if (prepareSource != null)
 				result = prepareSource.call() as List<String>
 
-			mapRules = PrepareMap(source, (inheritFields)?source:dest, map, copyOnlyMatching, autoMap, excludeFields)
+			mapRules = prepareMap(source, (inheritFields)?source:dest, map, calcFields, copyOnlyMatching, autoMap, excludeFields)
 			
 			if (inheritFields)
 				assignFieldToTemp(source, writer, mapRules)
@@ -829,7 +834,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 						throw new ExceptionGETL("In the child dataset \"$name\", the link field \"${child.linkField}\" is specified, " +
 								"which is not in the source \"$source\"!")
 
-					child.mapRules = PrepareMap(child.linkSource, child.writer, child.map, copyOnlyMatching, autoMap,
+					child.mapRules = prepareMap(child.linkSource, child.writer, child.map, child.calcFields, copyOnlyMatching, autoMap,
 							[]/*TODO: добавит поддержку исключаемых полей для дочерних */, source)
 				}
 
@@ -929,7 +934,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 
 					if (calcCode != null) {
 						try {
-							calcCode.processRow(inRow, outRow, processVars)
+							calcCode.processRow(inRow, outRow)
 						}
 						catch (Exception e) {
 							isExprError = true
@@ -1155,8 +1160,9 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	 * @param excludeFields list of fields to exclude from the source
 	 * @return mapping result
 	 */
-	static protected Map<String, String> PrepareMap(Dataset source, Dataset dest, Map<String, String> map,
-										  Boolean copyOnlyMatching, Boolean autoMap, List<String> excludeFields, Dataset parentSource = null) {
+	@SuppressWarnings('GrMethodMayBeStatic')
+	protected Map<String, String> prepareMap(Dataset source, Dataset dest, Map<String, String> map, List<String> calcFields,
+													Boolean copyOnlyMatching, Boolean autoMap, List<String> excludeFields, Dataset parentSource = null) {
 		def res = new HashMap<String, String>()
 
 		if (autoMap) {
@@ -1177,10 +1183,14 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 			}
 		}
 		map.each {k , v ->
-			if (!copyOnlyMatching || v != null)
-				res.put(k.toLowerCase(), v)
-			else if (copyOnlyMatching && v == null && res.containsKey(k))
-				res.remove(k)
+			if ((!copyOnlyMatching || v != null) && !res.containsKey(k))
+				res.put(k, v)
+			else if (copyOnlyMatching && v == null) {
+				if (res.containsKey(k) && !(k in calcFields))
+					res.remove(k)
+				else if (!res.containsKey(k) && (k in calcFields))
+					res.put(k, v)
+			}
 		}
 
 		if (!copyOnlyMatching && autoMap) {

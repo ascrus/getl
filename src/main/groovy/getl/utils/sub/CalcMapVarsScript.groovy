@@ -10,8 +10,8 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class CalcMapVarsScript extends BaseUserCode {
     /** Mapping expressions of calculated variables */
-    public final Map<String, String> calcVars = [:] as Map<String, String>
+    public final Map<String, Object> calcVars = [:] as Map<String, Object>
 
     /** Process row and calculate extended field values */
-    void processRow(Map<String, Object> source, Map<String, Object> dest, Map<String, Object> vars) { }
+    void processRow(Map<String, Object> source, Map<String, Object> dest) { }
 }

@@ -445,7 +445,8 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         def source = [field1: 'test'] as Map<String, Object>
         def dest = [:] as Map<String, Object>
         def vars = [field3: 'TEST'] as Map<String, Object>
-        cl.processRow(source, dest, vars)
+        cl.calcVars.putAll(vars)
+        cl.processRow(source, dest)
         assertNull(dest.field1)
         assertEquals('TEST', source.field2)
         assertEquals('TEST!', source.field2_1)

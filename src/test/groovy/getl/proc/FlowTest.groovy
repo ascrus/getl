@@ -240,6 +240,7 @@ class FlowTest extends GetlDslTest {
                 field('_name') { isNull = false }
                 field('_dt') { type = datetimeFieldType; isNull = false }
                 field('_value') { type = numericFieldType; length = 12; precision = 2; isNull = false }
+                field('_param')
 
                 readOpts.isValid = true
             }
@@ -275,8 +276,14 @@ class FlowTest extends GetlDslTest {
             }
 
             file.drop()
+            file.tap {
+                field('_dt').name = 'dt'
+                field('_value').name = 'value'
+            }
             etl.copyRows(tab, file) {
-                map = [_id: 'id', '*new_name': '${source.name.toUpperCase()}', _name: '${source.new_name}', '*new_value': '${source.value * 100}']
+                copyOnlyMatching = true
+                processVars.param = 'test'
+                map = [_id: 'id', '*new_name': '${source.name.toUpperCase()}', _name: '${source.new_name}', '*new_value': '${source.value * 100}', _param: '${vars.param}']
                 copyRow { s, d ->
                     d._dt = s.dt
                     d._value = s.new_value
@@ -287,9 +294,10 @@ class FlowTest extends GetlDslTest {
                 i++
                 assertEquals(i, row._id)
                 assertEquals("TEST $i", row._name)
-                assertNotNull(row._dt)
-                assertNotNull(row._value)
-                assertEquals(row._id * 100000.00 + row._id, row._value)
+                assertNotNull(row.dt)
+                assertNotNull(row.value)
+                assertEquals(row._id, row._id)
+                assertEquals('test', row._param)
             }
 
             file.drop()
