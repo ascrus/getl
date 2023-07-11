@@ -308,4 +308,14 @@ class BaseUserCode extends Getl {
     static Boolean isQuery(Dataset ds) {
         return (ds instanceof QueryDataset)
     }
+
+    /** Minimum value */
+    static Number lesser(Number... values) {
+        NumericUtils.Lesser(values)
+    }
+
+    /** Maximum value */
+    static Number greatest(Number... values) {
+        NumericUtils.Greatest(values)
+    }
 }

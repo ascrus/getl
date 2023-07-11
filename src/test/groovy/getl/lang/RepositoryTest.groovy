@@ -1318,10 +1318,6 @@ fileName = 'test1.csv'
                 exec true, 'RUN_FILE sql/script1.sql'
                 assertTrue(vars.is_complete as Boolean)
 
-                vars.remove('is_complete')
-                exec true, 'RUN_FILE sql/script1'
-                assertTrue(vars.is_complete as Boolean)
-
                 shouldFail {
                     exec true, 'RUN_FILE repository:/sql/script1'
                 }

@@ -485,11 +485,13 @@ class RepositoryStorageManager {
         def fileName = objectFilePathInStorage(repository, objName, env)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
-        ConfigSlurper.SaveConfigFile(data: objParams, file: new File(fileName), codePage: 'utf-8', convertVars: false,
+        ConfigSlurper.SaveConfigFile(data: objParams, file: file, codePage: 'utf-8', convertVars: false,
                 trimMap: true, smartWrite: true, owner: dslCreator)
 
         if (!file.exists())
             throw new DslError(dslCreator, '#dsl.repository.fail_save_object', [repname: objName.name, repository: repository.getClass().name, file: file.path])
+
+        obj.dslSaveTime = new Date(file.lastModified())
 
         saveToStoryDataset(repository.getClass().name, objName.name, env, changeTime)
 
@@ -531,12 +533,14 @@ class RepositoryStorageManager {
         def objParams = repository.exportConfig(obj)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
-        ConfigSlurper.SaveConfigFile(data: objParams, file: new File(fileName), codePage: 'utf-8', convertVars: false,
+        ConfigSlurper.SaveConfigFile(data: objParams, file: file, codePage: 'utf-8', convertVars: false,
                 trimMap: true, smartWrite: true, owner: dslCreator)
 
         if (!file.exists())
             throw new DslError(dslCreator, '#dsl.repository.fail_save_object',
                     [repname: obj.dslNameObject?:'noname', repository: repository.getClass().name, file: file.path])
+
+        obj.dslSaveTime = new Date(file.lastModified())
     }
 
     /**
@@ -813,6 +817,7 @@ class RepositoryStorageManager {
                                     GetlRepository obj
                                     synchronized (repository.lockByObjectName(name)) {
                                         obj = repository.importConfig(objParams, null, name)
+                                        obj.dslSaveTime = new Date(file.lastModified())
                                         runWithLoadMode(true) {
                                             repository.registerObject(this.dslCreator, obj, name, true)
                                         }
@@ -894,6 +899,7 @@ class RepositoryStorageManager {
                 }
                 def isExists = (obj != null)
                 obj = repository.importConfig(objParams, obj, name)
+                obj.dslSaveTime = new Date(file.lastModified())
                 if (register) {
                     if (!isExists)
                         repository.registerObject(this.dslCreator, obj, name, true)
@@ -936,6 +942,7 @@ class RepositoryStorageManager {
         def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8', environment: env,
                 configVars: this.dslCreator.configVars, owner: dslCreator)
         obj = repository.importConfig(objParams, obj, obj?.dslNameObject)
+        obj.dslSaveTime = new Date(file.lastModified())
         repository.initRegisteredObject(obj)
     }
 

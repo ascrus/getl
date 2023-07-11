@@ -676,7 +676,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 
-		Map<String, String> map = CloneUtils.CloneMap(params.map as Map) as Map<String, String>
+		def map = MapUtils.MapToLower(CloneUtils.CloneMap(params.map as Map) as Map<String, Object>) as Map<String, String>
 		def calcFields = [] as List<String>
         CalcMapVarsScript calcCode = null
 		scriptExpr = null

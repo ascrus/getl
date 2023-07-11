@@ -34,6 +34,11 @@ interface GetlRepository extends Cloneable {
     /** Description of object */
     void setDescription(String value)
 
+    /** Time to save an object to disk in a repository */
+    Date getDslSaveTime()
+    /** Time to save an object to disk in a repository */
+    void setDslSaveTime(Date value)
+
     @Override
     Object clone()
 }

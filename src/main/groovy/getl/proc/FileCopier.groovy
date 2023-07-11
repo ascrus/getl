@@ -7,6 +7,7 @@ import getl.proc.sub.FileCopierBuild
 import getl.jdbc.TableDataset
 import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
+import getl.utils.BoolUtils
 import getl.utils.CloneUtils
 import getl.utils.Config
 import getl.utils.FileUtils
@@ -106,6 +107,11 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (renamePath != null && !renamePath.isCompile)
             renamePath.compile()
     }
+
+    /** Copy file with temporary extension and rename when done */
+    Boolean getHideWhenCopy() { BoolUtils.IsValue(params.hideWhenCopy) }
+    /** Copy file with temporary extension and rename when done */
+    void setHideWhenCopy(Boolean value) { params.hideWhenCopy = value }
 
     /** Run the script on the source before starting the process */
     String getDestinationBeforeScript() { params.destinationBeforeScript as String }
@@ -440,6 +446,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
                 def outpath = infile.get('_outpath_') as String
                 def outfilename = infile.get('localfilename') as String
+                def destFileName = outfilename + ((hideWhenCopy)?'.getltemp':'')
 
                 def outfile = new HashMap<String, Object>()
                 outfile.putAll(infile)
@@ -469,16 +476,21 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                     beforeCopy.call(infile, outfile)
 
                 Operation([src], numberAttempts, timeAttempts, this) { man ->
-                    man.download(infilename, outfilename)
+                    man.download(infilename, destFileName)
                 }
 
                 try {
                     Operation(dst, numberAttempts, timeAttempts, this) { man ->
-                        man.upload(outfilename)
+                        man.upload(destFileName)
+                    }
+                    if (hideWhenCopy) {
+                        Operation(dst, numberAttempts, timeAttempts, this) { man ->
+                            man.rename(destFileName, outfilename)
+                        }
                     }
                 }
                 finally {
-                    src.removeLocalFile(outfilename, false)
+                    src.removeLocalFile(destFileName, false)
                 }
 
                 if (afterCopy != null)

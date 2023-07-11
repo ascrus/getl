@@ -337,11 +337,18 @@ class Connection implements GetlRepository, ObjectTags {
 	@Override
 	void setDslRegistrationTime(Date value) { sysParams.dslRegistrationTime = value }
 
+	@JsonIgnore
+	@Override
+	Date getDslSaveTime() { sysParams.dslSaveTime as Date }
+	@Override
+	void setDslSaveTime(Date value) { sysParams.dslSaveTime = value }
+
 	@Override
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
 		sysParams.dslCreator = null
 		sysParams.dslRegistrationTime = null
+		sysParams.dslSaveTime = null
 	}
 
 	/** Current logger */

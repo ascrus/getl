@@ -256,6 +256,13 @@ class NumericUtils {
 		return res
 	}
 
+	/**
+	 * Parse text value to number
+	 * @param formatter decimal formatter
+	 * @param value text value
+	 * @param ignoreError ignore error and return null if error (default false)
+	 * @return number value
+	 */
 	static Number ParseString(DecimalFormat formatter, String value, Boolean ignoreError = false) {
 		if (value == null)
 			return null
@@ -275,5 +282,23 @@ class NumericUtils {
 		}
 
 		return res
+	}
+
+	/**
+	 * Return minimum number value of list
+	 * @param values list of values
+	 * @return minimum number value of list
+	 */
+	static Number Lesser(Number... values) {
+		return values.min()
+	}
+
+	/**
+	 * Return maximum number value of list
+	 * @param values list of values
+	 * @return minimum number value of list
+	 */
+	static Number Greatest(Number... values) {
+		return values.max()
 	}
 }

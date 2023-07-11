@@ -99,7 +99,7 @@ class CopyTest extends TestDsl {
     } as Path
 
     protected long copy(Manager src, Path srcMask, List<Manager> dst, Path dstMask, Path renameMask = null,
-                        boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true, boolean cacheStory = true) {
+                        boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true, boolean cacheStory = true, Boolean hideCopy = false) {
         long res = 0
         Dsl(this) {
             res = fileman.copier(src, dst) {
@@ -110,6 +110,7 @@ class CopyTest extends TestDsl {
                     renamePath = renameMask
 
                 it.inMemoryMode = inMemoryMode
+                it.hideWhenCopy = hideCopy
 
                 if (cacheStory)
                     cacheFilePath = "${this.workPath}/filecopiercache"
@@ -171,7 +172,7 @@ class CopyTest extends TestDsl {
             }
 
             def countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>,
-                    destMask, null, false, false, false, false)
+                    destMask, null, false, false, false, false, true)
             testCase {
                 assertEquals(81, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())

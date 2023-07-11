@@ -98,10 +98,64 @@ class PostgreSQLDriver extends JDBCDriver {
 	@SuppressWarnings('unused')
 	PostgreSQLConnection getCurrentPostgreSQLConnection() { connection as PostgreSQLConnection }
 
+	/** Enum types is loaded */
+	private Boolean isLoadedEnumTypes = false
+	/** List of enum types */
+	private final Map<String, Integer> enumTypes = [:] as Map<String, Integer>
+
+	@Override
+	void connect() {
+		super.connect()
+		synchronized (enumTypes) {
+			isLoadedEnumTypes = false
+			enumTypes.clear()
+		}
+	}
+
+	@Override
+	void disconnect() {
+		super.disconnect()
+		synchronized (enumTypes) {
+			isLoadedEnumTypes = false
+			enumTypes.clear()
+		}
+	}
+
+	@SuppressWarnings('SpellCheckingInspection')
+	@Override
+	List<Field> fields(Dataset dataset) {
+		if (!isLoadedEnumTypes) {
+			synchronized (enumTypes) {
+				enumTypes.clear()
+				new QueryDataset(connection: connection,
+						query: '''SELECT t.typname AS type_name, Max(Length(e.enumlabel)) AS type_length 
+								  FROM pg_catalog.pg_type t
+								  	INNER JOIN pg_catalog.pg_enum e ON e.enumtypid = t.oid 
+								  WHERE typtype = 'e'
+								  GROUP BY t.typname
+								   ''').eachRow { row ->
+					enumTypes.put(row.type_name as String, row.type_length as Integer)
+				}
+				isLoadedEnumTypes = true
+			}
+		}
+
+		return super.fields(dataset)
+	}
+
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)
+
+		if (field.type == Field.Type.STRING && field.typeName != null) {
+			def length = enumTypes.get(field.typeName)
+			if (length != null) {
+				field.length = length
+				field.charOctetLength = length
+				return
+			}
+		}
 
 		if (field.type == Field.Type.BLOB) {
 			field.length = null

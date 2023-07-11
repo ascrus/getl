@@ -828,11 +828,19 @@ class Executor implements GetlRepository {
 	@Override
 	void setDslRegistrationTime(Date value) { _dslRegistrationTime = value }
 
+	private Date _dslSaveTime
+	@JsonIgnore
+	@Override
+	Date getDslSaveTime() { _dslSaveTime as Date }
+	@Override
+	void setDslSaveTime(Date value) { _dslSaveTime = value }
+
 	@Override
 	void dslCleanProps() {
 		_dslNameObject = null
 		_dslCreator = null
 		_dslRegistrationTime = null
+		_dslSaveTime = null
 	}
 
 	/** Description */

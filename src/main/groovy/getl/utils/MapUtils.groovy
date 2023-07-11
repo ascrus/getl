@@ -44,18 +44,19 @@ class MapUtils {
 
 	/**
 	 * Set keys of map to lower case
-	 * @param m
-	 * @return
+	 * @param map original map
+	 * @return map with lower case key
 	 */
-	static Map<String, Object> MapToLower(Map<String, Object> m) {
-		if (m == null) return null
+	static Map<String, Object> MapToLower(Map<String, Object> map) {
+		if (map == null)
+			return null
 		
-		def r = new HashMap<String, Object>()
-		m.each { String k, v ->
-			r.put(k.toLowerCase(), v)
+		def res = new HashMap<String, Object>()
+		map.each { String k, v ->
+			res.put(k.toLowerCase(), v)
 		}
 
-		return r
+		return res
 	}
 	
 	/**

@@ -15,6 +15,8 @@ import getl.utils.*
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import org.codehaus.groovy.runtime.StringBufferWriter
+import org.supercsv.exception.SuperCsvException
+
 import java.text.DecimalFormat
 import java.time.format.ResolverStyle
 import java.util.zip.GZIPInputStream
@@ -731,71 +733,111 @@ class CSVDriver extends FileDriver {
 			
 			def cur = 0L
 			def line = 0L
-			while (true) {
-				Map row = null
-				def isError = false
-				try {
-					cur++
-					line++
-					if (limit > 0 && cur > limit)
-						break
+			try {
+				while (true) {
+					Map row = null
+					def isError = false
+					try {
+						cur++
+						line++
+						if (limit > 0 && cur > limit)
+							break
 
-					row = reader.read(header, cp)
-				}
-				catch (SuperCsvCellProcessorException e) {
-					if (processError == null)
+						row = reader.read(header, cp)
+					}
+					catch (SuperCsvCellProcessorException e) {
+						if (processError == null)
+							throw e
+
+						def c = e.csvContext
+						def ex = new DatasetError(dataset, '#csv.read_error', e,
+								[line: line, colNumber: c.columnNumber, colName: header[c.columnNumber - 1], error: e.message])
+
+						if (!processError(ex, line))
+							throw e
+
+						isError = true
+					}
+					catch (IOException e) {
 						throw e
+					}
+					catch (Exception e) {
+						def isContinue = (processError != null)?processError(e, line):false
+						if (!isContinue)
+							throw e
+						isError = true
+					}
+					if (!isError) {
+						if (row == null) {
+							cur--
+							if (portion != null && (portion + 1) < files.size()) {
+								reader.close()
+								portion++
+								bufReader = getFileReader(cds, params, (Integer)files[portion].number)
 
-					def c = e.csvContext
-					def ex = new DatasetError(dataset, '#csv.read_error', e,
-							[line: line, colNumber: c.columnNumber, colName: header[c.columnNumber - 1], error: e.message])
+								if (escaped) {
+									reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
+								}
+								else {
+									reader = new CsvMapReader(bufReader, pref)
+								}
 
-					if (!processError(ex, line))
-						throw e
-
-					isError = true
-				}
-				catch (IOException e) {
-					throw e
-				}
-				catch (Exception e) {
-					def isContinue = (processError != null)?processError(e, line):false
-					if (!isContinue)
-						throw e
-					isError = true
-				}
-				if (!isError) {
-					if (row == null) {
-						cur--
-						if (portion != null && (portion + 1) < files.size()) {
-							reader.close()
-							portion++
-							bufReader = getFileReader(cds, params, (Integer)files[portion].number)
-							
-							if (escaped) {
-								reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
+								if (p.isHeader) reader.getHeader(true)
+								continue
 							}
 							else {
-								reader = new CsvMapReader(bufReader, pref)
+								break
 							}
-							
-							if (p.isHeader) reader.getHeader(true)
+						}
+
+						if (filter != null && !filter(row)) {
+							cur--
 							continue
 						}
-						else {
-							break
-						}
-					}
-					
-					if (filter != null && !filter(row)) {
-						cur--
-						continue
-					} 
 
-					code.call(row)
-					if (cur == limit || code.directive == Closure.DONE)
-						break
+						code.call(row)
+						if (cur == limit || code.directive == Closure.DONE)
+							break
+					}
 				}
+			}
+			catch (Exception e) {
+				def sb = new StringBuilder()
+				sb.append("File path: ${cds.fullFileName()}\n")
+
+				def se = (e instanceof SuperCsvException)?(e as SuperCsvException):null
+
+				sb.append('Content:\n')
+				def lFields = cds.field.collect { it.toString().length() }.max()
+				def lProcs = cp.collect { it.getClass().simpleName.length() }.max()
+				def cFields = cds.field.size()
+				def cProcs = cp.length
+				def cData = (se != null)?se.csvContext.rowSource.size():0
+				def count = NumericUtils.Greatest(cFields, cProcs, cData)
+				for (int i = 0; i < count; i++) {
+					if (i < cFields)
+						sb.append(cds.field[i].toString().padRight(lFields))
+					else
+						sb.append(' '.repeat(lFields))
+
+					sb.append(' => ')
+
+					if (i < cProcs)
+						sb.append(cp[i].getClass().simpleName.padRight(lProcs))
+					else
+						sb.append(' '.repeat(lProcs))
+
+					sb.append(' => ')
+					if (i < cData)
+						sb.append(se.csvContext.rowSource[i])
+					else
+						sb.append('<NONE>')
+
+					sb.append('\n')
+				}
+
+				cds.logger.dump(e, cds.getClass().name, cds.toString(), sb.toString())
+				throw e
 			}
 			countRec = cur
 		}
