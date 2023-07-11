@@ -2463,6 +2463,11 @@ ${sql.stripTrailing()}
 	/** Default batch size buffer for write operations */
 	protected Long defaultBatchSize
 
+	/** Field value for prepared insert statement */
+	String prepareFieldValueForInsert(Field field) {
+		return '?'
+	}
+
 	@Override
 	@Synchronized('operationLock')
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
@@ -2541,7 +2546,7 @@ ${sql.stripTrailing()}
 						return
 
 					h << prepareFieldNameForSQL(f.name)
-					v << "?"
+					v << prepareFieldValueForInsert(f)
 					sv << f.name
 				}
 				if (v.isEmpty())

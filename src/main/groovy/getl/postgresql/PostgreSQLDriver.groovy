@@ -153,6 +153,7 @@ class PostgreSQLDriver extends JDBCDriver {
 			if (length != null) {
 				field.length = length
 				field.charOctetLength = length
+				field.extended.put('postgresql_enum_type', field.typeName)
 				return
 			}
 		}
@@ -200,6 +201,16 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
+	String prepareFieldValueForInsert(Field field) {
+		def res = super.prepareFieldValueForInsert(field)
+		def enumName = field.extended.get('postgresql_enum_type')
+		if (enumName != null)
+			res = '?::"' + enumName + '"'
+
+		return res
+	}
+
+	@Override
 	Boolean blobReadAsObject(Field field = null) { return false }
 
 	@Override
@@ -239,6 +250,12 @@ class PostgreSQLDriver extends JDBCDriver {
 
 	@Override
 	String type2sqlType(Field field, Boolean useNativeDBType) {
+		if (field.type == Field.stringFieldType) {
+			def enumType = field.extended.get('postgresql_enum_type')
+			if (enumType != null)
+				return '"' + enumType + '"'
+		}
+
 		if ((field.type == Field.arrayFieldType)) {
 			if (field.arrayType == null)
 				throw new ExceptionGETL("It is required to specify the type of the array in \"arrayType\" for field \"${field.name}\"!")

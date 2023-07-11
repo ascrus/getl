@@ -79,7 +79,7 @@ abstract class Driver {
 		methodParams.register("eachRow", [])
 		methodParams.register("openWrite", [])
 		methodParams.register("executeCommand", [])
-		methodParams.register('prepareImportFields', ['resetTypeName', 'resetKey', 'resetNotNull',
+		methodParams.register('prepareImportFields', ['resetTypeName', 'resetKey', 'resetNotNull', 'copyExtended',
 													  'resetDefault', 'resetCheck', 'resetCompute', 'excludeTypes', 'rules'])
 	}
 
@@ -196,6 +196,7 @@ abstract class Driver {
 
 		methodParams.validation('prepareImportFields', importParams, null)
 
+		def copyExtended = BoolUtils.IsValue(importParams.copyExtended)
 		def resetTypeName = BoolUtils.IsValue(importParams.resetTypeName)
 		def resetKey = BoolUtils.IsValue(importParams.resetKey)
 		def resetNotNull = BoolUtils.IsValue(importParams.resetNotNull)
@@ -237,6 +238,9 @@ abstract class Driver {
 				return
 
 			def field = origField.copy()
+
+			if (!copyExtended)
+				field.extended.clear()
 
 			if (resetTypeName || !isCompatibleDataset) {
 				field.typeName = null

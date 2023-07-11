@@ -118,27 +118,43 @@ CREATE TABLE public.test_enum (
 
 				truncate()
 			}
-			return
+
+			def r = [
+					[id: 1, name: 'Type NONE', type: 'NONE'],
+					[id: 2, name: 'Type SINGLE', type: 'SINGLE'],
+					[id: 3, name: 'Type SINGLE', type: 'ALL']
+			]
 
 			etl.rowsTo(tab) {
 				writeRow { add ->
-					add id: 1, name: 'Type NONE', type: 'NONE'
-					add id: 2, name: 'Type SINGLE', type: 'SINGLE'
-					add id: 3, name: 'Type SINGLE', type: 'ALL'
+					r.each { add.call(it) }
 				}
 			}
+			assertEquals(r, tab.rows(order: ['id']))
 
-			def tabNew = postgresqlTable {
+			def tabCopy = postgresqlTable {
 				setConnection(con)
 				schemaName = tab.schemaName()
-				tableName = tab.tableName + '_new'
+				tableName = tab.tableName + '_copy'
+				field = tab.field
+				createOpts { ifNotExists = true }
+				create()
+				truncate()
+			}
+			etl.copyRows(tab, tabCopy)
+			assertEquals(r, tabCopy.rows(order: ['id']))
+
+			def tabExport = postgresqlTable {
+				setConnection(con)
+				schemaName = tab.schemaName()
+				tableName = tab.tableName + '_export'
 				importFields(tab)
 				createOpts { ifNotExists = true }
 				create()
 				truncate()
 			}
-
-			etl.copyRows(tab, tabNew)
+			etl.copyRows(tab, tabExport)
+			assertEquals(r, tabExport.rows(order: ['id']))
 		}
 	}
 }
