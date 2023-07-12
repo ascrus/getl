@@ -1198,7 +1198,7 @@ class JDBCDriver extends Driver {
 	String getNowFunc() { sqlExpressionValue('now') }
 
 	/** Return table type name from create dataset */
-	protected String tableTypeName(JDBCDataset dataset) {
+	protected String tableTypeName(JDBCDataset dataset, Map params) {
 		String res = null
 
 		def tableType = (dataset as JDBCDataset).type
@@ -1242,7 +1242,7 @@ class JDBCDriver extends Driver {
 							JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
 			throw new NotSupportError(connection, 'create table')
         }
-		def tableTypeName = tableTypeName(ds)
+		def tableTypeName = tableTypeName(ds, params)
 
 		def validExists = ConvertUtils.Object2Boolean(params.ifNotExists, false)
 		if (validExists && !isSupport(Support.CREATEIFNOTEXIST)) {

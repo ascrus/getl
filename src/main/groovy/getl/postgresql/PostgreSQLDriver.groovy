@@ -267,9 +267,9 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	protected String tableTypeName(JDBCDataset dataset) {
-		def res = super.tableTypeName(dataset)
-		if (res == null && BoolUtils.IsValue((dataset as TableDataset).createDirective.unlogged))
+	protected String tableTypeName(JDBCDataset dataset, Map params) {
+		def res = super.tableTypeName(dataset, params)
+		if (res == null && BoolUtils.IsValue(params.unlogged, BoolUtils.IsValue((dataset as TableDataset).createDirective.unlogged)))
 			res = 'UNLOGGED'
 
 		return res
