@@ -62,6 +62,9 @@ class JDBCDriver extends Driver {
 		methodParams.register('copyTableTo', ['ddlOnly'])
 	}
 
+	/** Default rule for not quoting object name */
+	protected String defaultRuleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
+
 	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	protected void initParams() {
@@ -94,7 +97,7 @@ class JDBCDriver extends Driver {
 		fieldPrefix = '"'
 		tablePrefix = '"'
 		defaultSchemaFromConnectDatabase = false
-		ruleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
+		ruleNameNotQuote = defaultRuleNameNotQuote
 		ruleEscapedText = ['\\': '\\\\', '\n': '\\n', '\'': '\\\'']
 
 		setSqlExpressionSqlDateFormat('yyyy-MM-dd')
@@ -1474,7 +1477,7 @@ class JDBCDriver extends Driver {
 			return null
 
 		def res = name
-		def needQuote = !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
+		def needQuote = (ruleNameNotQuote == null) || !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
 
 		if (!needQuote || caseQuotedName) {
 			switch (caseRetrieveObject) {
@@ -1503,7 +1506,7 @@ class JDBCDriver extends Driver {
 			return null
 
 		String res = (dataset != null)?(dataset.fieldByName(name)?.name?:name):name
-		def needQuote = !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
+		def needQuote = (ruleNameNotQuote == null) || !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
 
 		if (!needQuote || caseQuotedName) {
 			switch (caseObjectName) {
@@ -1545,7 +1548,7 @@ class JDBCDriver extends Driver {
 	}
 
 	String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
-		return prepareRetrieveObject(name, tablePrefix, tableEndPrefix)
+		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix)
 	}
 
 	String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
@@ -1557,8 +1560,9 @@ class JDBCDriver extends Driver {
 	 * @param dataset	- dataset
 	 * @return String	- full name SQL object
 	 */
-	String fullNameDataset (Dataset dataset) {
-		if (!(dataset instanceof TableDataset)) return 'noname'
+	String fullNameDataset(Dataset dataset) {
+		if (!(dataset instanceof TableDataset))
+			return 'noname'
 
         def ds = dataset as TableDataset
 		

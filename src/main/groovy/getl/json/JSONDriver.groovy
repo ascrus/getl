@@ -228,10 +228,14 @@ class JSONDriver extends WebServiceDriver {
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		super.eachRow(dataset, params, prepareCode, code)
 
+		def ws = dataset as JSONDataset
+		if (ws.autoCaptureFromWeb() && ws.downloadFileSize == 0)
+			return 0L
+
 		Closure<Boolean> filter = params.filter as Closure<Boolean>
 		
 		def countRec = 0L
-		doRead(dataset as JSONDataset, params, prepareCode) { Map row ->
+		doRead(ws, params, prepareCode) { Map row ->
 			if (filter != null && !(filter.call(row)))
 				return
 			

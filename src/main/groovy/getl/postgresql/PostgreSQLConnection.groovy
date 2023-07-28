@@ -69,10 +69,21 @@ class PostgreSQLConnection extends JDBCConnection {
 		executeCommand('SET DATESTYLE = \'{style}\'', [queryParams: [style: value?:dateStyle()]])
 	}
 
+	/** Generate queries with case sensitive fields */
+	Boolean getCaseSensitiveFields() { params.caseSensitiveFields as Boolean }
+	/** Generate queries with case sensitive fields */
+	void setCaseSensitiveFields(Boolean value) {
+		if (value != caseSensitiveFields) {
+			params.caseSensitiveFields = value
+			currentPostgreSQLDriver.initCaseSensitiveFields()
+		}
+	}
+
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
 		driverName = "org.postgresql.Driver"
+		currentPostgreSQLDriver.initCaseSensitiveFields()
 	}
 
 	@Override

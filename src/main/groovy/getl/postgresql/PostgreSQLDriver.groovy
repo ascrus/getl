@@ -49,6 +49,18 @@ class PostgreSQLDriver extends JDBCDriver {
 		sqlExpressions.escapedText = 'E\'{text}\''
     }
 
+	/** Init rule for processing case sensitive fields */
+	protected void initCaseSensitiveFields() {
+		if (BoolUtils.IsValue(currentPostgreSQLConnection.caseSensitiveFields)) {
+			ruleNameNotQuote = null
+			caseObjectName = 'NONE'
+		}
+		else {
+			ruleNameNotQuote = defaultRuleNameNotQuote
+			caseObjectName = 'LOWER'
+		}
+	}
+
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {

@@ -18,10 +18,21 @@ class WebUtilsTest extends GetlDslTest {
             def webServiceJarFile = FileUtils.FileFromResources('/webserver/web-Service-test.jar')
             assertNotNull("Not found web service test jar in test resource!", webServiceJarFile)
 
+            def sslFile = FileUtils.FileFromResources('/webserver/keystore.p12')
+            assertNotNull("Not found ssl file in test resource!", webServiceJarFile)
+
             def command = "java.exe -jar \"$webServiceJarFile\""
             def cmdArgs = FileUtils.ParseArguments(command)
             def serverRunBuilder = new ProcessBuilder(cmdArgs)
-            serverRunBuilder.directory(new File(TFS.systemPath))
+            def workDir = new File(TFS.systemPath)
+            serverRunBuilder.directory(workDir)
+
+            def sslDir = new File(workDir.path + '/ssl')
+            sslDir.deleteOnExit()
+            sslDir.mkdirs()
+            FileUtils.CopyToDir(sslFile, sslDir.path, 'keystore.p12')
+            new File(sslDir.path + '/keystore.p12').deleteOnExit()
+
             serverProc = serverRunBuilder.start()
             if (serverProc.waitFor(1, TimeUnit.SECONDS))
                 println serverProc.errorStream.readLines()
@@ -57,7 +68,7 @@ class WebUtilsTest extends GetlDslTest {
                     authType = 'basic'
                     login = 'user'
                     password = 'user'
-                    webUrl = 'http://localhost:8089/api'
+                    webUrl = 'https://localhost:8089/api'
                     webRequestMethod = WEBREQUESTMETHODGET
                     webConnectTimeout = 1000
                     webReadTimeout = 1000
@@ -80,6 +91,11 @@ class WebUtilsTest extends GetlDslTest {
                 shouldFail { ds.rows() }
 
                 ds.webServiceName = 'get@user'
+
+                con.checkCertificate = true
+                shouldFail { ds.rows() }
+
+                con.checkCertificate = null
                 def rows = ds.rows()
                 assertEquals(1, rows.size())
                 def row = rows[0]
@@ -115,7 +131,7 @@ class WebUtilsTest extends GetlDslTest {
         def dt = new Timestamp(new Date().time)
         def webParams = ['header.key1': 123, 'header.key2': '{test}.<test>', 'header.key3': dt, param1: 'param1/param2.<param3>'] as Map<String, Object>
 
-        def request = HttpClientUtils.BuildGetRequest('http://localhost:8089/api/', 'get@user', webParams, [test: 'test'])
+        def request = HttpClientUtils.BuildGetRequest('https://localhost:8089/api/', 'get@user', webParams, [test: 'test'])
         def client = HttpClientUtils.BuildHttpClient(request, 'BASIC', 'admin_cmw', 'C0m1ndw4r3Pl@tf0rm', 1, 1)
 
         def serverProc = startServer()
@@ -149,7 +165,7 @@ class WebUtilsTest extends GetlDslTest {
 
         def serverProc = startServer()
         try {
-            def con = WebUtils.CreateConnection(url: 'http://localhost:8089/api/', service: 'get@user', login: 'user', password: 'user',
+            def con = WebUtils.CreateConnection(url: 'https://localhost:8089/api/', service: 'get@user', login: 'user', password: 'user',
                     requestMethod: 'GET', params: webParams, vars: [test: 'test'])
             def code = con.responseCode
             println "STATUS: $code"

@@ -88,9 +88,14 @@ class WebServiceConnection extends FileConnection implements UserLogins {
     }
 
     /** Automatic data capture from a web service when reading rows */
-    Boolean getAutoCaptureFromWeb() { ConvertUtils.Object2Boolean(params.autoCaptureFromWeb) }
+    Boolean getAutoCaptureFromWeb() { params.autoCaptureFromWeb as Boolean }
     /** Automatic data capture from a web service when reading rows */
     void setAutoCaptureFromWeb(Boolean value) { params.autoCaptureFromWeb = value }
+
+    /** Check certificate */
+    Boolean getCheckCertificate() { params.checkCertificate as Boolean }
+    /** Check certificate */
+    void setCheckCertificate(Boolean value) { params.checkCertificate = value }
 
     /** Default timestamp with timezone mask */
     @SuppressWarnings('SpellCheckingInspection')

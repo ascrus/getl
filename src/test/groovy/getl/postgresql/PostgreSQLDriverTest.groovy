@@ -47,9 +47,9 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 		Getl.Dsl {
 			postgresqlTable {
 				setConnection(con)
-				tableName = 'test_unlogged'
-				field('id') { type = integerFieldType; isKey = true }
-				field('name') { length = 50; isNull = false }
+				tableName = 'Test_Unlogged'
+				field('ID') { type = integerFieldType; isKey = true }
+				field('Name') { length = 50; isNull = false }
 				dropOpts {
 					ifExists = true
 				}
@@ -155,6 +155,139 @@ CREATE TABLE public.test_enum (
 			}
 			etl.copyRows(tab, tabExport)
 			assertEquals(r, tabExport.rows(order: ['id']))
+		}
+	}
+
+	@Test
+	void testCaseFields() {
+		Getl.Dsl {
+			def c = con.cloneConnection() as PostgreSQLConnection
+			c.caseSensitiveFields = true
+			def tab1 = postgresqlTable {
+				setConnection c
+				tableName = 'Test_Case_Fields'
+				field('id') { type = integerFieldType; isKey = true }
+				field('Name') { length = 50; isNull = false }
+				field('DT') { type = datetimeFieldType }
+
+				drop(ifExists: true)
+				create()
+			}
+
+			PostgreSQLTable tab2
+
+			try {
+				tab2 = postgresqlTable {
+					setConnection c
+					tableName = tab1.tableName
+					retrieveFields()
+				}
+
+				tab1.field.each { f1 ->
+					def f2 = tab2.fieldByName(f1.name)
+					assertNotNull(f2)
+					assertEquals(f1.name, f2.name)
+					assertEquals(f1.type, f2.type)
+					assertEquals(f1.length, f2.length)
+					assertEquals(f1.isKey, f2.isKey)
+					assertEquals(f1.isNull, f2.isNull)
+				}
+			}
+			finally {
+				tab1.drop()
+			}
+
+			c.caseSensitiveFields = null
+			tab1.create()
+			try {
+				tab2.retrieveFields()
+				tab1.field.each { f1 ->
+					def f2 = tab2.fieldByName(f1.name)
+					assertNotNull(f2)
+					assertEquals(f1.name.toLowerCase(), f2.name)
+					assertEquals(f1.type, f2.type)
+					assertEquals(f1.length, f2.length)
+					assertEquals(f1.isKey, f2.isKey)
+					assertEquals(f1.isNull, f2.isNull)
+				}
+			}
+			finally {
+				tab1.drop()
+			}
+		}
+	}
+
+	@Test
+	void testCaseWork() {
+		Getl.Dsl {
+			def c = con.cloneConnection() as PostgreSQLConnection
+			def proc = { String ddlCreateTable ->
+				def t = postgresqlTable {
+					setConnection c
+					tableName = 'Test_Case_Work'
+					field('ID') { type = integerFieldType; isKey = true }
+					field('Name') { length = 50; isNull = false }
+					field('value') { type = numericFieldType; length = 5; precision = 2 }
+					drop(ifExists: true)
+					if (ddlCreateTable == null)
+						create()
+					else
+						c.executeCommand(ddlCreateTable)
+				}
+
+				try {
+					def data = [] as List<Map>
+					(1..3).each { data << [id: it, name: "Test $it", value: it + 0.12] }
+
+					etl.rowsTo(t) {
+						writeRow { add ->
+							data.each { add(it) }
+						}
+					}
+					assertEquals(3, t.countRow())
+
+					def i = 0
+					t.eachRow {
+						assertEquals(data[i].id, it.id)
+						assertEquals(data[i].name, it.name)
+						assertEquals(data[i].value, it.value)
+						i++
+					}
+
+					def f = csvTempWithDataset(t)
+					etl.copyRows(t, f)
+					assertEquals(3, t.readRows)
+					assertEquals(3, f.writeRows)
+
+					t.truncate()
+					assertEquals(0, t.countRow())
+
+					t.bulkLoadCsv(f)
+					assertEquals(3, t.countRow())
+
+					i = 0
+					t.eachRow {
+						assertEquals(data[i].id, it.id)
+						assertEquals(data[i].name, it.name)
+						assertEquals(data[i].value, it.value)
+						i++
+					}
+				}
+				finally {
+					t.drop()
+				}
+			}
+
+			c.saveToHistory('-- *** Lower case name ')
+			proc()
+
+			c.saveToHistory('-- *** Sensitive name with sensitive name in table')
+			c.caseSensitiveFields = true
+			proc('CREATE TABLE "Test_Case_Work" ("ID" int PRIMARY KEY, "Name" varchar(50) NOT NULL, value numeric(5, 2))')
+
+			c.saveToHistory('-- *** Sensitive name ')
+			c.caseSensitiveFields = true
+			proc()
 		}
 	}
 }

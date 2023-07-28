@@ -391,4 +391,25 @@ class JsonTest extends GetlTest {
             }
         }
     }
+
+    @Test
+    void testReadDatesJson() {
+        Getl.Dsl {
+            def ds = json {
+                fileName = 'resource:/json/dates.json'
+                rootNode = '.'
+                formatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss[.SSS][.SS][.S]'
+
+                field('Id') { type = integerFieldType }
+                field('dt') { type = datetimeFieldType}
+
+                def dates = ['2023-04-28 10:27:38.100', '2023-04-28 10:27:38.010', '2023-04-28 10:27:38.001']
+                def i = 0
+                eachRow {
+                    assertEquals(dates[i], DateUtils.FormatDateTime(it.dt as Date))
+                    i++
+                }
+            }
+        }
+    }
 }

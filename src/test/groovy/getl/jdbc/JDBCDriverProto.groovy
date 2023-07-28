@@ -111,8 +111,8 @@ abstract class JDBCDriverProto extends GetlTest {
             table.schemaName = defaultSchema
             table.tableName = useTableName
 
-            def fq = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('id1', table)
             table.field = fields
+            def fq = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL(table.fieldByName('id1').name, table)
             table.fieldByName('id1').checkValue = "$fq > 0"
 
             prepareTable()
@@ -636,8 +636,10 @@ abstract class JDBCDriverProto extends GetlTest {
         bulkTable.bulkLoadFile(source: file)
         assertEquals(countRows, bulkTable.updateRows)
         assertEquals(countRows, bulkTable.countRow())
+
+        def fq = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL(table.fieldByName('id1').name, table)
         def fileRow = file.rows(limit: 1)[0]
-        def tableRow = bulkTable.rows(limit: 1, where: 'id1 = 1')[0]
+        def tableRow = bulkTable.rows(limit: 1, where: "$fq = 1")[0]
         assertEquals(fileRow, tableRow)
     }
 

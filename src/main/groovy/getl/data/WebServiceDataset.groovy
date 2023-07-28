@@ -97,6 +97,14 @@ class WebServiceDataset extends FileDataset {
     /** Automatic data capture from a web service when reading rows */
     Boolean autoCaptureFromWeb() { ListUtils.NotNullValue(autoCaptureFromWeb, currentWebServiceConnection.autoCaptureFromWeb, false) }
 
+    /** Size of downloaded file from web service */
+    private Long downloadFileSize = 0L
+    /** Size of downloaded file from web service */
+    @JsonIgnore
+    Long getDownloadFileSize() { this.downloadFileSize }
+    /** Size of downloaded file from web service */
+    void setDownloadFileSize(Long value) { this.downloadFileSize = value }
+
     /**
      * Read data from web service and save to file
      * @param wp web service read parameters

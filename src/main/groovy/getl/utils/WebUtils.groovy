@@ -6,7 +6,17 @@ import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import groovy.transform.CompileStatic
 import groovy.transform.NamedVariant
+
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLEngine
+import javax.net.ssl.SSLSession
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509ExtendedTrustManager
 import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.sql.Time
 import java.sql.Timestamp
 import java.time.format.DateTimeFormatter
@@ -17,6 +27,21 @@ import java.time.format.DateTimeFormatter
  */
 @CompileStatic
 class WebUtils {
+    /*static {
+        initLib()
+    }
+
+    static private Boolean isInitLib*/
+
+    /** Init library */
+    /*static void initLib() {
+        if (!isInitLib) {
+            System.setProperty('https.protocols', 'TLSv1,TLSv1.1,TLSv1.2')
+            DisableSslVerification()
+            isInitLib = true
+        }
+    }*/
+
     /** Get request method */
     @SuppressWarnings('SpellCheckingInspection')
     static public final String WEBREQUESTMETHODGET = 'GET'
@@ -26,6 +51,42 @@ class WebUtils {
 
     @SuppressWarnings('SpellCheckingInspection')
     static public final DateTimeFormatter UrlDateFormatter = DateUtils.BuildDateTimeFormatter('yyyy-MM-dd\'T\'HH:mm:ss[.SSS]')
+
+    static class TrustAllX509TrustManager extends X509ExtendedTrustManager  {
+        @Override
+        void checkClientTrusted(X509Certificate[] certs, String authType) {  }
+        @Override
+        void checkServerTrusted(X509Certificate[] certs, String authType) {  }
+        @Override
+        void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) { }
+        @Override
+        void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) { }
+        @Override
+        void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) { }
+        @Override
+        void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) { }
+        @Override
+        X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0]
+        }
+    }
+
+    static class HostnameVerifierAll implements HostnameVerifier {
+        boolean verify(String string, SSLSession ssl) {
+            return true
+        }
+    }
+
+    static public final TrustManager[] trustManagers = [new TrustAllX509TrustManager()]
+    static public final SecureRandom secureRandom = new SecureRandom()
+    static public final HostnameVerifierAll hostnameVerifierAll = new HostnameVerifierAll()
+
+    static void DisableSslVerification() {
+        SSLContext sc = SSLContext.getInstance('TLS')
+        sc.init(null, trustManagers, secureRandom)
+        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())
+        HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifierAll)
+    }
 
     /**
      * Create a connection to a web service

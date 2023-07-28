@@ -15,13 +15,26 @@ import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse
 import org.apache.hc.client5.http.impl.classic.HttpClients
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager
+import org.apache.hc.client5.http.socket.ConnectionSocketFactory
+import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory
 import org.apache.hc.core5.http.HttpHeaders
 import org.apache.hc.core5.http.HttpStatus
+import org.apache.hc.core5.http.config.Registry
+import org.apache.hc.core5.http.config.RegistryBuilder
 import org.apache.hc.core5.http.message.BasicClassicHttpRequest
 import org.apache.hc.core5.http.message.BasicHeader
+import org.apache.hc.core5.ssl.SSLContexts
+import org.apache.hc.core5.ssl.TrustStrategy
 import org.apache.hc.core5.util.Timeout
 import org.apache.hc.client5.http.auth.AuthScope
+
+import javax.net.ssl.SSLContext
 import java.nio.charset.StandardCharsets
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
 import java.sql.Time
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
@@ -124,6 +137,13 @@ class HttpClientUtils {
         return request
     }
 
+    static class AcceptingTrustStrategy implements TrustStrategy {
+        @Override
+        boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            return true
+        }
+    }
+
     /**
      *
      * @param authenticationType
@@ -134,9 +154,23 @@ class HttpClientUtils {
      * @return
      */
     static CloseableHttpClient BuildHttpClient(BasicClassicHttpRequest request, String authenticationType, String login = null, String password = null,
-                                               Integer connectTimeout = null, Integer readTimeout = null) {
+                                               Integer connectTimeout = null, Integer readTimeout = null, Boolean checkCertificate = false) {
         def builder = HttpClients.custom()
         builder.setUserAgent('GetlFramework')
+
+
+        if (!BoolUtils.IsValue(checkCertificate)) {
+            SSLContext sslContext = SSLContexts.custom()
+                    .loadTrustMaterial(null, new AcceptingTrustStrategy())
+                    .build()
+            SSLConnectionSocketFactory sslFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE)
+            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create()
+                    .register("https", sslFactory)
+                    .register("http", new PlainConnectionSocketFactory())
+                    .build()
+            BasicHttpClientConnectionManager connectionManager = new BasicHttpClientConnectionManager(socketFactoryRegistry)
+            builder.connectionManager = connectionManager
+        }
 
         def requestConfig = RequestConfig.custom()
         if (connectTimeout != null)

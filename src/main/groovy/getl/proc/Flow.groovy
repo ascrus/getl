@@ -1006,13 +1006,15 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 						countRow++
 					}
 				}
-				
-				writer.doneWrite()
+
+				if (writer.status == Dataset.Status.WRITE)
+					writer.doneWrite()
 				childs.each { String name, FlowCopyChild child ->
 					def childWriter = child.writer
-					childWriter.doneWrite()
+					if (childWriter.status == Dataset.Status.WRITE)
+						childWriter.doneWrite()
 				}
-				if (saveErrors || saveExprErrors)
+				if ((saveErrors || saveExprErrors) && errorsDataset.status == Dataset.Status.WRITE)
 					errorsDataset.doneWrite()
 			}
 			catch (Exception e) {
@@ -1028,19 +1030,23 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				throw e
 			}
 			finally {
-				if (!writeSynch)
-					writer.closeWrite()
-				else
-					writer.closeWriteSynch()
+				if (writer.status == Dataset.Status.WRITE) {
+					if (!writeSynch)
+						writer.closeWrite()
+					else
+						writer.closeWriteSynch()
+				}
 
 				childs.each { String name, FlowCopyChild child ->
 					def childWriter = child.writer
-					if (!writeSynch)
-						childWriter.closeWrite()
-					else
-						childWriter.closeWriteSynch()
+					if (childWriter.status == Dataset.Status.WRITE) {
+						if (!writeSynch)
+							childWriter.closeWrite()
+						else
+							childWriter.closeWriteSynch()
+					}
 				}
-				if (saveErrors || saveExprErrors)
+				if ((saveErrors || saveExprErrors) && errorsDataset.status == Dataset.Status.WRITE)
 					errorsDataset.closeWrite()
 			}
 

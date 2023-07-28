@@ -6,6 +6,7 @@ import getl.exception.ConnectionError
 import getl.exception.DatasetError
 import getl.exception.RequiredParameterError
 import getl.lang.Getl
+import getl.utils.FileUtils
 import getl.utils.HttpClientUtils
 import getl.utils.Logs
 import groovy.transform.InheritConstructors
@@ -63,21 +64,37 @@ class WebServiceDriver extends FileDriver {
         if (timeout < 1)
             throw new ConnectionError(con, '#params.great_zero', [param: 'timeoutConnectionAttempts', value: timeout])
 
-        for (int retry = 0; retry <= con.numberConnectionAttempts; retry++) {
+        dataset.downloadFileSize = 0L
+
+        def fileName = fullFileNameDataset(dataset)
+        def file = new File(fileName)
+        if (file.exists())
+            file.delete()
+
+        for (int retry = 1; retry <= con.numberConnectionAttempts; retry++) {
             def request = HttpClientUtils.BuildGetRequest(url, serviceName, urlParams, urlVars)
             Logs.Finest(con, '#web.connection.load_data', [url: request.uri.toString()])
-            try(def client = HttpClientUtils.BuildHttpClient(request, authType, login, password, connectTimeout, readTimeout)
+            try(def client = HttpClientUtils.BuildHttpClient(request, authType, login, password, connectTimeout, readTimeout, con.checkCertificate)
                 def response = client.execute(request)) {
-                def status = HttpClientUtils.HttpResponseToFile(response, fullFileNameDataset(dataset))
+                def status = HttpClientUtils.HttpResponseToFile(response, fileName)
+                def responseStr = response.entity.toString()
                 if (status != HttpStatus.SC_OK)
-                    throw new DatasetError(dataset, '#utils.web.invalid_status', [url: url, service: serviceName, status: status])
+                    throw new DatasetError(dataset, '#utils.web.invalid_status', [url: url, service: serviceName, status: status, response: responseStr])
+
+                if (file.exists()) {
+                    dataset.downloadFileSize = file.length()
+                    dataset.logger.finest("Downloaded \"$fileName\" (${FileUtils.SizeBytes(dataset.downloadFileSize)})")
+                }
+                else
+                    throw new DatasetError(dataset, "#web_files.content_not_found", [response: responseStr])
 
                 break
             }
             catch (IOException e) {
-                if (retry > con.numberConnectionAttempts)
+                if (retry == con.numberConnectionAttempts)
                     throw e
 
+                Logs.Warning(dataset, '#web.dataset.read_error', [url: url, error: e.message])
                 Getl.pause(timeout * 1000)
             }
         }
@@ -87,11 +104,8 @@ class WebServiceDriver extends FileDriver {
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         super.eachRow(dataset, params, prepareCode, code)
         def ds = dataset as WebServiceDataset
-        if (ds.autoCaptureFromWeb()) {
-            if (ds.existsFile())
-                ds.drop()
+        if (ds.autoCaptureFromWeb())
             ds.readFromWeb()
-        }
 
         return 0L
     }
