@@ -4,6 +4,8 @@ import getl.data.Field
 import getl.test.GetlTest
 import org.junit.Test
 
+import java.sql.Date
+
 /**
  * @author Alexsey Konstantinov
  */
@@ -149,6 +151,26 @@ class PathTest extends GetlTest {
 
     @Test
     void testClone() {
+        def o = new Path('{region}/{date}/*.{num}.csv?region||MSK\\|SPB\\|KRD;date|date|yyyy-MM-dd;num|integer')
+        def vo = o.analyzeFile('KRD/2023-07-15/file1.001.csv')
+        assertEquals('KRD', vo.region)
+        assertEquals(DateUtils.ParseSQLDate('2023-07-15'), vo.date as Date)
+        assertEquals(1, vo.num)
 
+        def n = o.clone() as Path
+        assertEquals(o.toString(), n.toString())
+        def vn = n.analyzeFile('KRD/2023-07-15/file1.001.csv')
+        assertEquals(vo, vn)
+        assertEquals('KRD', vn.region)
+        assertEquals(DateUtils.ParseSQLDate('2023-07-15'), vn.date as Date)
+        assertEquals(1, vn.num)
+    }
+
+    @Test
+    void testFormat2Regexp() {
+        assertEquals('MSK|SPB|KRD', Path.Format2Regexp('MSK|SPB|KRD'))
+        assertEquals('MSK|SPB|KRD', Path.Format2Regexp('(MSK|SPB|KRD)'))
+        assertEquals('(MSK|SPB)|(KRD)', Path.Format2Regexp('(MSK|SPB)|(KRD)'))
+        assertEquals('MSK|[(]SPB[)]|KRD', Path.Format2Regexp('MSK|(SPB)|KRD'))
     }
 }

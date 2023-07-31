@@ -499,8 +499,10 @@ class Path implements GetlRepository {
 
 					def type = vt.type as Field.Type
 
-					if (vt.regular != null)
-						b.append("(${vt.regular})")
+					if (vt.regular != null) {
+						df = Format2Regexp(vt.regular.toString())
+						b.append("($df)")
+					}
 					else if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
 						if (vt.format != null) {
 							df = vt.format.toString()
@@ -545,7 +547,7 @@ class Path implements GetlRepository {
 					}
 					else {
 						if (vt.format != null) {
-							df = vt.format.toString()
+							df = Format2Regexp(vt.format.toString())
 							b.append("($df)")
 						}
 						else {
@@ -635,6 +637,22 @@ class Path implements GetlRepository {
 		vars = (MapUtils.UnmodifiableMap(compVars) as Map<String, Map>)
 		mask = maskStr
 		isCompile = true
+	}
+
+	/** Escaped special regular expression chars */
+	static String Format2Regexp(String format) {
+		if (format == null || format.length() == 0)
+			return format
+
+		def l = format.length()
+		if (l > 2 && format[0] == '(' && format[l - 1] == ')') {
+			if (format.indexOf('(', 1) == -1 && format.lastIndexOf(')', l - 2) == -1)
+				return format.substring(1, l - 1)
+			else
+				return format
+		}
+
+		return format.replace('(', '[(]').replace(')', '[)]')
 	}
 
 	/** Generation mask path pattern on elements */
