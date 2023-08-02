@@ -24,7 +24,7 @@ class PostgreSQLConnection extends JDBCConnection {
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()
-		methodParams.register('Super', ['dateStyle'])
+		methodParams.register('Super', ['dateStyle', 'caseSensitiveFields'])
 	}
 	
 	@Override

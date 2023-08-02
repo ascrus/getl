@@ -162,6 +162,10 @@ ECHO For id1=1 then id2={id2}
         def sql = '/* ERROR */ERROR Test 1 2 3'
         def parser = new SQLParser(sql)
         assertEquals(SQLParser.StatementType.GETL_ERROR, parser.statementType())
+
+        sql = "ERROR 'Test 1 2 3'"
+        parser = new SQLParser(sql)
+        assertEquals(SQLParser.StatementType.GETL_ERROR, parser.statementType())
     }
 
     @Test

@@ -23,7 +23,7 @@ class WebServiceConnection extends FileConnection implements UserLogins {
 
         methodParams.register('Super', ['webUrl', 'webParams', 'webVars', 'webConnectTimeout',
                                         'webReadTimeout', 'webRequestMethod', 'autoCaptureFromWeb',
-                                        'login', 'password', 'storedLogins', 'authType'])
+                                        'login', 'password', 'storedLogins', 'authType', 'checkCertificate'])
     }
 
     @Override

@@ -1556,9 +1556,9 @@ class JDBCDriver extends Driver {
 	}
 	
 	/**
-	 * Build full name from SQL object dataset
-	 * @param dataset	- dataset
-	 * @return String	- full name SQL object
+	 * Return full name for SQL table with prefix or noname if dataset is not table
+	 * @param dataset Source dataset
+	 * @return Full name SQL object
 	 */
 	String fullNameDataset(Dataset dataset) {
 		if (!(dataset instanceof TableDataset))
@@ -1595,6 +1595,11 @@ class JDBCDriver extends Driver {
 		return r
 	}
 
+	/**
+	 * Return short name for SQL table without prefix or noname if dataset is not table
+	 * @param dataset Source dataset
+	 * @return Full name SQL object
+	 */
 	String nameDataset(JDBCDataset dataset) {
 		if (!(dataset instanceof TableDataset)) {
 			if (!(dataset instanceof QueryDataset))
@@ -1605,9 +1610,9 @@ class JDBCDriver extends Driver {
 
         def ds = dataset as TableDataset
 
-		def r = prepareTableNameForSQL(ds.params.tableName as String)?:'unnamed'
-		def dbName = (!(ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType]))?prepareTableNameForSQL(ds.dbName()):null
-		def schemaName = (!(ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType]))?prepareTableNameForSQL(ds.schemaName()):null
+		def r = prepareObjectNameWithPrefix(ds.params.tableName as String, null)?:'unnamed'
+		def dbName = (!(ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType]))?prepareObjectNameWithPrefix(ds.dbName(), null):null
+		def schemaName = (!(ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType]))?prepareObjectNameWithPrefix(ds.schemaName(), null):null
 		if (schemaName != null)
 			r = schemaName + '.' + r
 		if (dbName != null) {
@@ -2666,7 +2671,7 @@ ${sql.stripTrailing()}
 			stat = con.prepareStatement(query)
 		}
 		catch (SQLException e) {
-			connection.logger.dump(e, getClass().name, dataset.objectFullName, query)
+			connection.logger.dump(e, getClass().name, dataset.objectName, query)
 			throw e
 		}
 
@@ -2925,7 +2930,7 @@ ${sql.stripTrailing()}
 			throw new DatasetError(source, '#jdbc.need_jdbc_dataset', [detail: 'unionDataset'])
 		
 		if (target.connection != source.connection)
-			throw new DatasetError(target, '#jdbc.different_connections', [source: source.dslNameObject?:source.objectFullName])
+			throw new DatasetError(target, '#jdbc.different_connections', [source: source.dslNameObject?:source.objectName])
 		
 		def autoMap = ConvertUtils.Object2Boolean(procParams.autoMap, true)
 		def map = (procParams.map as Map)?:new HashMap()
