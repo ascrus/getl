@@ -63,7 +63,7 @@ class JDBCDriver extends Driver {
 	}
 
 	/** Default rule for not quoting object name */
-	protected String defaultRuleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
+	static protected final String defaultRuleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
 
 	@SuppressWarnings('SpellCheckingInspection')
 	@Override
@@ -1955,6 +1955,7 @@ class JDBCDriver extends Driver {
 		}
 		
 		saveToHistory(sql)
+		(dataset as JDBCDataset).sysParams.lastSqlStatement = formatSqlStatements(sql)
 		
 		try {
 			java.sql.Connection con = sqlConnect.connection
@@ -3739,5 +3740,19 @@ FROM {source} {after_from}
 	}
 
 	/** Preparing read field value code */
-	String prepareReadField(Field field) { return null }
+	String prepareReadField(Field field) {
+		if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate')
+			return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalDate).atStartOfDay())'
+
+		if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
+			return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalTime).atDate(LocalDate.of(0, 1, 1))'
+
+		if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime')
+			return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalDateTime))'
+
+		if (field.type == Field.timestamp_with_timezoneFieldType && field.columnClassName == 'java.time.OffsetDateTime')
+			return 'java.sql.Timestamp.valueOf(({field} as java.time.OffsetDateTime).toLocalDateTime())'
+
+		return null
+	}
 }

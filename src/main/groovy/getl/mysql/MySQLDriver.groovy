@@ -127,10 +127,11 @@ class MySQLDriver extends JDBCDriver {
 		}
 	}
 
+	/*
 	@Override
 	String prepareReadField(Field field) {
 		if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate')
-			return '({field} as java.time.LocalDate).toDate().toTimestamp()'
+			return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalDate).atStartOfDay())'
 
 		if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
 			return '({field} as java.time.LocalTime).toDate().toTimestamp()'
@@ -143,6 +144,7 @@ class MySQLDriver extends JDBCDriver {
 
 		return null
 	}
+	 */
 
 	@SuppressWarnings(['SqlDialectInspection', 'SqlNoDataSourceInspection'])
 	@Override

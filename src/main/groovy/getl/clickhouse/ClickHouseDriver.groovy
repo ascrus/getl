@@ -130,17 +130,21 @@ class ClickHouseDriver extends JDBCDriver {
         }
     }
 
+    /*
     @Override
     String prepareReadField(Field field) {
         if (field.type == Field.dateFieldType && field.columnClassName == 'java.time.LocalDate')
-            return '({field} as java.time.LocalDate).toDate().toTimestamp()'
-        else if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
-            return '({field} as java.time.LocalTime).toDate().toTimestamp()'
-        else if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime')
-            return '({field} as java.time.LocalDateTime).toDate().toTimestamp()'
+            return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalDate).atStartOfDay())'
+
+        if (field.type == Field.timeFieldType && field.columnClassName == 'java.time.LocalTime')
+            return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalTime).atDate(LocalDate.of(0, 1, 1))'
+
+        if (field.type == Field.datetimeFieldType && field.columnClassName == 'java.time.LocalDateTime')
+            return 'java.sql.Timestamp.valueOf(({field} as java.time.LocalDateTime))'
 
         return null
     }
+     */
 
     @Override
     protected List<String> readPrimaryKey(Map<String, String> names) {

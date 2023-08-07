@@ -1178,7 +1178,7 @@ $body
 				result = new java.sql.Date(GenerateDate().time)
 				break
 			case Field.timeFieldType:
-				result = new java.sql.Time(GenerateDate().time)
+				result = new java.sql.Time(GenerateDateTime().time)
 				break
 			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
 				result = new java.sql.Timestamp(GenerateDateTime().time)
@@ -2027,9 +2027,9 @@ sb << """
 
 			switch (f.type) {
 				case Field.timestamp_with_timezoneFieldType:
-					if (!driver.timestamptzReadAsTimestamp())
+					/*if (!driver.timestamptzReadAsTimestamp())
 						sb << " outRow.put('$fName', (_getl_temp_var_${i} as java.time.OffsetDateTime).toDate().toTimestamp())"
-					else
+					else*/
 						sb << "	outRow.put('$fName', _getl_temp_var_${i})"
 					break
 				case Field.blobFieldType:
