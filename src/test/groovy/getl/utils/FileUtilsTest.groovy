@@ -408,7 +408,7 @@ println time() + 'finish' '''
 
         shouldFail { FileUtils.ResourceFileName(repFileName) }
         Getl.Dsl {getl ->
-            shouldFail { FileUtils.ResourceFileName(repFileName, getl) }
+            assertFalse(new File(FileUtils.ResourceFileName(repFileName, getl)).exists())
             repositoryStorageManager.storagePath = 'resource:/fileutils'
             def fileName3 = FileUtils.ResourceFileName(repFileName, getl)
             assertTrue(new File(fileName3).exists())

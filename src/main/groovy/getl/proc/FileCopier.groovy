@@ -385,7 +385,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         }
         if (!onlyFromStory)
             doneStoryWrite()
-        if (cacheTable != null)
+        if (cacheTable != null && !onlyFromStory)
             saveCacheStory()
 
         Operation(destinations, numberAttempts, timeAttempts, this) { man ->

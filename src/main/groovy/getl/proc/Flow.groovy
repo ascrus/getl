@@ -1174,8 +1174,12 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		if (autoMap) {
 			source.field.each { f ->
 				def fn = f.name.toLowerCase()
-				if (!(fn in excludeFields) && dest.fieldByName(fn) != null)
-					res.put(fn, fn)
+				if (!(fn in excludeFields) && dest.fieldByName(fn) != null) {
+					def dn = map.get(fn)?:fn
+					def i = dn.indexOf(';')
+					if ((i == -1 && fn == dn) || (i > -1 && StringUtils.LeftStr(dn, i) == fn))
+						res.put(fn, dn)
+				}
 			}
 			if (parentSource != null) {
 				parentSource.field.each { f ->

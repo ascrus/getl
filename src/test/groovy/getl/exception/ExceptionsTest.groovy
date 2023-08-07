@@ -26,7 +26,7 @@ class ExceptionsTest extends TestDsl {
                     schemaName = 'schema'
                     tableName = 'table'
                     this.e = new NotSupportError(tab, 'object', 'test', 'detail')
-                    assertEquals('TDSTable ["SCHEMA"."TABLE"]: Not support object "test" (detail)!', e.message)
+                    assertEquals('TDSTable [SCHEMA.TABLE]: Not support object "test" (detail)!', e.message)
                 }
 
                 embeddedTable('group:object') { tab ->

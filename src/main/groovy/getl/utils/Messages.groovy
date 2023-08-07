@@ -173,8 +173,8 @@ class Messages {
 
     /** Generate text from message or code */
     static String BuildText(GetlRepository object, String message, Map vars = null) {
-        return StringUtils.EvalMacroString('{objectClassName} [{object}]: ' + manager.message(message),
-                (vars?:[:]) + [object: object.dslNameObject?:object.toString(), objectClassName: object.getClass().simpleName], false)
+        return StringUtils.EvalMacroString('{object}: ' + manager.message(message),
+                (vars?:[:]) + [object: (object.dslNameObject != null)?(object.getClass().simpleName + ' [' + object.dslNameObject + ']'):object.toString()], false)
     }
 
     /** Generate text from message or code */
