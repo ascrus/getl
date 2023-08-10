@@ -629,7 +629,7 @@ class StringUtils {
 	/** Extract from the string the parent path relative to the specified part of the string */
 	static String ExtractParentFromChild(String path, String findPath, Boolean ignoreCase = false) {
 		findPath = String2RegExp(findPath)
-		def ic = (ignoreCase)?'(?i)':''
+		def ic = (ignoreCase)?'(?iu)':''
 		def pattern = ~(ic + '(' + findPath + ')')
 		def matcher = pattern.matcher(path)
 		def index = -1

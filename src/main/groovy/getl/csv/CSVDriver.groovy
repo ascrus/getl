@@ -719,9 +719,11 @@ class CSVDriver extends FileDriver {
 
 			List<String> listFields
 			if (prepareCode != null)
-				listFields = prepareCode.call(fileFields.findAll { field -> !field.name.matches('(?i)^_getl_csv_col_\\d+') }) as List<String>
+				listFields = prepareCode.call(fileFields.findAll { field ->
+					!field.name.matches('(?i)^_getl_csv_col_\\d+') }) as List<String>
 			else
-				listFields = fileFields.findAll { field -> !field.name.matches('(?i)^_getl_csv_col_\\d+') }
+				listFields = fileFields.findAll { field ->
+					!field.name.matches('(?i)^_getl_csv_col_\\d+') }
 						.collect { field -> field.name }
 			
 			CellProcessor[] cp = fields2cellProcessor(dataset: cds, fields: listFields, header: header,

@@ -904,7 +904,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 		def rp = root
 		if (rp[rp.length() - 1] != "/") rp += "/"
 		
-		if (cur.matches("(?i)${rp}.*")) cur = cur.substring(rp.length())
+		if (cur.matches("(?iu)${rp}.*")) cur = cur.substring(rp.length())
 		
 		return cur
 	}
@@ -2071,7 +2071,7 @@ WHERE
 		def lc = localDirectory?.replace('\\', '/')
 		
 		File f
-		if (lc != null && dir.matches("(?i)${lc}/.*")) {
+		if (lc != null && dir.matches("(?iu)${lc}/.*")) {
 			f = new File(dir)
 		}
 		else {

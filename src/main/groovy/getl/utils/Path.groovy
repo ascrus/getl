@@ -602,7 +602,7 @@ class Path implements GetlRepository {
 		maskFile = maskStr.replace('$', '\\$')
 		likeFile = maskStr
 		compVars.each { key, value ->
-			def vo = "(?i)(\\{${key}\\})"
+			def vo = "(?iu)(\\{${key}\\})"
 			maskFile = maskFile.replaceAll(vo, "\\\$\$1")
 			likeFile = likeFile.replace("{$key}", "%")
 		}
@@ -658,7 +658,7 @@ class Path implements GetlRepository {
 	/** Generation mask path pattern on elements */
 	void generateMaskPattern () {
 		StringBuilder b = new StringBuilder()
-		b.append("(?i)")
+		b.append("(?iu)")
 		for (Integer i = 0; i < elements.size(); i++) {
 			b.append(elements[i].mask)
 			if (i < elements.size() - 1) b.append("/")
@@ -671,7 +671,7 @@ class Path implements GetlRepository {
 		if (!elements.isEmpty()) {
 			StringBuilder mp = new StringBuilder()
 			StringBuilder lp = new StringBuilder()
-			mp.append("(?i)")
+			mp.append("(?iu)")
 			for (Integer i = 0; i < elements.size() - 1; i++) {
 				mp.append((elements[i].mask as String) + "/")
 				lp.append((elements[i].like as String).replace('.', '\\.') + "/")
@@ -687,7 +687,7 @@ class Path implements GetlRepository {
 		if (countElements > elements.size())
 			throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements in filepath mask [$maskStr}]")
 		StringBuilder b = new StringBuilder()
-		b.append("(?i)")
+		b.append("(?iu)")
 		for (Integer i = 0; i < countElements; i++) {
 			b.append(elements[i].mask)
 			if (i < countElements - 1) b.append("/")
@@ -740,6 +740,9 @@ class Path implements GetlRepository {
 
 	/** Checking the value by compiled mask */
 	Boolean match(String value) {
+		if (value == null)
+			throw new NullPointerException('Need mask value for matches')
+
 		return value.matches(maskPathPattern)
 	}
 

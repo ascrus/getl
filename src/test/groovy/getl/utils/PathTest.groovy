@@ -31,8 +31,8 @@ class PathTest extends GetlTest {
         assertEquals('/root', p.rootPath)
         assertEquals(5, p.countLevel)
         assertEquals(2, p.numLocalPath)
-        assertEquals('(?i)/root/(.+)/(.+)/test_(\\d\\d\\d\\d-\\d\\d-\\d\\d)_(\\d{2})[.]txt', p.maskPath)
-        assertEquals('(?i)/root/(.+)/(.+)/(.+)', p.maskFolder)
+        assertEquals('(?iu)/root/(.+)/(.+)/test_(\\d\\d\\d\\d-\\d\\d-\\d\\d)_(\\d{2})[.]txt', p.maskPath)
+        assertEquals('(?iu)/root/(.+)/(.+)/(.+)', p.maskFolder)
         assertEquals('/root/${group}/${subgroup}/test_${date}_${num}.txt', p.maskFile)
         assertEquals('/root/%/%', p.likeFolder)
         assertEquals('/root/%/%/test_%_%\\.txt', p.likeFile)
@@ -172,5 +172,13 @@ class PathTest extends GetlTest {
         assertEquals('MSK|SPB|KRD', Path.Format2Regexp('(MSK|SPB|KRD)'))
         assertEquals('(MSK|SPB)|(KRD)', Path.Format2Regexp('(MSK|SPB)|(KRD)'))
         assertEquals('MSK|[(]SPB[)]|KRD', Path.Format2Regexp('MSK|(SPB)|KRD'))
+    }
+
+    @Test
+    void testUnicodeMatch() {
+        def p = new Path('*Тест*')
+        assertTrue(p.match('первое тестирование юникод'))
+        assertTrue(p.match('Второе Тестирование юникод'))
+        assertTrue(p.match('ТРЕТЬЕ ТЕСТИРОВАНИЕ ЮНИКОД'))
     }
 }
