@@ -706,6 +706,9 @@ class Lexer {
 		if (start == null)
 			start = 0
 
+		if (start >= tokens.size())
+			return ''
+
 		if (ignoreComments == null)
 			ignoreComments = false
 

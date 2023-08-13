@@ -424,9 +424,26 @@ SWITCH_LOGIN test2;
                 sql {
                     vars.script_param = 1
                     exec '''ECHO Run scrip.sql ...
-RUN_FILE resource:/jdbc/script.sql
+RUN_FILE resource:/jdbc/script.sql;
+IF ({sql_exit_code} = 1) DO {
+  SET SELECT 'OK' AS script_return; 
+}
 '''
                     assertEquals('COMPLETE', vars.script_result)
+                    assertEquals('OK', vars.script_return)
+                    assertEquals(0, exitCode)
+
+                    exec '''ECHO Run scrip.sql ...
+RUN_FILE resource:/jdbc/script.sql;
+IF ({sql_exit_code} = 1) DO {
+  SET SELECT 'OK' AS script_return; 
+}
+
+EXIT 2;
+'''
+                    assertEquals('COMPLETE', vars.script_result)
+                    assertEquals('OK', vars.script_return)
+                    assertEquals(2, exitCode)
                 }
             }
         }
@@ -519,6 +536,49 @@ SET SELECT
             assertEquals('9D860BDC3D8A0D9144DCFE252DF7FB59', con2.storedLogins.user1)
             assertEquals('561F4D2C09DB60931C87EA14BFF904F8', con2.storedLogins.user2)
             assertEquals('333FC4C497DC27ED780FBA55CC03D2BA', con2.storedLogins.user3)
+        }
+    }
+
+    @Test
+    void testError() {
+        Getl.Dsl {
+            embeddedConnection {
+                sql {
+                    shouldFail {
+                        exec '''ECHO Test error 1 ...
+/*
+Test error
+*/ ERROR TEST1; '''
+                    }
+                    assertEquals('TEST1', errorText)
+
+                    shouldFail {
+                        exec '''ECHO Test error 2 ...
+-- Test error
+ERROR "TEST2"; '''
+                    }
+                    assertEquals('"TEST2"', errorText)
+
+                    shouldFail {
+                        exec '''ECHO Test error 3 ...
+ERROR (TEST3); -- Test error'''
+                    }
+                    assertEquals('(TEST3)', errorText)
+
+                    shouldFail {
+                        exec '''ECHO Test error 4 ...
+ERROR [TEST4]; /* Test error */'''
+                    }
+                    assertEquals('[TEST4]', errorText)
+
+                    vars.var1 = 'TEST5'
+                    shouldFail {
+                        exec '''ECHO Test error 5 ...
+ERROR {var1};'''
+                    }
+                    assertEquals('TEST5', errorText)
+                }
+            }
         }
     }
 }

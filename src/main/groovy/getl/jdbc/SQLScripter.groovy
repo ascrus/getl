@@ -92,7 +92,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 	public Map<String, Object> extVars
 	/** All variables */
 	@JsonIgnore
-	Map<String, Object> getAllVars() { ((connection?.attributes?:[:]) + (extVars?:[:]) + vars) as Map<String, Object> }
+	Map<String, Object> getAllVars() { ((connection?.attributes?:[:]) + (extVars?:[:]) + vars + [sql_exit_code: exitCode, sql_error_text: errorText]) as Map<String, Object> }
 	
 	/***  Source JDBC connection */
 	private JDBCConnection connection
@@ -253,6 +253,12 @@ class SQLScripter implements WithConnection, GetlRepository {
 		}
 	}
 
+	/** Exit code */
+	private Integer exitCode = 0
+
+	/** Exit code */
+	Integer getExitCode() { exitCode }
+
 	/** Commands history */
 	public final StringBuffer historyCommands = new StringBuffer()
 
@@ -268,6 +274,18 @@ class SQLScripter implements WithConnection, GetlRepository {
 		return StringUtils.EvalMacroString(command, allVars, errorWhenUndefined) { value ->
 			return (connection.driver as JDBCDriver).convertDateTime2String(value)
 		}.trim()
+	}
+
+	private String paramSingleOperator(String operator, SQLParser parser) {
+		setLastSql(evalMacroString(parser.lexer.script))
+		def lexer = new Lexer(lastSql, Lexer.ScriptType.SQL)
+
+		def posCmd = lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], operator)
+		if (posCmd == -1)
+			throw new SQLScripterError(this, '#sqlscripter.invalid_syntax', [operator: operator, sql: lastSql])
+
+		def text = lexer.scriptBuild(start: posCmd, ignoreComments: true)
+		return text.substring(operator.length()).trim()
 	}
 
 	@SuppressWarnings('GroovyAssignabilityCheck')
@@ -316,15 +334,13 @@ class SQLScripter implements WithConnection, GetlRepository {
 	}
 
 	private void doRunFile(SQLParser parser) {
-		setLastSql(evalMacroString(parser.lexer.script))
-		def posCmd = parser.lexer.findKeyWord('RUN_FILE')
-		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
-		if (posParam.length() == 0)
+		def text = paramSingleOperator('RUN_FILE', parser)
+		if (text.length() == 0)
 			throw new SQLScripterError(this, '#sqlscripter.run_file_non_filename')
 
-		def scriptFile = FileUtils.FindFileByDefault(posParam, ['sql'], dslCreator)
+		def scriptFile = FileUtils.FindFileByDefault(text, ['sql'], dslCreator)
 		if (scriptFile == null)
-			throw new IOFilesError(this, '#io.file.not_found', [path: posParam, type: 'Script'])
+			throw new IOFilesError(this, '#io.file.not_found', [path: text, type: 'Script'])
 
 		if (debugMode)
 			Logs.Finest(this, '#sqlscripter.run_file_start', [path: scriptFile.path])
@@ -336,6 +352,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 			vars.putAll(ns.vars)
 		}
 		finally {
+			exitCode = ns.exitCode
+			errorText = ns.errorText
 			lastSql = ns.lastSql
 			historyCommands.append(ns.historyCommands)
 			historyDDL.append(ns.historyDDL)
@@ -345,15 +363,15 @@ class SQLScripter implements WithConnection, GetlRepository {
 	}
 
 	private void doSwitchLogin(SQLParser parser) {
-		setLastSql(evalMacroString(parser.lexer.script))
-		def posCmd = parser.lexer.findKeyWord('SWITCH_LOGIN')
-		def posParam = parser.lexer.scriptBuild(start: posCmd + 1, ignoreComments: true).trim()
-		if (posParam.length() == 0)
+		def text = paramSingleOperator('SWITCH_LOGIN', parser)
+		if (text.length() == 0)
 			throw new SQLScripterError(this, '#sqlscripter.switch_login_need')
+
 		if (debugMode)
 			Logs.Finest(this, '#sqlscripter.switch_login_start',
-					[connection: connection.dslNameObject?:connection.toString(), login: posParam])
-		connection.useLogin(posParam)
+					[connection: connection.dslNameObject?:connection.toString(), login: text])
+
+		connection.useLogin(text)
 	}
 
 	/*** Do update command */
@@ -485,6 +503,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 			}
 			finally {
 				lastSql = ns.lastSql
+				exitCode = ns.exitCode
+				errorText = ns.errorText
 				historyCommands.append(ns.historyCommands)
 				historyDDL.append(ns.historyDDL)
 				historyDML.append(ns.historyDML)
@@ -546,6 +566,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 			}
 			finally {
 				lastSql = ns.lastSql
+				exitCode = ns.exitCode
+				errorText = ns.errorText
 				historyCommands.append(ns.historyCommands)
 				historyDDL.append(ns.historyDDL)
 				historyDML.append(ns.historyDML)
@@ -590,41 +612,43 @@ class SQLScripter implements WithConnection, GetlRepository {
 
 	/** Logging echo message */
 	private void doEcho(SQLParser parser) {
-		def parseScript = parser.lexer.script
-
-		def posHeader = parser.lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], 'ECHO')
-		if (posHeader == -1)
-			throw new SQLScripterError(this, '#sqlscripter.invalid_syntax', [operator: 'ECHO', sql: parseScript])
-		def tokenHeader = parser.lexer.tokens[posHeader]
-
-		String text = null
-		def posText = (tokenHeader.first as Integer) + 5
-		if (posText < parseScript.length() - 1)
-			text = parseScript.substring(posText).trim().trim()
+		def text = paramSingleOperator('ECHO', parser)
 
 		if (debugMode)
 			logger.finest('Echo ...')
 
 		if (text != null && text.length() > 0)
-			logger.write(logEcho, StringUtils.UnescapeJava(evalMacroString(text)))
+			logger.write(logEcho, StringUtils.UnescapeJava(text))
 	}
 
+	/** Error text */
+	private errorText
+
+	/** Error text */
+	String getErrorText() { errorText }
+
 	private void doError(SQLParser parser) {
-		def parseScript = parser.lexer.script
+		def text = paramSingleOperator('ERROR', parser)
+		if (text.length() == 0)
+			text = 'Script generated an error'
 
-		def posHeader = parser.lexer.findKeyWithType([Lexer.TokenType.SINGLE_WORD, Lexer.TokenType.FUNCTION], 'ERROR')
-		if (posHeader == -1)
-			throw new SQLScripterError(this, '#sqlscripter.invalid_syntax', [operator: 'ERROR', sql: parseScript])
-		def tokenHeader = parser.lexer.tokens[posHeader]
+		logger.severe(text)
+		exitCode = -1
+		errorText = text
+		throw new SQLScripterError(this, text)
+	}
 
-		String text = null
-		def posText = tokenHeader.last as Integer + 2
-		if (posText < parseScript.length() - 1)
-			text = parseScript.substring(posText).trim()
+	private void doExit(SQLParser parser) {
+		def text = paramSingleOperator('EXIT', parser)
+		if (text.length() == 0) {
+			exitCode = 0
+			return
+		}
 
-		def message = evalMacroString(text)
-		logger.severe(message)
-		throw new SQLScripterError(this, message)
+		if (!NumericUtils.IsInteger(text))
+			throw new SQLScripterError(this, '#sqlscripter.invalid_exit_value', [value: text])
+
+		exitCode = NumericUtils.String2Integer(text)
 	}
 	
 	private Boolean requiredExit
@@ -648,6 +672,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 			useParsing = connection.extensionForSqlScripts()
 
 		lastSql = null
+		exitCode = 0
+		errorText = null
 		historyCommands.setLength(0)
 		historyDDL.setLength(0)
 		historyDML.setLength(0)
@@ -710,6 +736,7 @@ class SQLScripter implements WithConnection, GetlRepository {
 						doError(parser)
 						break
 					case SQLParser.StatementType.GETL_EXIT:
+						doExit(parser)
 						requiredExit = true
 						break
 					case SQLParser.StatementType.GETL_LOAD_POINT:
@@ -732,9 +759,15 @@ class SQLScripter implements WithConnection, GetlRepository {
 			}
 			catch (Exception e) {
 				logger.severe("Error run script:\n${st[i]}")
+				if (exitCode != -1)
+					exitCode = -2
+
 				throw e
 			}
 		}
+
+		if (!requiredExit)
+			exitCode = 0
 	}
 
 	private Pattern scriptVariablePattern = Pattern.compile('^[:](\\w+)$')

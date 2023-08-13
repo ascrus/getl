@@ -47,7 +47,7 @@ class SQLParser {
 			GETL_SET: ['(?i)^[@]{0,1}SET .+'],
 			GETL_FOR: ['(?i)^[@]{0,1}FOR DO'],
 			GETL_COMMAND: ['(?i)^[@]{0,1}COMMAND'],
-			GETL_EXIT: ['(?i)^[@]{0,1}EXIT'],
+			GETL_EXIT: ['(?i)^[@]{0,1}EXIT( .+)*$'],
 			GETL_ERROR: ['(?i)^[@]{0,1}ERROR( .+)*$'],
 			GETL_LOAD_POINT: ['(?i)^[@]{0,1}LOAD[_]POINT .+ TO .+'],
 			GETL_SAVE_POINT: ['(?i)^[@]{0,1}SAVE[_]POINT .+ FROM .+'],
