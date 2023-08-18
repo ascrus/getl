@@ -9,8 +9,11 @@ out/
 ### Config files for test modules
 tests/
 
-## Eclipse
+### Eclipse
 bin/
 .classpath
 .project
 .settings/
+
+### Wiki
+wiki/
