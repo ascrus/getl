@@ -14,6 +14,7 @@ import getl.exception.IOFilesError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
 import getl.exception.SQLScripterError
+import getl.exception.SQLScripterException
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
@@ -23,6 +24,7 @@ import groovy.transform.Synchronized
 import java.nio.charset.Charset
 import java.nio.charset.IllegalCharsetNameException
 import java.nio.charset.UnsupportedCharsetException
+import java.sql.SQLException
 import java.util.regex.Pattern
 
 /**
@@ -253,10 +255,18 @@ class SQLScripter implements WithConnection, GetlRepository {
 		}
 	}
 
-	/** Exit code */
+	/** Script exit code */
 	private Integer exitCode = 0
 
-	/** Exit code */
+	/** Script exit code
+	 * <ul>
+	 *     <li>>=0: complete without error;</li>
+	 *     <li>-1: critical error;</li>
+	 *     <li>-2: syntax error;</li>
+	 *     <li>-3: sql error;</li>
+	 *     <li>-4: user error.</li>
+	 * </ul>
+	 */
 	Integer getExitCode() { exitCode }
 
 	/** Commands history */
@@ -633,9 +643,8 @@ class SQLScripter implements WithConnection, GetlRepository {
 			text = 'Script generated an error'
 
 		logger.severe(text)
-		exitCode = -1
 		errorText = text
-		throw new SQLScripterError(this, text)
+		throw new SQLScripterException(this, text)
 	}
 
 	private void doExit(SQLParser parser) {
@@ -757,11 +766,23 @@ class SQLScripter implements WithConnection, GetlRepository {
 						doOther(parser)
 				}
 			}
+			catch (SQLException e) {
+				logger.severe("SQL error: ${e.message}\n${st[i]}")
+				exitCode = -3
+				throw e
+			}
+			catch (SQLScripterException e) {
+				exitCode = -4
+				throw e
+			}
+			catch (SQLScripterError e) {
+				logger.severe("Script syntax error:${e.message}\n${st[i]}")
+				exitCode = -2
+				throw e
+			}
 			catch (Exception e) {
-				logger.severe("Error run script:\n${st[i]}")
-				if (exitCode != -1)
-					exitCode = -2
-
+				logger.severe("Critical error: ${e.message}\n${st[i]}")
+				exitCode = -1
 				throw e
 			}
 		}

@@ -266,4 +266,45 @@ class WorkflowTest extends GetlDslTest {
             }
         }
     }
+
+    @Test
+    void testError() {
+        Getl.Dsl {
+            models.workflow {
+                start {
+                    later('LATER 1') {
+                        exec {
+                            className = 'getl.models.WorkflowTestError'
+                            vars.step_name = 'LATER 1'
+                        }
+                        onError {
+                            condition = 'return true'
+                        }
+
+                        later('SUB LATER 1') {
+                            exec {
+                                className = 'getl.models.WorkflowTestError'
+                                vars.step_name = 'SUB LATER 1'
+                            }
+                            onError {
+                                condition = 'return true'
+                            }
+                        }
+                    }
+
+                    later('LATER 2') {
+                        exec {
+                            className = 'getl.models.WorkflowTestError'
+                            vars.step_name = 'LATER 2'
+                        }
+                        onError {
+                            condition = 'return true'
+                        }
+                    }
+                }
+
+                execute()
+            }
+        }
+    }
 }

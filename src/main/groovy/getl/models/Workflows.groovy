@@ -25,7 +25,6 @@ import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -283,7 +282,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
 
         def parent = scriptByName(scriptName)
         if (parent == null)
-            throw new ExceptionModel("Script \"$scriptName\" not found in workflow!")
+            throw new ExceptionModel("Script \"$scriptName\" not found in workflow")
 
         parent.runClosure(cl)
 
@@ -359,7 +358,7 @@ class Workflows extends BaseModel<WorkflowSpec> {
      */
     Integer execute(Map<String, Object> addVars = null, List<String> include_steps = null, List<String> exclude_steps = null,
                     URLClassLoader userClassLoader = null) {
-        dslCreator.logFinest("Executing workflow [\"$dslNameObject\"] model ...")
+        dslCreator.logFinest("Executing workflow $this model ...")
 
         if (userClassLoader == null && dslCreator != null)
             userClassLoader = dslCreator.repositoryStorageManager.librariesClassLoader
@@ -378,12 +377,12 @@ class Workflows extends BaseModel<WorkflowSpec> {
             }
             catch (Throwable e) {
                 if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
-                    dslCreator.logError("Error execution step \"${node.stepName}\"!", e)
+                    dslCreator.logError("Error execution step \"${node.stepName}\"", e)
 
                 throw e
             }
         }
-        dslCreator.logInfo("--- Execution $res steps from workflow \"$dslNameObject\" model completed successfully")
+        dslCreator.logInfo("--- Execution $res steps from workflow $this model completed successfully")
 
         return res
     }
@@ -495,7 +494,7 @@ return $className"""
 
         if ((include_steps != null && !Path.MatchList(node.stepName, include_steps)) ||
                 (exclude_steps != null && Path.MatchList(node.stepName, exclude_steps))) {
-            dslCreator.logWarn("Step \"${node.stepName}\" is not included in the allowed step names and is skipped!")
+            dslCreator.logWarn("Step \"${node.stepName}\" is not included in the allowed step names and is skipped")
 
             node.nested.findAll { it.operation != errorOperation }.each { subNode ->
                 try {
@@ -503,7 +502,7 @@ return $className"""
                 }
                 catch (Throwable e) {
                     if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
-                        dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+                        dslCreator.logError("Error execution step \"${subNode.stepName}\"", e)
 
                     throw e
                 }
@@ -524,7 +523,7 @@ return $className"""
             }
             catch (Throwable e) {
                 dslCreator.logError("$methodType code execution error for step \"$stepLabel\"", e)
-                dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel]", scriptUserCode)
+                dslCreator.logging.dump(e, 'workflow', "${this}.[$stepLabel]", scriptUserCode)
                 throw e
             }
 
@@ -532,10 +531,10 @@ return $className"""
         }
 
         // Check condition for step
-        if (node.condition != null) {
+        if (node.condition != null && node.operation != errorOperation) {
             def conditionResult = runMethod('Condition', conditionName(node.stepName), true)
             if (!BoolUtils.IsValue(conditionResult)) {
-                dslCreator.logWarn("Conditions for \"$stepLabel\" step do not require its execute!")
+                dslCreator.logWarn("Condition for \"$stepLabel\" step do not require its execute")
                 return res
             }
         }
@@ -676,7 +675,7 @@ return $className"""
                             if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP) {
                                 Logs.Severe(this, '#dsl.model.workflows.error_executing', [step: stepLabel, script: scriptName, className: runClass.name], e)
                                 if (generatedUserCode != null)
-                                    dslCreator.logging.dump(e, 'workflow', "[${dslNameObject}].[$stepLabel].[$scriptName]", scriptUserCode)
+                                    dslCreator.logging.dump(e, 'workflow', "${this}.[$stepLabel].[$scriptName]", scriptUserCode)
                             }
                             throw e
                         }
@@ -712,7 +711,7 @@ return $className"""
                 }
                 catch (Throwable e) {
                     if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
-                        dslCreator.logError("Error execution step \"${subNode.stepName}\"!", e)
+                        dslCreator.logError("Error execution step \"${subNode.stepName}\"", e)
 
 
                     throw e
@@ -720,20 +719,32 @@ return $className"""
             }
         }
         catch (Exception e) {
+            def needThrow = true
             def errStep = node.nested.find { it.operation == errorOperation }
             if (errStep != null) {
                 try {
-                    stepExecute(errStep, addVars ?: new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
+                    stepExecute(errStep, addVars?:new HashMap<String, Object>(), include_steps, exclude_steps, userClassLoader, stepLabel)
                 }
                 catch (Throwable err) {
                     if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP)
-                        dslCreator.logError("Error execution step \"${errStep.stepName}\"!", err)
+                        dslCreator.logError("Error execution step \"${errStep.stepName}\"", err)
 
                     throw err
                 }
+
+                if (!(e instanceof AbortDsl) || (e as AbortDsl).typeCode != AbortDsl.STOP_APP) {
+                    if (errStep.condition != null) {
+                        def conditionResult = runMethod('Condition', conditionName(errStep.stepName), true)
+                        if (BoolUtils.IsValue(conditionResult)) {
+                            needThrow = false
+                            dslCreator.logWarn("Condition for \"$stepLabel\" step requires workflows to continue")
+                        }
+                    }
+                }
             }
 
-            throw e
+            if (needThrow)
+                throw e
         }
 
         return res
