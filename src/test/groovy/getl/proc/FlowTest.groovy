@@ -305,6 +305,51 @@ class FlowTest extends GetlDslTest {
     }
 
     @Test
+    void testExpressions() {
+        Getl.Dsl {
+            def file1 = csvTemp {
+                field('f1')
+                field('f2') { type = integerFieldType }
+                field('f3') { type = datetimeFieldType }
+
+                etl.rowsTo {
+                    writeRow { add ->
+                        add f1: '1', f2: 100, f3: DateUtils.ParseSQLTimestamp('2023-08-01 00:00:01')
+                        add f1: '2', f2: 200, f3: DateUtils.ParseSQLTimestamp('2023-08-01 00:00:02')
+                        add f1: 'n/a', f2: 300, f3: DateUtils.ParseSQLTimestamp('2023-08-01 00:00:03')
+                    }
+                }
+            }
+
+            def file2 = csvTemp {
+                field = file1.field
+                field('f1') { type = integerFieldType }
+            }
+
+            etl.copyRows(file1, file2) {
+                map.f1 = '${nullIf(source.f1, \'n/a\')}'
+            }
+
+            def rows = file2.rows()
+
+            def r = rows[0]
+            assertEquals(1, r.f1)
+            assertEquals(100, r.f2)
+            assertEquals(DateUtils.ParseSQLTimestamp('2023-08-01 00:00:01'), r.f3)
+
+            r = rows[1]
+            assertEquals(2, r.f1)
+            assertEquals(200, r.f2)
+            assertEquals(DateUtils.ParseSQLTimestamp('2023-08-01 00:00:02'), r.f3)
+
+            r = rows[2]
+            assertNull(r.f1)
+            assertEquals(300, r.f2)
+            assertEquals(DateUtils.ParseSQLTimestamp('2023-08-01 00:00:03'), r.f3)
+        }
+    }
+
+    @Test
     void testSaveErrors() {
         Getl.Dsl {
             def csv = csvTemp {

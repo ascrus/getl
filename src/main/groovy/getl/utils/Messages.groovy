@@ -15,14 +15,16 @@ class Messages {
         super()
     }
 
-    Messages(String fileName) {
+    Messages(String fileName, Boolean overload = false) {
         super()
-        attachFile(fileName)
+        attachFile(fileName, overload)
     }
 
-    Messages(List<String> files) {
+    Messages(List<String> files, Boolean overload = false) {
         super()
-        files.each {fileName -> attachFile(fileName) }
+        files.each {fileName ->
+            attachFile(fileName, overload)
+        }
     }
 
     static {
@@ -125,7 +127,7 @@ class Messages {
      * Attach properties file with messages
      * @param fileName file name
      */
-    void attachFile(String fileName) {
+    void attachFile(String fileName, Boolean overload = false) {
         def fn = FileUtils.ResourceFileName(fileName)
         if (fn == null)
             throw new Error("Messages resource file \"$fileName\" not found!")
@@ -144,12 +146,15 @@ class Messages {
             props.load(reader)
         }
         def newKeys = props.keySet().toList() as List<String>
-        def alreadyKeys = (messages.keySet().toList() as List<String>).intersect(newKeys)
-        if (!alreadyKeys.isEmpty())
-            throw new Error("Message file \"$fileName\" already codes: ${alreadyKeys.join('; ')}")
+        if (!overload) {
+            def alreadyKeys = (messages.keySet().toList() as List<String>).intersect(newKeys)
+            if (!alreadyKeys.isEmpty())
+                throw new Error("Message file \"$fileName\" already codes: ${alreadyKeys.join('; ')}")
+        }
 
         messages.putAll(props)
-        files.add(fileName)
+        if (!(fileName in files))
+            files.add(fileName)
     }
 
     /**
@@ -157,13 +162,13 @@ class Messages {
      * @param name name of message file
      * @param classLoader class loader for search resource files
      */
-    void attachResourceFile(String name, ClassLoader classLoader = null) {
+    void attachResourceFile(String name, ClassLoader classLoader = null, Boolean overload = false) {
         def fileName = name + '.' + lang.toLowerCase() + '.properties'
         def file = FileUtils.FileFromResources('/' + fileName, null, classLoader)
         if (file == null)
             throw new Error("Message file \"$fileName\" not found in resources!")
 
-        attachFile('resource:/' + fileName)
+        attachFile('resource:/' + fileName, overload)
     }
 
     /** Generate text from message or code */

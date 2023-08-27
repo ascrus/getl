@@ -222,6 +222,26 @@ class ExecutorTest extends GetlTest {
 
 //                println countProcessed
                 assertTrue(countProcessed < 40000)
+
+                abortOnError = false
+                run {
+                    if (it == 30000)
+                        throw new Exception("Stop")
+                }
+                assertEquals(99999, countProcessed)
+
+                abortOnError = false
+                def foundErrors = []
+                processError { elem, err ->
+                    foundErrors << elem
+                    return true
+                }
+                run {
+                    if (it == 30000)
+                        throw new Exception("Stop")
+                }
+                assertEquals(99999, countProcessed)
+                assertEquals([30000], foundErrors)
             }
         }
     }

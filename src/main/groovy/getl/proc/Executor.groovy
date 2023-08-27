@@ -64,6 +64,37 @@ class Executor implements GetlRepository {
 	/** Abort on error in any process (default false) */
 	@Synchronized
 	void setAbortOnError(Boolean value) { abortOnError = value }
+
+	/** Processing error user code */
+	private Closure<Boolean> onProcessError
+	/** Processing error user code */
+	Closure<Boolean> getOnProcessError() { onProcessError }
+	/** Processing error user code */
+	void setOnProcessError(Closure<Boolean> value) { onProcessError = value }
+	/** Processing error user code<br><br>
+     * <b>Closure parameters:</b>
+     * <ul>
+     *     <li>element - thread element being processed</li>
+     *     <li>error - an error occurred</li>
+     * </ul>
+     * <b>Closure return:</b>
+     * <ul>
+     *     <li>true - continue with other elements</li>
+     *     <li>false - abort with an error</li>
+     * </ul>
+     * @param value user code as Closure
+     */
+	void processError(@ClosureParams(value = SimpleType, options = ['java.lang.Object', 'java.lang.Throwable']) Closure<Boolean> value) {
+		setOnProcessError(value)
+	}
+	/** Run user process for found error */
+	@Synchronized
+	private Boolean continueWithError(Object elem, Throwable e) {
+		if (onProcessError == null)
+			return true
+
+		return onProcessError.call(elem, e)
+	}
 	
 	/** Write thread errors to log (default false) */
 	private Boolean logErrors = false
@@ -328,6 +359,8 @@ class Executor implements GetlRepository {
 						catch (Throwable e) {
 							if (abortOnError)
 								throw e
+                            else if (!continueWithError(element, e))
+								throw e
 						}
 					}
 				}
@@ -477,7 +510,8 @@ class Executor implements GetlRepository {
 							counterProcessed.nextCount()
 						}
 						catch (Throwable e) {
-							if (abortOnError)
+							def userCheck = continueWithError(element, e)
+							if (abortOnError && !userCheck)
 								throw e
 						}
 					}

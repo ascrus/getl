@@ -171,8 +171,10 @@ class Flow {
 					}
 				}
 			}
+
 			result.put(k.toLowerCase(), m)
 		}
+
 		return result
 	}
 
@@ -257,9 +259,11 @@ class Flow {
 			String mn
 			
 			def convert = (!(df.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
-			 
+
+			def mapName = map.get(dn)
+			def isCalc = BoolUtils.IsValue(mapName.isCalc)
 			String mapFormat = null
-			Map mapName = map.get(dn) as Map
+
 			// No source map field
 			if (mapName.isEmpty()) {
 				// Nothing mapping
@@ -378,7 +382,7 @@ class Flow {
 class {GETL_FLOW_CALC_CLASS_NAME} extends getl.utils.sub.CalcMapVarsScript {
 @Override
 void processRow(Map<String, Object> source, Map<String, Object> dest) {
-  	def vars = calcVars
+  def vars = calcVars
 """
 
 		def removeKeys = [] as List<String>
@@ -1174,7 +1178,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		if (autoMap) {
 			source.field.each { f ->
 				def fn = f.name.toLowerCase()
-				if (!(fn in excludeFields) && dest.fieldByName(fn) != null) {
+				if (!(fn in excludeFields) && !(fn in calcFields) && dest.fieldByName(fn) != null) {
 					def dn = map.get(fn)?:fn
 					def i = dn.indexOf(';')
 					if ((i == -1 && fn == dn) || (i > -1 && StringUtils.LeftStr(dn, i) == fn))
@@ -1187,7 +1191,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 						return
 
 					def fn = f.name.toLowerCase()
-					if (!(fn in excludeFields) && dest.fieldByName(fn) != null)
+					if (!(fn in excludeFields) && !(fn in calcFields) && dest.fieldByName(fn) != null)
 						res.put(fn, fn)
 				}
 			}
@@ -1206,7 +1210,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		if (!copyOnlyMatching && autoMap) {
 			dest.field.each { f ->
 				def fn = f.name.toLowerCase()
-				if (!res.containsKey(fn) && !(fn in excludeFields))
+				if (!res.containsKey(fn) && !(fn in excludeFields) && !(fn in calcFields))
 					res.put(fn, null)
 			}
 		}
