@@ -100,7 +100,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	protected void doDoneConnect() {
 		super.doDoneConnect()
 		sysParams.sessionID = currentJDBCDriver.sessionID()
-		currentJDBCDriver.saveToHistory("-- USER CONNECTED (URL: ${sysParams."currentConnectURL"})${(autoCommit())?' WITH AUTOCOMMIT':''}")
+		currentJDBCDriver.saveToHistory("-- USER CONNECTED (URL: ${sysParams."buildConnectURL"})${(autoCommit())?' WITH AUTOCOMMIT':''}")
         if (!sessionProperty.isEmpty()) {
 			currentJDBCDriver.initSessionProperties()
         }
@@ -108,7 +108,7 @@ class JDBCConnection extends Connection implements UserLogins {
 
 	@Override
 	protected void doDoneDisconnect() {
-		currentJDBCDriver.saveToHistory("-- USER DISCONNECTED (URL: ${sysParams."currentConnectURL"})")
+		currentJDBCDriver.saveToHistory("-- USER DISCONNECTED (URL: ${sysParams."buildConnectURL"})")
 		super.doDoneDisconnect()
 		sysParams.sessionID = null
 	}
@@ -127,11 +127,6 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * JDBC connection URL
 	 */
 	void setConnectURL(String value) { params.connectURL = value }
-	
-	/**
-	 * Build jdbc connection url
-	 */
-	String currentConnectURL() { sysParams.currentConnectURL as String }
 	
 	/**
 	 * Server host and port for connection url
@@ -191,6 +186,8 @@ class JDBCConnection extends Connection implements UserLogins {
 	String getDbName() { params.dbName as String }
 	/** Database name from access to objects in datasets */
 	void setDbName(String value) { params.dbName = value }
+	/** Current database name from access to objects in datasets */
+	String dbName() { StringUtils.EvalMacroString(dbName, dslVars, false) }
 
 	/** Schema name from access to objects in datasets */
 	String getSchemaName() { params.schemaName as String }
@@ -202,7 +199,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		if (res == null && currentJDBCDriver.defaultSchemaFromConnectDatabase)
 			res = connectDatabase
 
-		return res
+		return StringUtils.EvalMacroString(res, dslVars, false)
 	}
 
 	/** Code page for connection files */
@@ -329,10 +326,19 @@ class JDBCConnection extends Connection implements UserLogins {
 	String getLastSqlStatement() { sysParams.lastSqlStatement as String }
 
 	/** Current host for connection */
-	String currentConnectHost() { connectHost }
+	String connectHost() { StringUtils.EvalMacroString(connectHost, dslVars, false) }
+
+	/** Current url for connection */
+	String connectURL() { StringUtils.EvalMacroString(connectURL, dslVars, false) }
 
 	/** Current database name for connection */
-	String currentConnectDatabase() { connectDatabase }
+	String connectDatabase() { StringUtils.EvalMacroString(connectDatabase, dslVars, false) }
+
+	/** Current login for connection */
+	String login() { StringUtils.EvalMacroString(login, dslVars, false) }
+
+	/** Build jdbc connection url */
+	String buildConnectURL() { sysParams.buildConnectURL as String }
 
 	/**
 	 * Return datasets list by parameters
@@ -494,7 +500,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	String getObjectName() {
 		def str
 		if (connectURL != null) {
-			def m = connectURL =~ /jdbc:.+:\/\/(.+)/
+			def m = connectURL() =~ /jdbc:.+:\/\/(.+)/
 			if (m.count == 1) {
 				def p = (driver as JDBCDriver).connectionParamBegin
 				def h = (m[0] as List)[1] as String
@@ -502,15 +508,16 @@ class JDBCConnection extends Connection implements UserLogins {
 				str = (i != -1)?h.substring(0, i):h
 			}
 			else {
-				str = connectURL
+				str = connectURL()
 			}
 		}
 		else if (connectHost != null) {
-			str = "host: ${currentConnectHost()}"
-			if (connectDatabase != null) str += ", db: ${currentConnectDatabase()}"
+			str = "host: ${connectHost()}"
+			if (connectDatabase != null)
+				str += ", db: ${connectDatabase()}"
 		}
 		else if (connectDatabase != null) {
-			str = "database: ${currentConnectDatabase()}"
+			str = "database: ${connectDatabase()}"
 		}
 		else{
 			str = "unknown"
@@ -578,13 +585,13 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Current host name */
 	@JsonIgnore
 	String getConnectHostName() {
-		ConnectHost2HostName(connectHost)
+		ConnectHost2HostName(connectHost())
 	}
 	
 	/** Current port number */
 	@JsonIgnore
 	Integer getConnectPortNumber() {
-		ConnectHost2PortNumber(connectHost)
+		ConnectHost2PortNumber(connectHost())
 	}
 	
 	/** Current script history file name */

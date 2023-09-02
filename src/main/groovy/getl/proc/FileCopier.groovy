@@ -350,7 +350,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
                         run { Integer segment ->
                             def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}", isTempLocalDirectory: true], dslCreator)
-                            FileUtils.ValidPath(src.localDirectory, true)
+                            FileUtils.ValidPath(src.localDirectory(), true)
                             def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory, isTempLocalDirectory: true], dslCreator)
                             ConnectTo([src, dst], na, ta)
 
@@ -358,7 +358,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                                 processSegment(segment, src, [dst])
                             }
                             finally {
-                                FileUtils.DeleteFolder(src.localDirectory, true)
+                                FileUtils.DeleteFolder(src.localDirectory(), true)
                                 disconnectFrom([src, dst])
                             }
                         }

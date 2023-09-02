@@ -707,6 +707,23 @@ class RepositoryTest extends TestDsl {
     }
 
     @Test
+    void testConnectionVars() {
+        if (!FileUtils.ExistsFile(repConfigFileName)) return
+
+        Getl.Dsl {
+            configuration.load repConfigFileName
+            repositoryStorageManager {
+                autoLoadFromStorage = false
+                autoLoadForList = false
+                storagePath = 'resource:/repository'
+                loadRepositories()
+            }
+
+            callScript(CheckVarsScript, [con: embeddedConnection('h2:con')], [password: '123'])
+        }
+    }
+
+    @Test
     void testAddJdbcTablesToRepository() {
         Getl.Dsl {
             useEmbeddedConnection embeddedConnection('h2:con', true) {

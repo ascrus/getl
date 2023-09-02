@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Alexsey Konstantinov
  */
 @SuppressWarnings('unused')
-class RepositoryStorageManager {
+final class RepositoryStorageManager {
     RepositoryStorageManager(Getl owner) {
         dslCreator = owner
         initRepositories()

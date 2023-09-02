@@ -69,7 +69,8 @@ class TDS extends H2Connection {
 		if (connectHost == null) {
 			connectProperty."IFEXISTS" = "FALSE"
 		}
-		if (inMemory && connectProperty."DB_CLOSE_DELAY" == null) connectProperty."DB_CLOSE_DELAY" = -1
+		if (inMemory && connectProperty."DB_CLOSE_DELAY" == null)
+			connectProperty."DB_CLOSE_DELAY" = -1
 //		autoCommit = true
 	}
 
@@ -77,7 +78,7 @@ class TDS extends H2Connection {
     protected void doDoneDisconnect () {
         super.doDoneDisconnect()
         if (!inMemory && connectURL == null && connectDatabase != null) {
-            DeleteDbFiles.execute(tempPath, FileUtils.FileName(connectDatabase), true)
+            DeleteDbFiles.execute(tempPath, FileUtils.FileName(connectDatabase()), true)
         }
     }
 	
@@ -101,8 +102,8 @@ class TDS extends H2Connection {
 				connectDatabase = "getl"
 			} else {
 				connectDatabase = "$tempPath/getl"
-				new File(connectDatabase + '.mv.db').deleteOnExit()
-				new File(connectDatabase + '.trace.db').deleteOnExit()
+				new File(connectDatabase() + '.mv.db').deleteOnExit()
+				new File(connectDatabase() + '.trace.db').deleteOnExit()
 			}
 		}
 	}

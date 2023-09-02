@@ -157,7 +157,7 @@ class SavePointManager implements GetlRepository, WithConnection {
 	JDBCConnection getCurrentJDBCConnection() { connection as JDBCConnection }
 
 	/** Database name for table */
-	String getDbName () { (params.dbName as String)?:currentJDBCConnection.dbName }
+	String getDbName () { (params.dbName as String)?:currentJDBCConnection.dbName() }
 	/** Database name for table */
 	void setDbName (String value) {
 		params.dbName = value

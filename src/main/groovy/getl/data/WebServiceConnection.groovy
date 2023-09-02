@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -9,7 +10,7 @@ import getl.lang.sub.LoginManager
 import getl.lang.sub.StorageLogins
 import getl.lang.sub.UserLogins
 import getl.utils.CloneUtils
-import getl.utils.ConvertUtils
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
@@ -41,6 +42,8 @@ class WebServiceConnection extends FileConnection implements UserLogins {
     String getWebUrl() { params.webUrl as String }
     /** Url connection */
     void setWebUrl(String value) { params.webUrl = value }
+    /** Current url connection */
+    String webUrl() { StringUtils.EvalMacroString(webUrl, dslVars, false) }
 
     /** Connection url parameters */
     Map<String, Object> getWebParams() { params.webParams as Map<String, Object> }
@@ -123,6 +126,8 @@ class WebServiceConnection extends FileConnection implements UserLogins {
     String getLogin() { params.login as String }
     @Override
     void setLogin(String value) { params.login = value }
+    /** Current login */
+    String login() { StringUtils.EvalMacroString(login, dslVars, false) }
 
     @Override
     String getPassword() { params.password as String }
@@ -195,7 +200,7 @@ class WebServiceConnection extends FileConnection implements UserLogins {
         def res = super.getObjectName()
         if (webUrl != null) {
             try {
-                def url = new URL(webUrl)
+                def url = new URL(webUrl())
                 res += " /${url.protocol}://${url.host}:${url.port?:url.defaultPort}/"
             }
             catch (Exception ignored) { }

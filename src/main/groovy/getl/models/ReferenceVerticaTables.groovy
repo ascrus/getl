@@ -189,7 +189,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 def rows = rows()
                 if (rows.size() != 1)
                     throw new ModelError(this, '#dsl.model.reference_vertica_tables.invalid_user',
-                            [connection: referenceConnectionName, user: currentJDBCConnection.login])
+                            [connection: referenceConnectionName, user: currentJDBCConnection.login()])
 
                 def roles = rows[0].roles as String
                 if (roles != null && roles != '') {

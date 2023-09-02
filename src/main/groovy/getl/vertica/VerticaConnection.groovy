@@ -58,7 +58,7 @@ class VerticaConnection extends JDBCConnection {
 		if (con.connectURL != null)
 		{
 			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
-			def m = p.analyze(con.connectURL)
+			def m = p.analyze(con.connectURL())
 
 			database = m.database as String
 			if (database == null)
@@ -69,7 +69,7 @@ class VerticaConnection extends JDBCConnection {
 			}
 		}
 		else {
-			database = con.connectDatabase
+			database = con.connectDatabase()
 			if (database == null)
 				throw new ExceptionGETL("No database is specified for the connection!")
 		}
@@ -95,14 +95,14 @@ class VerticaConnection extends JDBCConnection {
 		if (anotherConnection.login == null)
 			throw new ExceptionGETL("No login is specified for the connection \"$anotherConnection\"!")
 
-		def password = anotherConnection.loginManager.currentDecryptPassword()
+		def password = StringUtils.EvalMacroString(anotherConnection.loginManager.currentDecryptPassword(), anotherConnection.dslVars, false)
 		if (password == null)
 			throw new ExceptionGETL("No password is specified for the connection \"$anotherConnection\"!")
 
 		def database, host, port = 5433
 		if (anotherConnection.connectURL != null) {
 			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
-			def m = p.analyze(anotherConnection.connectURL)
+			def m = p.analyze(anotherConnection.connectURL())
 			host = m.host as String
 			if (host == null)
 				throw new ExceptionGETL("Invalid connect URL, host unreachable in connection \"$anotherConnection\"!")
@@ -121,18 +121,18 @@ class VerticaConnection extends JDBCConnection {
 			}
 		}
 		else {
-			host = anotherConnection.connectHost
+			host = anotherConnection.connectHost()
 			if (host == null)
 				throw new ExceptionGETL("No host is specified for the connection \"$anotherConnection\"!")
 			port = anotherConnection.connectPortNumber?:5433
-			database = anotherConnection.connectDatabase
+			database = anotherConnection.connectDatabase()
 			if (database == null)
 				throw new ExceptionGETL("No database is specified for the connection \"$anotherConnection\"!")
 		}
 
 		def command = "CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}"
 		def p = [host: host, port: port, database: database,
-					  login: anotherConnection.login, password: password]
+					  login: anotherConnection.login(), password: password]
 		def h = StringUtils.EvalMacroString(command, p + [password: StringUtils.Replicate('*', password.length())])
 		executeCommand(command, [queryParams: p, historyText: h])
 

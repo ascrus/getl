@@ -332,8 +332,10 @@ Examples:
 
                 eng = runClass.getConstructor().newInstance() as Getl
                 eng.configuration.manager.init(jobArgs)
-                if (jobArgs.vars != null)
+                if (jobArgs.vars != null) {
                     eng.configuration.manager.vars.putAll(jobArgs.vars as Map)
+                    eng.scriptExtendedVars.putAll(jobArgs.vars as Map)
+                }
 
                 if (jobArgs.getl_verbose_mode != null)
                     eng.setGetlSystemParameter('verboseMode', BoolUtils.IsValue(jobArgs.getl_verbose_mode))
@@ -5323,7 +5325,8 @@ Examples:
                       @DelegatesTo(FileManager)
                       @ClosureParams(value = SimpleType, options = ['getl.files.FileManager']) Closure cl = null) {
         def parent = registerFileManager(RepositoryFilemanagers.FILEMANAGER, name, registration) as FileManager
-        if (parent.rootPath == null) parent.rootPath = new File('.').canonicalPath
+        if (parent.rootPath == null)
+            parent.rootPath = new File('.').canonicalPath
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
             try {

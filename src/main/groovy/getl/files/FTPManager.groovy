@@ -62,6 +62,8 @@ class FTPManager extends Manager implements UserLogins {
 	String getServer() { params.server }
 	/** Server address */
 	void setServer(String value) { params.server = value }
+	/** Current server address */
+	String server() { StringUtils.EvalMacroString(server, dslVars, false) }
 	
 	/** Server port */
 	Integer getPort() { (params.port != null)?(params.port as Integer):21 }
@@ -72,6 +74,8 @@ class FTPManager extends Manager implements UserLogins {
 	String getLogin() { params.login }
 	@Override
 	void setLogin(String value) { params.login = value }
+	/** Current login */
+	String login() { StringUtils.EvalMacroString(login, dslVars, false) }
 	
 	@Override
 	String getPassword() { params.password }
@@ -168,7 +172,9 @@ class FTPManager extends Manager implements UserLogins {
 		if (login == null)
 			throw new RequiredParameterError(this, 'login', 'connect')
 
-		writeScriptHistoryFile("Connect to ftp $server:$port with login $login from session $sessionID")
+		def lPassword = StringUtils.EvalMacroString(loginManager.currentDecryptPassword(), dslVars, false)
+
+		writeScriptHistoryFile("Connect to ftp ${server()}:$port with login ${login()} from session $sessionID")
 		
 		if (connectionTimeout != null)
 			client.connector.connectionTimeout = connectionTimeout
@@ -176,8 +182,8 @@ class FTPManager extends Manager implements UserLogins {
 			client.connector.closeTimeout = closeTimeout
 		if (readTimeout != null)
 			client.connector.readTimeout = readTimeout
-		client.connect(server, port)
-		client.login(login, loginManager.currentDecryptPassword())
+		client.connect(server(), port)
+		client.login(login(), lPassword)
         if (autoNoopTimeout != null)
 			client.setAutoNoopTimeout(autoNoopTimeout * 1000)
 		client.setType(FTPClient.TYPE_BINARY)
@@ -525,13 +531,13 @@ class FTPManager extends Manager implements UserLogins {
 			return 'ftp'
 
 		String res
-		def loginStr = (login != null)?"$login@":''
+		def loginStr = (login != null)?"${login()}@":''
 		if (rootPath == null || rootPath.length() == 0)
-			res = "ftp://$loginStr$server"
+			res = "ftp://$loginStr${server()}"
 		else if (rootPath[0] == '/')
-			res = "ftp://$loginStr$server$rootPath"
+			res = "ftp://$loginStr${server()}${rootPath()}"
 		else
-			res = "ftp://$loginStr$server/$rootPath"
+			res = "ftp://$loginStr${server()}/${rootPath()}"
 
 		return res
 	}

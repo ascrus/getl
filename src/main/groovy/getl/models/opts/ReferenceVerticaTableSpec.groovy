@@ -297,7 +297,7 @@ ORDER BY ordinal_position'''
         p.putAll(ownerReferenceVerticaTableModel.modelVars)
         p.putAll(objectVars)
         p._model_sourcetable_ = sourceTable.fullTableName
-        p._model_destdatabase_ = externalConnection.connectDatabase
+        p._model_destdatabase_ = externalConnection.connectDatabase()
         p._model_desttable_ = destTable.fullTableName
         p._model_cols_ = cols.join(', ')
         p._model_sample_ = (sampleCopy != null) ? "TABLESAMPLE($sampleCopy)" : ''

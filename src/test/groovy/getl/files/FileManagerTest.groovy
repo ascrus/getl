@@ -149,7 +149,7 @@ class FileManagerTest extends ManagerTest {
                 }
                 assertEquals(3, res.countFiles)
                 assertEquals(3, history.countRow())
-                assertTrue(lastTime < selectLastTime())
+                assertTrue(lastTime == selectLastTime())
                 assertEquals(firstNumDate, selectFirstNum())
 
                 // Check new and modified

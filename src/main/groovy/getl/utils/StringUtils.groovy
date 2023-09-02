@@ -792,6 +792,9 @@ class StringUtils {
 		if (text == null)
 			return null
 
+		if (text.matches('^[$][{].+[}]$'))
+			return text
+
 		if (password == null || password.length() < 16 || password.length() > 32)
 			throw new ExceptionGETL('#string.invalid_password_length')
 
@@ -819,6 +822,9 @@ class StringUtils {
 	static String Decrypt(String text, String password) {
 		if (text == null)
 			return null
+
+		if (text.matches('^[$][{].+[}]$'))
+			return text
 
 		if (password == null || password.length() < 16 || password.length() > 32)
 			throw new ExceptionGETL('#string.invalid_password_length')

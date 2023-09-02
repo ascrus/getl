@@ -312,6 +312,18 @@ class Connection implements GetlRepository, ObjectTags {
 	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
 
+	/** Variables for dsl creator */
+	private final Map<String, Object> _dslVars = new HashMap<String, Object>()
+	/** Variables for dsl creator */
+	@JsonIgnore
+	protected Map<String, Object> getDslVars() { attributes() + _dslVars }
+	/** Variables for dsl creator */
+	protected void setDslVars(Map<String, Object> value) {
+		_dslVars.clear()
+		if (value != null)
+			_dslVars.putAll(value)
+	}
+
 	@JsonIgnore
 	@Override
 	String getDslNameObject() { sysParams.dslNameObject as String }
@@ -329,6 +341,8 @@ class Connection implements GetlRepository, ObjectTags {
 			else
 				sysParams.dslCreator = value
 		}
+
+		setDslVars((dslCreator?.scriptExtendedVars as Map<String, Object>)?:new HashMap<String, Object>())
 	}
 
 	@JsonIgnore
@@ -395,22 +409,27 @@ class Connection implements GetlRepository, ObjectTags {
 	/** Code page for connection files */
 	protected void setCodePage(String value) {
 		if (value != null) {
+			def lValue = StringUtils.EvalMacroString(value, dslVars, false)
+			String cValue = null
 			try {
-				def cp = Charset.forName(value)
-				value = cp.name()
+				def cp = Charset.forName(lValue)
+				cValue = cp.name()
+
 			}
 			catch (IllegalCharsetNameException  ignored) {
-				throw new ConnectionError(this, '#connection.invalid_codepage', [code_page: value])
+				throw new ConnectionError(this, '#connection.invalid_codepage', [code_page: cValue])
 			}
 			catch (UnsupportedCharsetException ignored) {
-				throw new ConnectionError(this, '#connection.illegal_codepage', [code_page: value])
+				throw new ConnectionError(this, '#connection.illegal_codepage', [code_page: cValue])
 			}
+			if (value == lValue)
+				value = cValue
 		}
 
 		params.codePage = value
 	}
 	/** Code page for connection files */
-	protected String codePage() { codePage?:'utf-8' }
+	protected String codePage() { StringUtils.EvalMacroString(codePage, dslVars, false)?:'utf-8' }
 	/** Max bytes per char with connection code page */
 	Integer codePageMaxBytesPerChar() {
 		return Charset.forName(codePage()).newEncoder().maxBytesPerChar()
@@ -733,6 +752,7 @@ class Connection implements GetlRepository, ObjectTags {
 		def res = CreateConnectionInternal([connection: className] + p)
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
+		res.dslVars = this._dslVars
 		res.afterClone(this)
 		return res
 	}

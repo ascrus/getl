@@ -49,7 +49,7 @@ class TableDataset extends JDBCDataset {
 	/** Database name */
 	void setDbName(String value) { params.dbName = value }
 	/** Database name */
-	String dbName() { dbName?:currentJDBCConnection?.dbName }
+	String dbName() { dbName?:currentJDBCConnection?.dbName() }
 
 	/** Schema name */
 	String getSchemaName() { params.schemaName as String }

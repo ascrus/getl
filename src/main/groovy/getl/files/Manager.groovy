@@ -47,7 +47,6 @@ abstract class Manager implements GetlRepository, ObjectTags {
 
 		tempDirFile = new File(TFS.systemPath + '/files.localdir')
 		tempDirFile.deleteOnExit()
-		resetLocalDir()
 
 		initParams()
 		validParams()
@@ -82,7 +81,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	void setIsTempLocalDirectory(Boolean value) {
 		_isTempLocalDirectory = value
 		if (value && localDirectory != null)
-			new File(localDirectory).deleteOnExit()
+			new File(localDirectory()).deleteOnExit()
 	}
 
 	/** Initialization dataset parameters */
@@ -166,7 +165,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
-
+		res.dslVars = this._dslVars
 		res.afterClone(this)
 
 		return res
@@ -214,6 +213,18 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
 
+	/** Variables for dsl creator */
+	private final Map<String, Object> _dslVars = new HashMap<String, Object>()
+	/** Variables for dsl creator */
+	@JsonIgnore
+	protected Map<String, Object> getDslVars() { attributes() + _dslVars }
+	/** Variables for dsl creator */
+	protected void setDslVars(Map<String, Object> value) {
+		_dslVars.clear()
+		if (value != null)
+			_dslVars.putAll(value)
+	}
+
 	@JsonIgnore
 	@Override
 	String getDslNameObject() { sysParams.dslNameObject }
@@ -231,6 +242,8 @@ abstract class Manager implements GetlRepository, ObjectTags {
 			else
 				sysParams.dslCreator = value
 		}
+
+		setDslVars((dslCreator?.scriptExtendedVars as Map<String, Object>)?:new HashMap<String, Object>())
 	}
 
 	@JsonIgnore
@@ -273,6 +286,8 @@ abstract class Manager implements GetlRepository, ObjectTags {
 		else
 			currentRootPath = null
 	}
+	/** Current root path */
+	String rootPath() { StringUtils.EvalMacroString(rootPath, dslVars, false) }
 
 	/** Allow only read from source */
 	Boolean getReadOnlyMode() { ConvertUtils.Object2Boolean(params.readOnlyMode) }
@@ -296,7 +311,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	/** Set current root path */
 	protected void currentRootPathSet() {
 		if (rootPath != null)
-			currentRootPath = prepareRootPath(rootPath)
+			currentRootPath = prepareRootPath(rootPath())
 		else
 			currentRootPath = null
 	}
@@ -312,6 +327,8 @@ abstract class Manager implements GetlRepository, ObjectTags {
 		localDirectorySet(value)
 		_isTempLocalDirectory = false
 	}
+	/** Current local directory */
+	String localDirectory() { StringUtils.EvalMacroString(localDirectory, dslVars, false) }
 
 	private localDirectorySet(String value) {
 		dropLocalDirectory()
@@ -378,6 +395,8 @@ abstract class Manager implements GetlRepository, ObjectTags {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
+	/** Extended attributes */
+	Map<String, Object> attributes() { attributes }
 	/** Extended attribute value */
 	Object attribute(String name) {
 		if (name == null)
@@ -447,7 +466,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { (rootPath != null)?"${FileUtils.TransformFilePath(rootPath, false, dslCreator)}":'file' }
+	String getObjectName() { (rootPath != null)?"${FileUtils.TransformFilePath(rootPath(), false, dslCreator)}":'file' }
 	
 	/** Write errors to log */
 	@JsonIgnore
@@ -553,8 +572,8 @@ abstract class Manager implements GetlRepository, ObjectTags {
 
 	/** Remove local directory */
 	private dropLocalDirectory() {
-		if (_isTempLocalDirectory && localDirectory != null && FileUtils.ExistsFile(localDirectory, true))
-			FileUtils.DeleteFolder(localDirectory, true)
+		if (_isTempLocalDirectory && localDirectory != null && FileUtils.ExistsFile(localDirectory(), true))
+			FileUtils.DeleteFolder(localDirectory(), true)
 	}
 	
 	/** Disconnect from server */
@@ -2068,7 +2087,7 @@ WHERE
 			return localDirFile.parent
 		
 		dir = dir.replace('\\', '/')
-		def lc = localDirectory?.replace('\\', '/')
+		def lc = localDirectory()?.replace('\\', '/')
 		
 		File f
 		if (lc != null && dir.matches("(?iu)${lc}/.*")) {
@@ -2146,7 +2165,7 @@ WHERE
 	 */
 	Boolean removeLocalDirs(String dirName, Boolean throwError) {
         def fullDirName = new File("${currentLocalDir()}/$dirName").canonicalPath
-		def deleteRoot = (fullDirName != new File(localDirectory).canonicalPath)
+		def deleteRoot = (fullDirName != new File(localDirectory()).canonicalPath)
         return FileUtils.DeleteFolder(fullDirName, deleteRoot, throwError)
 	}
 
@@ -2218,7 +2237,7 @@ WHERE
 	 * 	Change local directory to root
 	 */
 	void changeLocalDirectoryToRoot() {
-		setCurrentLocalPath(localDirectory)
+		setCurrentLocalPath(localDirectory())
 	}
 	
 	/**
@@ -2633,7 +2652,7 @@ WHERE
 	protected Map<String, String> toStringParams() {
 		def res = new HashMap<String, String>()
 		if (rootPath != null)
-			res.root = FileUtils.TransformFilePath(rootPath, false, dslCreator)
+			res.root = FileUtils.TransformFilePath(rootPath(), false, dslCreator)
 
 		return res
 	}
@@ -2656,6 +2675,8 @@ WHERE
 	/** host OS (null - unknown, win - Windows, unix - unix compatibility */
 	@JsonIgnore
 	abstract String getHostOS()
+	/** host OS (null - unknown, win - Windows, unix - unix compatibility */
+	String hostOS() { StringUtils.EvalMacroString(hostOS, dslVars, false) }
 
 	/**
 	 * Removing directories in the current directory using the specified mask

@@ -261,7 +261,7 @@ class Flow {
 			def convert = (!(df.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
 
 			def mapName = map.get(dn)
-			def isCalc = BoolUtils.IsValue(mapName.isCalc)
+			//def isCalc = BoolUtils.IsValue(mapName.isCalc)
 			String mapFormat = null
 
 			// No source map field

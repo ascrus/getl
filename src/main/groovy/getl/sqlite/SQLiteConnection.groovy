@@ -30,8 +30,8 @@ class SQLiteConnection extends JDBCConnection {
     protected Class<TableDataset> getTableClass() { SQLiteTable }
 
     @Override
-    String currentConnectDatabase() {
-        def res = FileUtils.TransformFilePath(connectDatabase, false, dslCreator)
+    String connectDatabase() {
+        def res = FileUtils.TransformFilePath(super.connectDatabase(), false, dslCreator)
         if (res != null)
             FileUtils.ValidFilePath(res)
         return res

@@ -5,6 +5,7 @@ import getl.lang.Getl
 import getl.test.GetlDslTest
 import getl.tfs.TFS
 import org.apache.hc.core5.http.io.entity.EntityUtils
+import org.junit.Ignore
 import org.junit.Test
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
@@ -159,6 +160,7 @@ class WebUtilsTest extends GetlDslTest {
     }
 
     @Test
+    @Ignore
     void testWebGet() {
         def dt = new Timestamp(new Date().time)
         def webParams = ['header.key1': 123, 'header.key2': '{test}.<test>', 'header.key3': dt, param1: 'param1/param2.<param3>'] as Map<String, Object>

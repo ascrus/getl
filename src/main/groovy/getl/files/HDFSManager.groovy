@@ -58,6 +58,8 @@ class HDFSManager extends Manager implements UserLogins {
     String getServer() { params.server }
     /** Server address */
     void setServer(String value) { params.server = value }
+    /** Current server address */
+    String server() { StringUtils.EvalMacroString(server, dslVars, false) }
 
     /** Server port */
     Integer getPort() { (params.port != null)?(params.port as Integer):8022 }
@@ -68,6 +70,8 @@ class HDFSManager extends Manager implements UserLogins {
     String getLogin() { params.login }
     @Override
     void setLogin(String value) { params.login = value }
+    /** Current login */
+    String login() { StringUtils.EvalMacroString(login, dslVars, false) }
 
     @Override
     String getPassword() { params.password }
@@ -127,14 +131,14 @@ class HDFSManager extends Manager implements UserLogins {
         @Override
         Void run() {
             Configuration conf = new Configuration()
-            conf.set("fs.defaultFS", "hdfs://${man.server}:${man.port}")
-            conf.set("hadoop.job.ugi", man.login)
+            conf.set("fs.defaultFS", "hdfs://${man.server()}:${man.port}")
+            conf.set("hadoop.job.ugi", man.login())
 
             man.client = FileSystem.get(conf)
             man.homeDirectory = client.homeDirectory
             man.currentPath = man.currentRootPath
             if (man.rootPath != null && man.replication != null)
-                client.setReplication(new Path(man.rootPath), man.replication)
+                client.setReplication(new Path(man.rootPath()), man.replication)
 
             return null
         }
@@ -151,9 +155,9 @@ class HDFSManager extends Manager implements UserLogins {
             throw new RequiredParameterError(this, 'login', 'connect')
 
 
-        writeScriptHistoryFile("Connect to hdfs $server:$port with login $login from session $sessionID")
+        writeScriptHistoryFile("Connect to hdfs ${server()}:$port with login ${login()} from session $sessionID")
 
-        UserGroupInformation ugi = UserGroupInformation.createRemoteUser(login)
+        UserGroupInformation ugi = UserGroupInformation.createRemoteUser(login())
         ugi.doAs(new ConfigAction(this))
     }
 
@@ -202,7 +206,7 @@ class HDFSManager extends Manager implements UserLogins {
             dir = dir.substring(1)
         if (dir == null)
             dir = currentPath
-        if (!((dir + '/').matches(rootPath + '/.*')))
+        if (!((dir + '/').matches(rootPath() + '/.*')))
             dir = currentRootPath + '/' + dir
         return ((dir != null)?dir:'') + ((file != null)?"/$file":'')
     }
@@ -464,11 +468,11 @@ class HDFSManager extends Manager implements UserLogins {
 
         String res
         if (rootPath == null || rootPath.length() == 0)
-            res = "hdfs://$server"
+            res = "hdfs://${server()}"
         else if (rootPath[0] == '/')
-            res = "hdfs://$server$rootPath"
+            res = "hdfs://${server()}${rootPath()}"
         else
-            res = "hdfs://$server/$rootPath"
+            res = "hdfs://${server()}/${rootPath()}"
 
         return res
     }

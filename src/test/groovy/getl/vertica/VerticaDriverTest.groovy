@@ -474,7 +474,7 @@ LIMIT 1'''
     }
 
     @Test
-    @Ignore
+    //@Ignore
     void testReverse() {
         Getl.Dsl {
             configuration {

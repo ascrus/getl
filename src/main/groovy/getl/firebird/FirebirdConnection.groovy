@@ -31,5 +31,5 @@ class FirebirdConnection extends JDBCConnection {
     protected Class<TableDataset> getTableClass() { FirebirdTable }
 
     @Override
-    String currentConnectDatabase() { FileUtils.TransformFilePath(connectDatabase, false, dslCreator) }
+    String connectDatabase() { FileUtils.TransformFilePath(super.connectDatabase(), false, dslCreator) }
 }

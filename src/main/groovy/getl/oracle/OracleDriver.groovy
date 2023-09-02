@@ -92,7 +92,7 @@ end;'''
 	void connect() {
 		System.properties.setProperty('oracle.jdbc.fanEnabled', 'false')
 		super.connect()
-		defaultSchemaName = jdbcConnection.login
+		defaultSchemaName = jdbcConnection.login()
 	}
 	
 	@Override
@@ -337,20 +337,20 @@ end;'''
 	protected String buildConnectURL() {
         JDBCConnection con = jdbcConnection
 
-        def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
+        def url = (con.connectURL != null)?con.connectURL():defaultConnectURL()
         if (url == null)
 			return null
 
         if (url.indexOf('{host}') != -1) {
             if (con.connectHost == null)
 				throw new ExceptionGETL('Need set property "connectHost"')
-            def host = (con.connectHost.indexOf(':') == -1)?(con.connectHost + ':1521'):con.connectHost
+            def host = (con.connectHost.indexOf(':') == -1)?(con.connectHost() + ':1521'):con.connectHost()
             url = url.replace("{host}", host)
         }
         if (url.indexOf('{database}') != -1) {
             if (con.connectDatabase == null)
 				throw new ExceptionGETL('Need set property "connectDatabase"')
-            url = url.replace("{database}", con.connectDatabase)
+            url = url.replace("{database}", con.connectDatabase())
         }
 
         return url

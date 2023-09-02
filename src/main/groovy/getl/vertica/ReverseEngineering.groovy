@@ -26,7 +26,7 @@ import java.util.regex.Matcher
  */
 @InheritConstructors
 class ReverseEngineering extends Job {
-	static public final BigDecimal version = 1.1
+	static public final BigDecimal version = 1.2
 
 	private VerticaConnection cVertica
 	/** Vertica connection */
@@ -336,9 +336,11 @@ Example:
 	 * @param object
 	 * @return
 	 */
-	String ddl(String schema, String object) {
+	String ddl(String schema, String object, String params = null) {
 		def name = "\"${schema.replace("'", "\\'").replace('"', '""')}\"." +
 				"\"${object.replace("'", "\\'").replace('"', '""')}\""
+		if (params != null)
+			name += "($params)"
 		def qExportObjects = new QueryDataset(connection: cVertica, query: "SELECT EXPORT_OBJECTS('', E'$name', false)")
 		def r = qExportObjects.rows()
 		assert r.size() == 1, "Object \"$name\" not found"
@@ -1053,7 +1055,7 @@ Example:
 			setWrite('SQL_FUNCTIONS', fileNameSQLFunctions, [schema: r.schema_name, sql_function: r.function_name])
 
 			def name = objectName(r.schema_name as String, r.function_name as String)
-			def sql = ddl(r.schema_name as String, r.function_name as String)
+			def sql = ddl(r.schema_name as String, r.function_name as String, r.function_argument_type as String)
 			if (BoolUtils.IsValue(sectionDrop.sql_functions)) {
 				def i = sql.indexOf(' FUNCTION')
 				sql = 'CREATE OR REPLACE' + sql.substring(i)

@@ -9,7 +9,7 @@ import groovy.transform.CompileStatic
  * @author Alexsey Konstantinov
  */
 @CompileStatic
-class LoginManager {
+final class LoginManager {
     LoginManager(UserLogins owner) {
         if (owner == null)
             throw new RequiredParameterError('owner', 'LoginManager')
@@ -29,10 +29,12 @@ class LoginManager {
             throw new DslError((owner as GetlRepository), '#logins.user_not_found', [user: user])
 
         def reconnect = (owner.login != user && owner.isConnected())
-        if (reconnect) owner.disconnect()
+        if (reconnect)
+            owner.disconnect()
         owner.login = user
         owner.password = null
-        if (reconnect) owner.connect()
+        if (reconnect)
+            owner.connect()
     }
 
     /** Switch to new login */

@@ -66,7 +66,7 @@ class H2Connection extends JDBCConnection {
 	protected Class<TableDataset> getTableClass() { H2Table }
 
 	@Override
-	String currentConnectDatabase() { FileUtils.TransformFilePath(connectDatabase, false, dslCreator) }
+	String connectDatabase() { FileUtils.TransformFilePath(super.connectDatabase(), false, dslCreator) }
 
 	/** Return current connection setting value */
 	String readSettingValue(String name) {

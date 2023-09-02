@@ -11,8 +11,8 @@ class TDSDriver extends H2Driver {
         super.connect()
         def con = connection as H2Connection
         if (con.connectHost == null && con.connectDatabase != null && !con.inMemory) {
-            new File(con.connectDatabase + '.mv.db').deleteOnExit()
-            new File(con.connectDatabase + '.trace.db').deleteOnExit()
+            new File(con.connectDatabase() + '.mv.db').deleteOnExit()
+            new File(con.connectDatabase() + '.trace.db').deleteOnExit()
         }
     }
 }

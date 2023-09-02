@@ -79,7 +79,7 @@ class ResourceManager extends Manager {
     void setRootPath(String value) {
         super.setRootPath(value)
         if (connected)
-            setCurrentDirectory(directoryFromPath(rootPath))
+            setCurrentDirectory(directoryFromPath(rootPath()))
     }
 
     /** Connect status */
@@ -475,7 +475,7 @@ class ResourceManager extends Manager {
         if (resourcePath != null)
             res = "resource:/$resourcePath"
         else
-            res = rootPath?:'resource'
+            res = rootPath()?:'resource'
         return res
     }
 

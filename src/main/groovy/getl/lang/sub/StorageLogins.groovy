@@ -8,7 +8,7 @@ import groovy.transform.CompileStatic
  * @author Alexsey Konstantinov
  */
 @CompileStatic
-class StorageLogins extends HashMap<String, String> {
+final class StorageLogins extends HashMap<String, String> {
     StorageLogins(LoginManager manager) {
         if (manager == null)
             throw new RequiredParameterError('manager', 'StorageLogins')

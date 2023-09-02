@@ -501,19 +501,19 @@ class JDBCDriver extends Driver {
 	protected String buildConnectURL() {
 		JDBCConnection con = jdbcConnection
 		
-		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
+		def url = (con.connectURL != null)?con.connectURL():defaultConnectURL()
 		if (url == null)
 			return null
 
 		if (url.indexOf('{host}') != -1) {
             if (con.connectHost == null)
 				throw new RequiredParameterError(connection, 'connectHost', 'connect')
-            url = url.replace("{host}", con.currentConnectHost())
+            url = url.replace("{host}", con.connectHost())
         }
         if (url.indexOf('{database}') != -1) {
             if (con.connectDatabase == null)
 				throw new RequiredParameterError(connection, 'connectDatabase', 'connect')
-            url = url.replace("{database}", con.currentConnectDatabase())
+            url = url.replace("{database}", con.connectDatabase())
         }
 
 		return url
@@ -580,7 +580,7 @@ class JDBCDriver extends Driver {
 	private Boolean useLoadedDriver = false
 	/** JDBC driver loaded */
 	Boolean getUseLoadedDriver() { useLoadedDriver }
-	
+
 	@Override
 	@Synchronized('operationLock')
 	void connect() {
@@ -591,8 +591,8 @@ class JDBCDriver extends Driver {
 			sql = new Sql(con.javaConnection)
 		}
 		else {
-			def login = con.login
-			def password = con.loginManager.currentDecryptPassword()
+			def password = StringUtils.EvalMacroString(con.loginManager.currentDecryptPassword(), con.dslVars, false)
+
 			String conParams = buildConnectParams()
 			
 			def drvName = con.params.driverName as String
@@ -620,10 +620,10 @@ class JDBCDriver extends Driver {
 
 			def notConnected = true
 			while (notConnected) {
-				sql = newSql(jdbcClass, url, login, password, drvName, loginTimeout)
+				sql = newSql(jdbcClass, url, con.login(), password, drvName, loginTimeout)
 				notConnected = false
 			}
-			con.sysParams.currentConnectURL = url
+			con.sysParams.buildConnectURL = url
 			sql.getConnection().setAutoCommit(con.autoCommit())
 			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
 			sql.withStatement{ stmt -> 
@@ -809,7 +809,7 @@ class JDBCDriver extends Driver {
 		def isSupportDB = isSupport(Support.DATABASE)
 		def isSupportSchemas = isSupport(Support.SCHEMA)
 		def isSupportMultiDB = isSupport(Support.MULTIDATABASE)
-		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareRetrieveObject(params.dbName as String)?:jdbcConnection.dbName?:jdbcConnection.connectDatabase):null):null
+		String catalog = (isSupportDB)?((isSupportMultiDB)?(prepareRetrieveObject(params.dbName as String)?:jdbcConnection.dbName()?:jdbcConnection.connectDatabase()):null):null
 		String schemaPattern = (isSupportSchemas)?(prepareRetrieveObject(params.schemaName as String)?:jdbcConnection.schemaName()):null
 		String tableNamePattern = prepareRetrieveObject(params.tableName as String)
 
@@ -2090,7 +2090,7 @@ class JDBCDriver extends Driver {
 			con.validSqlHistoryFile()
 			def f = new File(con.fileNameSqlHistory).newWriter("utf-8", true)
 			try {
-				f.write("""-- ${DateUtils.NowDateTime()}: login: ${con.login} session: ${con.sessionID}
+				f.write("""-- ${DateUtils.NowDateTime()}: login: ${con.login()} session: ${con.sessionID}
 ${sql.stripTrailing()}
 
 """				)
@@ -2101,7 +2101,7 @@ ${sql.stripTrailing()}
 		}
 
         if (con.sqlHistoryOutput) {
-            println "SQL [login: ${con.login} session: ${con.sessionID}]:\n$sql\n"
+            println "SQL [login: ${con.login()} session: ${con.sessionID}]:\n$sql\n"
         }
 	}
 

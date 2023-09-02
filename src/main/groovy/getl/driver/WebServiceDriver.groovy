@@ -9,6 +9,7 @@ import getl.lang.Getl
 import getl.utils.FileUtils
 import getl.utils.HttpClientUtils
 import getl.utils.Logs
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import org.apache.http.HttpStatus
 
@@ -28,7 +29,9 @@ class WebServiceDriver extends FileDriver {
         def con = dataset.currentWebServiceConnection
         con.validPath()
 
-        def url = con.webUrl
+        def dslVars = con.dslCreator?.scriptExtendedVars?:[:]
+
+        def url = con.webUrl()
         if (url == null)
             throw new RequiredParameterError(dataset, 'webUrl')
 
@@ -36,8 +39,9 @@ class WebServiceDriver extends FileDriver {
             wp = new HashMap<String, Object>()
 
         def authType = con.authType
-        def login = con.login
-        def password = con.webLoginManager().currentDecryptPassword()
+
+        def login = con.login()
+        def password = StringUtils.EvalMacroString(con.webLoginManager().currentDecryptPassword(), dslVars)
 
         if (authType != null && login == null)
             throw new DatasetError(dataset, '#utils.web.non_login', [type: authType])

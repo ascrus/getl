@@ -3,7 +3,6 @@
 package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.exception.FilemanagerError
 import getl.exception.IOFilesError
 import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
@@ -75,6 +74,8 @@ class SFTPManager extends Manager implements UserLogins {
 	String getServer() { params.server as String }
 	/** Server address */
 	void setServer(String value) { params.server = value }
+	/** Current server address */
+	String server() { StringUtils.EvalMacroString(server, dslVars, false) }
 	
 	/** Server port */
 	Integer getPort() { (params.port != null)?(params.port as Integer):22 }
@@ -85,6 +86,8 @@ class SFTPManager extends Manager implements UserLogins {
 	String getLogin() { params.login as String }
 	@Override
 	void setLogin(String value) { params.login = value }
+	/** Current login */
+	String login() { StringUtils.EvalMacroString(login, dslVars, false) }
 
 	@Override
 	String getPassword() { params.password as String }
@@ -109,6 +112,11 @@ class SFTPManager extends Manager implements UserLogins {
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	void setKnownHostsFile(String value) { params.knownHostsFile = value }
+	/**
+	 * Current known hosts file name
+	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
+	 */
+	String knownHostsFile() { StringUtils.EvalMacroString(knownHostsFile, dslVars, false) }
 
 	/**
 	 * Host key
@@ -120,6 +128,10 @@ class SFTPManager extends Manager implements UserLogins {
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	void setHostKey(String value) { params.hostKey = value }
+	/**
+	 * Current host key
+	 */
+	String hostKey() { StringUtils.EvalMacroString(hostKey, dslVars, false) }
 
 	/** Need checking RSA host key (default true) */
 	Boolean getStrictHostKeyChecking() { BoolUtils.IsValue(params.strictHostKeyChecking, true) }
@@ -130,16 +142,22 @@ class SFTPManager extends Manager implements UserLogins {
 	String getIdentityFile() { params.identityFile as String }
 	/** Identity file name */
 	void setIdentityFile(String value) { params.identityFile = value }
+	/** Current identity file name */
+	String identityFile() { StringUtils.EvalMacroString(identityFile, dslVars, false) }
 
 	/** Password for identity file */
 	String getPassphrase() { params.passphrase as String }
 	/** Password for identity file */
 	void setPassphrase(String value) { params.passphrase = value }
+	/** Current password for identity file */
+	String passphrase() { StringUtils.EvalMacroString(passphrase, dslVars, false) }
 
 	/** Code page on command console */
 	String getCodePage() { (params.codePage as String)?:"utf-8" }
 	/** Code page on command console */
 	void setCodePage(String value) { params.codePage = value }
+	/** Current code page on command console */
+	String codePage() { StringUtils.EvalMacroString(codePage, dslVars, false) }
 	
 	/** Alive interval (in seconds) */
 	Integer getAliveInterval() { params."aliveInterval" as Integer }
@@ -156,27 +174,27 @@ class SFTPManager extends Manager implements UserLogins {
 
 	/** Create new session manager */
 	private Session newSession() {
-		String h = "Open session $sessionID: host $server:$port, login $login"
+		String h = "Open session $sessionID: host ${server()}:$port, login ${login()}"
 		client.identityRepository.removeAll()
 		if (identityFile != null) {
-			def f = new File(FileUtils.TransformFilePath(identityFile, dslCreator))
+			def f = new File(FileUtils.TransformFilePath(identityFile(), dslCreator))
 			if (!f.exists())
 				throw new IOFilesError(this, '#io.file.not_found', [path: f.path, type: 'RSA'], writeErrorsToLog)
 
 			if (passphrase == null) {
 				client.addIdentity(f.canonicalPath)
-				h += ", identity file \"$identityFile\""
+				h += ", identity file \"${identityFile()}\""
 			}
 			else {
-				client.addIdentity(f.canonicalPath, passphrase.bytes)
-				h += ", identity file \"$identityFile\" with \"${StringUtils.Replicate('*', passphrase.length())}\""
+				client.addIdentity(f.canonicalPath, passphrase().bytes)
+				h += ", identity file \"${identityFile()}\" with \"${StringUtils.Replicate('*', passphrase().length())}\""
 			}
 		}
 
-		Session res = client.getSession(login, server, port)
+		Session res = client.getSession(login(), server(), port)
 		try {
 			res.setConfig('PreferredAuthentications', 'publickey,password,keyboard-interactive')
-			def pass = loginManager.currentDecryptPassword()
+			def pass = StringUtils.EvalMacroString(loginManager.currentDecryptPassword(), dslVars, false)
 			if (pass != null && identityFile == null) {
 				res.setPassword(pass)
 				h += ", used password \"${StringUtils.Replicate('*', pass.length())}\""
@@ -188,13 +206,13 @@ class SFTPManager extends Manager implements UserLogins {
 			}
 			else {
 				if (hostKey != null) {
-					byte[] key = Base64.decoder.decode(hostKey)
-					client.getHostKeyRepository().add(new HostKey(server, key), null)
-					h += ", used host key \"${StringUtils.LeftStr(hostKey, 16)}\""
+					byte[] key = Base64.decoder.decode(hostKey())
+					client.getHostKeyRepository().add(new HostKey(server(), key), null)
+					h += ", used host key \"${StringUtils.LeftStr(hostKey(), 16)}\""
 				}
 				else if (knownHostsFile != null) {
-					h += ", hosts file \"$knownHostsFile\""
-					client.setKnownHosts(knownHostsFile)
+					h += ", hosts file \"${knownHostsFile()}\""
+					client.setKnownHosts(knownHostsFile())
 				}
 			}
 
@@ -236,11 +254,13 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.connect()
 			currentPath = currentRootPath
 			if (channelFtp.serverVersion > 5)
-				channelFtp.filenameEncoding = codePage.toUpperCase()
+				channelFtp.filenameEncoding = codePage().toUpperCase()
 		}
 		catch (Exception e) {
-			if (channelFtp != null && channelFtp.connected) channelFtp.disconnect()
-			if (clientSession.connected) clientSession.disconnect()
+			if (channelFtp != null && channelFtp.connected)
+				channelFtp.disconnect()
+			if (clientSession.connected)
+				clientSession.disconnect()
 			throw e
 		}
 	}
@@ -526,7 +546,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 		String psFile
 		if (_currentPath != null) {
-			if (hostOS == winOS) {
+			if (hostOS() == winOS) {
 				def curPath = _currentPath.substring(1)
 				psFile = FileUtils.UniqueFileName() + '.ps1'
 				new File(currentLocalDir() + '/' + psFile).text = """
@@ -552,7 +572,7 @@ exit \$LastExitCode
 			
 			channelCmd.connect()
 			
-			BufferedReader reader = new BufferedReader(new InputStreamReader(is, codePage))
+			BufferedReader reader = new BufferedReader(new InputStreamReader(is, codePage()))
 			String line
 			
 			while (!channelCmd.isClosed()) sleep 100
@@ -563,7 +583,7 @@ exit \$LastExitCode
 			}
 			
 			if (os.size() > 0) {
-				err.append(os.toString(codePage))
+				err.append(os.toString(codePage()))
 			}
 
 			res = channelCmd.getExitStatus()
@@ -604,6 +624,7 @@ exit \$LastExitCode
 
 	@Override
 	String getHostOS() { (params.hostOS as String)?:unixOS }
+	/** Host OS */
 	void setHostOS(String value) { params.hostOS = value }
 
 	@Override
@@ -635,13 +656,13 @@ exit \$LastExitCode
 			return 'sftp'
 
 		String res
-		def loginStr = (login != null)?"$login@":''
+		def loginStr = (login != null)?"${login()}@":''
 		if (rootPath == null || rootPath.length() == 0)
-			res = "sftp $loginStr$server"
+			res = "sftp $loginStr${server()}"
 		else if (rootPath[0] == '/')
-			res = "sftp $loginStr$server:$rootPath"
+			res = "sftp $loginStr${server()}:${rootPath()}"
 		else
-			res = "sftp $loginStr$server:/$rootPath"
+			res = "sftp $loginStr${server()}:/${rootPath()}"
 
 		return res
 	}
