@@ -1483,6 +1483,7 @@ class FileUtils {
 
 		def p = (['#TEMPDIR': SystemTempDir()] + Config.SystemProps()) as Map<String, Object>
 		if (getl != null) {
+			p.put('#ENVIRONMENT', getl.configuration.environment)
 			if (getl.repositoryStorageManager.storagePath != null)
 				p.put('#REPOSITORY', getl.repositoryStorageManager.storagePath())
 

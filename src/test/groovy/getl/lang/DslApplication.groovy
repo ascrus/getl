@@ -14,8 +14,8 @@ class DslApplication extends Getl {
 
     void check() {
         testCase {
-            assertEquals('test application', this.field1)
-            assertEquals(100, this.field2)
+            assert'test application' == this.field1
+            assert 100 == this.field2
         }
         configContent.check = true
     }

@@ -118,9 +118,9 @@ class ConfigSlurper extends ConfigManager {
 	/** Full path to the directory for the configuration files */
 	String path() { FileUtils.TransformFilePath(path, dslCreator) }
 
-	/** Use environment section */
+	/** Current repository environment  */
 	String getEnvironment() { params.environment as String }
-	/** Use environment section */
+	/** Current repository environment  */
 	void setEnvironment(String value) {
 		if (value != null && value.trim().length() == 0)
 			throw new RequiredParameterError('environment')

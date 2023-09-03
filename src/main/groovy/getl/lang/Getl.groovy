@@ -2508,8 +2508,11 @@ Examples:
 
                 synchronized (_lockMainThread) {
                     if (extVars != null) {
-                        //scriptGetl._scriptExtendedVars.putAll(Config.SystemProps())
-                        scriptGetl._scriptExtendedVars.putAll(['#TEMPDIR': FileUtils.SystemTempDir(), '#REPOSITORY': repositoryStorageManager?.storagePath()])
+                        scriptGetl._scriptExtendedVars.putAll([
+                                '#TEMPDIR': FileUtils.SystemTempDir(),
+                                '#REPOSITORY': repositoryStorageManager?.storagePath(),
+                                '#ENVIRONMENT': configuration?.environment
+                        ])
                         scriptGetl._scriptExtendedVars.putAll(extVars)
                     }
 
@@ -2902,7 +2905,21 @@ Examples:
      * @param validExist check for the existence of fields in the script
      */
     void _fillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
-        vars.each { key, value ->
+        def scriptVars = new HashMap<String, Object>()
+        scriptVars.putAll(vars)
+        if (script instanceof Getl) {
+            def scriptName = '$' + script.getClass().simpleName
+            ((script as Getl).scriptExtendedVars).each { k, v ->
+                if (k == scriptName && (v instanceof Map)) {
+                    scriptVars.remove(scriptName)
+                    (v as Map).each { sk, sv ->
+                        scriptVars.put(sk as String, sv)
+                    }
+                }
+            }
+        }
+
+        scriptVars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
             if (prop == null) {
                 if (validExist)
@@ -2916,7 +2933,7 @@ Examples:
                     def v = (value as Object).toString()
                     if (v.indexOf('{') != -1)
                         value = StringUtils.EvalMacroString(v,
-                                [environment: configuration.environment, unittestmode: unitTestMode] + (script as Getl).scriptExtendedVars, false)
+                                [environment: configuration.environment, unittestmode: unitTestMode], false)
                 }
 
                 switch (prop.type) {

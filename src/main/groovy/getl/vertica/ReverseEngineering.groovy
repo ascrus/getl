@@ -1055,7 +1055,7 @@ Example:
 			setWrite('SQL_FUNCTIONS', fileNameSQLFunctions, [schema: r.schema_name, sql_function: r.function_name])
 
 			def name = objectName(r.schema_name as String, r.function_name as String)
-			def sql = ddl(r.schema_name as String, r.function_name as String, r.function_argument_type as String)
+			def sql = ddl(r.schema_name as String, r.function_name as String, (verticaVersion >= 12)?(r.function_argument_type as String):null)
 			if (BoolUtils.IsValue(sectionDrop.sql_functions)) {
 				def i = sql.indexOf(' FUNCTION')
 				sql = 'CREATE OR REPLACE' + sql.substring(i)

@@ -318,4 +318,14 @@ class BaseUserCode extends Getl {
     static Number greatest(Number... values) {
         NumericUtils.Greatest(values)
     }
+
+    /** Check path and create if not exists */
+    static Boolean validPath(String path, Boolean deleteOnExit = false) {
+        FileUtils.ValidPath(path, deleteOnExit)
+    }
+
+    /** Check path from file and create if not exists */
+    static Boolean validFilePath(String path, Boolean deleteOnExit = false) {
+        FileUtils.ValidFilePath(path, deleteOnExit)
+    }
 }
