@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.lang.sub
 
 import getl.exception.RequiredParameterError
@@ -8,7 +9,7 @@ import groovy.transform.CompileStatic
  * @author Alexsey Konstantinov
  */
 @CompileStatic
-final class StorageLogins extends HashMap<String, String> {
+final class StorageLogins extends LinkedHashMap<String, String> {
     StorageLogins(LoginManager manager) {
         if (manager == null)
             throw new RequiredParameterError('manager', 'StorageLogins')
@@ -27,7 +28,7 @@ final class StorageLogins extends HashMap<String, String> {
     void putAll(Map logins) {
         def m = new HashMap<String, String>()
         logins.each { login, password ->
-            m.put(login.toString(), manager.encryptPassword(password.toString()))
+            m.put(login.toString(), (password != null)?manager.encryptPassword(password.toString()):null as String)
         }
 
         super.putAll(m)
