@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
  * Repository models of workflow processes
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class RepositoryWorkflows extends RepositoryObjects<Workflows> {
     @Override

@@ -266,7 +266,7 @@ class HistoryPointManager implements GetlRepository, ObjectTags {
 
 	/** Clone current manager */
 	@Synchronized
-	HistoryPointManager cloneHistoryPointManager(JDBCConnection con = null, Map otherParams = new HashMap(), Getl getl = null) {
+	HistoryPointManager cloneHistoryPointManager(Map otherParams = new HashMap(), Getl getl = null) {
 		checkManager()
 
 		Map p = CloneUtils.CloneMap(this.params, false)
@@ -277,18 +277,9 @@ class HistoryPointManager implements GetlRepository, ObjectTags {
 		def res = getClass().getConstructor().newInstance() as HistoryPointManager
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.sysParams.dslNameObject = dslNameObject
-		if (con != null)
-			res.historyTable = historyTable.cloneDataset(con) as TableDataset
-
 		res.params.putAll(p)
 
 		return res
-	}
-
-	/** Clone current manager */
-	@Synchronized
-	HistoryPointManager cloneHistoryPointManagerConnection(Map otherParams = new HashMap(), Getl getl = null) {
-		cloneHistoryPointManager(historyTable?.connection?.cloneConnection() as JDBCConnection, otherParams, getl)
 	}
 
 	/** Checked before first use */

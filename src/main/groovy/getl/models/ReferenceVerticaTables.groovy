@@ -27,7 +27,6 @@ import groovy.transform.stc.SimpleType
  * Reference tables model
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** Vertica connection name in the repository */

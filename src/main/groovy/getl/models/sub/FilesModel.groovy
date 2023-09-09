@@ -13,7 +13,6 @@ import groovy.transform.Synchronized
  * Source files model
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class FilesModel<T extends FileSpec> extends BaseModel {
     /** Source file manager name for model */

@@ -15,7 +15,6 @@ import groovy.transform.InheritConstructors
  * Base model dataset specification
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class DatasetSpec extends BaseSpec {
     DatasetSpec(DatasetsModel model, String tableName) {

@@ -23,7 +23,6 @@ import java.sql.Types
  * @author Alexsey Konstantinov
  *
  */
-@CompileStatic
 @InheritConstructors
 class PostgreSQLDriver extends JDBCDriver {
 	@Override

@@ -13,7 +13,6 @@ import groovy.transform.Synchronized
 
 import java.sql.Timestamp
 
-@CompileStatic
 abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     BaseSpec(BaseModel model) {
         super(model)

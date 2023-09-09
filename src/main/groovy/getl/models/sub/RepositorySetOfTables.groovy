@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
  * Repository models of list tables
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class RepositorySetOfTables extends RepositoryObjects<SetOfTables> {
     @SuppressWarnings('UnnecessaryQualifiedReference')

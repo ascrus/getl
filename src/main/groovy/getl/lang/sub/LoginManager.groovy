@@ -8,7 +8,6 @@ import groovy.transform.CompileStatic
  * Connection logins management
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 final class LoginManager {
     LoginManager(UserLogins owner) {
         if (owner == null)

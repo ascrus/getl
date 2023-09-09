@@ -14,21 +14,21 @@ final class StorageLogins extends LinkedHashMap<String, String> {
         if (manager == null)
             throw new RequiredParameterError('manager', 'StorageLogins')
 
-        this.manager = manager
+        this.loginManager = manager
     }
 
-    private LoginManager manager
+    private LoginManager loginManager
 
     @Override
     String put(String login, String password) {
-        return super.put(login, manager.encryptPassword(password))
+        return super.put(login, loginManager.encryptPassword(password))
     }
 
     @Override
     void putAll(Map logins) {
         def m = new HashMap<String, String>()
         logins.each { login, password ->
-            m.put(login.toString(), (password != null)?manager.encryptPassword(password.toString()):null as String)
+            m.put(login.toString(), (password != null)?loginManager.encryptPassword(password.toString()):null as String)
         }
 
         super.putAll(m)
@@ -44,6 +44,6 @@ final class StorageLogins extends LinkedHashMap<String, String> {
 
     @Override
     String putIfAbsent(String login, String password) {
-        return super.putIfAbsent(login, manager.encryptPassword(password))
+        return super.putIfAbsent(login, loginManager.encryptPassword(password))
     }
 }

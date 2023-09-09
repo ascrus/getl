@@ -25,7 +25,6 @@ import groovy.transform.stc.SimpleType
  * Mapping tables model
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class MapTables extends DatasetsModel<MapTableSpec> {
     /** Repository connection name for source datasets */

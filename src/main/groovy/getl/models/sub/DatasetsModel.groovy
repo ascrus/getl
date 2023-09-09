@@ -25,7 +25,6 @@ import groovy.transform.stc.SimpleType
  * Datasets model
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Repository connection name */
@@ -231,7 +230,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
 
         super.checkModel(checkObjects, cl)
 
-        checkDataset(modelIncrementDatasetName())
+        checkDataset(modelIncrementDatasetName() as String)
     }
 
     @Override
@@ -258,7 +257,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         }
 
         if (node.partitionsDatasetName != null)
-            checkDataset(node.partitionsDatasetName)
+            checkDataset(node.partitionsDatasetName as String)
 
         if (node.parentDatasetName != null) {
             if (findModelObject(node.parentDatasetName) == null)
@@ -288,9 +287,9 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         HistoryPointManager res = null
         if (incrementDatasetName != null) {
             res = dslCreator.historypoint { hp ->
-                hp.dslNameObject = '#' + dslNameObject.replace(':', '_')
+                hp.dslNameObject = '#' + this.dslNameObject.replace(':', '_')
                 hp.historyTableName = incrementDatasetName
-                hp.sourceName = "${dslNameObject}@*"
+                hp.sourceName = "${this.dslNameObject}@*"
                 hp.sourceType = identitySourceType
                 hp.create(true)
             }

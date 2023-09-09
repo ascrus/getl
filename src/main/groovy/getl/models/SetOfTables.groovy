@@ -20,7 +20,6 @@ import groovy.transform.stc.SimpleType
  * Table list model
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class SetOfTables extends DatasetsModel<TableSpec> {
     /** Connection name in the repository */

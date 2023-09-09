@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
  * Repository models of reference files
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class RepositoryReferenceFiles extends RepositoryObjects<ReferenceFiles>  {
     @Override

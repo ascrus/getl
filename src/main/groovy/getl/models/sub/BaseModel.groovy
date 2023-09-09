@@ -15,6 +15,7 @@ import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.ObjectTags
 import getl.lang.sub.ParseObjectName
+import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.utils.MapUtils
 import getl.utils.Path
@@ -30,8 +31,6 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Base class model
  * @author Alexsey Konstantinov
  */
-@SuppressWarnings(['UnnecessaryQualifiedReference', 'unused'])
-@CompileStatic
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository, ObjectTags {
     private String _dslNameObject
@@ -385,7 +384,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
 
         checkDataset(modelStoryDatasetName())
 
-        if (checkObjects) {
+        if (BoolUtils.IsValue(checkObjects)) {
             usedObjects.each { obj ->
                 checkObject(obj)
                 if (checkNodeCode != null)

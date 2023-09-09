@@ -26,7 +26,6 @@ import groovy.transform.stc.SimpleType
  * Reference files model
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** List of reference files */

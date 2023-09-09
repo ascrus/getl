@@ -8,7 +8,6 @@ import groovy.transform.InheritConstructors
  * Base model file specification
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class FileSpec extends BaseSpec {
     FileSpec(FilesModel model, String fileName) {

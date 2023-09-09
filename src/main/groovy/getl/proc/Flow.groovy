@@ -28,7 +28,6 @@ import java.util.regex.Pattern
  * Data flow manager class 
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 class Flow {
 	Flow() {
 		registerParameters()
@@ -541,6 +540,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	/**
 	 * Copy rows from dataset to other dataset
 	 */
+	@CompileStatic
 	Long copy(Map params,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
 					   Closure map_code = null) {
@@ -1257,7 +1257,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	 *
 	 * @param params - parameters
 	 */
-	@SuppressWarnings("DuplicatedCode")
+	@CompileStatic
 	Long writeTo(Map params,
 				 @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
 						 Closure code = null) {
@@ -1471,6 +1471,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	/**
 	 * Write user data to list of dataset
 	 */
+	@CompileStatic
 	void writeAllTo(Map params, @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
 			Closure code = null) {
 		methodParams.validation("writeAllTo", params)
@@ -1736,6 +1737,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	/**
 	 * Read and processed data from dataset
 	 */
+	@CompileStatic
 	Long process(Map params,
 				 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 						 Closure code = null) {

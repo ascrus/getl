@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
  * Repository models of map tables
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class RepositoryMapTables extends RepositoryObjects<MapTables> {
     @Override

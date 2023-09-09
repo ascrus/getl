@@ -10,7 +10,6 @@ import groovy.transform.InheritConstructors
  * Repository models of monitoring rules
  * @author Alexsey Konstantinov
  */
-@CompileStatic
 @InheritConstructors
 class RepositoryMonitorRules extends RepositoryObjects<MonitorRules>  {
     @Override
