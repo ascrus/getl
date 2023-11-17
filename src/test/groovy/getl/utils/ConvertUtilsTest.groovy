@@ -3,6 +3,8 @@ package getl.utils
 import getl.test.GetlTest
 import org.junit.Test
 
+import java.time.format.DateTimeFormatter
+
 class ConvertUtilsTest extends GetlTest {
     @Test
     void testString2Structure() {
@@ -98,5 +100,27 @@ class ConvertUtilsTest extends GetlTest {
         assertEquals('none', ConvertUtils.Var2Object('none', [a:1, b: 'test']))
         shouldFail { ConvertUtils.Var2Object('{unknown}', [a:1, b: 'test']) }
         assertEquals('{unknown}', ConvertUtils.Var2Object('{unknown}', [a:1, b: 'test'], false))
+    }
+
+    @Test
+    void testObject2Time() {
+        def text = '23:59:59'
+        assertNull(ConvertUtils.Object2Time(null))
+        assertEquals(text, ConvertUtils.Object2Time(text).toString())
+
+        assertEquals(text, ConvertUtils.Object2Time(text + '.123').toString())
+        assertEquals(text, ConvertUtils.Object2Time(text + '.123456').toString())
+        assertEquals(text, ConvertUtils.Object2Time(text + '.123456789').toString())
+    }
+
+    @Test
+    void testObject2Timestamp() {
+        def text = '2013-11-13 23:59:59'
+        assertNull(ConvertUtils.Object2Time(null))
+        assertEquals(text + '.0', ConvertUtils.Object2Timestamp(text).toString())
+        assertEquals(text + '.123', ConvertUtils.Object2Timestamp(text + '.123').toString())
+        assertEquals(text + '.123456', ConvertUtils.Object2Timestamp(text + '.123456').toString())
+        assertEquals(text + '.123456789', ConvertUtils.Object2Timestamp(text + '.123456789').toString())
+
     }
 }

@@ -140,7 +140,7 @@ class FileDataset extends Dataset implements AttachData {
 	/** Format for time fields */
 	void setFormatTime (String value) { params.formatTime = value }
 	/** Format for time fields */
-	String formatTime() { formatTime?:fileConnection?.formatTime() }
+	String formatTime(Boolean formatValue = false) { formatTime?:fileConnection?.formatTime(formatValue) }
 
 	/** Format for datetime fields */
 	String getFormatDateTime () { params.formatDateTime as String }

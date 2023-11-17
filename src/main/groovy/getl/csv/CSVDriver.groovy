@@ -529,7 +529,7 @@ class CSVDriver extends FileDriver {
 		def groupSeparator = ListUtils.NotNullValue([fParams.groupSeparator, dataset.groupSeparator()]) as String
 		def uniFormatDateTime = ListUtils.NotNullValue([fParams.uniFormatDateTime, dataset.uniFormatDateTime()]) as String
 		def formatDate = ListUtils.NotNullValue([fParams.formatDate, uniFormatDateTime, dataset.formatDate()]) as String
-		def formatTime = ListUtils.NotNullValue([fParams.formatTime, uniFormatDateTime, dataset.formatTime()]) as String
+		def formatTime = ListUtils.NotNullValue([fParams.formatTime, uniFormatDateTime, dataset.formatTime(isWrite)]) as String
 		def formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, uniFormatDateTime, dataset.formatDateTime(isWrite)]) as String
 		def formatTimestampWithTz = ListUtils.NotNullValue([fParams.formatTimestampWithTz, uniFormatDateTime, dataset.formatTimestampWithTz(isWrite)]) as String
 		def formatBoolean = ListUtils.NotNullValue([fParams.formatBoolean, dataset.formatBoolean()]) as String

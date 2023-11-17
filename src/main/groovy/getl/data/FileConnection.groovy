@@ -160,7 +160,7 @@ class FileConnection extends Connection {
 	/** Format for time fields */
 	void setFormatTime(String value) { params.formatTime = value }
 	/** Format for time fields */
-	String formatTime() { formatTime?:DateUtils.defaultTimeMask }
+	String formatTime(Boolean formatValue = false) { formatTime?:((formatValue)?DateUtils.defaultTimeMaskFormat:DateUtils.defaultTimeMask) }
 
 	/** Format for datetime fields */
 	String getFormatDateTime () { params.formatDateTime as String }

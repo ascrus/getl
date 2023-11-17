@@ -106,18 +106,28 @@ class NumericUtils {
 		return SegmentByHash(countSegment, args.toList())
 	}
 
+	/** Check string as number */
+	static Boolean IsNumber(String value) {
+		return value?.isNumber()
+	}
+
     /**
      * Check string as integer
      * @param value
      * @return
      */
 	static Boolean IsInteger(String value) {
-		try {
-			Integer.parseInt(value)
-		} catch (NumberFormatException ignored) {
-			return false
-		}
-		return true
+		return value?.isInteger()
+	}
+
+	/** Check string as long */
+	static Boolean IsLong(String value) {
+		return value?.isLong()
+	}
+
+	/** Check string as biginteger */
+	static Boolean IsBigInteger(String value) {
+		return value?.isBigInteger()
 	}
 
 	/**
@@ -126,12 +136,17 @@ class NumericUtils {
 	 * @return
 	 */
 	static Boolean IsNumeric(String value) {
-		try {
-			new BigDecimal(value)
-		} catch (NumberFormatException ignored) {
-			return false
-		}
-		return true
+		return value?.isBigDecimal()
+	}
+
+	/** Check string as double */
+	static Boolean IsDouble(String value) {
+		return value?.isDouble()
+	}
+
+	/** Check string as double */
+	static Boolean IsFloat(String value) {
+		return value?.isFloat()
 	}
 
 	/**

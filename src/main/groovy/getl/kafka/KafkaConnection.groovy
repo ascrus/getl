@@ -94,7 +94,7 @@ class KafkaConnection extends Connection {
     /** Format for time fields */
     void setFormatTime(String value) { params.formatTime = value }
     /** Format for time fields */
-    String formatTime() { formatTime?:DateUtils.defaultTimeMask }
+    String formatTime(Boolean formatValue = false) { formatTime?:((formatValue)?DateUtils.defaultTimeMaskFormat:DateUtils.defaultTimeMask) }
 
     /** Use the same date and time format */
     String getUniFormatDateTime() { params.uniFormatDateTime as String }

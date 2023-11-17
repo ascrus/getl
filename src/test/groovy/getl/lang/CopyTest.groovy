@@ -40,30 +40,75 @@ class CopyTest extends TestDsl {
 
         Dsl(this) {
             files('source', true) {
-                rootPath = this.sourcePathDir
+                rootPath = sourcePathDir
                 threadLevel = 1
-                buildListThread = 2
+                buildListThread = 10
             }
         }
     }
 
-    protected void generateSource() {
+    protected void generateSource(Boolean isLarge = false) {
         if (FileUtils.ExistsFile(sourcePathDir, true)) {
             FileUtils.DeleteFolder(sourcePathDir, true)
         }
 
+        def countRegions = (isLarge)?10:3
+        def countDates = (isLarge)?5:3
+        def countPortions = (isLarge)?50:3
+        def replicationMultiple = (isLarge)?countFilePortions*50:countFilePortions
+
         Dsl(this) {
+            options {
+                it.processTimeTracing = false
+            }
+
+            logFinest('Generate source ...')
+
             thread {
-                useList(1..3)
-                run(3) { region_num ->
-                    FileUtils.ValidPath("${this.sourcePathDir}/region_$region_num")
-                    (1..3).each { day_num ->
-                        FileUtils.ValidPath("${this.sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}")
+                useList(1..countRegions)
+                run(countRegions) { region_num ->
+                    FileUtils.ValidPath("${sourcePathDir}/region_$region_num")
+                    (1..countDates).each { day_num ->
+                        FileUtils.ValidPath("${sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}")
                         ['AAA', 'BBB', 'CCC'].each { obj_name ->
-                            (1..3).each { portion_num ->
-                                def fc = textFile("${this.sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}/region_${region_num}_object_${obj_name}.${StringUtils.AddLedZeroStr(portion_num, 4)}.dat") {
-                                    writeln StringUtils.Replicate('0123456789', this.countFilePortions)
+                            (1..countPortions).each { portion_num ->
+                                textFile("${sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}/region_${region_num}_object_${obj_name}.${StringUtils.AddLedZeroStr(portion_num, 4)}.dat") {
+                                    writeln StringUtils.Replicate('0123456789', replicationMultiple)
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected void generateLargeSource() {
+        if (FileUtils.ExistsFile(sourcePathDir, true)) {
+            FileUtils.DeleteFolder(sourcePathDir, true)
+        }
+
+        def countRegions = 8
+        def countHours = 10
+        def countTables = 50
+        def replicationMultiple = countFilePortions * 50
+
+        Dsl(this) {
+            options {
+                it.processTimeTracing = false
+            }
+
+            logFinest('Generate large source ...')
+
+            thread {
+                useList(1..countRegions)
+                run(countRegions) { regionNum ->
+                    FileUtils.ValidPath("${sourcePathDir}/dirinc_$regionNum")
+                    (1..countTables).each { tableNum ->
+                        (1..countHours).each { dayNum ->
+                            def tableName = "TABLE_${regionNum}_$tableNum"
+                            textFile("${sourcePathDir}/dirinc_$regionNum/table.${tableName}.2020-01-01_${StringUtils.AddLedZeroStr(dayNum, 2)}-00-00.txt") {
+                                writeln StringUtils.Replicate('0123456789', replicationMultiple)
                             }
                         }
                     }
@@ -113,7 +158,7 @@ class CopyTest extends TestDsl {
                 it.hideWhenCopy = hideCopy
 
                 if (cacheStory)
-                    cacheFilePath = "${this.workPath}/filecopiercache"
+                    cacheFilePath = "${workPath}/filecopiercache"
 
                 numberAttempts = 3
                 timeAttempts = 2
@@ -132,6 +177,8 @@ class CopyTest extends TestDsl {
 
                 removeFiles = delFiles
                 removeEmptyDirs = delDirs
+
+                quietMode = true
 
                 beforeCopyFile { s, d ->
                     assert s.region != null && s.date != null && s.region_num != null && s.name != null && s.num != null
@@ -155,7 +202,7 @@ class CopyTest extends TestDsl {
 
         Dsl(this) {
             files('single', true) {
-                rootPath = "${this.destPathDir}/single"
+                rootPath = "${destPathDir}/single"
                 createRootPath = true
             }
 
@@ -167,8 +214,8 @@ class CopyTest extends TestDsl {
             files('source') {
                 useStory embeddedTable(historyTable)
                 createStory = true
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2-single.{date}.sql"
+                if (debug)
+                    sqlHistoryFile = "${workPath}/h2-single.{date}.sql"
             }
 
             def countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>,
@@ -197,7 +244,7 @@ class CopyTest extends TestDsl {
             files('source') {
                 def list = buildListFiles {
                     recursive = true
-                    maskPath = this.sourceMask
+                    maskPath = sourceMask
                 }
                 testCase {
                     assertEquals(0, list.countRow())
@@ -213,7 +260,7 @@ class CopyTest extends TestDsl {
         }
 
         if (!debug)
-            FileUtils.DeleteFolder("${this.destPathDir}/single", true)
+            FileUtils.DeleteFolder("${destPathDir}/single", true)
     }
 
     @Test
@@ -222,17 +269,17 @@ class CopyTest extends TestDsl {
 
         Dsl(this) {
             files('many.1', true) {
-                rootPath = "${this.destPathDir}/many/1"
+                rootPath = "${destPathDir}/many/1"
                 createRootPath = true
             }
 
             files('many.2', true) {
-                rootPath = "${this.destPathDir}/many/2"
+                rootPath = "${destPathDir}/many/2"
                 createRootPath = true
             }
 
             files('many.3', true) {
-                rootPath = "${this.destPathDir}/many/3"
+                rootPath = "${destPathDir}/many/3"
                 createRootPath = true
             }
 
@@ -244,8 +291,8 @@ class CopyTest extends TestDsl {
             files('source') {
                 useStory embeddedTable(historyTable)
                 createStory = true
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2-many.{date}.sql"
+                if (debug)
+                    sqlHistoryFile = "${workPath}/h2-many.{date}.sql"
             }
 
             def countFiles = this.copy(files('source'), sourceMask,
@@ -273,14 +320,14 @@ class CopyTest extends TestDsl {
 
         Dsl(this) {
             files('rename', true) {
-                rootPath = "${this.destPathDir}/rename"
+                rootPath = "${destPathDir}/rename"
                 createRootPath = true
             }
 
             files('source') {
                 story = null
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2-rename.{date}.sql"
+                if (debug)
+                    sqlHistoryFile = "${workPath}/h2-rename.{date}.sql"
             }
 
             def countFiles = this.copy(files('source'), sourceMask, [files('rename')] as List<Manager>,
@@ -315,7 +362,7 @@ class CopyTest extends TestDsl {
         }
 
         if (!debug)
-            FileUtils.DeleteFolder("${this.destPathDir}/rename", true)
+            FileUtils.DeleteFolder("${destPathDir}/rename", true)
     }
 
     @Test
@@ -425,5 +472,45 @@ class CopyTest extends TestDsl {
 
             embeddedTable(historyTable).drop()
         }
+    }
+
+    @Test
+    void testCopyLarge() {
+        generateLargeSource()
+
+        Dsl(this) {
+            def destMan = files('dest', true) {
+                rootPath = "${destPathDir}/large"
+                createRootPath = true
+            }
+
+            def destFiles = [] as List<Manager>
+            (1..5).each { num ->
+                def man = destMan.cloneManager()
+                man.resetLocalDir()
+                destFiles.add(man)
+            }
+
+            fileman.copier(files('source'), destFiles) {
+                sourcePath = filePath('dirinc_{source}/*.{name}.{date}.txt') {
+                    variable('source') { type = integerFieldType }
+                    variable('date') { type = datetimeFieldType; format = 'yyyy-MM-dd_HH-mm-ss'}
+                }
+                destinationPath = filePath('{source}/{date}') {
+                    variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
+                }
+                numberAttempts = 3
+                timeAttempts = 1
+                order = ['source', 'name', 'date']
+                segmented = ['source', 'name']
+                removeFiles = true
+                removeEmptyDirs = false
+                whereFiles = 'FILEDATE <= NOW()'
+                quietMode = true
+            }
+        }
+
+        if (!debug)
+            FileUtils.DeleteFolder("${destPathDir}/large", true)
     }
 }

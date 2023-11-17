@@ -396,6 +396,10 @@ class ConvertUtils {
 				res.add(val.toBigDecimal())
 			else if (val.isDouble())
 				res.add(val.toDouble())
+			else if (val.isFloat())
+				res.add(val.toFloat())
+			else if (val.toLowerCase() in ['true', 'false'])
+				res.add(val.equalsIgnoreCase('true'))
 			else {
 				if (val.matches(SingleQuotedString) || val.matches(DoubleQuotedString))
 					res.add(val.substring(1, val.length() - 1))
@@ -489,6 +493,10 @@ class ConvertUtils {
 				res.put(name, val.toBigDecimal())
 			else if (val.isDouble())
 				res.put(name, val.toDouble())
+			else if (val.isFloat())
+				res.put(name, val.toFloat())
+			else if (val.toLowerCase() in ['true', 'false'])
+				res.put(name, val.equalsIgnoreCase('true'))
 			else {
 				if (val.matches(SingleQuotedString) || val.matches(DoubleQuotedString))
 					res.put(name, val.substring(1, val.length() - 1))
@@ -559,11 +567,7 @@ class ConvertUtils {
 		if (value instanceof Number)
 			return new Timestamp((value as Number).toLong())
 
-		def mask = 'yyyy-MM-dd HH:mm:ss'
-		def str = value.toString()
-		if (str.matches('.+[.]\\d+$'))
-			str += '.SSS'
-		return DateUtils.ParseSQLTimestamp(mask, str, false)
+		return DateUtils.ParseSQLTimestamp(value, false)
 	}
 
 	/**
@@ -599,11 +603,6 @@ class ConvertUtils {
 		if (value instanceof Number)
 			return new Time((value as Number).toLong())
 
-		def mask = 'HH:mm:ss'
-		def str = value.toString()
-		if (str.matches('.+[.]\\d+$'))
-			//noinspection GroovyUnusedAssignment
-			str += '.SSS'
-		return DateUtils.ParseSQLTime(mask, value, false)
+		return DateUtils.ParseSQLTime(value, false)
 	}
 }

@@ -590,16 +590,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	 * @return list of files
 	 */
 	FileManagerList listDir(String maskFiles = null) {
-		FileManagerList res
-		try {
-			res = doListDir(maskFiles)
-		}
-		catch (Exception e) {
-			if (writeErrorsToLog)
-				logger.severe("Error read directory on source \"$this\"", e)
-			throw e
-		}
-
+		def res = doListDir(maskFiles)
 		return res
 	}
 
@@ -612,7 +603,6 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	abstract protected FileManagerList doListDir(String maskFiles)
 
 	/** Process list files of current directory from server */
-	@CompileStatic
 	@Synchronized
 	void list(String maskFiles,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
@@ -621,9 +611,22 @@ abstract class Manager implements GetlRepository, ObjectTags {
 
 		validConnect()
 
-		FileManagerList l = listDir(maskFiles)
-		for (Integer i = 0; i < l.size(); i++) {
-            processCode.call(l.item(i))
+		try {
+			FileManagerList res = listDir(maskFiles)
+
+			for (Integer i = 0; i < res.size(); i++) {
+				processCode.call(res.item(i))
+			}
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog) {
+				logger.severe("Error read directory from \"$this\"", e)
+
+				logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+						generateDumpStatus('list', [maskFiles: maskFiles] as Map<String, Object>))
+			}
+
+			throw e
 		}
 	}
 	
@@ -666,7 +669,6 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	 * Change current server directory
 	 * @param dir new directory
 	 */
-	@CompileStatic
 	void changeDirectory(String dir) {
 		validConnect()
 
@@ -696,8 +698,13 @@ abstract class Manager implements GetlRepository, ObjectTags {
 				currentPath = dir
 			}
 			catch (Exception e) {
-				if (writeErrorsToLog)
-					logger.severe("Can not change directory to \"$dir\" on source \"$this\"", e)
+				if (writeErrorsToLog) {
+					logger.severe("Can not change directory to \"$dir\" from \"$this\"", e)
+
+					logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+							generateDumpStatus('changeDirectory', [dir: dir] as Map<String, Object>))
+				}
+
 				throw e
 			}
 		}
@@ -706,8 +713,13 @@ abstract class Manager implements GetlRepository, ObjectTags {
 				currentPath = "$_currentPath/$dir"
 			}
 			catch (Exception e) {
-				if (writeErrorsToLog)
-					logger.severe("Can not change directory to \"$_currentPath/$dir\" on source \"$this\"", e)
+				if (writeErrorsToLog) {
+					logger.severe("Can not change directory to \"$_currentPath/$dir\" from \"$this\"", e)
+
+					logger.dump(e, getClass().name, dslNameObject?:'noname',
+							generateDumpStatus('changeDirectory', [dir: dir] as Map<String, Object>))
+				}
+
 				throw e
 			}
 		}
@@ -758,7 +770,6 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	 * @param localFilePath file download path to local directory
 	 * @return downloaded file
 	 */
-	@CompileStatic
 	File download(String filePath, String localFilePath) {
 		validConnect()
 
@@ -781,7 +792,19 @@ abstract class Manager implements GetlRepository, ObjectTags {
 		}
 
 		FileUtils.ValidPath(localDir)
-		download(filePath, localDir, localFileName)
+		try {
+			download(filePath, localDir, localFileName)
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog) {
+				logger.severe("Error download file \"$filePath\" from \"$this\"", e)
+
+				logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+						generateDumpStatus('download', [filePath: filePath, localFilePath: localFilePath] as Map<String, Object>))
+			}
+
+			throw e
+		}
 	}
 	
 	/**
@@ -790,7 +813,38 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	 * @param localFileName local file name
 	 */
 	void upload(String localFilePath, String localFileName) {
-		doUpload(localFilePath, localFileName)
+		try {
+			doUpload(localFilePath, localFileName)
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog) {
+				logger.severe("Error upload file \"$localFileName\" to \"$this\"", e)
+
+				logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+						generateDumpStatus('upload', [localFilePath: localFilePath, localFileName: localFileName] as Map<String, Object>))
+			}
+
+			throw e
+		}
+	}
+
+	private String generateDumpStatus(String methodName, Map<String, Object> methodParams) {
+		def sb = new StringBuilder()
+		sb.append("Method: $methodName\n")
+		if (methodParams != null && !methodParams.isEmpty()) {
+			sb.append("Method parameters:\n")
+			methodParams.each { name, value ->
+				sb.append("  $name: $value\n")
+			}
+		}
+		sb.append("Manager status:\n")
+		sb.append("  Root path: ${rootPath()}\n")
+		sb.append("  Current directory: ${currentDir()}\n")
+		sb.append("  Local directory: ${localDirectory()}\n")
+		sb.append("  Current local directory: ${currentLocalDir()}\n")
+		sb.append("  Connected: ${isConnected()}\n")
+
+		return sb.toString()
 	}
 
 	/**
@@ -857,7 +911,6 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	 * Create a hierarchy of directories in the source if they don't exist
 	 * @param dirPath created directory path
 	 */
-	@CompileStatic
 	void createDirs(String dirPath) {
 		validConnect()
 		validWrite()
@@ -904,7 +957,6 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	}
 	
 	/** Return current directory with relative path */
-	@CompileStatic
 	String currentDir() {
 		validConnect()
 
@@ -1111,19 +1163,16 @@ abstract class Manager implements GetlRepository, ObjectTags {
 
 	static private Object operationLock = new Object()
 
-	@CompileStatic
 	@Synchronized('operationLock')
 	protected FileManagerList listDirSync(String mask = null) {
 		listDir(mask)
 	}
 	
-	@CompileStatic
 	@Synchronized('operationLock')
 	protected void changeDirSync(String dir) {
 		changeDirectory(dir)
 	}
 	
-	@CompileStatic
 	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Path maskPath, Boolean recursive, Integer fileLevel,
 								Boolean requiredAnalyze, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
 		if (threadLevel == null) threadCount = null
@@ -1748,8 +1797,13 @@ FROM (
 			sizeFileList = sizeFiles
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog)
-				logger.severe("Error build list of files on source \"$this\"", e)
+			if (writeErrorsToLog) {
+				logger.severe("Error build list of files from \"$this\"", e)
+
+				logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+						generateDumpStatus('buildList', lParams as Map<String, Object>))
+			}
+
 			throw e
 		}
 		finally {
@@ -2103,7 +2157,8 @@ WHERE
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				logger.severe("Cannot convert local directory name \"${f.path}\" to canonical on source \"$this\"", e)
+				logger.severe("Cannot convert local directory name \"${f.path}\" to canonical from \"$this\"", e)
+
 			throw e
 		}
 		return res
@@ -2210,7 +2265,20 @@ WHERE
 		}
 
 		dir = FileUtils.PrepareDirPath(dir, !isWindowsFileSystem)
-		setCurrentLocalPath(processLocalDirPath(dir))
+
+		try {
+			setCurrentLocalPath(processLocalDirPath(dir))
+		}
+		catch (Exception e) {
+			if (writeErrorsToLog) {
+				logger.severe("Error read directory from \"$this\"", e)
+
+				logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+						generateDumpStatus('changeDirectory', [dir: dir] as Map<String, Object>))
+			}
+
+			throw e
+		}
 	}
 	
 	/**
@@ -2267,7 +2335,12 @@ WHERE
 
 		def res = false
 		try {
-			def list = list(dirName + '/..')
+			def fmList = listDir(dirName + '/..')
+			def list = new LinkedList<Map>()
+			for (Integer i = 0; i < fmList.size(); i++) {
+				list.add(fmList.item(i))
+			}
+
 			def i = dirName.lastIndexOf('/')
 			if (i != -1) dirName = dirName.substring(i + 1)
 			res = (list.find { e -> e.filename == dirName && e.type == TypeFile.DIRECTORY} != null)
@@ -2541,8 +2614,13 @@ WHERE
 			res = doCommand(command, out, err)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog)
-				logger.severe("Error running command on source \"$this\"", e)
+			if (writeErrorsToLog) {
+				logger.severe("Error running command from \"$this\"", e)
+
+				logger.dump(e, getClass().name, dslNameObject ?: 'noname',
+						generateDumpStatus('command', [command: command] as Map<String, Object>))
+			}
+
 			throw e
 		}
 		writeScriptHistoryFile("Output command from session $sessionID:\n${out.toString()}")

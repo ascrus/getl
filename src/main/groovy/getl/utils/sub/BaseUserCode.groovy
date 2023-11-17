@@ -121,12 +121,32 @@ class BaseUserCode extends Getl {
         NumericUtils.Round(value, prec)
     }
 
+    static Boolean isNumber(String value) {
+        NumericUtils.IsNumber(value)
+    }
+
     static Boolean isInteger(String value) {
         NumericUtils.IsInteger(value)
     }
 
+    static Boolean isLong(String value) {
+        NumericUtils.IsLong(value)
+    }
+
+    static Boolean isBigInteger(String value) {
+        NumericUtils.IsBigInteger(value)
+    }
+
     static Boolean isNumeric(String value) {
         NumericUtils.IsNumeric(value)
+    }
+
+    static Boolean isDouble(String value) {
+        NumericUtils.IsDouble(value)
+    }
+
+    static Boolean isFloat(String value) {
+        NumericUtils.IsFloat(value)
     }
 
     static String asString(Object value) {
@@ -151,6 +171,10 @@ class BaseUserCode extends Getl {
 
     static Double asDouble(def value) {
         ConvertUtils.Object2Double(value)
+    }
+
+    static Float asFloat(def value) {
+        ConvertUtils.Object2Float(value)
     }
 
     static Timestamp asTimestamp(def value) {
@@ -186,7 +210,7 @@ class BaseUserCode extends Getl {
     }
 
     static String cutStr(String s, Integer maxLength) {
-        StringUtils.CutStr(s, maxLength)
+        StringUtils.CutStrByWord(s, maxLength)
     }
 
     static String rightStr(String s, Integer len) {
@@ -233,7 +257,7 @@ class BaseUserCode extends Getl {
         StringUtils.NullIsEmpty(value)
     }
 
-    static Boolean asBoolean(def value, Boolean defaultValue = false) {
+    static Boolean asBoolean(def value, Boolean defaultValue = null) {
         ConvertUtils.Object2Boolean(value, defaultValue)
     }
 
@@ -327,5 +351,45 @@ class BaseUserCode extends Getl {
     /** Check path from file and create if not exists */
     static Boolean validFilePath(String path, Boolean deleteOnExit = false) {
         FileUtils.ValidFilePath(path, deleteOnExit)
+    }
+
+    /** Searches string for substring and returns an integer indicating the position of the character in string that is the first character of this occurrence */
+    static Integer inStr(String text, String search, Integer position = 0, Integer occurrence = 1) {
+        StringUtils.InStr(text, search, position, occurrence)
+    }
+
+    /** Returns a string that is a substring of this string */
+    static String substr(String text, Integer start, Integer count = null) {
+        StringUtils.Substr(text, start, count)
+    }
+
+    /** Returns a list of all occurrences of a regular expression */
+    static List<String> findAll(String text, String regex) {
+        StringUtils.FindAll(text, regex)
+    }
+
+    /** Converts all of the characters in this String to upper case */
+    static String upper(String text) {
+        text?.toUpperCase()
+    }
+
+    /** Converts all of the characters in this String to lower case */
+    static String lower(String text) {
+        text?.toLowerCase()
+    }
+
+    /** Returns a string whose value is this string, with all leading and trailing white space removed */
+    static String trim(String text) {
+        text?.strip()
+    }
+
+    /** Returns a string whose value is this string, with all leading white space removed */
+    static String lTrim(String text) {
+        text?.stripLeading()
+    }
+
+    /** Returns a string whose value is this string, with all trailing white space removed */
+    static String rTrim(String text) {
+        text?.stripTrailing()
     }
 }

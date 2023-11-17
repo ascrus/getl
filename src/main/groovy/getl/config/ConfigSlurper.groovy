@@ -564,11 +564,11 @@ class ConfigSlurper extends ConfigManager {
 			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof Time) {
-			def str = "getl.utils.DateUtils.ParseSQLTime(getl.utils.DateUtils.defaultTimeMask, '${DateUtils.FormatDate(DateUtils.defaultTimeMask, value as Time)}', false)"
+			def str = "getl.utils.DateUtils.ParseSQLTime(getl.utils.DateUtils.defaultTimeMask, '${DateUtils.FormatDate(DateUtils.defaultTimeMaskFormat, value as Time)}', false)"
 			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof Date) {
-			def str = "getl.utils.DateUtils.ParseDate(getl.utils.DateUtils.defaultDateTimeMask, '${DateUtils.FormatDate(DateUtils.defaultDateTimeMask, value as Date)}', false)"
+			def str = "getl.utils.DateUtils.ParseDate(getl.utils.DateUtils.defaultDateTimeMask, '${DateUtils.FormatDate(DateUtils.defaultDateTimeMaskFormat, value as Date)}', false)"
 			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof Duration) {

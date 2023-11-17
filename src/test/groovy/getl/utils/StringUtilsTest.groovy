@@ -310,4 +310,43 @@ SET SELECT * FROM table; -- test
         def b = StringUtils.GZip(text)
         assertEquals(text, StringUtils.UnGZip(b))
     }
+
+    @Test
+    void testInStr() {
+        def text = 'abc abc abc'
+        assertNull(StringUtils.InStr(null, 'abc'))
+        assertEquals(0, StringUtils.InStr(text, 'abc'))
+        shouldFail { StringUtils.InStr(text, null) }
+        shouldFail { StringUtils.InStr(text, 'abc', null) }
+        shouldFail { StringUtils.InStr(text, 'abc', 0, null) }
+        shouldFail { StringUtils.InStr(text, 'abc', 0, -1) }
+        assertEquals(4, StringUtils.InStr(text, 'abc', 1))
+        assertEquals(8, StringUtils.InStr(text, 'abc', -1))
+        assertEquals(10, StringUtils.InStr(text, 'c', -1))
+        assertEquals(4, StringUtils.InStr(text, 'abc', 0, 2))
+        assertEquals(8, StringUtils.InStr(text, 'abc', 0, 3))
+        assertEquals(-1, StringUtils.InStr(text, 'abc', 0, 4))
+    }
+
+    @Test
+    void testSubstr() {
+        def text = 'text 123'
+        assertNull(StringUtils.Substr(null, 0))
+        shouldFail { StringUtils.Substr(text, null) }
+        assertEquals('text 123', StringUtils.Substr(text, 0))
+        assertEquals('text', StringUtils.Substr(text, 0, 4))
+        assertEquals('123', StringUtils.Substr(text, 5))
+        assertEquals('123', StringUtils.Substr(text, 5, 3))
+        assertEquals('123', StringUtils.Substr(text, 5, 100))
+    }
+
+    @Test
+    void testFindAll() {
+        def text = '123_2013-11-13_ABC'
+        def regex = '(?i)^(\\d{3})_(\\d{4}-\\d{2}-\\d{2})_(.+)'
+        assertNull(StringUtils.FindAll(null, regex))
+        shouldFail { StringUtils.FindAll(text, null) }
+        assertEquals(['123', '2013-11-13', 'ABC'], StringUtils.FindAll(text, regex))
+        assertNull(StringUtils.FindAll('123_ABC', regex))
+    }
 }

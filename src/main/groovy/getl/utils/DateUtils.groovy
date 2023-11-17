@@ -32,7 +32,9 @@ class DateUtils {
 	static public String defaultDateMask = 'yyyy-MM-dd'
 	/** Default time mask */
 	@SuppressWarnings('SpellCheckingInspection')
-	static public String defaultTimeMask = 'HH:mm:ss'
+	static public String defaultTimeMask = 'HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]'
+	/** Default time mask for format */
+	static public String defaultTimeMaskFormat = 'HH:mm:ss'
 	/** Default datetime mask */
 	@SuppressWarnings('SpellCheckingInspection')
 	static public String defaultDateTimeMask = 'yyyy-MM-dd HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]'
@@ -369,11 +371,11 @@ class DateUtils {
 	 * @param ignoreError ignore parse error (default true)
 	 * @return sql time
 	 */
-	static Time ParseSQLTime(String format, Object value, Boolean ignoreError = true) {
+	static Time ParseSQLTime(String format, String value, Boolean ignoreError = true) {
 		if (value == null)
 			return null
 
-		def res = ParseLocalTime(BuildTimeFormatter(format), value.toString(), ignoreError)
+		def res = ParseLocalTime(BuildTimeFormatter(format), value, ignoreError)
 		if (res == null)
 			return null
 
@@ -387,7 +389,7 @@ class DateUtils {
 	 * @return sql time
 	 */
 	static Time ParseSQLTime(Object value, Boolean ignoreError = true) {
-		ParseSQLTime(defaultTimeMask, value, ignoreError)
+		ParseSQLTime(defaultTimeMask, value?.toString(), ignoreError)
 	}
 
 	/**
@@ -429,7 +431,7 @@ class DateUtils {
 	 * @param ignoreError ignore parse error (default true)
 	 * @return sql timestamp
 	 */
-	static Timestamp ParseSQLTimestamp(String format, Object value, Boolean ignoreError = true) {
+	static Timestamp ParseSQLTimestamp(String format, String value, Boolean ignoreError = true) {
 		if (value == null)
 			return null
 
@@ -447,7 +449,7 @@ class DateUtils {
 	 * @return sql timestamp
 	 */
 	static Timestamp ParseSQLTimestamp(Object value, Boolean ignoreError = true) {
-		ParseSQLTimestamp(defaultDateTimeMask, value, ignoreError)
+		ParseSQLTimestamp(defaultDateTimeMask, value?.toString(), ignoreError)
 	}
 
 	/**
@@ -804,7 +806,7 @@ class DateUtils {
 	 * @return
 	 */
 	static String FormatTime(Date date) {
-		return FormatDate(defaultTimeMask, date)
+		return FormatDate(defaultTimeMaskFormat, date)
 	}
 	
 	/**

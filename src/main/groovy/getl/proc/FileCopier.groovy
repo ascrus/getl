@@ -327,16 +327,23 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
         try {
             if (segmented.isEmpty() || destinations.size() == 1) {
-                processSegment(0, source, destinations)
-            } else {
+                try {
+                    processSegment(0, source, destinations)
+                }
+                finally {
+                    FileUtils.DeleteFolder(source.localDirectory(), false)
+                }
+            }
+            else {
                 if (!disconnectFrom([source] + destinations))
                     throw new ExceptionFileListProcessing("Errors occurred while working with sources!")
 
                 def na = numberAttempts
                 def ta = timeAttempts
 
+                def localDirs = [] as List<String>
                 try {
-                    new Executor(dslCreator: dslCreator).tap {
+                    new Executor(dslCreator: dslCreator).tap { exec ->
                         useList(0..(destinations.size() - 1))
                         countProc = list.size()
                         abortOnError = true
@@ -349,8 +356,10 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                         }
 
                         run { Integer segment ->
-                            def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}", isTempLocalDirectory: true], dslCreator)
+                            def src = source.cloneManager([localDirectory: "${source.localDirectory}/${segment}", isTempLocalDirectory: true], dslCreator)
                             FileUtils.ValidPath(src.localDirectory(), true)
+                            exec.counter.addToList(src.localDirectory())
+
                             def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory, isTempLocalDirectory: true], dslCreator)
                             ConnectTo([src, dst], na, ta)
 
@@ -358,13 +367,21 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                                 processSegment(segment, src, [dst])
                             }
                             finally {
-                                FileUtils.DeleteFolder(src.localDirectory(), true)
+                                //FileUtils.DeleteFolder(src.localDirectory(), true)
                                 disconnectFrom([src, dst])
                             }
                         }
+                        localDirs.addAll(exec.counter.list)
                     }
                 }
                 finally {
+                    localDirs.each {localDirName ->
+                        try {
+                            FileUtils.DeleteFolder(localDirName, true)
+                        }
+                        catch (Exception ignored) { }
+                    }
+
                     ConnectTo([source] + destinations, na, ta)
                 }
             }
@@ -520,13 +537,13 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         finally {
             files.currentJDBCConnection.connected = false
 
-            Operation([src], numberAttempts, timeAttempts, this) { man ->
+            /*Operation([src], numberAttempts, timeAttempts, this) { man ->
                 try {
                     man.changeLocalDirectoryToRoot()
                     man.removeLocalDirs('.')
                 }
                 catch (Exception ignored) { }
-            }
+            }*/
         }
 
         counter.addCount(files.readRows)

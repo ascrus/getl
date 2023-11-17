@@ -498,7 +498,7 @@ class SalesForceDriver extends Driver {
 				break
 
 			case 'DATETIME':
-				value = DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ss", value)
+				value = DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ss", value?.toString())
 				break
 
 			case 'DATE':

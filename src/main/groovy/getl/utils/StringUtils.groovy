@@ -109,7 +109,7 @@ class StringUtils {
 		def matcher = EvalMacroStringPattern1.matcher(value)
 
 		def sqlDateFormatter = DateUtils.BuildDateFormatter(DateUtils.defaultDateMask)
-		def sqlTimeFormatter = DateUtils.BuildTimeFormatter(DateUtils.defaultTimeMask)
+		def sqlTimeFormatter = DateUtils.BuildTimeFormatter(DateUtils.defaultTimeMaskFormat)
 		def sqlDateTimeFormatter = DateUtils.BuildDateTimeFormatter(DateUtils.defaultDateTimeMaskFormat)
 		def sqlTimestampFormatter = DateUtils.BuildDateTimeFormatter(DateUtils.defaultTimestampMaskFormat)
 		def sqlTimestampTzFormatter = DateUtils.BuildDateTimeFormatter(DateUtils.defaultTimestampWithTzFullMaskFormat)
@@ -891,5 +891,90 @@ class StringUtils {
 	/** Check what array byte is string GZ compressed*/
 	static boolean IsGzCompressed(final byte[] compressed) {
 		return (compressed[0] == (byte)(GZIPInputStream.GZIP_MAGIC)) && (compressed[1] == (byte)(GZIPInputStream.GZIP_MAGIC >> 8))
+	}
+
+	/**
+	 * Searches string for substring and returns an integer indicating the position of the character in string that is the first character of this occurrence
+	 * @param text text to search
+	 * @param search string for search for
+	 * @param position indicating the character of string where begins the search, if position is negative, then counts backward from the end of string and then searches backward from the resulting position (default value 0)
+	 * @param occurrence indicating which occurrence of string Vertica searches (default value 1)
+	 * @return  value is based on the character position of the identified character
+	 */
+	@SuppressWarnings('DuplicatedCode')
+	static Integer InStr(String text, String search, Integer position = 0, Integer occurrence = 1) {
+		if (search == null)
+			throw new IncorrectParameterError('#params.required', 'search')
+		if (position == null)
+			throw new IncorrectParameterError('#params.required', 'position')
+		if (occurrence == null)
+			throw new IncorrectParameterError('#params.required', 'occurrence')
+		if (occurrence < 1)
+			throw new IncorrectParameterError('#params.great_zero', 'occurrence', [value: occurrence])
+
+		if (text == null)
+			return null
+
+		if (position >= 0) {
+			def i = text.indexOf(search, position)
+			if (occurrence == 1 || i == -1)
+				return i
+
+			def l = 1
+			while (l < occurrence && i != -1) {
+				i = text.indexOf(search, i + 1)
+				l++
+			}
+
+			return i
+		}
+
+		def i = text.lastIndexOf(search, text.length() + position)
+		if (occurrence == 1 || i == -1)
+			return i
+
+		def l = 1
+		while (l < occurrence && i != -1) {
+			i = text.lastIndexOf(search, i - 1)
+			l++
+		}
+
+		return i
+	}
+
+	/** Returns a string that is a substring of this string */
+	static String Substr(String text, Integer start, Integer count = null) {
+		if (text == null)
+			return null
+
+		if (count == null)
+			return text.substring(start)
+
+		return (start + count < text.length())?text.substring(start, start + count):text.substring(start)
+	}
+
+	/**
+	 * Returns a list of all occurrences of a regular expression
+	 * @param text text to be processed
+	 * @param regex a regular expression in which the search values are specified as groups within parentheses
+	 * @return list of found values (empty if nothing found)
+	 */
+	static List<String> FindAll(String text, String regex) {
+		if (text == null)
+			return null
+
+		if (regex == null)
+			throw new IncorrectParameterError('#params.required', 'regex')
+
+		def res = [] as List<String>
+		def p = Pattern.compile(regex)
+		def m = p.matcher(text)
+		if (m.find()) {
+			def l = (m.collect()[0] as Collection<String>)
+			for (int i = 1; i < l.size(); i++)
+				res.add(l[i])
+		}
+
+		return (!res.isEmpty())?res:null
 	}
 }
