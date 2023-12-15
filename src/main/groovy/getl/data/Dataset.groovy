@@ -4,11 +4,13 @@ package getl.data
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.data.opts.DatasetLookupSpec
+import getl.data.sub.DatasetCompareField
 import getl.data.sub.FieldList
 import getl.data.sub.WithConnection
 import getl.exception.ConfigError
 import getl.exception.DatasetError
 import getl.exception.IOFilesError
+import getl.exception.InternalError
 import getl.exception.NotSupportError
 import getl.exception.RequiredParameterError
 import getl.lang.Getl
@@ -23,6 +25,7 @@ import getl.driver.Driver
 import getl.utils.*
 import getl.tfs.*
 import groovy.transform.CompileStatic
+import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -757,7 +760,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 		if (procParams == null)
 			procParams = new HashMap()
 
-		methodParams.validation("create", procParams, [connection.driver.methodParams.params("createDataset")])
+		methodParams.validation('create', procParams, [connection.driver.methodParams.params('createDataset')])
 
 		def dirs = directives('create')?:new HashMap<String, Object>()
 		procParams = dirs + procParams
@@ -781,7 +784,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 		
 		if (procParams == null)
 			procParams = new HashMap()
-		methodParams.validation("drop", procParams, [connection.driver.methodParams.params("dropDataset")])
+		methodParams.validation('drop', procParams, [connection.driver.methodParams.params('dropDataset')])
 
 		def dirs = directives('drop')?:new HashMap<String, Object>()
 		procParams = dirs + procParams
@@ -803,7 +806,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 
 		if (procParams == null)
 			procParams = new HashMap()
-		methodParams.validation("truncate", procParams, [connection.driver.methodParams.params("clearDataset")])
+		methodParams.validation('truncate', procParams, [connection.driver.methodParams.params('clearDataset')])
 
 		try {
 			connection.driver.clearDataset(this, procParams)
@@ -835,7 +838,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 
 		if (procParams == null)
 			procParams = new HashMap()
-		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
+		methodParams.validation('bulkLoadFile', procParams, [connection.driver.methodParams.params('bulkLoadFile')])
 
 		def bulkLoadDir = directives('bulkLoad')?:new HashMap<String, Object>()
 		procParams = bulkLoadDir + procParams
@@ -1161,7 +1164,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 
 		if (procParams == null)
 			procParams = new HashMap()
-		methodParams.validation("eachRow", procParams, [connection.driver.methodParams.params("eachRow")])
+		methodParams.validation('eachRow', procParams, [connection.driver.methodParams.params('eachRow')])
 
 		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
@@ -1255,7 +1258,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 			throw new DatasetError(this, '#dataset.invalid_status', [operation: 'write', status: status])
 
 		procParams = procParams?:new HashMap()
-		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
+		methodParams.validation('openWrite', procParams, [connection.driver.methodParams.params('openWrite')])
 		def writeDir = directives('write')?:new HashMap<String, Object>()
 		procParams = writeDir + procParams
 
@@ -1456,7 +1459,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	Map lookup(Map procParams) {
 		if (procParams == null)
 			procParams = new HashMap()
-		methodParams.validation("lookup", procParams)
+		methodParams.validation('lookup', procParams)
 		
 		String key = procParams.key as String
 		if (key == null)
@@ -1904,51 +1907,143 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	}
 
 	/**
-	 * Check dataset with required fields
-	 * @param dataset checking dataset fields
-	 * @param fields required fields
+	 * Compare the fields of the dataset with the specified list of fields and return the difference between them
+	 * @param checkedDataset checked dataset
+	 * @param needFields compared list of fields
 	 * @param softCheckType soft type checking
-	 * @param throwErrors throw if error
-	 * @return list of found errors
+	 * @param softCheckNull soft nullable checking
+	 * @param softCheckPK soft primary key checking
+	 * @param checkDefaultExpression check field default expression
+	 * @param detectUnnecessaryFields identify unnecessary fields in the dataset
+	 * @return map of found difference codes with list of fields
 	 */
-	@CompileStatic
-	static List<String> CheckTableFields(Dataset dataset, List<Field> fields, Boolean softCheckType = true, Boolean throwErrors = true) {
-		if (dataset == null)
-			throw new RequiredParameterError('dataset', 'CheckTableFields')
+	@NamedVariant
+	static Map<String, List<DatasetCompareField>> DetectChangeFields(Dataset checkedDataset, List<Field> needFields, Boolean softCheckType = false,
+																	 Boolean softCheckNull = false, Boolean softCheckPK = false,
+																	 Boolean checkDefaultExpression = false,
+																	 Boolean detectUnnecessaryFields = false) {
+		if (checkedDataset == null)
+			throw new RequiredParameterError(checkedDataset, 'checkedDataset', 'DetectChangeFields')
 
-		def errors = [] as List<String>
+		if (needFields == null || needFields.isEmpty())
+			throw new RequiredParameterError(checkedDataset, 'fields', 'DetectChangeFields')
 
-		if (dataset.field.isEmpty())
-			return errors
+		def changed = [:] as Map<String, List<DatasetCompareField>>
 
-		fields.each { needField ->
-			def dsField = dataset.fieldByName(needField.name)
+		Closure<List<DatasetCompareField>> detectCode = { String code ->
+			def group = changed.get(code)
+			if (group == null) {
+				group = [] as List<DatasetCompareField>
+				changed.put(code, group)
+			}
+			return group
+		}
+
+		needFields.each { needField ->
+			def dsField = checkedDataset.fieldByName(needField.name)
 			if (dsField == null) {
-				errors.add(Messages.BuildText('#dataset.field_not_found', [field: needField.name]))
+				detectCode(DatasetCompareField.COMPARE_FIELD_NOT_FOUND).add(new DatasetCompareField(comparedField: needField))
 				return
 			}
 
 			def fieldType = (softCheckType)?FieldSoftType(dsField.type):dsField.type
 			def needType = (softCheckType)?FieldSoftType(needField.type):needField.type
-			if (!Field.IsCapacityType(fieldType, needType))
-				errors.add(Messages.BuildText('#dataset.field_type_not_compatible',
-						[field: needField.name, source_type: dsField.type, dest_type: needField.type]))
+			if ((softCheckType && !Field.IsCapacityType(fieldType, needType)) || (!softCheckType && fieldType != needType))
+				detectCode(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE).add(new DatasetCompareField(datasetField: dsField, comparedField: needField))
+			else if ((Field.AllowLength(needField) && Field.AllowLength(dsField) && (dsField.length?:0) < (needField.length?:0)) ||
+						(Field.AllowPrecision(needField) && Field.AllowPrecision(dsField) && (dsField.precision?:0) < (needField.precision?:0)))
+					detectCode(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE).add(new DatasetCompareField(datasetField: dsField, comparedField: needField))
 
-			if (Field.AllowLength(needField) && Field.AllowLength(dsField) && needField.length != null && (dsField.length?:0) < needField.length)
-				errors.add(Messages.BuildText('#dataset.field_length_not_compatible', [field: needField.name, length: needField.length]))
+			if ((!needField.isNull && dsField.isNull) || (!softCheckNull && needField.isNull && !dsField.isNull))
+				detectCode(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE).add(new DatasetCompareField(datasetField: dsField, comparedField: needField))
 
-			if (Field.AllowPrecision(needField) && Field.AllowPrecision(dsField) && needField.precision != null && (dsField.precision?:0) < needField.precision)
-				errors.add(Messages.BuildText('#dataset.field_prec_not_compatible', [field: needField.name, precision: needField.precision]))
+			if (checkDefaultExpression && needField.defaultValue != dsField.defaultValue)
+				detectCode(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE).add(new DatasetCompareField(datasetField: dsField, comparedField: needField))
 
-			if (!needField.isNull && dsField.isNull)
-				errors.add(Messages.BuildText('#dataset.field_null_not_compatible', [field: needField.name]))
+			if ((needField.isKey && !dsField.isKey) || (!softCheckPK && !needField.isKey && dsField.isKey))
+				detectCode(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE).add(new DatasetCompareField(datasetField: dsField, comparedField: needField))
+		}
 
-			if (needField.isKey && !dsField.isKey)
-				errors.add(Messages.BuildText('#dataset.field_key_not_compatible', [field: needField.name]))
+		if (detectUnnecessaryFields) {
+			def fieldsName = needFields.collect { field -> field.name?.toLowerCase() }
+			checkedDataset.field.each { dsField ->
+				if (!(dsField.name?.toLowerCase() in fieldsName)) {
+					detectCode(DatasetCompareField.COMPARE_UNNECESSARY_FIELD).add(new DatasetCompareField(datasetField: dsField))
+					if (dsField.isKey)
+						detectCode(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE).add(new DatasetCompareField(datasetField: dsField))
+				}
+			}
+		}
+
+		return changed
+	}
+
+	/**
+	 * Check the dataset fields against the list of required fields
+	 * @param checkedDataset checked dataset
+	 * @param fields required fields
+	 * @param softCheckType soft type checking
+	 * @param softCheckNull soft nullable checking
+	 * @param softCheckPk soft primary key checking
+	 * @param checkDefaultExpression check fields default expression
+	 * @param detectUnnecessaryFields identify unnecessary fields in the dataset
+	 * @param throwErrors throw if error
+	 * @return list of found errors
+	 */
+	@NamedVariant
+	static List<String> CheckTableFields(Dataset checkedDataset, List<Field> fields, Boolean softCheckType = true,
+										 Boolean softCheckNull = true, Boolean softCheckPK = true,
+										 Boolean checkDefaultExpression = false,
+										 Boolean detectUnnecessaryFields = false, Boolean throwErrors = true) {
+		if (checkedDataset == null)
+			throw new RequiredParameterError('checkedDataset', 'CheckTableFields')
+
+		if (fields == null || fields.isEmpty())
+			throw new RequiredParameterError(checkedDataset, 'fields', 'CheckTableFields')
+
+		def errors = [] as List<String>
+		def changes = DetectChangeFields(checkedDataset, fields, softCheckType, softCheckNull, softCheckPK,
+				checkDefaultExpression, detectUnnecessaryFields)
+
+		changes.each { code, changeFields ->
+			changeFields.each { detail ->
+				def dsField = detail.datasetField
+				def needField = detail.comparedField
+
+				switch (code) {
+					case DatasetCompareField.COMPARE_FIELD_NOT_FOUND:
+						errors.add(Messages.BuildText('#dataset.field_not_found',
+								[field: needField.name]))
+						break
+					case DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE:
+						errors.add(Messages.BuildText('#dataset.field_type_not_compatible',
+								[field: needField.name, source_type: dsField.type, dest_type: needField.type]))
+						break
+					case DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE:
+						errors.add(Messages.BuildText('#dataset.field_length_not_compatible',
+								[field: needField.name, length: needField.length, precision: needField.precision]))
+						break
+					case DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE:
+						errors.add(Messages.BuildText('#dataset.field_null_not_compatible',
+								[field: needField.name]))
+						break
+					case DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE:
+						errors.add(Messages.BuildText('#dataset.field_key_not_compatible', [field: needField.name]))
+						break
+					case DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE:
+						errors.add(Messages.BuildText('#dataset.field_default_not_compatible', [field: needField.name]))
+						break
+					case DatasetCompareField.COMPARE_UNNECESSARY_FIELD:
+						errors.add(Messages.BuildText('#dataset.unnecessary_field', [field: dsField.name]))
+						break
+					default:
+						throw new InternalError(checkedDataset, "Unknown code \"$code\"")
+				}
+			}
 		}
 
 		if (throwErrors && !errors.isEmpty())
-			throw new DatasetError(dataset, '#dataset.invalid_check_structure', [errors: errors.join(', ')])
+			throw new DatasetError(checkedDataset, '#dataset.invalid_check_structure', [errors: errors.join(', ')])
 
 		return errors
 	}

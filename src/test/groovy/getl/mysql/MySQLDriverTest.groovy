@@ -17,4 +17,10 @@ class MySQLDriverTest extends JDBCDriverProto {
 		needCatalog = con.connectDatabase
 		return con
 	}
+
+	@Override
+	protected Boolean synchronizeStructureTable()  { true }
+
+	@Override
+	protected String schemaForSynchronizeStructureTable() { 'open' }
 }

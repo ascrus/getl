@@ -42,6 +42,7 @@ class OracleDriver extends JDBCDriver {
 		sqlExpressions.sequenceNext = 'SELECT {value}.nextval id FROM dual'
 		sqlExpressions.sysDualTable = 'DUAL'
 		sqlExpressions.changeSessionProperty = 'ALTER SESSION SET {name} = \'{value}\''
+		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} MODIFY {fieldName} {typeName}'
 		sqlExpressions.ddlCreateSequence = '''declare count_seq number; if_not_exists varchar(20) := '{%ifNotExists%}';
 begin
     if (if_not_exists = 'IF NOT EXISTS') then
@@ -64,15 +65,25 @@ begin
 		execute immediate 'DROP SEQUENCE {name}';
 	end if;
 end;'''
+
+		sqlTypeMap.INTEGER.name = 'number(10)'
+		sqlTypeMap.BIGINT.name = 'number(19)'
+		sqlTypeMap.BLOB.useLength = sqlTypeUse.NEVER
+		sqlTypeMap.TEXT.useLength = sqlTypeUse.NEVER
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
-		return super.supported() +
-				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
+		def res = super.supported() +
+				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.COLUMN_CHANGE_TYPE, Support.INDEX, Support.INDEXFORTEMPTABLE,
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.START_TRANSACTION] -
 				[Support.SELECT_WITHOUT_FROM, Support.BOOLEAN]
+
+		if (jdbcConnection.serverMajorVersion > 21)
+			res.addAll([Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST])
+
+		return res
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -129,18 +140,6 @@ end;'''
 }"""
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	@Override
-	Map<String, Map<String, Object>> getSqlType() {
-		def res = super.getSqlType()
-		res.INTEGER.name = 'number(10)'
-		res.BIGINT.name = 'number(19)'
-		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
-
-		return res
-	}
-	
 	@Override
 	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)

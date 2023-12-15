@@ -22,18 +22,12 @@ class HanaDriver extends JDBCDriver {
         sqlExpressions.sysDualTable = 'dummy'
         sqlExpressions.sequenceNext = 'SELECT {value}.NEXTVAL AS id FROM DUMMY'
         sqlExpressions.changeSessionProperty = 'SET TEMPORARY OPTION {name} = {value}'
-    }
 
-    @Override
-    Map<String, Map<String, Object>> getSqlType () {
-        def res = super.getSqlType()
-        res.DOUBLE.name = 'double'
-        res.UUID.name = 'uniqueidentifier'
-        res.BLOB.name = 'VARBINARY'
-        res.BLOB.defaultLength = 5000
-        res.TEXT.useLength = sqlTypeUse.NEVER
-
-        return res
+        sqlTypeMap.DOUBLE.name = 'double'
+        sqlTypeMap.UUID.name = 'uniqueidentifier'
+        sqlTypeMap.BLOB.name = 'VARBINARY'
+        sqlTypeMap.BLOB.defaultLength = 5000
+        sqlTypeMap.TEXT.useLength = sqlTypeUse.NEVER
     }
 
     @Override

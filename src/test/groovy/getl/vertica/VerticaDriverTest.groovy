@@ -793,4 +793,10 @@ ECHO {ts}'''
             }
         }
     }
+
+    @Override
+    protected Boolean synchronizeStructureTable()  { true }
+
+    @Override
+    protected String schemaForSynchronizeStructureTable() { 'public' }
 }

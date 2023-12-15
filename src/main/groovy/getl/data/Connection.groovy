@@ -316,7 +316,7 @@ class Connection implements GetlRepository, ObjectTags {
 	private final Map<String, Object> _dslVars = new HashMap<String, Object>()
 	/** Variables for dsl creator */
 	@JsonIgnore
-	protected Map<String, Object> getDslVars() { attributes() + _dslVars }
+	Map<String, Object> getDslVars() { attributes() + _dslVars }
 	/** Variables for dsl creator */
 	protected void setDslVars(Map<String, Object> value) {
 		_dslVars.clear()
@@ -490,8 +490,8 @@ class Connection implements GetlRepository, ObjectTags {
 										  Closure<Boolean> filter) {
 		if (params == null)
 			params = new HashMap()
-		methodParams.validation("retrieveObjects", params,
-				[driver.methodParams.params("retrieveObjects")])
+		methodParams.validation('retrieveObjects', params,
+				[driver.methodParams.params('retrieveObjects')])
 
 		List<Object> res
 		
@@ -718,7 +718,7 @@ class Connection implements GetlRepository, ObjectTags {
 		
 		if (params == null)
 			params = new HashMap()
-		methodParams.validation("executeCommand", params, [driver.methodParams.params("executeCommand")])
+		methodParams.validation('executeCommand', params, [driver.methodParams.params('executeCommand')])
 		
 		String command = params.command
 		if (command == null)

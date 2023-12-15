@@ -28,11 +28,6 @@ class VerticaTable extends TableDataset {
     /** Fill field value with value from table on insert and when calling function REFRESH_COLUMNS */
     static public final lookupDefaultUsingType = 'DEFAULT USING'
 
-    /*@Override
-    protected void registerParameters() {
-        super.registerParameters()
-    }*/
-
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof VerticaConnection))

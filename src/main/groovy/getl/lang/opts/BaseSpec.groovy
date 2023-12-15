@@ -101,7 +101,7 @@ class BaseSpec implements Cloneable {
     }
 
     private Map<String, Object> _params
-    private final Object synchParams = new Object()
+    protected final Object synchParams = new Object()
 
     /** Object parameters */
     @JsonIgnore
@@ -119,6 +119,15 @@ class BaseSpec implements Cloneable {
             _params.put(key, value)
         else
             _params.remove(key)
+    }
+
+    /**
+     * Processing user code on parameters with synchronized mode
+     * @param code user processing code
+     */
+    @Synchronized('synchParams')
+    protected void processParams(Closure code) {
+        code.call()
     }
 
     /** Detected ignore key map from import */

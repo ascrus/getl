@@ -18,6 +18,13 @@ import groovy.transform.InheritConstructors
 @CompileStatic
 @InheritConstructors
 class ArrayDatasetDriver extends Driver {
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
+
+        methodParams.register('eachRow', ['localDatasetData'])
+    }
+
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Support> supported() {

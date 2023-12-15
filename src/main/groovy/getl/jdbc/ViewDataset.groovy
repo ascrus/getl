@@ -50,8 +50,7 @@ class ViewDataset extends TableDataset {
 	void createView(Map procParams) {
 		validConnection()
 
-		methodParams.validation('createView', procParams,
-				[connection.driver.methodParams.params('createView')])
+		methodParams.validation('createView', procParams, [connection.driver.methodParams.params('createView')])
 
 		currentJDBCConnection.currentJDBCDriver.createView(this, procParams)
 	}

@@ -45,12 +45,24 @@ class ClickHouseDriver extends JDBCDriver {
         sqlExpressions.sysDualTable = 'system.one'
         sqlExpressions.ddlCreateSchema = 'CREATE DATABASE{ %ifNotExists%} {schema}'
         sqlExpressions.ddlDropSchema = 'DROP DATABASE{ %ifExists%} {schema}'
+        sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} MODIFY COLUMN {fieldName} {typeName}'
+
+        sqlTypeMap.STRING.name = 'String'
+        sqlTypeMap.STRING.useLength = sqlTypeUse.NEVER
+        sqlTypeMap.INTEGER.name = 'Int32'
+        sqlTypeMap.BIGINT.name = 'Int64'
+        sqlTypeMap.DOUBLE.name = 'Double'
+        //sqlTypeMap.NUMERIC.name = 'Decimal128'
+        sqlTypeMap.BOOLEAN.name = 'Boolean'
+        sqlTypeMap.DATE.name = 'Date32'
+        sqlTypeMap.DATETIME.name = 'DateTime64'
+        sqlTypeMap.UUID.name = 'UUID'
     }
 
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-                [Support.LOCAL_TEMPORARY, Support.UUID, Support.DATE, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
+                [Support.LOCAL_TEMPORARY, Support.UUID, Support.DATE, Support.COLUMN_CHANGE_TYPE, Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
                  Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST] -
                 [Support.COMPUTE_FIELD, Support.CHECK_FIELD, Support.TRANSACTIONAL]
     }
@@ -65,23 +77,6 @@ class ClickHouseDriver extends JDBCDriver {
     @Override
     String defaultConnectURL() {
         return 'jdbc:clickhouse://{host}/{database}'
-    }
-
-    @Override
-    Map<String, Map<String, Object>> getSqlType() {
-        def res = super.getSqlType()
-        res.STRING.name = 'String'
-        res.STRING.useLength = sqlTypeUse.NEVER
-        res.INTEGER.name = 'Int32'
-        res.BIGINT.name = 'Int64'
-        res.DOUBLE.name = 'Double'
-        //res.NUMERIC.name = 'Decimal128'
-        res.BOOLEAN.name = 'Boolean'
-        res.DATE.name = 'Date32'
-        res.DATETIME.name = 'DateTime64'
-        res.UUID.name = 'UUID'
-
-        return res
     }
 
     /** ClickHouse connection */

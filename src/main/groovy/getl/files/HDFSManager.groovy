@@ -45,7 +45,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     protected void registerParameters() {
         super.registerParameters()
-        methodParams.register('super', ['server', 'port', 'login', 'password', 'storedLogins', 'replication'])
+        methodParams.register('super', ['server', 'port', 'login', 'password', 'storedLogins', 'replication', 'connectionTimeout', 'maxRetryOnError'])
     }
 
     @Override
@@ -96,6 +96,26 @@ class HDFSManager extends Manager implements UserLogins {
         params.replication = value
     }
 
+    /** Connection timeout in seconds (default 3 seconds) */
+    Integer getConnectionTimeout() { params.connectionTimeout as Integer }
+    /** Connection timeout in seconds (default 3 seconds) */
+    void setConnectionTimeout(Integer value) {
+        if (value != null && value < 1)
+            throw new IncorrectParameterError(this, '#params.great_zero', 'connectionTimeout')
+
+        params.connectionTimeout = value
+    }
+
+    /** Connection timeout in seconds (default 1 seconds) */
+    Integer getMaxRetryOnError() { params.maxRetryOnError as Integer }
+    /** Connection timeout in seconds (default 1 seconds) */
+    void setMaxRetryOnError(Integer value) {
+        if (value != null && value < 1)
+            throw new IncorrectParameterError(this, '#params.great_zero', 'maxRetryOnError')
+
+        params.maxRetryOnError = value
+    }
+
     /** File system driver */
     private FileSystem client
 
@@ -131,8 +151,12 @@ class HDFSManager extends Manager implements UserLogins {
         @Override
         Void run() {
             Configuration conf = new Configuration()
-            conf.set("fs.defaultFS", "hdfs://${man.server()}:${man.port}")
-            conf.set("hadoop.job.ugi", man.login())
+            conf.set('fs.defaultFS', "hdfs://${man.server()}:${man.port}")
+            conf.set('hadoop.job.ugi', man.login())
+            conf.setInt('ipc.client.connect.timeout', (man.connectionTimeout?:3) * 1000)
+            conf.setInt('ipc.client.connect.retry.interval', 1000)
+            conf.setInt('ipc.client.connect.max.retries', (man.maxRetryOnError?:1))
+            conf.setInt('ipc.client.connect.max.retries.on.timeouts', (man.maxRetryOnError?:1))
 
             man.client = FileSystem.get(conf)
             man.homeDirectory = client.homeDirectory

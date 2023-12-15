@@ -3,7 +3,6 @@ package getl.excel
 /*import com.monitorjbl.xlsx.*
 import com.monitorjbl.xlsx.impl.**/
 import com.github.pjfanning.xlsx.*
-import com.github.pjfanning.xlsx.impl.*
 import getl.data.*
 import getl.driver.Driver
 import getl.csv.CSVDataset
@@ -146,7 +145,7 @@ class ExcelDriver extends FileDriver {
 
             def fieldCount = dataset.field.size()
             while (rows.hasNext()) {
-                def row = rows.next() as StreamingRow
+                def row = rows.next() //as StreamingRow
 
                 if (row.firstCellNum == -1.shortValue())
                     continue
@@ -177,9 +176,9 @@ class ExcelDriver extends FileDriver {
                     catch (Exception e) {
                         connection.logger.severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset", e)
                         try {
-                            def m = new HashMap<String, Object>()
-                            row.cellMap.each { column, value ->
-                                m.put("col $column".toString(), value?.stringCellValue)
+                            def m = new LinkedHashMap<String, Object>()
+                            for (def c in row.cellIterator().toList()) {
+                                m.put(c.getAddress().toString(), c.toString())
                             }
                             connection.logger.dump(e, 'excel', dataset.fullFileName(), "Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in row:\n${MapUtils.ToJson(m)}")
                         }

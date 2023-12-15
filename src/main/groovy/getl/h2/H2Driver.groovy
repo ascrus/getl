@@ -1,8 +1,10 @@
 //file:noinspection SqlNoDataSourceInspection
+//file:noinspection DuplicatedCode
 package getl.h2
 
 import getl.driver.Driver
 import getl.exception.DatasetError
+import getl.exception.InternalError
 import getl.jdbc.sub.BulkLoadMapping
 import groovy.transform.InheritConstructors
 import getl.csv.*
@@ -46,6 +48,7 @@ class H2Driver extends JDBCDriver {
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
 		sqlExpressions.escapedText = 'STRINGDECODE(\'{text}\')'
 		sqlExpressions.convertTextToTimestamp = '(TIMESTAMP \'{value}\')'
+		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DATA TYPE {typeName}'
 
 		ruleEscapedText.put('\'', '\'\'')
 	}
@@ -55,9 +58,9 @@ class H2Driver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Support.GLOBAL_TEMPORARY, Support.LOCAL_TEMPORARY, Support.MEMORY,
-				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
+				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.COLUMN_CHANGE_TYPE,
 				 Support.UUID, Support.TIME, Support.DATE, Support.TIMESTAMP_WITH_TIMEZONE,
-				 Support.DROPIFEXIST, Support.CREATEIFNOTEXIST,
+				 Support.DROPIFEXIST, Support.CREATEIFNOTEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.AUTO_INCREMENT/*,
 				 Support.ARRAY*/]
 		/* TODO: H2 ARRAY NOT FULL */
@@ -296,5 +299,26 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			res.cascade = 'CASCADE'
 
 		return res
+	}
+
+	static private final String ReadPrimaryKeyConstraintName = '''SELECT constraint_name
+FROM information_schema.table_constraints
+WHERE 
+    constraint_type = 'PRIMARY KEY'
+    AND Lower(table_schema) = '{schema}' 
+    AND Lower(table_name) = '{table}' '''
+
+	@Override
+	String primaryKeyConstraintName(TableDataset table) {
+		def q = new QueryDataset()
+		q.connection = connection
+		q.query = ReadPrimaryKeyConstraintName
+		q.queryParams.schema = (table.schemaName()?:defaultSchemaName).toLowerCase()
+		q.queryParams.table = table.tableName.toLowerCase()
+		def r = q.rows()
+		if (r.size() > 1)
+			throw new InternalError(table, 'Error reading primary key from list of constraints', "${r.size()} records returned")
+
+		return (!r.isEmpty())?r[0].constraint_name as String:null
 	}
 }

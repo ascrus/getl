@@ -19,6 +19,7 @@ class WebServiceDriver extends FileDriver {
     protected void registerParameters() {
         super.registerParameters()
         methodParams.register('eachRow', ['autoCaptureFromWeb'])
+        methodParams.register('readFromWeb', [])
     }
 
     /**

@@ -3,8 +3,10 @@
 package getl.vertica
 
 import getl.csv.CSVConnection
+import getl.data.sub.DatasetCompareField
 import getl.exception.DatasetError
 import getl.exception.IncorrectParameterError
+import getl.exception.InternalError
 import getl.jdbc.sub.BulkLoadMapping
 import getl.oracle.OracleDriver
 import getl.proc.Flow
@@ -32,6 +34,7 @@ class VerticaDriver extends JDBCDriver {
 		super.registerParameters()
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy', 'checkPrimaryKey', 'privileges'])
+		methodParams.register('dropDataset', ['cascade'])
 		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
@@ -58,28 +61,25 @@ class VerticaDriver extends JDBCDriver {
 		sqlExpressions.ddlCreateView = '{create}{ %temporary%} VIEW{ %ifNotExists%} {name}{ %privileges% SCHEMA PRIVILEGES} AS\n{select}'
 		sqlExpressions.ddlCreateSchema = 'CREATE SCHEMA{ %ifNotExists%} {schema}{ AUTHORIZATION %authorization%}{ DEFAULT %privileges% SCHEMA PRIVILEGES}'
 		sqlExpressions.ddlDropSchema = 'DROP SCHEMA{ %ifExists%} {schema}{ %cascade%}'
+		sqlExpressions.ddlDrop = 'DROP {type} {%ifExists% }{tableName}{ %cascade%}'
+		sqlExpressions.ddlDropConstraint = 'ALTER TABLE {tableName} DROP CONSTRAINT {constraintName} CASCADE'
+		sqlExpressions.ddlDropColumnTable = 'ALTER TABLE {tableName} DROP COLUMN {fieldName} CASCADE'
+		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DATA TYPE {typeName}'
 		sqlExpressions.changeSessionProperty = 'SET {name} TO {value}'
 		sqlExpressions.escapedText = 'E\'{text}\''
 
-		ruleQuotedWords.add('NEW')
+		sqlTypeMap.DOUBLE.name = 'double precision'
+		sqlTypeMap.BLOB.name = 'varbinary'
+		sqlTypeMap.TEXT.name = 'long varchar'
+
+		driverSqlKeywords.addAll(['NEW'])
 	}
-
-	@SuppressWarnings('UnnecessaryQualifiedReference')
-	@Override
-	Map<String, Map<String, Object>> getSqlType () {
-        def res = super.getSqlType()
-        res.DOUBLE.name = 'double precision'
-        res.BLOB.name = 'varbinary'
-        res.TEXT.name = 'long varchar'
-
-        return res
-    }
 
 	@Override
 	List<Support> supported() {
         return super.supported() +
 				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE,
-                 Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE,
+                 Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE,
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
 				 Support.BULKLOADMANYFILES, Support.BULKESCAPED, Support.BULKGZ, Support.BULKNULLASVALUE,
@@ -133,9 +133,10 @@ class VerticaDriver extends JDBCDriver {
 		if (params.orderBy != null && !(params.orderBy as List).isEmpty())
 			result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
 		if (params.segmentedBy != null && BoolUtils.IsValue(params.unsegmented))
-			throw new ExceptionGETL('Invalid segmented options')
+			throw new DatasetError(dataset, '#vertica.invalid_segmentation')
 		if (params.segmentedBy != null) {
 			def sb = (params.segmentedBy as String).trim()
+			//noinspection RegExpSimplifiable
 			if (!sb.matches('(?i)^[\\w\\W]+\\s+(ALL\\s+NODES){1}(\\s+.+)*$'))
 				sb += ' ALL NODES'
 			result += "SEGMENTED BY $sb\n"
@@ -252,7 +253,7 @@ class VerticaDriver extends JDBCDriver {
 		if (useExternalParser) {
 			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null)
-				throw new ExceptionGETL('Required parser function name')
+				throw new DatasetError(dest, '#vertica.required_parser_func_name')
 			def parserOptions = (params.parser as Map).options as Map<String, Object>
 			if (parserOptions != null && !parserOptions.isEmpty()) {
 				def ol = []
@@ -284,13 +285,13 @@ class VerticaDriver extends JDBCDriver {
 		}
 		else if (!standardLoad) {
 			if (fieldDelimiterChar == '\u0001' && escapeChar == null)
-				throw new ExceptionGETL('Field separator with unicode value 1 is not supported!')
+				throw new DatasetError(dest, '#vertica.invalid_field_separator_value')
 			if (quoteStrChar == '\u0001' && escapeChar == null)
-				throw new ExceptionGETL('Quote separator with unicode value 1 is not supported!')
+				throw new DatasetError(dest, '#vertica.invalid_quote_value')
 			if (rowDelimiterChar == '\u0001' && escapeChar == null)
-				throw new ExceptionGETL('Row separator with unicode value 1 is not supported!')
+				throw new DatasetError(dest, '#vertica.invalid_row_separator_value')
 			if (source.nullAsValue() != null)
-				throw new ExceptionGETL('Vertica driver not support nullAsValue option, when bulk loading not escaped file!')
+				throw new DatasetError(dest, '#vertica.not_support_null_value_when_bulkload_not_escaped')
 
 			def opts = [
 					'type=\'traditional\'',
@@ -355,7 +356,7 @@ class VerticaDriver extends JDBCDriver {
 		String fileName
 		if (params.files != null) {
 			if (!(params.files instanceof List))
-				throw new ExceptionGETL('Parameter files must be of type List')
+				throw new IncorrectParameterError(dest, '#vertica.invalid_bulkload_parameter_files', 'files')
 			def f = [] as List<String>
 			(params.files as List<String>).each {
 				def s = "'" + it + "'"
@@ -744,7 +745,7 @@ class VerticaDriver extends JDBCDriver {
 
 		privileges = privileges.toUpperCase()
 		if (!(privileges in ['INCLUDE', 'EXCLUDE']))
-			throw new ExceptionGETL("Invalid default privilege option \"$privileges\" for \"$objectName\"!")
+			throw new ExceptionGETL("Invalid default privilege option \"$privileges\" for \"$objectName\"")
 
 		return privileges
 	}
@@ -878,6 +879,67 @@ class VerticaDriver extends JDBCDriver {
 	String generatePrimaryKeyDefinition(JDBCDataset dataset, Map params) {
 		def defPrimary = GenerationUtils.SqlKeyFields(dataset, dataset.field, null, null)
 		return sqlExpressionValue('ddlCreatePrimaryKey', [columns: defPrimary.join(","), check_pk: (BoolUtils.IsValue(params.checkPrimaryKey))?'ENABLED':'DISABLED'])
+	}
+
+	@Override
+	protected Map<String, Object> dropTableParams(JDBCDataset dataset, String type, Boolean validExists, Map<String, Object> params) {
+		def res = super.dropTableParams(dataset, type, validExists, params)
+		if (params.cascade == null)
+			res.cascade = 'CASCADE'
+
+		return res
+	}
+
+	static private final String ReadPrimaryKeyConstraintName = '''SELECT constraint_name 
+FROM v_catalog.table_constraints
+WHERE 
+    constraint_type = 'p'
+    AND table_id IN (
+        SELECT table_id 
+        FROM v_catalog.tables t 
+        WHERE Lower(t.table_schema) = '{schema}' AND Lower(t.table_name) = '{table}'
+    ) '''
+
+	@Override
+	String primaryKeyConstraintName(TableDataset table) {
+		def q = new QueryDataset()
+		q.connection = connection
+		q.query = ReadPrimaryKeyConstraintName
+		q.queryParams.schema = (table.schemaName()?:defaultSchemaName).toLowerCase()
+		q.queryParams.table = table.tableName.toLowerCase()
+		def r = q.rows()
+		if (r.size() > 1)
+			throw new InternalError(table, 'Error reading primary key from list of constraints', "${r.size()} records returned")
+
+		return (!r.isEmpty())?r[0].constraint_name as String:null
+	}
+
+	@Override
+	protected Boolean incompatibleTypeForChangeFields(TableDataset table, Map<String, List<DatasetCompareField>> changed) {
+		if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)) {
+			for (def val in changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)) {
+				if (!((val.datasetField.type in [Field.numericFieldType, Field.integerFieldType, Field.bigintFieldType] &&
+						val.comparedField.type in [Field.numericFieldType, Field.integerFieldType, Field.bigintFieldType] &&
+						(val.datasetField.length?:0) <= 18 && (val.datasetField.precision?:0) == 0 &&
+						(val.comparedField.length?:0) <= 18 && (val.comparedField.precision?:0) == 0) ||
+					((val.datasetField.type in [Field.stringFieldType, Field.textFieldType]) &&
+							(val.comparedField.type in [Field.stringFieldType, Field.textFieldType])))) {
+					return true
+				}
+			}
+		}
+
+		if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)) {
+			for (def val in changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)) {
+				if (val.datasetField.type == Field.numericFieldType &&
+						((val.datasetField.precision?:0) != (val.comparedField.precision?:0) ||
+							val.datasetField.length?.intdiv(19) != val.comparedField.length?.intdiv(19))) {
+					return true
+				}
+			}
+		}
+
+		return false
 	}
 
 	/*

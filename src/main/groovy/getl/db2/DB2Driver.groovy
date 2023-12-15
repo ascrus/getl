@@ -24,13 +24,14 @@ class DB2Driver extends JDBCDriver {
 
 		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
 		sqlExpressions.changeSessionProperty = 'SET {name} = {value}'
+		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DATA TYPE {typeName}'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Support.COLUMN_CHANGE_TYPE,
 				 Driver.Support.INDEX, Support.INDEXFORTEMPTABLE, Driver.Support.TIME, Driver.Support.DATE]
 	}
 

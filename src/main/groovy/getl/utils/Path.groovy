@@ -421,7 +421,7 @@ class Path implements GetlRepository {
 	void compile(Map params = new HashMap()) {
 		if (params == null)
 			params = new HashMap()
-		methodParams.validation("compile", params)
+		methodParams.validation('compile', params)
 		maskStr = (params.mask as String)?:mask
 		if (maskStr == null)
 			throw new ExceptionGETL("Required parameter \"mask\" in filepath mask!")

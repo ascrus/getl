@@ -23,7 +23,11 @@ class NetezzaDriver extends JDBCDriver {
         connectionParamJoin = ";"
 
         sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
-        sqlExpressions.ddlDrop = 'DROP {object} {name} {ifexists}'
+        sqlExpressions.ddlDrop = 'DROP {type} {tableName} {ifExists}'
+
+        sqlTypeMap.DOUBLE.name = 'double precision'
+        sqlTypeMap.BLOB.name = 'varbinary'
+        sqlTypeMap.NUMERIC.name = 'numeric'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -42,16 +46,6 @@ class NetezzaDriver extends JDBCDriver {
                 [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
                  Driver.Operation.CREATE]
     }*/
-
-    @Override
-    Map<String, Map<String, Object>> getSqlType () {
-        def res = super.getSqlType()
-        res.DOUBLE.name = 'double precision'
-        res.BLOB.name = 'varbinary'
-        res.NUMERIC.name = 'numeric'
-
-        return res
-    }
 
     @Override
     String defaultConnectURL () {

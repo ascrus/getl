@@ -64,6 +64,12 @@ class ImpalaDriver extends JDBCDriver {
         defaultSchemaName = 'default'
 
         sqlExpressions.sysDualTable = '(SELECT 1 AS row_num) AS dual'
+
+        sqlTypeMap.STRING.name = 'string'
+        sqlTypeMap.STRING.useLength = sqlTypeUse.NEVER
+        sqlTypeMap.DOUBLE.name = 'double'
+
+        driverSqlKeywords.addAll(['METHOD'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -87,19 +93,6 @@ class ImpalaDriver extends JDBCDriver {
         return 'jdbc:impala://{host}/{database}'
     }
 
-    @SuppressWarnings("UnnecessaryQualifiedReference")
-    @Override
-    Map<String, Map<String, Object>> getSqlType() {
-        def res = super.getSqlType()
-        res.STRING.name = 'string'
-        res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
-        res.DOUBLE.name = 'double'
-        /*res.BLOB.name = 'binary'
-        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER*/
-
-        return res
-    }
-
     /** Current Impala connection */
     ImpalaConnection getCurrentImpalaConnection() { connection as ImpalaConnection }
 
@@ -121,7 +114,7 @@ class ImpalaDriver extends JDBCDriver {
             partitionFields.sort(true) { Field a, Field b -> (a.ordPartition?:999999999) <=> (b.ordPartition?:999999999) }
             def partitionCols = [] as List<String>
             partitionFields.each { Field f ->
-                partitionCols << generateColumnDefinition(f, false)
+                partitionCols.add(generateColumnDefinition(f, false))
             }
             sb << "PARTITIONED BY (${partitionCols.join(', ')})"
             sb << '\n'

@@ -42,16 +42,6 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class SalesForceDriver extends Driver {
-    @Override
-    protected void registerParameters() {
-        super.registerParameters()
-
-		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
-		methodParams.register('retrieveObjects', [])
-        methodParams.register('bulkUnload', ['where', 'limit', 'orderBy', 'chunkSize'])
-		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
-	}
-
     private ConnectorConfig config
     private PartnerConnection partnerConnection
     private BulkConnection bulkConnection

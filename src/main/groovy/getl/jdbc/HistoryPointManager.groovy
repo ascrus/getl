@@ -304,7 +304,7 @@ class HistoryPointManager implements GetlRepository, ObjectTags {
 				field = tableHistoryFields
 			}
 			else {
-				CheckTableFields(it, tableHistoryFields, false)
+				CheckTableFields(checkedDataset: it, fields: tableHistoryFields, softCheckType: false, throwErrors: true)
 			}
 		}
 	}

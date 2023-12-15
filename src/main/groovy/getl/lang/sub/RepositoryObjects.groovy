@@ -176,7 +176,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return list of names repository objects according to specified conditions
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    @CompileStatic
     List<String> list(String mask = null, List<String> classes = null, Boolean loadFromStorage = true, Boolean loadLazyObjects = null,
                       @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.lang.sub.GetlRepository'])
                             Closure<Boolean> filter = null) {
@@ -292,7 +291,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param obj object
      * @return name of the object in the repository or null if not found
      */
-    @CompileStatic
     String find(T obj) {
         if (obj == null)
             throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'find'])
@@ -321,7 +319,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param findInStorage find for an object in the repository file storage
      * @return found object or null if not found
      */
-    @CompileStatic
     T find(String name, Boolean findInStorage = true) {
         if (name == null)
             throw new DslError(dslCreator, '#params.required', [param: 'name', detail: 'find'])
@@ -369,7 +366,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     @NamedVariant
-    @CompileStatic
     T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true, Boolean encryptPasswords = true) {
         if (obj == null)
             throw new DslError(dslCreator, '#params.required', [param: 'obj', detail: 'registerObject'])
@@ -410,7 +406,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * Add name to list of lazy loading objects
      * @param objectName added object name
      */
-    @CompileStatic
     void addToLazyLoad(String objectName) {
         if (objectName == null)
             throw new NullPointerException('objectName null value!')
@@ -472,7 +467,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     @NamedVariant
-    @CompileStatic
     T register(Getl creator, String className = null, String name = null, Boolean registration = false,
                Boolean cloneInThread = true, Map params = null) {
 
@@ -592,7 +586,6 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param filter filter for detect objects to unregister
      * @param process processing object before unregister
      */
-    @CompileStatic
     void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {

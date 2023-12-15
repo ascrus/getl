@@ -379,10 +379,10 @@ class Sequence implements GetlRepository, WithConnection, ObjectTags {
 	 * Restart sequence value
 	 * @param newValue new value
 	 */
-	void restartWith(Long newValue) {
+	void restartWith(Long newValue, Boolean ddlOnly = false) {
 		validConnection()
 		def con = currentJDBCConnection
 		con.tryConnect()
-		con.currentJDBCDriver.restartSequence(this, newValue)
+		con.currentJDBCDriver.restartSequence(this, newValue, ddlOnly)
 	}
 }

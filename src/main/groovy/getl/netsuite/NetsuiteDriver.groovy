@@ -33,6 +33,14 @@ class NetsuiteDriver extends JDBCDriver {
 		tableEndPrefix = ']'
 
 		sqlExpressions.now = 'GETDATE()'
+
+		sqlTypeMap.DOUBLE.name = 'float'
+		sqlTypeMap.BOOLEAN.name = 'bit'
+		sqlTypeMap.BLOB.name = 'varbinary'
+		sqlTypeMap.BLOB.useLength = sqlTypeUse.ALWAYS
+		sqlTypeMap.TEXT.name = 'varchar'
+		sqlTypeMap.TEXT.useLength = sqlTypeUse.ALWAYS
+		sqlTypeMap.DATETIME.name = 'datetime'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -47,21 +55,6 @@ class NetsuiteDriver extends JDBCDriver {
 	List<Operation> operations() {
 		return [Operation.RETRIEVEFIELDS, Operation.READ_METADATA, Operation.INSERT, Operation.UPDATE, Operation.DELETE]
 	}*/
-
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	@Override
-	Map<String, Map<String, Object>> getSqlType () {
-		def res = super.getSqlType()
-		res.DOUBLE.name = 'float'
-		res.BOOLEAN.name = 'bit'
-		res.BLOB.name = 'varbinary'
-		res.BLOB.useLength = JDBCDriver.sqlTypeUse.ALWAYS
-		res.TEXT.name = 'varchar'
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.ALWAYS
-		res.DATETIME.name = 'datetime'
-
-		return res
-	}
 
 	@SuppressWarnings('SpellCheckingInspection')
 	@Override

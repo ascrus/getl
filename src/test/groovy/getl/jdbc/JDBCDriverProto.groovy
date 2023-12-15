@@ -1,4 +1,5 @@
 //file:noinspection SpellCheckingInspection
+//file:noinspection GrMethodMayBeStatic
 package getl.jdbc
 
 import getl.csv.CSVDataset
@@ -230,6 +231,11 @@ abstract class JDBCDriverProto extends GetlTest {
         tempTable.drop()
     }
 
+    protected renameTable() {
+        table.renameTo(table.tableName + '_rename')
+        table.tableName = table.tableName + '_rename'
+    }
+
     protected void dropTable() {
         table.drop(ifExists: true)
         assertFalse(table.exists)
@@ -247,7 +253,7 @@ abstract class JDBCDriverProto extends GetlTest {
 			f.name = f.name.toLowerCase()
 			f.defaultValue = null
 
-			if (f.type == Field.Type.BIGINT && ((con.driver as JDBCDriver).sqlType.BIGINT.name as String).toUpperCase() == 'NUMBER') {
+			if (f.type == Field.Type.BIGINT && ((con.driver as JDBCDriver).sqlTypeMapper.BIGINT.name as String).toUpperCase() == 'NUMBER') {
 				f.type = Field.Type.NUMERIC
 				f.length = null
 			}
@@ -256,13 +262,13 @@ abstract class JDBCDriverProto extends GetlTest {
 				f.precision = null
 			}
 
-            if (f.type == Field.stringFieldType && (con.driver as JDBCDriver).sqlType.STRING.useLength == JDBCDriver.sqlTypeUse.NEVER) {
+            if (f.type == Field.stringFieldType && (con.driver as JDBCDriver).sqlTypeMapper.STRING.useLength == JDBCDriver.sqlTypeUse.NEVER) {
                 f.length = null
             }
 
 			if (!(f.type in [Field.Type.STRING, Field.Type.NUMERIC])) {
-				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlType.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
-						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlType.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
+				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlTypeMapper.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
+						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlTypeMapper.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
 					f.length = null
 			}
 
@@ -294,13 +300,13 @@ abstract class JDBCDriverProto extends GetlTest {
 				f.precision = null
 			}
 
-            if (f.type == Field.stringFieldType && (con.driver as JDBCDriver).sqlType.STRING.useLength == JDBCDriver.sqlTypeUse.NEVER) {
+            if (f.type == Field.stringFieldType && (con.driver as JDBCDriver).sqlTypeMapper.STRING.useLength == JDBCDriver.sqlTypeUse.NEVER) {
                 f.length = null
             }
 
 			if (!(f.type in [Field.Type.STRING, Field.Type.NUMERIC])) {
-				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlType.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
-						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlType.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
+				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlTypeMapper.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
+						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlTypeMapper.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
 					f.length = null
 			}
 
@@ -776,6 +782,7 @@ IF ('{support_update}' = 'true') DO {
         deleteData()
         truncateData()
         deleteRows()
+        renameTable()
         dropTable()
 
         disconnect()
@@ -1167,5 +1174,74 @@ IF ('{support_update}' = 'true') DO {
             assertEquals(o[2], r[2])
             assertEquals(n[1], r[3])
         }
+    }
+
+    protected Boolean synchronizeStructureTable()  { false }
+    protected String schemaForSynchronizeStructureTable() { null }
+
+    @Test
+    void testSynchronizeStructureTable() {
+        if (!synchronizeStructureTable())
+            return
+
+        def sql = new SQLScripter().tap {
+            useConnection con
+        }
+
+        def table = new TableDataset(connection: con, schemaName: schemaForSynchronizeStructureTable(), tableName: 'test_synch_table').tap {
+            if (exists)
+                drop()
+
+            field('id') { type = integerFieldType; isKey = true }
+            field('name') { length = 20 }
+            field('value') { type = numericFieldType; length = 10; precision = 1; isNull = false }
+            field('dt') { type = timestampFieldType }
+            field('unknown_field') { type = integerFieldType }
+
+            def sqlCreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkValidationExpression: true,
+                    detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
+
+            println sqlCreate
+            //sql.exec(true, sqlCreate)
+
+            field('id') { type = bigintFieldType }
+            field('name') { isNull = false; length = 50 }
+            field('value') { length = 12; precision = 1; isNull = true }
+            field('dt') { isKey = true; defaultValue = con.currentJDBCDriver.sqlExpressionValue('now') }
+            removeField('unknown_field')
+
+            con.disconnect()
+            def sqlAlter = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkValidationExpression: true,
+                    detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
+            println sqlAlter
+            //sql.exec(true, sqlAlter)
+
+            if (table.connection.driver.isOperation(Driver.Operation.RENAME_TABLE)) {
+                field('value') { type = doubleFieldType }
+                con.disconnect()
+                def sqlRecreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkValidationExpression: true,
+                        detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
+                println sqlRecreate
+                sql.exec(true, sqlRecreate)
+            }
+        }
+
+        con.disconnect()
+        def checkTable = new TableDataset(connection: con, schemaName: schemaForSynchronizeStructureTable(), tableName: 'test_synch_table').tap {
+            retrieveFields()
+        }
+
+        def checkFields = table.DetectChangeFields(checkedDataset: checkTable, needFields: table.field,
+                checkDefaultExpression: false, detectUnnecessaryFields: true)
+        if (checkFields != null) {
+            println 'Validation synchronize:'
+            checkFields.each { code, fields ->
+                println "# $code:"
+                fields.each {
+                    println "  * $it"
+                }
+            }
+        }
+        assertTrue(checkFields.isEmpty())
     }
 }

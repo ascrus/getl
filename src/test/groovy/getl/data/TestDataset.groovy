@@ -1,6 +1,8 @@
 package getl.data
 
 import getl.test.GetlTest
+import getl.utils.ListUtils
+import getl.utils.MapUtils
 import org.junit.Test
 
 class TestDataset extends GetlTest {
@@ -55,5 +57,56 @@ class TestDataset extends GetlTest {
             assertEquals(['id', 'name'], res2.notnull)
             assertEquals(['value'], res2.length)
         }
+    }
+
+    @Test
+    void testDetectChangeFields() {
+        def ds1 = new Dataset().tap {
+            field('id') { type = integerFieldType; isKey = true; length = 3 }
+            field('name') {isNull = false; length = 10 }
+            field('value') { type = numericFieldType; length = 5; precision = 2 }
+            field('dt') { type = datetimeFieldType }
+        }
+
+        def ds2 = new Dataset().tap {
+            field = ds1.field
+        }
+        assertTrue(Dataset.DetectChangeFields(ds1, ds2.field).isEmpty())
+
+        ds1.removeField('dt')
+        def res = Dataset.DetectChangeFields(ds1, ds2.field)
+        assertEquals('[field_not_found:[comparedField: "dt DATETIME", datasetField: <none>]]', res.toString())
+
+        ds1.field = ds2.field
+        ds2.fieldByName('value').type = Field.doubleFieldType
+        res = Dataset.DetectChangeFields(ds1, ds2.field, true)
+        assertTrue(res.isEmpty())
+        res = Dataset.DetectChangeFields(ds1, ds2.field, false)
+        assertEquals('[field_type_not_compatible:[comparedField: "value DOUBLE", datasetField: "value NUMERIC(5, 2)"]]', res.toString())
+
+        ds2.field = ds1.field
+        ds2.fieldByName('name').length = 20
+        res = Dataset.DetectChangeFields(ds1, ds2.field)
+        assertEquals('[field_length_not_compatible:[comparedField: "name STRING(20) NOT NULL", datasetField: "name STRING(10) NOT NULL"]]', res.toString())
+
+        ds2.field = ds1.field
+        ds2.fieldByName('value').precision = 5
+        res = Dataset.DetectChangeFields(ds1, ds2.field)
+        assertEquals('[field_length_not_compatible:[comparedField: "value NUMERIC(5, 5)", datasetField: "value NUMERIC(5, 2)"]]', res.toString())
+
+        ds2.field = ds1.field
+        ds1.fieldByName('name').isNull = true
+        res = Dataset.DetectChangeFields(ds1, ds2.field)
+        assertEquals('[field_null_not_compatible:[comparedField: "name STRING(10) NOT NULL", datasetField: "name STRING(10)"]]', res.toString())
+
+        ds1.field = ds2.field
+        ds1.fieldByName('id').isKey = false
+        res = Dataset.DetectChangeFields(ds1, ds2.field)
+        assertEquals('[field_key_not_compatible:[comparedField: "id INTEGER KEY", datasetField: "id INTEGER NOT NULL"]]', res.toString())
+
+        ds1.field = ds2.field
+        ds2.removeField('dt')
+        res = Dataset.DetectChangeFields(ds1, ds2.field, true, true, true, false, true)
+        assertEquals('[unnecessary_field:[comparedField: <none>, datasetField: "dt DATETIME"]]', res.toString())
     }
 }

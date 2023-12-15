@@ -1882,21 +1882,25 @@ sb << """
 	 * @param expr - string expression with {field} and {orig} macros
 	 * @return
 	 */
-	static List<String> SqlKeyFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
+	static List<String> SqlKeyFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields, Closure<Boolean> filter = null) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		List<Field> kf = []
 		fields.each { Field f ->
-			if ((!(f.name.toLowerCase() in excludeFields)) && f.isKey) kf << f
+			if ((!(f.name.toLowerCase() in excludeFields)) && f.isKey) {
+				if (filter == null || filter.call(f.name))
+					kf.add(f)
+			}
 		}
 		kf.sort(true) { Field a, Field b -> (a.ordKey?:999999999) <=> (b.ordKey?:999999999) }
 		
 		List<String> res = []
 		kf.each { Field f ->
 			if (expr == null) {
-				res << SqlObjectName(dataset, f.name)
+				res.add(SqlObjectName(dataset, f.name))
 			} 
 			else {
-				res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(dataset, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
+				res.add(expr.replace("{orig}", f.name.toLowerCase())
+						.replace("{field}", SqlObjectName(dataset, f.name)).replace("{param}", "${Field2ParamName(f.name)}"))
 			}
 		}
 
@@ -1908,17 +1912,18 @@ sb << """
 	 * @param expr - string expression with {field} macros
 	 * @return
 	 */
-	static List<String> SqlFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
+	static List<String> SqlFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields, Closure<Boolean> filter = null) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		
 		List<String> res = []
 		fields.each { Field f ->
-			if (!(f.name.toLowerCase() in excludeFields)) {
-				if (expr == null) {
-					res << SqlObjectName(dataset, f.name)
-				} 
-				else {
-					res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(dataset, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
+			def name = f.name.toLowerCase()
+			if (!(name in excludeFields)) {
+				if (filter == null || filter.call(f.name)) {
+					if (expr == null)
+						res << SqlObjectName(dataset, f.name)
+					else
+						res << expr.replace("{orig}", name).replace("{field}", SqlObjectName(dataset, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
 				}
 			}
 		}

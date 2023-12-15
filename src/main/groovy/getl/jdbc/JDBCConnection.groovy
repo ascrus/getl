@@ -17,6 +17,7 @@ import getl.lang.Getl
 import getl.lang.sub.ParseObjectName
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
+import getl.lang.sub.RepositoryObjects
 import getl.lang.sub.UserLogins
 import getl.utils.*
 import getl.lang.sub.LoginManager
@@ -84,7 +85,9 @@ class JDBCConnection extends Connection implements UserLogins {
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'sessionProperty', 'schemaName', 'driverName', 'driverPath', 'connectHost',
 				'connectDatabase', 'fetchSize', 'loginTimeout', 'queryTimeout', 'sqlHistoryOutput', 'codePage', 'charLengthAsBytes',
-				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation', 'extensionForSqlScripts'])
+				'storedLogins', 'outputServerWarningToLog', 'transactionIsolation', 'extensionForSqlScripts',
+				'serverMajorVersion', 'serverMinorVersion', 'serverProductName', 'serverProductVersion', 'jdbcDriverMajorVersion', 'jdbcDriverMinorVersion',
+				'jdbcDriverProductName', 'jdbcDriverProductVersion'])
 		methodParams.register('createSchema', ['ifNotExists'])
 		methodParams.register('dropSchema', ['ifExists'])
 	}
@@ -320,6 +323,38 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Return session ID (if supported RDBMS driver) */
 	@JsonIgnore
 	String getSessionID() { sysParams.sessionID as String }
+
+	/** Database major version */
+	@JsonIgnore
+	Integer getServerMajorVersion() { sysParams.serverMajorVersion as Integer }
+
+	/** Database minor version */
+	@JsonIgnore
+	Integer getServerMinorVersion() { sysParams.serverMinorVersion as Integer }
+
+	/** Server product name */
+	@JsonIgnore
+	String getServerProductName() { sysParams.serverProductName as String }
+
+	/** Server product version */
+	@JsonIgnore
+	String getServerProductVersion() { sysParams.serverProductVersion as String }
+
+	/** Database major version */
+	@JsonIgnore
+	Integer getJdbcDriverMajorVersion() { sysParams.jdbcDriverMajorVersion as Integer }
+
+	/** Database minor version */
+	@JsonIgnore
+	Integer getJdbcDriverMinorVersion() { sysParams.jdbcDriverMinorVersion as Integer }
+
+	/** Server product name */
+	@JsonIgnore
+	String getJdbcDriverProductName() { sysParams.jdbcDriverProductName as String }
+
+	/** Server product version */
+	@JsonIgnore
+	String getJdbcDriverProductVersion() { sysParams.jdbcDriverProductVersion as String }
 
 	/** Last executed SQL statement */
 	@JsonIgnore
@@ -657,6 +692,14 @@ class JDBCConnection extends Connection implements UserLogins {
 
 	/** Logins manager */
 	protected LoginManager loginManager
+
+	/** Prepare before connection */
+	String _prepareConnection(byte[] key) {
+		if (key != RepositoryObjects._storage_key)
+			throw new DslError(this, 'Invalid key')
+
+		loginManager.currentDecryptPassword()
+	}
 
 	@Override
 	void useLogin(String user) {

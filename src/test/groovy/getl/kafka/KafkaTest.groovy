@@ -61,6 +61,17 @@ class KafkaTest extends GetlTest {
 
     @Test
     void testWriteAndRead() {
+        if (con == null)
+            return
+
+        try {
+            con.connect()
+        }
+        catch (Exception ignored) {
+            Logs.Warning('Kafka not ready!')
+            return
+        }
+
         Getl.Dsl {
             con.dropTopic('test-getl', true)
             con.createTopic('test-getl', 1, 1, true)

@@ -110,7 +110,7 @@ class WebServiceDataset extends FileDataset {
      * @param wp web service read parameters
      */
     void readFromWeb(Map<String, Object> wp = new HashMap<String, Object>()) {
-        methodParams.validation('readFromWeb', wp)
+        methodParams.validation('readFromWeb', wp, [connection.driver.methodParams.params('readFromWeb')])
 
         validConnection()
 

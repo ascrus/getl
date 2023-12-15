@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -20,7 +21,6 @@ import getl.utils.DateUtils
 import getl.utils.MapUtils
 import getl.utils.Path
 import getl.utils.StringUtils
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.lang.reflect.ParameterizedType
@@ -31,6 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Base class model
  * @author Alexsey Konstantinov
  */
+@SuppressWarnings('UnnecessaryQualifiedReference')
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository, ObjectTags {
     private String _dslNameObject

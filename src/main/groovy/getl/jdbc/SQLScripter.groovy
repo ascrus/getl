@@ -1,5 +1,6 @@
 //file:noinspection unused
 //file:noinspection RegExpSimplifiable
+//file:noinspection DuplicatedCode
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore

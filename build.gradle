@@ -28,7 +28,7 @@ dependencies {
 	api "org.codehaus.groovy:groovy-dateutil:$groovy_version"
 	api "org.codehaus.groovy:groovy-yaml:$groovy_version"
 
-	api 'com.fasterxml.jackson.core:jackson-annotations:2.13.3'
+	api 'com.fasterxml.jackson.core:jackson-annotations:2.16.0'
 
 	//implementation 'com.h2database:h2:1.4.200'
 
@@ -70,14 +70,14 @@ dependencies {
 	implementation 'org.apache.httpcomponents.client5:httpclient5:5.2'
 
 	implementation 'com.google.code.gson:gson:2.9.0'
-	implementation 'org.apache.hadoop:hadoop-auth:3.3.4'
-	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.4'
-	implementation 'org.apache.hadoop:hadoop-common:3.3.4'
+	implementation 'org.apache.hadoop:hadoop-auth:3.3.6'
+	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.6'
+	implementation 'org.apache.hadoop:hadoop-common:3.3.6'
 	implementation 'javax.servlet:javax.servlet-api:4.0.1'
 
 	implementation 'com.github.albfernandez:javadbf:1.13.2'
 
-	implementation 'org.apache.kafka:kafka-clients:3.2.1'
+	implementation 'org.apache.kafka:kafka-clients:3.6.1'
 
 	implementation 'com.force.api:force-partner-api:55.2.0'
 

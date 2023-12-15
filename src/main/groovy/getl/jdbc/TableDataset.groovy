@@ -17,8 +17,8 @@ import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TDS
 import getl.utils.*
-import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
+import groovy.transform.NamedVariant
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -34,6 +34,7 @@ class TableDataset extends JDBCDataset {
 		super.registerParameters()
 		methodParams.register('unionDataset', [])
 		methodParams.register('deleteRows', [])
+		methodParams.register('renameTo', [])
 	}
 
 	@Override
@@ -154,7 +155,7 @@ class TableDataset extends JDBCDataset {
 
 		if (procParams == null)
 			procParams = new HashMap()
-		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
+		methodParams.validation('unionDataset', procParams, [connection.driver.methodParams.params('unionDataset')])
 
 		Long res
 		try {
@@ -228,8 +229,7 @@ class TableDataset extends JDBCDataset {
 		validTableName()
 
 		procParams = procParams?:new HashMap()
-		methodParams.validation('deleteRows', procParams,
-				[connection.driver.methodParams.params('deleteRows')])
+		methodParams.validation('deleteRows', procParams, [connection.driver.methodParams.params('deleteRows')])
 
 		Long res
 		try {
@@ -818,7 +818,7 @@ class TableDataset extends JDBCDataset {
 	Long copyTo(TableDataset dest, Map<String, String> map = new HashMap<String, String>(), Map copyParams = null) {
 		Long res = 0
 		try {
-			if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit())
+			if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit() && !currentJDBCConnection.isTran())
 				currentJDBCConnection.transaction {
 					res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map, copyParams)
 				}
@@ -893,5 +893,41 @@ class TableDataset extends JDBCDataset {
 	void optimizeAsBuffer() {
 		dropOpts.ifExists = true
 		createOpts.ifNotExists = true
+	}
+
+	/**
+	 * Synchronize structure with table in database
+	 * @param softCheckType soft type checking
+	 * @param softCheckNull soft nullable checking
+	 * @param softCheckPK soft primary key checking
+	 * @param checkDefaultExpression check field default value expression
+	 * @param detectUnnecessaryFields identify unnecessary fields in the dataset
+	 * @param recreateTableForIncompatibleType recreate the table if there are incompatible changes field type
+	 * @param ddlOnly generate script without running on database
+	 * @return structure synchronization script or null if not generated script
+	 */
+	@NamedVariant
+	String synchronizeStructure(Boolean softCheckType = true,
+							  Boolean softCheckNull = true, Boolean softCheckPK = true,
+							  Boolean checkDefaultExpression = false,
+							  Boolean detectUnnecessaryFields = false, Boolean recreateTableForIncompatibleType = false, Boolean ddlOnly = true) {
+		validConnection()
+		validTableName()
+		return currentJDBCConnection.currentJDBCDriver.synchronizeStructure(this, BoolUtils.IsValue(softCheckType), BoolUtils.IsValue(softCheckNull),
+				BoolUtils.IsValue(softCheckPK), BoolUtils.IsValue(checkDefaultExpression), BoolUtils.IsValue(detectUnnecessaryFields),
+				BoolUtils.IsValue(recreateTableForIncompatibleType), BoolUtils.IsValue(ddlOnly))
+	}
+
+	void renameTo(String newName, Map procParams = null) {
+		procParams = procParams?:new HashMap()
+		methodParams.validation('renameTo', procParams, [connection.driver.methodParams.params('renameTableTo')])
+
+		validConnection()
+		validTableName()
+
+		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
+			throw new NotSupportError(this, 'bulk load file')
+
+		currentJDBCConnection.currentJDBCDriver.renameTableTo(this, newName, procParams)
 	}
 }

@@ -1282,14 +1282,29 @@ class FileUtils {
 
 	/**
 	 * Create new temporary file
-	 * @param prefix name prefix
-	 * @param suffix name suffix
-	 * @param directory file creation directory
-	 * @return file object description
+	 * @param prefix name prefix (default getl_)
+	 * @param suffix name suffix (default _temp)
+	 * @param directory file creation directory (default GETL temp directory)
+	 * @return created file description
 	 */
 	static File CreateTempFile(String prefix = null, String suffix = null, String directory = null) {
 		def file = File.createTempFile(prefix?:'getl_', suffix?:'_temp', new File(directory?:TFS.storage.currentPath()))
 		file.deleteOnExit()
+		return file
+	}
+
+	/**
+	 * Create new temporary directory in GETL temp directory
+	 * @param subDirectory subdirectory name
+	 * @return created directory description
+	 */
+	static File CreateTempDirectory(String subDirectory) {
+		if (subDirectory == null)
+			throw new RequiredParameterError('subDirectory')
+
+		def file = new File(TFS.storage.currentPath() + '/' + subDirectory)
+		ValidPath(file, true)
+
 		return file
 	}
 

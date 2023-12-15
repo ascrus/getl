@@ -5548,13 +5548,16 @@ Examples:
                     @DelegatesTo(FileTextSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl = null) {
         def parent = new FileTextSpec(this)
-        if (file != null) {
+        if (file != null)
             parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()
-        }
+
         def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.filePath() + '"') : ''}", 'byte')
         pt.objectName = 'byte'
         runClosure(parent, cl)
-        parent.save()
+        if (parent.fileName != null || parent.temporaryFile)
+            parent.save()
+        else
+            parent.clear()
         pt.name = "Processing text file${(parent.fileName != null) ? (' "' + parent.filePath() + '"') : ''}"
         finishProcess(pt, parent.countBytes)
 

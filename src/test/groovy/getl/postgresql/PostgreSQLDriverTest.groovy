@@ -290,4 +290,10 @@ CREATE TABLE public.test_enum (
 			proc()
 		}
 	}
+
+	@Override
+	protected Boolean synchronizeStructureTable()  { true }
+
+	@Override
+	protected String schemaForSynchronizeStructureTable() { 'public' }
 }

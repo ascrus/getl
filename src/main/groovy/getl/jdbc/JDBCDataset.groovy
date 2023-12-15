@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -124,15 +125,15 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} and {orig} macros
 	 * @return - generated list
 	 */
-	List<String> sqlKeyFields(String expr, List<String> excludeFields) {
-		GenerationUtils.SqlKeyFields(this, field, expr, excludeFields)
+	List<String> sqlKeyFields(String expr, List<String> excludeFields, Closure<Boolean> filter = null) {
+		GenerationUtils.SqlKeyFields(this, field, expr, excludeFields, filter)
 	}
 	
 	/**
 	 * Return key fields name by sql syntax
 	 */
-	List<String> sqlKeyFields() {
-		sqlKeyFields(null, null)
+	List<String> sqlKeyFields(Closure<Boolean> filter = null) {
+		sqlKeyFields(null as String, null as List<String>, filter)
 	}
 	
 	/**
@@ -141,14 +142,14 @@ class JDBCDataset extends Dataset {
 	 * @return - generated list
 	 */
 	List<String> sqlKeyFields(String expr) {
-		sqlKeyFields(expr, null)
+		sqlKeyFields(expr, null, null)
 	}
 	
 	/**
 	 * Return key fields name by sql syntax with expression and exclude fields list
 	 */
 	List<String> sqlKeyFields(List<String> excludeFields) {
-		sqlKeyFields(null, excludeFields)
+		sqlKeyFields(null as String, excludeFields, null)
 	}
 	
 	/**
@@ -156,36 +157,36 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} macros 
 	 * @return - generated list
 	 */
-	List<String> sqlFields(String expr, List<String> excludeFields) {
-		GenerationUtils.SqlFields(this, field, expr, excludeFields)
+	List<String> sqlFields(String expr, List<String> excludeFields, Closure<Boolean> filter = null) {
+		GenerationUtils.SqlFields(this, field, expr, excludeFields, filter)
 	}
-	
+
 	/**
 	 * Return fields name by sql syntax with expression and exclude fields list
 	 */
-	List<String> sqlFieldsFrom(List<Field> fields, String expr, List<String> excludeFields) {
-		GenerationUtils.SqlFields(this, fields, expr, excludeFields)
+	List<String> sqlFieldsFrom(List<Field> fields, String expr, List<String> excludeFields, Closure<Boolean> filter = null) {
+		GenerationUtils.SqlFields(this, fields, expr, excludeFields, filter)
 	}
 
 	/**
 	 * Return fields name by sql syntax with expression
 	 */
-	List<String> sqlFieldsFrom(List<Field> fields, String expr = null) {
-		sqlFieldsFrom(fields, expr, null)
+	List<String> sqlFieldsFrom(List<Field> fields, String expr = null, Closure<Boolean> filter = null) {
+		sqlFieldsFrom(fields, expr, null, filter)
 	}
 
 	/**
 	 * Return fields name by sql syntax with exclude fields list
 	 */
 	List<String> sqlFieldsFrom(List<Field> fields, List<String> excludeFields) {
-		sqlFieldsFrom(fields, null, excludeFields)
+		sqlFieldsFrom(fields, null, excludeFields, null)
 	}
 	
 	/**
 	 * Return fields name by sql syntax
 	 */
-	List<String> sqlFields() {
-		sqlFields(null, null)
+	List<String> sqlFields(Closure<Boolean> filter = null) {
+		sqlFields(null as String, null as List<String>, filter)
 	}
 	
 	/**
@@ -193,15 +194,15 @@ class JDBCDataset extends Dataset {
 	 * @param expr - string expression with {field} macros
 	 * @return - generated list
 	 */
-	List<String> sqlFields(String expr) {
-		sqlFields(expr, null)
+	List<String> sqlFields(String expr, Closure<Boolean> filter = null) {
+		sqlFields(expr, null as List<String>, filter)
 	}
 	
 	/**
 	 * Return fields name by sql syntax with exclude fields list
 	 */
 	List<String> sqlFields(List<String> excludeFields) {
-		sqlFields(null, excludeFields)
+		sqlFields(null as String, excludeFields, null)
 	}
 
 	/** Query parameters */

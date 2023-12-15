@@ -2,7 +2,6 @@ package getl.lang.sub
 
 import getl.exception.DslError
 import getl.exception.RequiredParameterError
-import groovy.transform.CompileStatic
 
 /**
  * Connection logins management

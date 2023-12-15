@@ -38,9 +38,7 @@ class ExcelDriverTest extends GetlTest {
         excelDataset.onPrepareFilter = null
     }
 
-    @Test
-    void testEachRow() {
-        def rows = excelDataset.rows()
+    private checkRows(List<Map> rows) {
         assertEquals(3, rows.size())
 //        rows.each {println it}
 
@@ -66,6 +64,25 @@ class ExcelDriverTest extends GetlTest {
         assertEquals(DateUtils.ParseDate('2021-12-15'), rows[2].d)
         assertNull(rows[2].e)
         assertNull(rows[2].f)
+    }
+
+    @Test
+    void testEachRow() {
+        def rows = excelDataset.rows()
+        checkRows(rows)
+    }
+
+    @Test
+    void testExcel2003() {
+        def ds = excelDataset.cloneDataset() as ExcelDataset
+        ds.fileName = 'test.xls'
+        def rows = ds.rows()
+        checkRows(rows)
+
+        ds.field('c') { type = datetimeFieldType }
+        shouldFail {
+            ds.rows()
+        }
     }
 
     @Test

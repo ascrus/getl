@@ -5,6 +5,7 @@ package getl.files
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.FilemanagerError
 import getl.exception.IOFilesError
+import getl.exception.IncorrectParameterError
 import getl.exception.RequiredParameterError
 import getl.files.sub.FileManagerList
 import getl.lang.Getl
@@ -87,14 +88,17 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void setStoredLogins(Map<String, String> value) {
 		storedLogins.clear()
-		if (value != null) storedLogins.putAll(value)
+		if (value != null)
+			storedLogins.putAll(value)
 	}
 	
 	/** Passive mode */
 	Boolean getPassive() { (params.passive != null)?params.passive:true }
 	/** Passive mode */
 	void setPassive(Boolean value) {
-		if (client.connected) client.setPassive(value) 
+		if (client.connected)
+			client.setPassive(value)
+
 		params.passive = value 
 	}
 	
@@ -107,7 +111,12 @@ class FTPManager extends Manager implements UserLogins {
 	Integer getAutoNoopTimeout() { params.autoNoopTimeout as Integer }
 	/** Auto noop timeout in seconds */
 	void setAutoNoopTimeout(Integer value) {
-		if (client.connected) client.setAutoNoopTimeout(value * 1000)
+		if (value != null && value < 1)
+			throw new IncorrectParameterError(this, '#params.great_zero', 'autoNoopTimeout')
+
+		if (client.connected)
+			client.setAutoNoopTimeout(value * 1000)
+
 		params.autoNoopTimeout = value
 	}
 	
@@ -115,15 +124,25 @@ class FTPManager extends Manager implements UserLogins {
 	Integer getCloseTimeout() { params.closeTimeout as Integer }
 	/** Close timeout */
 	void setCloseTimeout(Integer value) {
-		if (client.connected) client.connector.closeTimeout = value
+		if (value != null && value < 1)
+			throw new IncorrectParameterError(this, '#params.great_zero', 'closeTimeout')
+
+		if (client.connected)
+			client.connector.closeTimeout = value
+
 		params.closeTimeout = value
 	}
 	
-	/** Connection timeout */
+	/** Connection timeout in seconds */
 	Integer getConnectionTimeout() { params.connectionTimeout as Integer }
-	/** Connection timeout */
+	/** Connection timeout in seconds */
 	void setConnectionTimeout(Integer value) {
-		if (client.connected) client.connector.connectionTimeout = value
+		if (value != null && value < 1)
+			throw new IncorrectParameterError(this, '#params.great_zero', 'connectionTimeout')
+
+		if (client.connected)
+			client.connector.connectionTimeout = value
+
 		params.connectionTimeout = value
 	}
 	
@@ -131,7 +150,12 @@ class FTPManager extends Manager implements UserLogins {
 	Integer getReadTimeout() { params.readTimeout as Integer }
 	/** Read timeout */
 	void setReadTimeout(Integer value) {
-		if (client.connected) client.connector.readTimeout = value
+		if (value != null && value < 1)
+			throw new IncorrectParameterError(this, '#params.great_zero', 'readTimeout')
+
+		if (client.connected)
+			client.connector.readTimeout = value
+
 		params.readTimeout = value
 	}
 

@@ -1,7 +1,9 @@
+//file:noinspection DuplicatedCode
 package getl.mysql
 
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.InternalError
 import getl.jdbc.*
 import groovy.transform.InheritConstructors
 
@@ -28,6 +30,12 @@ class MySQLDriver extends JDBCDriver {
 		sqlExpressions.convertTextToTimestamp = 'CAST(\'{value}\' AS datetime)'
 		sqlExpressions.sysDualTable = 'DUAL'
 		sqlExpressions.changeSessionProperty = 'SET {name} = {value}'
+		sqlExpressions.ddlChangeColumnTable = 'ALTER TABLE {tableName} MODIFY {fieldDesc}'
+
+		sqlTypeMap.BLOB.name = 'blob'
+		sqlTypeMap.BLOB.useLength = sqlTypeUse.NEVER
+		sqlTypeMap.TEXT.name = 'text'
+		sqlTypeMap.TEXT.useLength = sqlTypeUse.NEVER
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -35,7 +43,7 @@ class MySQLDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Support.LOCAL_TEMPORARY, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.START_TRANSACTION,
-				 Support.TIME, Support.DATE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
+				 Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST] -
 				[Support.SELECT_WITHOUT_FROM/*, Support.CHECK_FIELD*/] /* TODO : Valid CHECK on new version! */
 	}
@@ -55,18 +63,6 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	String defaultConnectURL () {
 		return 'jdbc:mysql://{host}/{database}'
-	}
-
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	@Override
-	Map<String, Map<String, Object>> getSqlType () {
-		def res = super.getSqlType()
-		res.BLOB.name = 'blob'
-		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
-		res.TEXT.name = 'text'
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
-
-		return res
 	}
 
 	/** Current MySQL connection */
@@ -170,5 +166,26 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
 		retrieveCatalogs(masks)
+	}
+
+	static private final String ReadPrimaryKeyConstraintName = '''SELECT constraint_name
+FROM information_schema.table_constraints
+WHERE 
+    constraint_type = 'PRIMARY KEY'
+    AND Lower(table_schema) = '{schema}' 
+    AND Lower(table_name) = '{table}' '''
+
+	@Override
+	String primaryKeyConstraintName(TableDataset table) {
+		def q = new QueryDataset()
+		q.connection = connection
+		q.query = ReadPrimaryKeyConstraintName
+		q.queryParams.schema = (table.schemaName()?:defaultSchemaName).toLowerCase()
+		q.queryParams.table = table.tableName.toLowerCase()
+		def r = q.rows()
+		if (r.size() > 1)
+			throw new InternalError(table, 'Error reading primary key from list of constraints', "${r.size()} records returned")
+
+		return (!r.isEmpty())?r[0].constraint_name as String:null
 	}
 }

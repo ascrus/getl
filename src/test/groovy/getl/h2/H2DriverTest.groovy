@@ -182,4 +182,10 @@ class H2DriverTest extends JDBCDriverProto {
             }
         }
     }
+
+    @Override
+    protected Boolean synchronizeStructureTable()  { true }
+
+    @Override
+    protected String schemaForSynchronizeStructureTable() { 'public' }
 }

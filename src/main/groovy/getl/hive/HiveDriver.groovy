@@ -56,7 +56,15 @@ class HiveDriver extends JDBCDriver {
         sqlExpressions.now = 'CURRENT_TIMESTAMP'
         sqlExpressions.sysDualTable = '(SELECT 1 AS row_num) AS dual'
 
+        sqlTypeMap.STRING.name = 'string'
+        sqlTypeMap.STRING.useLength = sqlTypeUse.NEVER
+        sqlTypeMap.DOUBLE.name = 'double'
+        /*sqlTypeMap.BLOB.name = 'binary'
+        sqlTypeMap.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER*/
+
         ruleNameNotQuote = '(?i)^[a-z]+[a-z0-9_]*$'
+
+        driverSqlKeywords.addAll(['METHOD'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -84,19 +92,6 @@ class HiveDriver extends JDBCDriver {
     @SuppressWarnings('unused')
     HiveConnection getCurrentHiveConnection() { connection as HiveConnection }
 
-    @SuppressWarnings("UnnecessaryQualifiedReference")
-    @Override
-    Map<String, Map<String, Object>> getSqlType () {
-        def res = super.getSqlType()
-        res.STRING.name = 'string'
-        res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
-        res.DOUBLE.name = 'double'
-        /*res.BLOB.name = 'binary'
-        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER*/
-
-        return res
-    }
-
     @Override
     protected String createDatasetAddColumn(Field f, Boolean useNativeDBType) {
         return (!f.isPartition)?super.createDatasetAddColumn(f, useNativeDBType):null
@@ -115,7 +110,7 @@ class HiveDriver extends JDBCDriver {
             partitionFields.sort(true) { Field a, Field b -> (a.ordPartition?:999999999) <=> (b.ordPartition?:999999999) }
             def partitionCols = [] as List<String>
             partitionFields.each { Field f ->
-                partitionCols << generateColumnDefinition(f, false)
+                partitionCols.add(generateColumnDefinition(f, false))
             }
             sb << "PARTITIONED BY (${partitionCols.join(', ')})"
             sb << '\n'

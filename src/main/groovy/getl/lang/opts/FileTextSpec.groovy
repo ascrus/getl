@@ -1,13 +1,16 @@
 //file:noinspection unused
 package getl.lang.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.exception.DslError
 import getl.lang.Getl
 import getl.tfs.TFS
 import getl.utils.BoolUtils
+import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.MapUtils
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -48,6 +51,15 @@ class FileTextSpec extends BaseSpec {
     /** Delete file if empty  */
     void setDeleteOnEmpty(Boolean value) { saveParamValue('deleteOnEmpty', value) }
 
+    /** Output writeln text to log */
+    Boolean getLogOutput() { BoolUtils.IsValue(params.logOutput) }
+    /** Output writeln text to log */
+    void setLogOutput(Boolean value) { saveParamValue('logOutput', value) }
+
+    /** Current buffer text */
+    @JsonIgnore
+    String getBufferText() { buffer?.text }
+
     /** Text buffer */
     private final File buffer = FileUtils.CreateTempFile()
 
@@ -64,9 +76,10 @@ class FileTextSpec extends BaseSpec {
         if (_filePath != null)
             return _filePath
 
-        def file = new File(FileUtils.TransformFilePath(fileName, ownerObject as Getl))
+        def fp = StringUtils.EvalMacroString(fileName, [date: DateUtils.FormatDate(DateUtils.Now())], false)
+        def file = new File(FileUtils.TransformFilePath(fp, ownerObject as Getl))
         if (temporaryFile && file.parent == null)
-            _filePath = "${TFS.storage.currentPath()}/$fileName"
+            _filePath = "${TFS.storage.currentPath()}/${file.name}"
         else
             _filePath = file.absolutePath
 
@@ -76,8 +89,11 @@ class FileTextSpec extends BaseSpec {
     /** Write text buffer to file */
     @SuppressWarnings('SpellCheckingInspection')
     void save() {
+        if (!buffer.exists())
+            return
+
         if (fileName == null && !temporaryFile)
-            throw new DslError(getl,'#params.required', [param: 'fileMan', detail: 'save'])
+            throw new DslError(getl,'#params.required', [param: 'fileName', detail: 'save'])
 
         if (buffer.length() == 0 && deleteOnEmpty && !append) {
             delete(false)
@@ -117,17 +133,33 @@ class FileTextSpec extends BaseSpec {
     /** Clear current text buffer */
     void clear() {
         buffer.delete()
+        logBuffer = new StringBuilder()
     }
 
     /** Write text and line feed */
     void writeln(String text) {
         buffer.append(text)
         buffer.append('\n')
+        addToLogBuffer(text + '\n')
+    }
+
+    private logBuffer = new StringBuilder()
+    private void addToLogBuffer(String text) {
+        if (!logOutput)
+            return
+
+        logBuffer.append(text)
+        def i = logBuffer.lastIndexOf('\n')
+        if (i > -1) {
+            getl.logFine(logBuffer.substring(0, i))
+            logBuffer.delete(0, i)
+        }
     }
 
     /** Write string */
     void write(String text) {
         buffer.append(text)
+        addToLogBuffer(text)
     }
 
     /**
@@ -139,7 +171,9 @@ class FileTextSpec extends BaseSpec {
     void write(Map data, Boolean convertVars = false, Boolean trimMap = false) {
         StringBuilder sb = new StringBuilder()
         ConfigSlurper.SaveMap(data, sb, convertVars, trimMap)
-        buffer.append(sb.toString())
+        def text = sb.toString()
+        buffer.append(text)
+        addToLogBuffer(text)
     }
 
     /**
@@ -163,6 +197,7 @@ class FileTextSpec extends BaseSpec {
     String readToBuffer(String sourceFileName = null, String encode = null) {
         def res = new File(sourceFileName?:filePath()).getText(encode?:codePage)
         buffer.append(res)
+        addToLogBuffer(res)
         return res
     }
 

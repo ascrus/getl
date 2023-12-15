@@ -6,6 +6,7 @@ import getl.proc.Flow
 import getl.utils.ConvertUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -28,6 +29,8 @@ class FlowCopySpec extends FlowBaseSpec {
             params._childs = new HashMap<String, FlowCopyChildSpec>()
         if (params.map == null)
             params.map = new HashMap<String, String>()
+        if (params.bulkMap == null)
+            params.bulkMap = new HashMap<String, String>()
     }
 
     /** Source dataset */
@@ -79,24 +82,33 @@ class FlowCopySpec extends FlowBaseSpec {
      * destination_field_name: "source_field_name;format=[datetime or boolean format];convert=[true|false]"
      */
     void setMap(Map<String, String> value) {
-        map.clear()
-        if (value != null) map.putAll(value)
+        processParams {
+            map.clear()
+            if (value != null)
+                map.putAll(value)
+        }
     }
 
     /** Parameters for source read process */
     Map<String, Object> getSourceParams() { params.sourceParams as Map<String, Object> }
     /** Parameters for source read process */
     void setSourceParams(Map<String, Object> value) {
-        sourceParams.clear()
-        if (value != null) sourceParams.putAll(value)
+        processParams {
+            sourceParams.clear()
+            if (value != null)
+                sourceParams.putAll(value)
+        }
     }
 
     /** Parameters for destination write process */
     Map<String, Object> getDestParams() { params.destParams as Map<String, Object> }
     /** Parameters for destination write process */
     void setDestParams(Map<String, Object> value) {
-        destParams.clear()
-        if (value != null) destParams.putAll(value)
+        processParams {
+            destParams.clear()
+            if (value != null)
+                destParams.putAll(value)
+        }
     }
 
     /** Write with synchronize main thread */
@@ -173,6 +185,17 @@ class FlowCopySpec extends FlowBaseSpec {
     String getBulkNullAsValue() { params.bulkNullAsValue }
     /** Use nullAsValue option for bulk load files */
     void setBulkNullAsValue(String value) { saveParamValue('bulkNullAsValue', value) }
+
+    /** Fields map for bulkload temp file */
+    Map getBulkMap() { params.bulkMap as Map }
+    /** Fields map for bulkload temp file */
+    void setBulkMap(Map value) {
+        processParams {
+            bulkMap.clear()
+            if (value != null)
+                bulkMap.putAll(value)
+        }
+    }
 
     /** Format for date fields */
     String getFormatDate() { params.formatDate as String }

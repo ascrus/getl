@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.salesforce
 
 import com.fasterxml.jackson.annotation.JsonIgnore

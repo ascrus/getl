@@ -60,7 +60,7 @@ class Flow {
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'saveSourceFieldsInErrorsDataset', 'excludeFields', 'mirrorCSV',
-				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue',
+				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'bulkNullAsValue', 'bulkMap',
 				 'onInit', 'onDone', 'onFilter', 'onBulkLoad', 'onPostProcessing', 'process', 'onBeforeWrite', 'onAfterWrite',
 				 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
@@ -544,7 +544,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	Long copy(Map params,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
 					   Closure map_code = null) {
-		methodParams.validation("copy", params)
+		methodParams.validation('copy', params)
 
 		errorsDataset = null
 		countRow = 0L
@@ -665,6 +665,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		Boolean bulkEscaped = params.bulkEscaped as Boolean
 		Boolean bulkAsGZIP = params.bulkAsGZIP as Boolean
 		String bulkNullAsValue = params.bulkNullAsValue as String
+		Map bulkMap = params.bulkMap as Map
 		if (isBulkLoad) {
 			if (isDestTemp || isDestVirtual)
 				throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset!")
@@ -742,12 +743,10 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 		Dataset writer
 
 		Map<String, Object> destParams
-		if (params.destParams != null && !(params.destParams as Map).isEmpty()) {
+		if (params.destParams != null && !(params.destParams as Map).isEmpty())
 			destParams = params.destParams as Map<String, Object>
-		}
-		else {
+		else
 			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:new HashMap<String, Object>()) as Map<String, Object>
-		}
 
 		if (!inheritFields && dest.field.isEmpty())
 			dest.retrieveFields()
@@ -766,6 +765,11 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 				bulkParams.compressed = 'GZIP'
 			if (autoTran)
 				bulkParams.autoCommit = false
+
+			if (!bulkParams.containsKey('map'))
+				bulkParams.map = new HashMap<String, Object>()
+			if (bulkMap != null && !bulkMap.isEmpty())
+				(bulkParams.map as Map).putAll(bulkMap)
 
 			destParams = new HashMap<String, Object>()
 
@@ -1261,7 +1265,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	Long writeTo(Map params,
 				 @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
 						 Closure code = null) {
-		methodParams.validation("writeTo", params)
+		methodParams.validation('writeTo', params)
 
 		countRow = 0L
 
@@ -1474,7 +1478,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	@CompileStatic
 	void writeAllTo(Map params, @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
 			Closure code = null) {
-		methodParams.validation("writeAllTo", params)
+		methodParams.validation('writeAllTo', params)
 
 		if (code == null) code = params.process as Closure
 		if (code == null)
@@ -1741,7 +1745,7 @@ return {GETL_FLOW_CALC_CLASS_NAME}"""
 	Long process(Map params,
 				 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 						 Closure code = null) {
-		methodParams.validation("process", params)
+		methodParams.validation('process', params)
 
 		errorsDataset = null
 		countRow = 0L

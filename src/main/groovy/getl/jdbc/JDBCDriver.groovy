@@ -1,5 +1,6 @@
 package getl.jdbc
 
+import getl.data.sub.DatasetCompareField
 import getl.exception.ConnectionError
 import getl.exception.DatasetError
 import getl.exception.InternalError
@@ -8,6 +9,7 @@ import getl.exception.RequiredParameterError
 import getl.jdbc.opts.SequenceCreateSpec
 import getl.jdbc.sub.BulkLoadMapping
 import getl.jdbc.sub.JDBCProcessException
+import getl.lang.sub.RepositoryObjects
 import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
 import groovy.transform.CompileStatic
@@ -52,17 +54,19 @@ class JDBCDriver extends Driver {
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowExpressions'])
 		methodParams.register('unionDataset', ['source', 'autoMap', 'map', 'keyField',
-                                               'queryParams', 'condition'])
-		methodParams.register('executeCommand', ['historyText'])
-		methodParams.register('deleteRows', ['where', 'queryParams', 'ddlOnly'])
-		methodParams.register('clearDataset', ['autoTran', 'truncate', 'ddlOnly', 'queryParams'])
+                                               'queryParams', 'condition', 'ddlOnly', 'commit'])
+		methodParams.register('executeCommand', ['historyText', 'commit', 'ddlOperator'])
+		methodParams.register('deleteRows', ['where', 'queryParams', 'ddlOnly', 'commit'])
+		methodParams.register('clearDataset', ['autoTran', 'truncate', 'ddlOnly', 'queryParams', 'commit'])
 		methodParams.register('createSchema', ['ddlOnly'])
 		methodParams.register('dropSchema', ['ddlOnly'])
 		methodParams.register('createView', ['ddlOnly'])
-		methodParams.register('copyTableTo', ['ddlOnly'])
+		methodParams.register('copyTableTo', ['ddlOnly', 'commit'])
+		methodParams.register('renameTableTo', ['ddlOnly'])
 	}
 
 	/** Default rule for not quoting object name */
+	@SuppressWarnings('RegExpSimplifiable')
 	static protected final String defaultRuleNameNotQuote = '(?i)^[_]?[a-z]+[a-z0-9_]*$'
 
 	@SuppressWarnings('SpellCheckingInspection')
@@ -73,6 +77,8 @@ class JDBCDriver extends Driver {
 		addPKFieldsToUpdateStatementInUnionDataset = false
 		startTransactionDDL = false
 		commitDDL = false
+		startTransactionDML = false
+		commitDML = false
 		transactionalDDL = false
 		transactionalTruncate = false
 		allowExpressions = false
@@ -106,23 +112,8 @@ class JDBCDriver extends Driver {
 		setSqlExpressionSqlTimestampWithTzFormat('yyyy-MM-dd HH:mm:ss.SSSSSSx')
 		setSqlExpressionDatetimeFormat('yyyy-MM-dd HH:mm:ss')
 
-		ruleQuotedWords = ['CREATE', 'ALTER', 'DROP', 'REPLACE',
-						   'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY', 'USER', 'ROLE',
-                           'COMMIT', 'ROLLBACK',
-						   'PRIMARY', 'UNIQUE', 'KEY', 'CONSTRAINT', 'DEFAULT', 'CHECK', 'COMPUTE', 'NULL',
-						   'AND', 'OR', 'XOR', 'NOT', 'ON', 'IDENTITY',
-						   'IF', 'EXISTS', 'IN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'FOR', 'CURSOR',
-						   'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'LIMIT', 'OFFSET',
-						   'INSERT', 'INTO', 'VALUES',
-                           'UPDATE', 'SET',
-                           'DELETE', 'MERGE'] as List<String>
-		this.sqlType.each { name, par ->
-			//noinspection RegExpSimplifiable
-			def words = (par.name as String).toUpperCase().split('[ ]')
-			ruleQuotedWords.addAll(words)
-		}
-
-		sqlExpressions = [
+		sqlExpressions = new HashMap<String, String>()
+		sqlExpressions.putAll([
 				convertTextToTimestamp: 'CAST(\'{value}\' AS timestamp)',
 				now: 'NOW()',
 				sequenceNext: 'SELECT NextVal(\'{value}\') AS id;',
@@ -133,8 +124,11 @@ class JDBCDriver extends Driver {
 				ddlCreateTable: 'CREATE{ %type%} TABLE{ %ifNotExists%} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
 				ddlCreateIndex: 'CREATE{ %unique%}{ %hash%} INDEX{ %ifNotExists%} {indexName} ON {tableName} ({columns})',
 				ddlCreateField: '{column} {type}{ %increment%}{ %not_null%}{ %default%}{ %check%}{ %compute%}',
+				ddlAlterField: '{column} {type}',
 				ddlCreatePrimaryKey: 'PRIMARY KEY{ %hash%} ({columns})',
-				ddlDrop: 'DROP {object}{ %ifExists%} {name}',
+				ddlAddConstraint: 'ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} {constraintDesc}',
+				ddlDropConstraint: 'ALTER TABLE {tableName} DROP CONSTRAINT {constraintName}',
+				ddlDrop: 'DROP {type} {%ifExists% }{tableName}',
 				ddlCreateView: '{create}{ %temporary%} VIEW{ %ifNotExists%} {name} AS\n{select}',
 				ddlAutoIncrement: null,
 				ddlCreateSchema: 'CREATE SCHEMA{ %ifNotExists%} {schema}',
@@ -144,8 +138,73 @@ class JDBCDriver extends Driver {
 				ddlTruncateDelete: 'DELETE FROM {tableName}',
 				ddlCreateSequence: 'CREATE SEQUENCE{ %ifNotExists%} {name}{ INCREMENT BY %increment%}{ MINVALUE %min%}{ MAXVALUE %max%}{ START WITH %start%}{ CACHE %cache%}{%CYCLE%}',
 				ddlDropSequence: 'DROP SEQUENCE{ %ifExists%} {name}',
-				ddlRestartSequence: 'ALTER SEQUENCE {name} RESTART WITH {value}'
-		]
+				ddlRestartSequence: 'ALTER SEQUENCE {name} RESTART WITH {value}',
+				ddlRenameTable: 'ALTER TABLE {tableName} RENAME TO {newTableName}',
+				ddlChangeColumnTable: null,
+				ddlAddColumnTable: 'ALTER TABLE {tableName} ADD COLUMN {fieldName} {fieldDesc}',
+				ddlDropColumnTable: 'ALTER TABLE {tableName} DROP COLUMN {fieldName}',
+				ddlChangeTypeColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} TYPE {typeName}',
+				ddlAddDefaultColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DEFAULT {fieldDefault}',
+				ddlDropDefaultColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} DROP DEFAULT',
+				ddlAddNotNullColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET NOT NULL',
+				ddlDropNotNullColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} DROP NOT NULL'
+		])
+
+		sqlTypeMap = new HashMap<String, Map<String, Object>>()
+		sqlTypeMap.putAll([
+				STRING: [name: 'varchar', useLength: sqlTypeUse.ALWAYS, usePrecision: sqlTypeUse.NEVER],
+				INTEGER: [name: 'int', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				BIGINT: [name: 'bigint', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				NUMERIC: [name: 'decimal', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES],
+				DOUBLE: [name: 'double precision', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				BOOLEAN: [name: 'boolean', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				DATE: [name: 'date', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				TIME: [name: 'time', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				DATETIME: [name: 'timestamp', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER/*,
+									  format: 'timestamp{(%length%)} with time zone'*/],
+				BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, /*defaultLength: 65000, */usePrecision: sqlTypeUse.NEVER],
+				TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, /*defaultLength: 65000, */usePrecision: sqlTypeUse.NEVER],
+				UUID: [name: 'uuid', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
+				ARRAY: [name: 'array', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.NEVER],
+				OBJECT: [name: 'object', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER]
+		])
+
+		driverSqlKeywords = ['CREATE', 'ALTER', 'DROP', 'REPLACE',
+							 'DATABASE', 'SCHEMA', 'TABLE', 'INDEX', 'VIEW', 'SEQUENCE', 'PROCEDURE', 'FUNCTION', 'LIBRARY', 'USER', 'ROLE',
+							 'COMMIT', 'ROLLBACK',
+							 'PRIMARY', 'UNIQUE', 'KEY', 'CONSTRAINT', 'DEFAULT', 'CHECK', 'COMPUTE', 'NULL',
+							 'AND', 'OR', 'XOR', 'NOT', 'ON', 'IDENTITY',
+							 'IF', 'EXISTS', 'IN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'FOR', 'CURSOR',
+							 'WITH', 'SELECT', 'FROM', 'JOIN', 'WHERE', 'GROUP', 'ORDER', 'BY', 'LIMIT', 'OFFSET',
+							 'INSERT', 'INTO', 'VALUES',
+							 'UPDATE', 'SET',
+							 'DELETE', 'MERGE'] as List<String>
+		this.sqlTypeMap.each { name, par ->
+			//noinspection RegExpSimplifiable
+			def words = (par.name as String).toUpperCase().split('[ ]')
+			driverSqlKeywords.addAll(words)
+		}
+		serverSqlKeywords = [] as List<String>
+		ruleQuotedKeywords = [] as List<String>
+
+		compatibleFieldType = new HashMap<Field.Type, List<Field.Type>>()
+		compatibleFieldType.put(Field.stringFieldType, [Field.textFieldType])
+		compatibleFieldType.put(Field.integerFieldType, [Field.bigintFieldType, Field.numericFieldType, Field.doubleFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.bigintFieldType, [Field.numericFieldType, Field.doubleFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.dateFieldType, [Field.timestampFieldType, Field.timestamp_with_timezoneFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.timeFieldType, [Field.timestampFieldType, Field.timestamp_with_timezoneFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.timestampFieldType, [Field.dateFieldType, Field.timeFieldType, Field.timestamp_with_timezoneFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.timestamp_with_timezoneFieldType, [Field.dateFieldType, Field.timeFieldType, Field.timestampFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.numericFieldType, [Field.integerFieldType, Field.bigintFieldType, Field.doubleFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.doubleFieldType, [Field.integerFieldType, Field.bigintFieldType, Field.numericFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.booleanFieldType, [Field.integerFieldType, Field.bigintFieldType, Field.numericFieldType, Field.doubleFieldType, Field.stringFieldType])
+		compatibleFieldType.put(Field.textFieldType, [])
+		compatibleFieldType.put(Field.blobFieldType, [])
+		compatibleFieldType.put(Field.uuidFieldType, [Field.stringFieldType])
+		compatibleFieldType.put(Field.rowidFieldType, [])
+		compatibleFieldType.put(Field.arrayFieldType, [])
+		compatibleFieldType.put(Field.objectFieldType, [])
 	}
 
 	/** Start time connect */
@@ -172,7 +231,7 @@ class JDBCDriver extends Driver {
 	List<Operation> operations() {
 		[Operation.RETRIEVEFIELDS, Operation.RETRIEVELOCALTEMPORARYFIELDS, Operation.RETRIEVEQUERYFIELDS, Operation.READ_METADATA,
 		 Operation.INSERT, Operation.UPDATE, Operation.DELETE, Operation.TRUNCATE, Operation.CREATE, Operation.DROP, Operation.CREATE_SCHEMA,
-		 Operation.EXECUTE, Operation.CREATE_VIEW]
+		 Operation.EXECUTE, Operation.CREATE_VIEW, Operation.RENAME_TABLE]
 	}
 	
 	/**
@@ -230,7 +289,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Java field type association
 	 */
-	static Map javaTypes() {
+	Map javaTypes() {
 		[
 			BIGINT: [Types.BIGINT],
 			INTEGER: [Types.INTEGER, Types.SMALLINT, Types.TINYINT],
@@ -403,31 +462,12 @@ class JDBCDriver extends Driver {
 	}
 
 	static enum sqlTypeUse {ALWAYS, SOMETIMES, NEVER}
+
+	/** SQL type mapper */
+	protected Map<String, Map<String, Object>> sqlTypeMap
 	
-	/**
-	 * SQL type mapper
-	 */
-	Map<String, Map<String, Object>> getSqlType () {
-		def res = [
-			STRING: [name: 'varchar', useLength: sqlTypeUse.ALWAYS, usePrecision: sqlTypeUse.NEVER],
-			INTEGER: [name: 'int', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			BIGINT: [name: 'bigint', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			NUMERIC: [name: 'decimal', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES],
-			DOUBLE: [name: 'double precision', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			BOOLEAN: [name: 'boolean', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			DATE: [name: 'date', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			TIME: [name: 'time', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			DATETIME: [name: 'timestamp', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER/*,
-									  format: 'timestamp{(%length%)} with time zone'*/],
-			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, /*defaultLength: 65000, */usePrecision: sqlTypeUse.NEVER],
-			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, /*defaultLength: 65000, */usePrecision: sqlTypeUse.NEVER],
-			UUID: [name: 'uuid', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER],
-			ARRAY: [name: 'array', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.NEVER],
-			OBJECT: [name: 'object', useLength: sqlTypeUse.NEVER, usePrecision: sqlTypeUse.NEVER]
-		] as Map<String, Map<String, Object>>
-		return res
-	}
+	/** SQL type mapper */
+	Map<String, Map<String, Object>> getSqlTypeMapper() { sqlTypeMap }
 	
 	/**
 	 * Convert field type to SQL data type
@@ -441,7 +481,7 @@ class JDBCDriver extends Driver {
 			throw new RequiredParameterError(connection, 'field', 'type2sqlType')
 		
 		def type = field.type.toString()
-		def rule = this.sqlType.get(type)
+		def rule = this.sqlTypeMap.get(type)
 		if (rule == null)
 			throw new InternalError(connection, "Unknown generation for type \"$type\"", 'type2sqlType')
 
@@ -587,11 +627,10 @@ class JDBCDriver extends Driver {
 		Sql sql = null
 		JDBCConnection con = jdbcConnection
 		
-		if (con.javaConnection != null) {
+		if (con.javaConnection != null)
 			sql = new Sql(con.javaConnection)
-		}
 		else {
-			def password = StringUtils.EvalMacroString(con.loginManager.currentDecryptPassword(), con.dslVars, false)
+			def password = StringUtils.EvalMacroString(con._prepareConnection(RepositoryObjects._storage_key), con.dslVars, false)
 
 			String conParams = buildConnectParams()
 			
@@ -624,17 +663,40 @@ class JDBCDriver extends Driver {
 				notConnected = false
 			}
 			con.sysParams.buildConnectURL = url
-			sql.getConnection().setAutoCommit(con.autoCommit())
-			sql.getConnection().setTransactionIsolation(con.transactionIsolation)
-			sql.withStatement{ stmt -> 
-				if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
-				if (con.queryTimeout != null) stmt.queryTimeout = con.queryTimeout
-			}
 		}
-		
+
+		sql.getConnection().setAutoCommit(con.autoCommit())
+		sql.getConnection().setTransactionIsolation(con.transactionIsolation)
+		sql.withStatement{ stmt ->
+			if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
+			if (con.queryTimeout != null) stmt.queryTimeout = con.queryTimeout
+		}
+
+		def meta = sql.connection.metaData
+		jdbcConnection.sysParams.serverMajorVersion = meta.databaseMajorVersion
+		jdbcConnection.sysParams.serverMinorVersion = meta.databaseMinorVersion
+		jdbcConnection.sysParams.serverProductName = meta.databaseProductName
+		jdbcConnection.sysParams.serverProductVersion = meta.databaseProductVersion
+		jdbcConnection.sysParams.jdbcDriverMajorVersion = meta.driverMajorVersion
+		jdbcConnection.sysParams.jdbcDriverMinorVersion = meta.driverMinorVersion
+		jdbcConnection.sysParams.jdbcDriverProductName = meta.driverName
+		jdbcConnection.sysParams.jdbcDriverProductVersion = meta.driverVersion
+
+		def kw = meta.SQLKeywords?.split(',')
+		serverSqlKeywords.clear()
+		if (kw != null)
+			serverSqlKeywords.addAll(kw)
+
 		connectDate = DateUtils.Now()
 		sqlConnect = sql
+
+		afterConnect()
+		ruleQuotedKeywords.clear()
+		ruleQuotedKeywords.addAll((driverSqlKeywords + serverSqlKeywords).unique()*.toUpperCase().sort())
 	}
+
+	/** Processing after connection to server */
+	protected void afterConnect() { }
 
 	/** Current transactional isolation level */
 	Integer getTransactionIsolation() { sqlConnect.getConnection().getTransactionIsolation() }
@@ -660,7 +722,7 @@ class JDBCDriver extends Driver {
      * @param name
      * @param value
      */
-    void changeSessionProperty(String name, def value) {
+    void changeSessionProperty(String name, def value) { /* TODO: add ddlOnly */
 		def sql = sqlExpression('changeSessionProperty')
         if (sql == null)
 			throw new ConnectionError(connection, '#jdbc.connection.deny_change_property')
@@ -849,7 +911,8 @@ class JDBCDriver extends Driver {
 				t.type = rs.getString('TABLE_TYPE')
 				t.description = rs.getString('REMARKS')
 
-				if (filter == null || filter.call(t)) tables << t
+				if (filter == null || filter.call(t))
+					tables.add(t)
 			}
 		}
 		finally {
@@ -1041,13 +1104,20 @@ class JDBCDriver extends Driver {
 		List<Field> res = null
 
 		if (isOperation(Operation.RETRIEVEQUERYFIELDS)) {
-			def stat = sqlConnect.connection.prepareStatement(sql)
 			try {
-				def meta = stat.metaData
-				res = meta2Fields(meta, false)
+				def stat = sqlConnect.connection.prepareStatement(sql)
+				try {
+					def meta = stat.metaData
+					res = meta2Fields(meta, false)
+				}
+				finally {
+					stat.close()
+				}
 			}
-			finally {
-				stat.close()
+			catch (Exception e) {
+				ds.logger.dump(e, getClass().name + '.queryFields', ds.toString(), sql)
+
+				throw e
 			}
 		}
 		else
@@ -1151,12 +1221,16 @@ class JDBCDriver extends Driver {
 		}
 	}
 
-	/** Need start transaction DDL operator */
+	/** Need start transaction before DDL operator */
 	protected Boolean startTransactionDDL
 	/** Need commit after DDL operation */
 	protected Boolean commitDDL
 	/** DDL operator running in transaction */
 	protected Boolean transactionalDDL
+	/** Need start transaction before DML operator */
+	protected Boolean startTransactionDML
+	/** Need commit after DML operation */
+	protected Boolean commitDML
 	/** Truncate table running in transaction */
 	protected Boolean transactionalTruncate
 	/** Allow expression for bulk load */
@@ -1191,8 +1265,14 @@ class JDBCDriver extends Driver {
 
 	/** Rule for defining identifier names that do not require quotes */
 	protected String ruleNameNotQuote
+	/** List of driver keywords that cannot be used as an identifier name without quotes */
+	protected List<String> driverSqlKeywords
+	/** List of server keywords that cannot be used as an identifier name without quotes */
+	private List<String> serverSqlKeywords
 	/** List of keywords that cannot be used as an identifier name without quotes */
-	protected List<String> ruleQuotedWords
+	private List<String> ruleQuotedKeywords
+	/** List of keywords that cannot be used as an identifier name without quotes */
+	List<String> getRuleQuotedKeywords() { ruleQuotedKeywords }
 
 	/** Name dual system table */
 	String getSysDualTable() { sqlExpressionValue('sysDualTable') }
@@ -1239,7 +1319,6 @@ class JDBCDriver extends Driver {
 
         params = params?:new HashMap()
 
-		def tableName = fullNameDataset(ds)
 		def tableType = ds.type
 		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType, JDBCDataset.localTemporaryTableType,
 							JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
@@ -1247,15 +1326,14 @@ class JDBCDriver extends Driver {
         }
 		def tableTypeName = tableTypeName(ds, params)
 
-		def validExists = ConvertUtils.Object2Boolean(params.ifNotExists, false)
+		def validExists = BoolUtils.IsValue(params.ifNotExists)
 		if (validExists && !isSupport(Support.CREATEIFNOTEXIST)) {
 			if (!isTable(ds))
 				throw new NotSupportError(ds, 'create if not exists')
 			if ((ds as TableDataset).exists)
 				return
 		}
-		def ifNotExists = (validExists && isSupport(Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':null
-		def useNativeDBType = ConvertUtils.Object2Boolean(params.useNativeDBType, false)
+		def useNativeDBType = BoolUtils.IsValue(params.useNativeDBType)
 		
 		def p = MapUtils.CleanMap(params, ['ifNotExists', 'indexes', 'hashPrimaryKey', 'useNativeDBType'])
 		def extend = createDatasetExtend(ds, p)
@@ -1321,26 +1399,24 @@ class JDBCDriver extends Driver {
 		}
 
 		def con = jdbcConnection
-		def ddlOnly = ConvertUtils.Object2Boolean(params.ddlOnly, false)
+		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
 		def sbCommands = new StringBuffer()
 
-		def needTran = transactionalDDL && !(jdbcConnection.autoCommit()) && !ddlOnly
+		def needTran = transactionalDDL && !(con.autoCommit()) && !ddlOnly
 		if (needTran)
 			con.startTran(false, startTransactionDDL)
 		try {
-			def varsCT = [
-					type: tableTypeName,
-					ifNotExists: ifNotExists,
-					tableName: tableName,
-					fields: fields,
-					pk: pk,
-					extend: extend]
+			def varsCT = createTableParams(ds, tableTypeName, validExists, fields, pk, extend, params)
 			def sqlCodeCT = sqlExpressionValue('ddlCreateTable', varsCT)
 			//		println sqlCodeCT
 			if (!ddlOnly)
 				executeCommand(sqlCodeCT, p, sbCommands)
-			else
-				sbCommands.append(formatSqlStatements(sqlCodeCT, p.queryParams as Map, false) + '\n')
+			else {
+				/*sbCommands.append(formatSqlStatements(sqlCodeCT, p.queryParams as Map, false) + '\n')
+				if (transactionalDDL && !(con.autoCommit()))
+					sbCommands.append(formatSqlStatements('COMMIT') + '\n')*/
+				sbCommands.append(formatDDLStatements(sqlCodeCT, p.queryParams as Map, true))
+			}
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
 				if (!isSupport(Support.INDEX))
@@ -1355,20 +1431,19 @@ class JDBCDriver extends Driver {
 								((sortMethod != 'ASC')?(' ' + sortMethod):''))
 					}
 					
-					def varsCI = [
-							indexName: prepareTableNameForSQL(name as String),
-							unique: (value.unique != null && value.unique == true)?"UNIQUE":null,
-							hash: (value.hash != null && value.hash == true)?"HASH":null,
-							ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":null,
-							tableName: tableName,
-							columns: idxCols.join(",")
-					]
+					def varsCI = createIndexParams(ds, name, BoolUtils.IsValue(value.unique), BoolUtils.IsValue(value.hash),
+							BoolUtils.IsValue(value.ifNotExists), idxCols, params)
 					def sqlCodeCI = sqlExpressionValue('ddlCreateIndex', varsCI)
 
+					/* TODO: Move index creating to another transaction without table create transaction */
 					if (!ddlOnly)
 						executeCommand(sqlCodeCI, p, sbCommands)
-					else
-						sbCommands.append(formatSqlStatements(sqlCodeCI, p.queryParams as Map, false) + '\n')
+					else {
+						/*sbCommands.append(formatSqlStatements(sqlCodeCI, p.queryParams as Map, false) + '\n')
+						if (transactionalDDL && !(con.autoCommit()))
+							sbCommands.append(formatSqlStatements('COMMIT') + '\n')*/
+						sbCommands.append(formatDDLStatements(sqlCodeCI, p.queryParams as Map, true))
+					}
 				}
 			}
 		}
@@ -1386,6 +1461,31 @@ class JDBCDriver extends Driver {
 			con.commitTran(false, commitDDL)
 	}
 
+	/** Prepare params for create table statement */
+	protected Map<String, Object> createTableParams(JDBCDataset dataset, String tableTypeName, Boolean validExists, String fields, String pk, String extend,
+													Map<String, Object> params) {
+		return [
+				type: tableTypeName,
+				ifNotExists: ((validExists && isSupport(Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':null),
+				tableName: fullNameDataset(dataset),
+				fields: fields,
+				pk: pk,
+				extend: extend
+		]
+	}
+
+	/** Prepare params for create index statement */
+	protected Map<String, Object> createIndexParams(JDBCDataset dataset, String indexName, Boolean unique, Boolean hash, Boolean validExists,
+													List<String> columns, Map<String, Object> params) {
+		return [
+				indexName: prepareTableNameForSQL(indexName),
+				unique: (unique)?'UNIQUE':null,
+				hash: (hash)?'HASH':null,
+				ifNotExists: (validExists && isSupport(Support.CREATEINDEXIFNOTEXIST))?'IF NOT EXISTS':null,
+				tableName: fullNameDataset(dataset),
+				columns: columns.join(',')
+		]
+	}
 
 	/** Need null keyword when defining field in create table */
 	protected Boolean needNullKeyWordOnCreateField = false
@@ -1396,7 +1496,7 @@ class JDBCDriver extends Driver {
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
-	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
+	String generateColumnDefinition(Field f, Boolean useNativeDBType, Boolean isAlter = false) {
 		def fp = new HashMap<String, String>()
 		fp.column = prepareFieldNameForSQL(f.name)
 		fp.type = type2sqlType(f, useNativeDBType)
@@ -1413,7 +1513,7 @@ class JDBCDriver extends Driver {
 		if (isSupport(Support.COMPUTE_FIELD) && f.compute != null)
 			fp.compute = generateComputeDefinition(f)
 
-		return sqlExpressionValue('ddlCreateField', fp)
+		return (!isAlter)?sqlExpressionValue('ddlCreateField', fp):sqlExpressionValue('ddlAlterField', fp)
 	}
 
 	/** Generate default constraint for field of table */
@@ -1433,8 +1533,9 @@ class JDBCDriver extends Driver {
 
 	/** Generate primary key definition */
 	String generatePrimaryKeyDefinition(JDBCDataset dataset, Map params) {
+		params = params?:new HashMap()
 		def defPrimary = GenerationUtils.SqlKeyFields(dataset, dataset.field, null, null)
-		return sqlExpressionValue('ddlCreatePrimaryKey', [hash: (ConvertUtils.Object2Boolean(params.hashPrimaryKey, false))?'HASH':null, columns: defPrimary.join(",")])
+		return sqlExpressionValue('ddlCreatePrimaryKey', params + [hash: (BoolUtils.IsValue(params.hashPrimaryKey))?'HASH':null, columns: defPrimary.join(",")])
 	}
 
 	/**
@@ -1477,7 +1578,7 @@ class JDBCDriver extends Driver {
 			return null
 
 		def res = name
-		def needQuote = (ruleNameNotQuote == null) || !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
+		def needQuote = (ruleNameNotQuote == null) || !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedKeywords)
 
 		if (!needQuote || caseQuotedName) {
 			switch (caseRetrieveObject) {
@@ -1506,7 +1607,7 @@ class JDBCDriver extends Driver {
 			return null
 
 		String res = (dataset != null)?(dataset.fieldByName(name)?.name?:name):name
-		def needQuote = (ruleNameNotQuote == null) || !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedWords)
+		def needQuote = (ruleNameNotQuote == null) || !res.matches(ruleNameNotQuote) || (res.toUpperCase() in ruleQuotedKeywords)
 
 		if (!needQuote || caseQuotedName) {
 			switch (caseObjectName) {
@@ -1627,40 +1728,48 @@ class JDBCDriver extends Driver {
 		return r
 	}
 
+	/** Prepare parameters for dropping table statement */
+	protected Map<String, Object> dropTableParams(JDBCDataset dataset, String type, Boolean validExists, Map<String, Object> params) {
+		return [
+				tableName: fullNameDataset(dataset),
+				type: type,
+				ifExists: (validExists && isSupport(Support.DROPIFEXIST))?'IF EXISTS':''
+		]
+	}
+
 	@Synchronized
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
-		validTableName(dataset as JDBCDataset)
+		def ds = dataset as JDBCDataset
+		validTableName(ds)
 
         params = params?:new HashMap()
 
-		def n = fullNameDataset(dataset)
-		def t = ((dataset as JDBCDataset).type in
+		def type = (ds.type in
                     [JDBCDataset.tableType, JDBCDataset.localTemporaryTableType, JDBCDataset.globalTemporaryTableType,
                      JDBCDataset.memoryTable, JDBCDataset.externalTable])?'TABLE':
-				((dataset as JDBCDataset).type in [JDBCDataset.viewType, JDBCDataset.localTemporaryViewType])?'VIEW':null
+				(ds.type in [JDBCDataset.viewType, JDBCDataset.localTemporaryViewType])?'VIEW':null
 
-		if (t == null)
-			throw new NotSupportError(dataset, 'drop dataset')
+		if (type == null)
+			throw new NotSupportError(ds, 'drop dataset')
 
-		def validExists = ConvertUtils.Object2Boolean(params.ifExists, false)
+		def validExists = BoolUtils.IsValue(params.ifExists)
 		if (validExists && !isSupport(Support.DROPIFEXIST)) {
-			if (!isTable(dataset))
-				throw new NotSupportError(dataset, 'drop if exists')
-			if (!(dataset as TableDataset).exists)
+			if (!isTable(ds))
+				throw new NotSupportError(ds, 'drop if exists')
+			if (!(ds as TableDataset).exists)
 				return
 		}
 
-		def ddlOnly = ConvertUtils.Object2Boolean(params.ddlOnly, false)
-
-		def ifExists = (validExists && isSupport(Support.DROPIFEXIST))?'IF EXISTS':''
-		def sql = sqlExpressionValue('ddlDrop', [object: t, ifexists: ifExists, name: n])
-		dataset.sysParams.lastSqlStatement = formatSqlStatements(sql)
-
 		def con = jdbcConnection
+		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
+
+		def varsDts = dropTableParams(ds, type, validExists, params)
+		def sql = sqlExpressionValue('ddlDrop', varsDts)
+		ds.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
 
 		if (!ddlOnly) {
-			def needTran = transactionalDDL && !(con.autoCommit())
+			def needTran = transactionalDDL && isSupport(Support.TRANSACTIONAL) && !(con.autoCommit())
 			if (needTran)
 				con.startTran(false, startTransactionDDL)
 
@@ -1707,7 +1816,7 @@ class JDBCDriver extends Driver {
 	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
 		if (params.where != null) dir.where = params.where
 		if (params.orderBy != null) dir.orderBy = params.orderBy
-		dir.forUpdate = ConvertUtils.Object2Boolean(params.forUpdate, false)
+		dir.forUpdate = BoolUtils.IsValue(params.forUpdate)
 	}
 
     /**
@@ -2007,19 +2116,19 @@ class JDBCDriver extends Driver {
 		catch (JDBCProcessException e) {
 			connection.logger.severe("Error processing row from dataset \"${dataset.objectName}\"", e)
 			if (rowCopy != null)
-				connection.logger.dump(e.error, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+				connection.logger.dump(e.error, getClass().name + ".statement", dataset.toString(), rowCopy.statement)
 
 			throw e.error
 		}
 		catch (SQLException e) {
-			connection.logger.dump(e, getClass().name + ".sql", dataset.objectName, sql)
+			connection.logger.dump(e, getClass().name + ".sql", dataset.toString(), sql)
 			throw e
 		}
 		catch (Error e) {
-			connection.logger.dump(e, getClass().name + ".sql", dataset.objectName, sql)
+			connection.logger.dump(e, getClass().name + ".sql", dataset.toString(), sql)
 			connection.logger.severe("Critical error processing read dataset \"${dataset.objectName}\"", e)
 			if (rowCopy != null)
-				connection.logger.dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+				connection.logger.dump(e, getClass().name + ".statement", dataset.toString(), rowCopy.statement)
 			throw e
 		}
 
@@ -2040,7 +2149,9 @@ class JDBCDriver extends Driver {
 		def fn = fullNameDataset(dataset)
 		def con = jdbcConnection
 
-		def truncate = ConvertUtils.Object2Boolean(params.truncate, isOperation(Operation.TRUNCATE))
+		params = params?:new HashMap()
+
+		def truncate = BoolUtils.IsValue(params.truncate, isOperation(Operation.TRUNCATE))
 		if (truncate) {
 			if (!isOperation(Operation.TRUNCATE))
 				throw new NotSupportError(dataset, 'truncate')
@@ -2051,33 +2162,33 @@ class JDBCDriver extends Driver {
 		}
 
 		def qp = [tableName: fn]
-		String sql = (truncate)?sqlExpressionValue('ddlTruncateTable', qp):sqlExpressionValue('ddlTruncateDelete', qp)
-		Map p = MapUtils.CleanMap(params, ['autoTran', 'truncate'])
+		String sql = (truncate)?sqlExpressionValue('ddlTruncateTable', params + qp):sqlExpressionValue('ddlTruncateDelete', params + qp)
+		Map p = MapUtils.CleanMap(params, ['autoTran', 'truncate', 'ddlOnly', 'commit'])
 
-		def ddlOnly = ConvertUtils.Object2Boolean(params.ddlOnly, false)
-		dataset.sysParams.lastSqlStatement = formatSqlStatements(sql, p.queryParams as Map)
+		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
+		def needCommit = BoolUtils.IsValue(params.commit)
+		dataset.sysParams.lastSqlStatement = formatDMLStatements(sql, p.queryParams as Map, needCommit)
 
 		if (!ddlOnly) {
-			def autoTran = false
-			if (con.isSupportTran)
-				autoTran = ConvertUtils.Object2Boolean(params.autoTran, (connection.tranCount == 0))
-			autoTran = (autoTran && (!truncate || (truncate && transactionalTruncate)))
+			def needTran = (con.isSupportTran && !con.autoCommit &&
+					BoolUtils.IsValue(params.autoTran, (!con.isTran() && (!truncate || (truncate && transactionalTruncate)))))
 
-			if (autoTran)
-				con.startTran(false, truncate && transactionalTruncate && startTransactionDDL)
+			if (needTran)
+				con.startTran(false, startTransactionDML)
 			try {
 				dataset.writeRows = 0L
 				dataset.updateRows = 0L
 				dataset.updateRows = executeCommand(sql, p + [isUpdate: true])
 			}
 			catch (Exception e) {
-				if (autoTran)
-					con.rollbackTran(false, truncate && transactionalTruncate && commitDDL)
+				if (needTran)
+					con.rollbackTran(false, commitDML)
+
 				throw e
 			}
 
-			if (autoTran)
-				con.commitTran(false, truncate && transactionalTruncate && commitDDL)
+			if (needTran)
+				con.commitTran(false, commitDML)
 		}
 	}
 
@@ -2132,6 +2243,10 @@ ${sql.stripTrailing()}
 		if (params == null)
 			params = new HashMap()
 
+		def con = jdbcConnection
+		def ddlOperator = BoolUtils.IsValue(params.ddlOperator)
+		def needCommit = isSupport(Support.TRANSACTIONAL) && (BoolUtils.IsValue(params.commit) || (ddlOperator && transactionalDDL)) && !con.autoCommit()
+
 		def sql = evalSqlParameters(command, params.queryParams as Map, false).stripTrailing()
 		def oper = formatSqlStatements(sql, null, false)
 		connection.sysParams.lastSqlStatement = oper
@@ -2140,45 +2255,52 @@ ${sql.stripTrailing()}
 		if (commandBuffer != null)
 			commandBuffer.append(oper + '\n')
 
-		JDBCConnection con = jdbcConnection
-		def stat = sqlConnect.connection.createStatement()
-
-		try {
-			if (params.isUpdate != null && params.isUpdate) {
+		try (def stat = sqlConnect.connection.createStatement()) {
+			if (BoolUtils.IsValue(params.isUpdate))
 				result += stat.executeUpdate(sql)
-			}
 			else {
-				if (!stat.execute(sql))
-					result += stat.updateCount
+				if (needCommit)
+					con.startTran(false, (ddlOperator && startTransactionDDL) || (!ddlOperator && startTransactionDML))
+				try {
+					if (!stat.execute(sql))
+						result += stat.updateCount
+				} catch (Exception e) {
+					if (needCommit)
+						con.rollbackTran(false, (ddlOperator && commitDDL) || (!ddlOperator && commitDML))
+
+					throw e
+				}
+				if (needCommit)
+					con.commitTran(false, (ddlOperator && commitDDL) || (!ddlOperator && commitDML))
+			}
+
+			def warn = stat.getConnection().warnings
+			con.sysParams.warnings = new LinkedList<Map>()
+			List<Map> iw = ignoreWarning
+			while (warn != null) {
+				def ignore = false
+				iw.each { Map p ->
+					if (!ignore && p.errorCode == warn.errorCode && p.sqlState == warn.SQLState) {
+						ignore = true
+					}
+				}
+				if (!ignore) {
+					con.sysParams.warnings << [errorCode: warn.errorCode, sqlState: warn.SQLState, message: warn.message]
+				}
+				warn = warn.nextWarning
+			}
+			if (!(con.sysParams.warnings as List).isEmpty()) {
+				if (BoolUtils.IsValue(con.outputServerWarningToLog))
+					con.logger.warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
+				saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
+				con.sysParams.remove('warnings')
 			}
 		}
 		catch (SQLException e) {
-			con.logger.dump(e, getClass().name + ".exec", con.objectName, "statement:\n${sql}")
+			con.logger.dump(e, getClass().name + ".exec", con.toString(), "statement:\n${sql}")
 			throw e
 		}
 		
-		def warn = stat.getConnection().warnings
-		con.sysParams.warnings = new LinkedList<Map>()
-		List<Map> iw = ignoreWarning
-		while (warn != null) {
-			def ignore = false
-			iw.each { Map p ->
-				if (!ignore && p.errorCode == warn.errorCode && p.sqlState == warn.SQLState) {
-					ignore = true
-				}
-			}
-			if (!ignore) {
-				con.sysParams.warnings << [errorCode: warn.errorCode, sqlState: warn.SQLState, message: warn.message]
-			}
-			warn = warn.nextWarning
-		}
-		if (!(con.sysParams.warnings as List).isEmpty()) {
-			if (ConvertUtils.Object2Boolean(con.outputServerWarningToLog, false))
-				con.logger.warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
-            saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
-			con.sysParams.remove('warnings')
-		}
-
 		return result
 	}
 
@@ -2360,13 +2482,13 @@ ${sql.stripTrailing()}
 		}
 		
 		// Allow aliases in map
-		def useExpressions = ConvertUtils.Object2Boolean(params.allowExpressions, this.allowExpressions)
+		def useExpressions = BoolUtils.IsValue(params.allowExpressions, this.allowExpressions)
 		
 		// Mapping column to field
 		def mapping = [] as List<BulkLoadMapping>
 
 		// Auto mapping with field name 
-		def autoMap = ConvertUtils.Object2Boolean(params.autoMap, true)
+		def autoMap = BoolUtils.IsValue(params.autoMap, true)
 
 		// Added source fields to list mapping
 		source.field.each { sourceField ->
@@ -2672,7 +2794,7 @@ ${sql.stripTrailing()}
 			stat = con.prepareStatement(query)
 		}
 		catch (SQLException e) {
-			connection.logger.dump(e, getClass().name, dataset.objectName, query)
+			connection.logger.dump(e, getClass().name, dataset.toString(), query)
 			throw e
 		}
 
@@ -2777,7 +2899,7 @@ ${sql.stripTrailing()}
 			}
 		}
 		catch (SQLException e) {
-			connection.logger.dump(e, getClass().name + ".write", dataset.objectName, "row:\n${row}\nstatement:\n${wp.statement}")
+			connection.logger.dump(e, getClass().name + ".write", dataset.toString(), "row:\n${row}\nstatement:\n${wp.statement}")
 			wp.error = true
 			throw e
 		}
@@ -2933,7 +3055,7 @@ ${sql.stripTrailing()}
 		if (target.connection != source.connection)
 			throw new DatasetError(target, '#jdbc.different_connections', [source: source.dslNameObject?:source.objectName])
 		
-		def autoMap = ConvertUtils.Object2Boolean(procParams.autoMap, true)
+		def autoMap = BoolUtils.IsValue(procParams.autoMap, true)
 		def map = (procParams.map as Map)?:new HashMap()
 		def keyField = (procParams.keyField as List<String>)?:([] as List<String>)
 		def autoKeyField = keyField.isEmpty()
@@ -2987,19 +3109,16 @@ ${sql.stripTrailing()}
 		String sql = unionDatasetMerge(source, target, mapField as Map<String, String>, keyField, procParams)
 //		println sql
 
-		def ddlOnly = ConvertUtils.Object2Boolean(procParams.ddlOnly, false)
-		target.sysParams.lastSqlStatement = StringUtils.EvalMacroString(sql,
-				target.queryParams() + ((procParams.queryParams as Map)?:new HashMap()), false)
+		def ddlOnly = BoolUtils.IsValue(procParams.ddlOnly)
+		def needCommit = BoolUtils.IsValue(procParams.commit)
+		target.sysParams.lastSqlStatement = formatDMLStatements(sql, procParams.queryParams as Map, needCommit)
 
 		if (!ddlOnly) {
 			def con = jdbcConnection
+			def needTran = (con.isSupportTran && !con.autoCommit && BoolUtils.IsValue(procParams.autoTran, !con.isTran()))
 
-			def autoTran = false
-			if (con.isSupportTran)
-				autoTran = ConvertUtils.Object2Boolean(procParams.autoTran, (connection.tranCount == 0))
-
-			if (autoTran)
-				con.startTran()
+			if (needTran)
+				con.startTran(false, startTransactionDML)
 			try {
 				target.writeRows = 0L
 				target.updateRows = 0L
@@ -3008,14 +3127,14 @@ ${sql.stripTrailing()}
 				target.writeRows = target.updateRows
 			}
 			catch (Exception e) {
-				if (autoTran)
-					con.rollbackTran()
+				if (needTran)
+					con.rollbackTran(false, commitDML)
 
 				throw e
 			}
 
-			if (autoTran)
-				con.commitTran()
+			if (needTran)
+				con.commitTran(false, commitDML)
 		}
 
 		return target.updateRows
@@ -3038,18 +3157,16 @@ ${sql.stripTrailing()}
 				[afterDelete: afterDelete, table: dataset.fullTableName, afterTable: afterTable,
 				 where: where, afterWhere: afterWhere])
 
-		def ddlOnly = ConvertUtils.Object2Boolean(procParams.ddlOnly, false)
-		dataset.sysParams.lastSqlStatement = formatSqlStatements(sql)
+		def ddlOnly = BoolUtils.IsValue(procParams.ddlOnly)
+		def needCommit = BoolUtils.IsValue(procParams.commit)
+		dataset.sysParams.lastSqlStatement = formatDMLStatements(sql, needCommit)
 
 		if (!ddlOnly) {
 			def con = jdbcConnection
-			def autoTran = isSupport(Support.TRANSACTIONAL)
-			if (autoTran) {
-				autoTran = (!con.autoCommit() && !con.isTran())
-			}
+			def needTran = isSupport(Support.TRANSACTIONAL) && !con.autoCommit() && !con.isTran()
 
-			if (autoTran)
-				con.startTran()
+			if (needTran)
+				con.startTran(false, startTransactionDML)
 
 			try {
 				dataset.writeRows = 0L
@@ -3057,13 +3174,13 @@ ${sql.stripTrailing()}
 				dataset.updateRows = executeCommand(sql, [isUpdate: true])
 			}
 			catch (Exception e) {
-				if (autoTran)
-					con.rollbackTran()
+				if (needTran)
+					con.rollbackTran(false, commitDML)
 
 				throw e
 			}
-			if (autoTran)
-				con.commitTran()
+			if (needTran)
+				con.commitTran(false, commitDML)
 		}
 
 		return dataset.updateRows
@@ -3094,10 +3211,10 @@ ${sql.stripTrailing()}
 
 		def sql = sqlExpressionValue('ddlCreateSequence', qp)
 		def ddlOnly = opts.ddlOnly
-		sequence.sysParams.lastSqlStatement = formatSqlStatements(sql)
+		sequence.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
 
 		if (!ddlOnly) {
-			def needTran = (transactionalDDL && !jdbcConnection.autoCommit())
+			def needTran = (isSupport(Support.TRANSACTIONAL) && transactionalDDL && !jdbcConnection.autoCommit())
 			if (needTran)
 				connection.startTran(false, startTransactionDDL)
 			try {
@@ -3126,10 +3243,10 @@ ${sql.stripTrailing()}
 			qp.ifExists = 'IF EXISTS'
 
 		def sql = sqlExpressionValue('ddlDropSequence', qp)
-		sequence.sysParams.lastSqlStatement = formatSqlStatements(sql)
+		sequence.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
 
 		if (!ddlOnly) {
-			def needTran = (transactionalDDL && !jdbcConnection.autoCommit())
+			def needTran = (isSupport(Support.TRANSACTIONAL) && transactionalDDL && !jdbcConnection.autoCommit())
 			if (needTran)
 				connection.startTran(false, startTransactionDDL)
 			try {
@@ -3221,7 +3338,8 @@ FROM {source} {after_from}
 		if (params == null)
 			params = [:]
 
-		def ddlOnly = ConvertUtils.Object2Boolean(params.ddlOnly, false)
+		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
+		def needCommit = BoolUtils.IsValue(params.commit)
 
 		source.tap {
 			if (type == tableType && !ddlOnly && !exists)
@@ -3286,13 +3404,14 @@ FROM {source} {after_from}
 		def sql = syntaxCopyTableTo(source, dest, qParams)
 		sql = StringUtils.EvalMacroString(sql, qParams + ((params.queryParams as Map)?:[:]))
 
-		dest.sysParams.lastSqlStatement = formatSqlStatements(sql)
+		dest.sysParams.lastSqlStatement = formatDMLStatements(sql, needCommit)
 		source.sysParams.lastSqlStatement = dest.lastSqlStatement
 
 		if (!ddlOnly) {
-			def needTran = (transactionalDDL && !jdbcConnection.autoCommit()) && !ddlOnly
+			def needTran = (isSupport(Support.TRANSACTIONAL) && !jdbcConnection.autoCommit() && !jdbcConnection.isTran())
+
 			if (needTran)
-				connection.startTran()
+				connection.startTran(false, startTransactionDML)
 			try {
 				source.readRows = 0L
 				dest.writeRows = 0L
@@ -3303,22 +3422,22 @@ FROM {source} {after_from}
 			}
 			catch (Exception e) {
 				if (needTran)
-					connection.rollbackTran()
+					connection.rollbackTran(false, commitDML)
 
 				throw e
 			}
 			if (needTran)
-				connection.commitTran()
+				connection.commitTran(false, commitDML)
 		}
 
 		return dest.updateRows
 	}
 
-	/** Generate query parameters for script of create schema */
+	/** Prepare parameters for create schema statement */
 	protected Map<String, Object> createSchemaParams(String schemaName, Map<String, Object> createParams) {
 		def res = new HashMap<String, Object>()
 		res.schema = prepareObjectNameWithPrefix(schemaName, tablePrefix, tableEndPrefix)
-		if (isSupport(Support.CREATESCHEMAIFNOTEXIST) && ConvertUtils.Object2Boolean(createParams.ifNotExists, false))
+		if (isSupport(Support.CREATESCHEMAIFNOTEXIST) && BoolUtils.IsValue(createParams.ifNotExists))
 			res.ifNotExists = 'IF NOT EXISTS'
 
 		return res
@@ -3326,13 +3445,13 @@ FROM {source} {after_from}
 
 	/** Create schema in database */
 	@Synchronized
-	void createSchema(String schemaName, Map<String, Object> createParams) {
+	void createSchema(String schemaName, Map createParams) {
 		if (createParams == null)
-			createParams = [:]
+			createParams = new HashMap()
 
-		def ddlOnly = ConvertUtils.Object2Boolean(createParams.ddlOnly, false)
-		def sql = sqlExpressionValue('ddlCreateSchema',
-				createSchemaParams(schemaName, createParams?:(new HashMap<String, Object>())))
+		def ddlOnly = BoolUtils.IsValue(createParams.ddlOnly)
+		def sql = sqlExpressionValue('ddlCreateSchema', createSchemaParams(schemaName, createParams))
+		connection.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
 
 		if (!ddlOnly) {
 			def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
@@ -3350,15 +3469,13 @@ FROM {source} {after_from}
 			if (needTran)
 				connection.commitTran(false, commitDDL)
 		}
-		else
-			connection.sysParams.lastSqlStatement = formatSqlStatements(sql)
 	}
 
 	/** Generate query parameters for script of drop schema */
 	protected Map<String, Object> dropSchemaParams(String schemaName, Map<String, Object> dropParams) {
 		def res = new HashMap<String, Object>()
 		res.schema = prepareObjectNameWithPrefix(schemaName, tablePrefix, tableEndPrefix)
-		if (isSupport(Support.DROPSCHEMAIFEXIST) && ConvertUtils.Object2Boolean(dropParams.ifExists, false))
+		if (isSupport(Support.DROPSCHEMAIFEXIST) && BoolUtils.IsValue(dropParams.ifExists))
 			res.ifExists = 'IF EXISTS'
 
 		return res
@@ -3366,16 +3483,16 @@ FROM {source} {after_from}
 
 	/**  Drop schema from database */
 	@Synchronized
-	void dropSchema(String schemaName, Map<String, Object> dropParams) {
+	void dropSchema(String schemaName, Map dropParams) {
 		if (dropParams == null)
-			dropParams = [:]
+			dropParams = new HashMap()
 
-		def ddlOnly = ConvertUtils.Object2Boolean(dropParams.ddlOnly, false)
-		def sql = sqlExpressionValue('ddlDropSchema',
-				dropSchemaParams(schemaName, dropParams?:(new HashMap<String, Object>())))
+		def ddlOnly = BoolUtils.IsValue(dropParams.ddlOnly)
+		def sql = sqlExpressionValue('ddlDropSchema', dropSchemaParams(schemaName, dropParams))
+		connection.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
 
 		if (!ddlOnly) {
-			def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
+			def needTran = (transactionalDDL && isSupport(Support.TRANSACTIONAL) && !(jdbcConnection.autoCommit()))
 			if (needTran)
 				connection.startTran(false, startTransactionDDL)
 			try {
@@ -3390,8 +3507,6 @@ FROM {source} {after_from}
 			if (needTran)
 				connection.commitTran(false, commitDDL)
 		}
-		else
-			connection.sysParams.lastSqlStatement = formatSqlStatements(sql)
 	}
 
 	/** Create or replace view SQL syntax*/
@@ -3415,13 +3530,15 @@ FROM {source} {after_from}
 		if (dataset.type == JDBCDataset.localTemporaryViewType && !isSupport(Support.LOCAL_TEMPORARY_VIEW))
 			throw new NotSupportError(dataset, 'local temporary views')
 
+		params = params?:new HashMap<>()
+
 		validTableName(dataset as JDBCDataset)
-		def ddlOnly = ConvertUtils.Object2Boolean(params.ddlOnly, false)
-		def sql = sqlExpressionValue('ddlCreateView',
-				createViewParams(dataset, params?:(new HashMap<String, Object>())))
+		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
+		def sql = sqlExpressionValue('ddlCreateView', createViewParams(dataset, params))
+		dataset.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
 
 		if (!ddlOnly) {
-			def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
+			def needTran = (transactionalDDL && isSupport(Support.TRANSACTIONAL) && !(jdbcConnection.autoCommit()))
 			if (needTran)
 				connection.startTran(false, startTransactionDDL)
 			try {
@@ -3437,20 +3554,13 @@ FROM {source} {after_from}
 			if (needTran)
 				connection.commitTran(false, commitDDL)
 		}
-		else
-			dataset.sysParams.lastSqlStatement = formatSqlStatements(sql)
 	}
 
-	/**
-	 * Prepare parameters for creating a view
-	 * @param dataset view object
-	 * @param createParams creation options
-	 * @return generate variables
-	 */
+	/** Prepare parameters for creating view statement */
 	protected Map<String, Object> createViewParams(ViewDataset dataset, Map<String, Object> createParams) {
 		def res = [name: fullNameDataset(dataset)] as Map<String, Object>
 
-		def replace = ConvertUtils.Object2Boolean(createParams.replace, false)
+		def replace = BoolUtils.IsValue(createParams.replace)
 		if (replace && !allowReplaceView)
 			throw new NotSupportError(dataset, 'create or replace views')
 
@@ -3460,7 +3570,7 @@ FROM {source} {after_from}
 		if (isTemporary)
 			res.temporary = 'LOCAL TEMPORARY'
 
-		if (ConvertUtils.Object2Boolean(createParams.ifNotExists, false))
+		if (BoolUtils.IsValue(createParams.ifNotExists))
 			res.ifNotExists = 'IF NOT EXISTS'
 
 		def select = createParams.select as String
@@ -3670,10 +3780,12 @@ FROM {source} {after_from}
 	}
 
 	/** Restart sequence value */
-	void restartSequence(Sequence sequence, Long newValue) {
+	void restartSequence(Sequence sequence, Long newValue, Boolean ddlOnly = false) {
 		def qp = [name: sequence.fullName, value: newValue]
 		def sql = sqlExpressionValue('ddlRestartSequence', qp)
-		def needTran = (transactionalDDL && !(jdbcConnection.autoCommit()))
+		sequence.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
+
+		def needTran = (transactionalDDL && isSupport(Support.TRANSACTIONAL) && !(jdbcConnection.autoCommit()))
 		if (needTran)
 			connection.startTran(false, startTransactionDDL)
 		try {
@@ -3754,5 +3866,325 @@ FROM {source} {after_from}
 			return 'java.sql.Timestamp.valueOf(({field} as java.time.OffsetDateTime).toLocalDateTime())'
 
 		return null
+	}
+
+	/** Map of compatible field type */
+	protected Map<Field.Type, List<Field.Type>> compatibleFieldType
+
+	/** Constraint primary key name */
+	protected String primaryKeyConstraintName(TableDataset table) { null }
+	/** Allow change type for primary key fields */
+	protected Boolean allowChangeTypePrimaryKeyField() { true }
+	/** Detect incompatible type for changed fields */
+	protected Boolean incompatibleTypeForChangeFields(TableDataset table, Map<String, List<DatasetCompareField>> changed) {
+		def res = false
+		if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)) {
+			for (def val in changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)) {
+				def supportTypes = compatibleFieldType.get(val.datasetField.type)
+				if (supportTypes == null)
+					throw new InternalError(table, "Unsupported type \"${val.datasetField.type}\"")
+
+				res = !(val.comparedField.type in supportTypes)
+				if (res)
+					break
+			}
+		}
+
+		return res
+	}
+
+	/** Synchronize structure with table in database */
+	String synchronizeStructure(TableDataset table, Boolean softCheckType,
+								Boolean softCheckNull, Boolean softCheckPK,
+								Boolean checkDefaultExpression,
+								Boolean detectUnnecessaryFields, Boolean recreateTableForIncompatibleType,
+								Boolean ddlOnly) {
+		if (table.field.isEmpty()) {
+			table.retrieveFields()
+			if (table.field.isEmpty())
+				throw new DatasetError(table, '#jdbc.table.fail_read_fields', [table: table.fullTableName])
+		}
+
+		def newLine = '\n'
+		def startScript = new StringBuilder("""/*** START ${table.toString()}: """)
+		def finishScript = """/*** FINISH ${table.toString()} ***/\n"""
+		def res = new StringBuilder()
+
+		if (!table.exists) {
+			startScript.append('CREATE NOT EXISTS TABLE ***/\n')
+			res.append(startScript.toString())
+			table.create(ddlOnly: ddlOnly)
+			res.append(table.lastSqlStatement.trim())
+			res.append('\n')
+			res.append(finishScript)
+			return res.toString()
+		}
+
+		def checkTable = table.cloneDataset() as TableDataset
+		checkTable.retrieveFields()
+		def changed = table.DetectChangeFields(checkTable, table.field, softCheckType, softCheckNull, softCheckPK,
+				checkDefaultExpression, detectUnnecessaryFields)
+		if (changed.isEmpty())
+			return null
+
+		startScript.append('\n')
+		changed.each { code, fields ->
+			startScript.append(code)
+			startScript.append(':\n')
+			fields.each { val ->
+				startScript.append('  ')
+				startScript.append(val)
+				startScript.append('\n')
+			}
+		}
+		startScript.append('*/\n')
+
+		def tableName = table.fullTableName
+		res.append(startScript.toString())
+
+		if (recreateTableForIncompatibleType && incompatibleTypeForChangeFields(table, changed)) {
+			def sb = new StringBuilder()
+			def bufTable = table.cloneDataset() as TableDataset
+			bufTable.tableName = '_GETL_' + tableName + '_'
+			if (bufTable.exists)
+				throw new DatasetError(table, '#el.repository.synch.already_temp_table',
+						[connection: table.connection.toString(), table: table.toString(), buffer_table: bufTable.toString()])
+			bufTable.create(ddlOnly: ddlOnly)
+			sb.append(bufTable.lastSqlStatement.trim())
+			sb.append('\n')
+			table.copyTo(bufTable, null, [ddlOnly: ddlOnly, commit: true])
+			sb.append(table.lastSqlStatement.trim())
+			sb.append('\n')
+			table.drop(ddlOnly: ddlOnly)
+			sb.append(table.lastSqlStatement.trim())
+			sb.append('\n')
+
+			bufTable.renameTo(table.tableName, [ddlOnly: ddlOnly])
+			sb.append(bufTable.lastSqlStatement.trim())
+			sb.append('\n')
+
+			res.append(sb.toString())
+		}
+		else {
+			def sb = new StringBuilder()
+			def isDropPk = false
+			String pkName = null
+			def dropPk = {
+				if (isDropPk)
+					return
+
+				if (checkTable.fieldListKeys.isEmpty())
+					return
+
+				if (!isSupport(Support.PRIMARY_KEY))
+					return
+
+				pkName = prepareObjectNameForSQL(primaryKeyConstraintName(checkTable), checkTable)
+				if (pkName == null)
+					throw new DatasetError(table, '#dataset.fail_read_primary_key_constraint')
+
+				isDropPk = true
+				def oper = sqlExpressionValue('ddlDropConstraint', [tableName: tableName, constraintName: pkName])
+				if (!ddlOnly)
+					executeCommand(oper, [ddlOperator: true])
+				sb.append(formatDDLStatements(oper, ddlOnly))
+				sb.append(newLine)
+			}
+
+			if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_NOT_FOUND)) {
+				changed.get(DatasetCompareField.COMPARE_FIELD_NOT_FOUND).each { val ->
+					def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+					def fieldDesc = generateColumnDefinition(val.comparedField, false, false)
+					def oper = sqlExpressionValue('ddlAddColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
+					if (!ddlOnly)
+						executeCommand(oper, [ddlOperator: true])
+					sb.append(formatDDLStatements(oper, ddlOnly))
+					sb.append(newLine)
+				}
+			}
+
+			if (isSupport(Support.PRIMARY_KEY) && !checkTable.fieldListKeys.isEmpty() &&
+					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) ||
+							(!allowChangeTypePrimaryKeyField() &&
+								(changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.find { it.datasetField.isKey } != null ||
+							(isSupport(Support.NOT_NULL_FIELD) &&
+								changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.find { it.datasetField.isKey && it.comparedField.isNull })))))
+				dropPk()
+
+			def changeLength = {
+				changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)?.each { val ->
+					def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+					def typeName = type2sqlType(val.comparedField, false)
+					def oper = sqlExpressionValue('ddlChangeTypeColumnTable', [tableName: tableName, fieldName: fieldName, typeName: typeName])
+					if (!ddlOnly)
+						executeCommand(oper, [ddlOperator: true])
+					sb.append(formatDDLStatements(oper, ddlOnly))
+					sb.append(newLine)
+				}
+			}
+
+			def changeType = {
+				if (isSupport(Support.COLUMN_CHANGE_TYPE)) {
+					changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.each { val ->
+						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+						def typeName = type2sqlType(val.comparedField, false)
+						def oper = sqlExpressionValue('ddlChangeTypeColumnTable', [tableName: tableName, fieldName: fieldName, typeName: typeName])
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+					}
+				}
+			}
+
+			def changeDefault = {
+				if (isSupport(Support.DEFAULT_VALUE)) {
+					changed.get(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE)?.each { val ->
+						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+						def oper = (val.comparedField.defaultValue != null)?
+								sqlExpressionValue('ddlAddDefaultColumnTable', [tableName: tableName, fieldName: fieldName, fieldDefault: val.comparedField.defaultValue]):
+								sqlExpressionValue('ddlDropDefaultColumnTable', [tableName: tableName, fieldName: fieldName])
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+					}
+				}
+			}
+
+			def changeNull = {
+				if (isSupport(Support.NOT_NULL_FIELD)) {
+					changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.each { val ->
+						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+						def oper = (!val.comparedField.isNull)?
+								sqlExpressionValue('ddlAddNotNullColumnTable', [tableName: tableName, fieldName: fieldName]):
+								sqlExpressionValue('ddlDropNotNullColumnTable', [tableName: tableName, fieldName: fieldName])
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+					}
+				}
+			}
+
+			def useChangeColumnTable = (sqlExpression('ddlChangeColumnTable') != null)
+			if (useChangeColumnTable &&
+				(changed.containsKey(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE) ||
+					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE) && isSupport(Support.COLUMN_CHANGE_TYPE)) ||
+					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE) && isSupport(Support.DEFAULT_VALUE)) ||
+					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE) && isSupport(Support.NOT_NULL_FIELD)))) {
+				def changeFields = [] as List<String>
+				def l1 = changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
+				if (l1 != null)
+					changeFields.addAll(l1)
+				def l2 = changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
+				if (l2 != null)
+					changeFields.addAll(l2)
+				def l3 = changed.get(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
+				if (l3 != null)
+					changeFields.addAll(l3)
+				def l4 = changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
+				if (l4 != null)
+					changeFields.addAll(l4)
+				changeFields = changeFields.unique()
+				table.field.each { field ->
+					if (field.name in changeFields) {
+						def fieldName = prepareObjectNameForSQL(field.name, table)
+						def fieldDesc = generateColumnDefinition(field, false, false)
+						def oper = sqlExpressionValue('ddlChangeColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+					}
+				}
+			}
+			else {
+				changeLength()
+				changeType()
+				changeDefault()
+				changeNull()
+			}
+
+			if (!table.fieldListKeys.isEmpty() && isSupport(Support.PRIMARY_KEY) &&
+					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) || isDropPk)) {
+				if (pkName == null)
+					pkName = prepareObjectNameForSQL(((table.schemaName() != null)?"${table.schemaName()}_":'') + table.tableName + '_primary_key', checkTable)
+                def pkDesc = generatePrimaryKeyDefinition(table, table.createDirective)
+                def oper = sqlExpressionValue('ddlAddConstraint', [tableName: tableName, constraintName: pkName, constraintDesc: pkDesc])
+				if (!ddlOnly)
+					executeCommand(oper, [ddlOperator: true])
+				sb.append(formatDDLStatements(oper, ddlOnly))
+                sb.append(newLine)
+			}
+
+			if (changed.containsKey(DatasetCompareField.COMPARE_UNNECESSARY_FIELD)) {
+				changed.get(DatasetCompareField.COMPARE_UNNECESSARY_FIELD).each { val ->
+					def fieldName = prepareObjectNameForSQL(val.datasetField.name, table)
+					def fieldDesc = generateColumnDefinition(val.datasetField, false)
+					def oper = sqlExpressionValue('ddlDropColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
+					if (!ddlOnly)
+						executeCommand(oper, [ddlOperator: true])
+					sb.append(formatDDLStatements(oper, ddlOnly))
+					sb.append(newLine)
+				}
+			}
+
+			res.append(sb.toString())
+		}
+
+		res.append(finishScript)
+		return res.toString()
+	}
+
+	protected Map<String, Object> renameTableToParams(TableDataset table, String newName, Map params) {
+		return [tableName: table.fullTableName, newTableName: prepareTableNameForSQL(newName, table)]
+	}
+
+	protected String formatDDLStatements(String sql, Boolean ddlOnly) {
+		def oper = formatSqlStatements(sql)
+		if (ddlOnly && transactionalDDL && isSupport(Support.TRANSACTIONAL) && !jdbcConnection.autoCommit())
+			oper += '\n' + formatSqlStatements('COMMIT')
+
+		return oper
+	}
+
+	protected String formatDDLStatements(String expr, Map params, Boolean ddlOnly) {
+		return formatDDLStatements(StringUtils.EvalMacroString(expr, params?:[:], false), ddlOnly)
+	}
+
+	protected String formatDMLStatements(String sql, Boolean needCommit) {
+		def oper = formatSqlStatements(sql)
+		if (needCommit && transactionalDDL && isSupport(Support.TRANSACTIONAL) && !jdbcConnection.autoCommit())
+			oper += '\n' + formatSqlStatements('COMMIT')
+
+		return oper
+	}
+
+	protected String formatDMLStatements(String expr, Map params, Boolean needCommit) {
+		return formatDMLStatements(StringUtils.EvalMacroString(expr, params?:[:], false), needCommit)
+	}
+
+	protected void renameTableTo(TableDataset table, String newName, Map params) {
+		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
+		def sql = sqlExpressionValue('ddlRenameTable', renameTableToParams(table, newName, params))
+		table.sysParams.lastSqlStatement = formatDDLStatements(sql, ddlOnly)
+
+		if (!ddlOnly) {
+			def needTran = (transactionalDDL && isSupport(Support.TRANSACTIONAL) && !(jdbcConnection.autoCommit()))
+			if (needTran)
+				connection.startTran(false, startTransactionDDL)
+			try {
+				executeCommand(sql)
+			}
+			catch (Exception e) {
+				if (needTran)
+					connection.rollbackTran(false, commitDDL)
+
+				throw e
+			}
+			if (needTran)
+				connection.commitTran(false, commitDDL)
+		}
 	}
 }

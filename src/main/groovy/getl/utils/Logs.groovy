@@ -804,7 +804,7 @@ class Logs {
 	@Synchronized('lockLog')
 	void dump(Throwable error, String typeObject, String nameObject, Object data) {
 		if (fileNameHandler == null) {
-			severe("Can not save dump, required logFileName!")
+			severe('Can not save dump, required logFileName')
 			println data.toString()
 			return
 		}
@@ -814,7 +814,7 @@ class Logs {
 			errorText = (error instanceof ExceptionGETL)?error.message:StringUtils.CutStrByLines(error.message, 1, 1024)
 
 		def fn = dumpFile()
-		fine("Saving dump information to file $fn, error: $errorText")
+		fine("Saving dump information to file \"$fn\", error: $errorText")
 		FileUtils.ValidFilePath(fn)
 
 		File df = new File(fn)
@@ -831,7 +831,7 @@ class Logs {
 				error.printStackTrace(w)
 			}
 			if (data != null) {
-				w.println "Generated script:"
+				w.println 'Debug information:'
 				w.println data.toString()
 			}
 			w.println "\n\n\n"

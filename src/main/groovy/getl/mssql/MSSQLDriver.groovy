@@ -45,10 +45,22 @@ class MSSQLDriver extends JDBCDriver {
 		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
 		sqlExpressions.ddlStartTran = 'BEGIN TRANSACTION'
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
+		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} {typeName}'
+
+		sqlTypeMap.DOUBLE.name = 'float'
+		sqlTypeMap.BOOLEAN.name = 'bit'
+		sqlTypeMap.BLOB.name = 'varbinary'
+		sqlTypeMap.BLOB.useLength = sqlTypeUse.ALWAYS
+		sqlTypeMap.BLOB.defaultLength = 8000
+		sqlTypeMap.TEXT.name = 'text'
+		sqlTypeMap.TEXT.useLength = sqlTypeUse.NEVER
+		sqlTypeMap.DATETIME.name = 'datetime'
+		sqlTypeMap.TIMESTAMP_WITH_TIMEZONE.name = 'datetimeoffset'
+		sqlTypeMap.UUID.name = 'uniqueidentifier'
 
 		sqlExpressionSqlTimestampFormat = 'yyyy-MM-dd HH:mm:ss.SSS'
 
-		ruleQuotedWords.add('DOUBLE')
+		driverSqlKeywords.addAll('[DOUBLE]')
 
 		ruleEscapedText.put('\'', '\'\'')
 		ruleEscapedText.remove('\n')
@@ -58,7 +70,7 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	List<Support> supported() {
 		def res = super.supported() +
-				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE,
+				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE,
 				 Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION]
 		/*if (serverVersion > 12)
 			res.addAll([Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST])*/
@@ -73,24 +85,6 @@ class MSSQLDriver extends JDBCDriver {
 				[Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
 				 Driver.Operation.CREATE]
 	}*/
-
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	@Override
-	Map<String, Map<String, Object>> getSqlType () {
-		def res = super.getSqlType()
-		res.DOUBLE.name = 'float'
-		res.BOOLEAN.name = 'bit'
-		res.BLOB.name = 'varbinary'
-		res.BLOB.useLength = JDBCDriver.sqlTypeUse.ALWAYS
-		res.BLOB.defaultLength = 8000
-		res.TEXT.name = 'text'
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
-		res.DATETIME.name = 'datetime'
-		res.TIMESTAMP_WITH_TIMEZONE.name = 'datetimeoffset'
-		res.UUID.name = 'uniqueidentifier'
-
-		return res
-	}
 
 	@Override
 	Boolean timestamptzReadAsTimestamp() { return true }
