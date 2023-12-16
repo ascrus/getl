@@ -514,7 +514,7 @@ class HistoryPointManager implements GetlRepository, ObjectTags {
 	Object getConvertNullValue() { (sourceType == identitySourceType)?identityMinValue:timestampMinValue }
 
 	/** Объект синхронизации работы с менеджером */
-	static private Object operationLock = new Object()
+	private final Object operationLock = new Object()
 
 	/** Таблица для сохранения точек */
 	private TableDataset saveTable

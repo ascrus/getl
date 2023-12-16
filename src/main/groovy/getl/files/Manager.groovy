@@ -1161,7 +1161,7 @@ abstract class Manager implements GetlRepository, ObjectTags {
 	@JsonIgnore
 	Long getSizeFileList() { sizeFileList }
 
-	static private Object operationLock = new Object()
+	private final Object operationLock = new Object()
 
 	@Synchronized('operationLock')
 	protected FileManagerList listDirSync(String mask = null) {

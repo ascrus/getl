@@ -12,6 +12,7 @@ import getl.utils.FileUtils
 import getl.utils.MapUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 
 /**
  * File text procession class
@@ -88,6 +89,7 @@ class FileTextSpec extends BaseSpec {
 
     /** Write text buffer to file */
     @SuppressWarnings('SpellCheckingInspection')
+    @Synchronized
     void save() {
         if (!buffer.exists())
             return
@@ -131,12 +133,14 @@ class FileTextSpec extends BaseSpec {
     }
 
     /** Clear current text buffer */
+    @Synchronized
     void clear() {
         buffer.delete()
         logBuffer = new StringBuilder()
     }
 
     /** Write text and line feed */
+    @Synchronized
     void writeln(String text) {
         buffer.append(text)
         buffer.append('\n')
@@ -157,6 +161,7 @@ class FileTextSpec extends BaseSpec {
     }
 
     /** Write string */
+    @Synchronized
     void write(String text) {
         buffer.append(text)
         addToLogBuffer(text)
@@ -168,6 +173,7 @@ class FileTextSpec extends BaseSpec {
      * @param convertVars convert ${variable} to ${vars.variable}
      * @param trimMap
      */
+    @Synchronized
     void write(Map data, Boolean convertVars = false, Boolean trimMap = false) {
         StringBuilder sb = new StringBuilder()
         ConfigSlurper.SaveMap(data, sb, convertVars, trimMap)
@@ -181,6 +187,7 @@ class FileTextSpec extends BaseSpec {
      * @param convertVars convert $ {variable} to $ {vars.variable}
      * @param cl configuration code
      */
+    @Synchronized
     void write(Boolean convertVars = false, Closure cl) {
         write(MapUtils.Closure2Map(cl), convertVars)
     }
@@ -194,6 +201,7 @@ class FileTextSpec extends BaseSpec {
     }
 
     /** Read file to text buffer */
+    @Synchronized
     String readToBuffer(String sourceFileName = null, String encode = null) {
         def res = new File(sourceFileName?:filePath()).getText(encode?:codePage)
         buffer.append(res)
@@ -205,6 +213,7 @@ class FileTextSpec extends BaseSpec {
      * Delete file
      * @param throwIfNotExists throw if file not exists
      */
+    @Synchronized
     void delete(Boolean throwIfNotExists = true) {
         def file = new File(filePath())
         if (!file.exists()) {

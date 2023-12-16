@@ -21,6 +21,7 @@ import getl.utils.CloneUtils
 import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.EMailer
+import getl.utils.Logs
 import getl.utils.StringUtils
 import groovy.time.Duration
 import groovy.time.TimeCategory
@@ -520,8 +521,11 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 queryParams: [dt: currentDateTime],
                 order: ['is_correct DESC', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC', 'open_incident', 'rule_name', 'code']) { row ->
             def rule = findRule(row.rule_name as String)
-            if (rule == null)
-                throw new ModelError(this, '#dsl.model.monitor_rules.invalid_rule', [rule: row.rule_name, table: statusTableName])
+            if (rule == null) {
+                Logs.Warning(this, '#dsl.model.monitor_rules.invalid_rule', [rule: row.rule_name, table: statusTableName])
+                //throw new ModelError(this, '#dsl.model.monitor_rules.invalid_rule', [rule: row.rule_name, table: statusTableName])
+                return
+            }
 
             Integer groupError
             if (row.is_notification as Boolean && row.is_correct as Boolean)

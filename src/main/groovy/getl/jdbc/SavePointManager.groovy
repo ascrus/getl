@@ -471,7 +471,7 @@ class SavePointManager implements GetlRepository, WithConnection {
 			saveValueSynch(source, newValue, format)
 	}
 
-	static private Object operationLock = new Object()
+	private final Object operationLock = new Object()
 
 	/**
 	 * Set new save point value to source

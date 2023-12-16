@@ -591,7 +591,7 @@ class JDBCDriver extends Driver {
 		return conParams
 	}
 
-	@Synchronized
+	@Synchronized('operationLock')
 	Sql newSql(Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
 		def javaDriver = driverClass.getConstructor().newInstance() as java.sql.Driver
@@ -1074,6 +1074,7 @@ class JDBCDriver extends Driver {
 	}
 
 	/** Read primary key for table */
+	@Synchronized('operationLock')
 	protected List<String> readPrimaryKey(Map<String, String> names) {
 		def schemaName = names.schemaName
 		def tabName = names.tableName
@@ -1170,7 +1171,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 
-	@Synchronized
+	@Synchronized('operationLock')
 	@Override
 	void commitTran(Boolean useSqlOperator = false) {
 		def con = jdbcConnection
@@ -1311,7 +1312,7 @@ class JDBCDriver extends Driver {
 		return res
 	}
 
-	@Synchronized
+	@Synchronized('operationLock')
 	@Override
 	void createDataset(Dataset dataset, Map params) {
 		def ds = dataset as JDBCDataset
@@ -1737,7 +1738,7 @@ class JDBCDriver extends Driver {
 		]
 	}
 
-	@Synchronized
+	@Synchronized('operationLock')
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
 		def ds = dataset as JDBCDataset
@@ -2192,7 +2193,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 
-	protected final Object operationLock = new Object()
+	private final Object operationLock = new Object()
 
 	@Synchronized('operationLock')
 	protected void saveToHistory(String sql) {
@@ -3201,7 +3202,7 @@ ${sql.stripTrailing()}
 	 * @param name full sequence name
 	 * @param ifNotExists create if not exists
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	protected void createSequence(Sequence sequence, Boolean ifNotExists, SequenceCreateSpec opts) {
 		def qp = [name: sequence.fullName] as Map<String, Object>
 		if (ifNotExists && isSupport(Support.CREATESEQUENCEIFNOTEXISTS))
@@ -3236,7 +3237,7 @@ ${sql.stripTrailing()}
 	 * @param name full sequence name
 	 * @param ifExists drop if exists
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	protected void dropSequence(Sequence sequence, Boolean ifExists, Boolean ddlOnly) {
 		def qp = [name: sequence.fullName] as Map<String, Object>
 		if (ifExists && isSupport(Support.DROPSEQUENCEIFEXISTS))
@@ -3444,7 +3445,7 @@ FROM {source} {after_from}
 	}
 
 	/** Create schema in database */
-	@Synchronized
+	@Synchronized('operationLock')
 	void createSchema(String schemaName, Map createParams) {
 		if (createParams == null)
 			createParams = new HashMap()
@@ -3482,7 +3483,7 @@ FROM {source} {after_from}
 	}
 
 	/**  Drop schema from database */
-	@Synchronized
+	@Synchronized('operationLock')
 	void dropSchema(String schemaName, Map dropParams) {
 		if (dropParams == null)
 			dropParams = new HashMap()
@@ -3521,7 +3522,7 @@ FROM {source} {after_from}
 	 * @param params creation options
 	 */
 	@SuppressWarnings('UnnecessaryQualifiedReference')
-	@Synchronized
+	@Synchronized('operationLock')
 	void createView(ViewDataset dataset, Map params) {
 		if (!isSupport(Support.VIEW))
 			throw new NotSupportError(dataset, 'views')
@@ -3780,6 +3781,7 @@ FROM {source} {after_from}
 	}
 
 	/** Restart sequence value */
+	@Synchronized('operationLock')
 	void restartSequence(Sequence sequence, Long newValue, Boolean ddlOnly = false) {
 		def qp = [name: sequence.fullName, value: newValue]
 		def sql = sqlExpressionValue('ddlRestartSequence', qp)
@@ -4155,7 +4157,7 @@ FROM {source} {after_from}
 
 	protected String formatDMLStatements(String sql, Boolean needCommit) {
 		def oper = formatSqlStatements(sql)
-		if (needCommit && transactionalDDL && isSupport(Support.TRANSACTIONAL) && !jdbcConnection.autoCommit())
+		if (needCommit && isSupport(Support.TRANSACTIONAL) && !jdbcConnection.autoCommit())
 			oper += '\n' + formatSqlStatements('COMMIT')
 
 		return oper
@@ -4165,6 +4167,7 @@ FROM {source} {after_from}
 		return formatDMLStatements(StringUtils.EvalMacroString(expr, params?:[:], false), needCommit)
 	}
 
+	@Synchronized('operationLock')
 	protected void renameTableTo(TableDataset table, String newName, Map params) {
 		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
 		def sql = sqlExpressionValue('ddlRenameTable', renameTableToParams(table, newName, params))

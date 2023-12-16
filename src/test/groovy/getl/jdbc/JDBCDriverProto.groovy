@@ -1198,7 +1198,7 @@ IF ('{support_update}' = 'true') DO {
             field('dt') { type = timestampFieldType }
             field('unknown_field') { type = integerFieldType }
 
-            def sqlCreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkValidationExpression: true,
+            def sqlCreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
                     detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
 
             println sqlCreate
@@ -1211,7 +1211,7 @@ IF ('{support_update}' = 'true') DO {
             removeField('unknown_field')
 
             con.disconnect()
-            def sqlAlter = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkValidationExpression: true,
+            def sqlAlter = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
                     detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
             println sqlAlter
             //sql.exec(true, sqlAlter)
@@ -1219,10 +1219,10 @@ IF ('{support_update}' = 'true') DO {
             if (table.connection.driver.isOperation(Driver.Operation.RENAME_TABLE)) {
                 field('value') { type = doubleFieldType }
                 con.disconnect()
-                def sqlRecreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkValidationExpression: true,
+                def sqlRecreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
                         detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
                 println sqlRecreate
-                sql.exec(true, sqlRecreate)
+                //sql.exec(true, sqlRecreate)
             }
         }
 
