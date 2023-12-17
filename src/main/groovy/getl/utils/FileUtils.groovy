@@ -13,6 +13,7 @@ import getl.lang.Getl
 import getl.proc.Executor
 import getl.tfs.TFS
 import groovy.transform.CompileStatic
+import groovy.transform.NamedVariant
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -1483,9 +1484,11 @@ class FileUtils {
 	 * @param errorWhenUndefined throw error if no variables found from the path
 	 * @param useResource allow used resource and repository files path
 	 * @param getl current Getl instance
+	 * @param sysVars use system variables date, time and datetime
 	 * @return transformed path
 	 */
-	static String TransformFilePath(String path, Boolean errorWhenUndefined = true, Boolean useResource = true, Getl getl = null) {
+	@NamedVariant
+	static String TransformFilePath(String path, Boolean errorWhenUndefined = true, Boolean useResource = true, Getl getl = null, Boolean sysVars = false) {
 		if (path == null)
 			return null
 
@@ -1504,6 +1507,16 @@ class FileUtils {
 
 			p.putAll(getl.getlSystemProperties)
 		}
+
+		if (sysVars) {
+			def curDt = DateUtils.now
+			p.putAll([date: DateUtils.FormatDate('yyyy-MM-dd', curDt), time: DateUtils.FormatDate('HH-mm-ss', curDt),
+					  datetime: DateUtils.FormatDate('yyyy-MM-dd_HH-mm-ss', curDt)])
+
+			if (getl != null)
+				p.putAll(getl.scriptExtendedVars)
+		}
+
 		return StringUtils.EvalMacroString(path, p, errorWhenUndefined)
 	}
 
@@ -1511,10 +1524,11 @@ class FileUtils {
 	 * Transform path based on OS environment variables
 	 * @param path original file path
 	 * @param getl current Getl instance
+	 * @param sysVars use system variables date, time and datetime
 	 * @return transformed path
 	 */
-	static String TransformFilePath(String path, Getl getl) {
-		return TransformFilePath(path, true, getl)
+	static String TransformFilePath(String path, Getl getl, Boolean sysVars = false) {
+		return TransformFilePath(path, true, true, getl, sysVars)
 	}
 
 	/**
@@ -1522,10 +1536,11 @@ class FileUtils {
 	 * @param path original file path
 	 * @param errorWhenUndefined throw error if no variables found from the path
 	 * @param getl current Getl instance
+	 * @param sysVars use system variables date, time and datetime
 	 * @return transformed path
 	 */
-	static String TransformFilePath(String path, Boolean errorWhenUndefined, Getl getl) {
-		return TransformFilePath(path, errorWhenUndefined, true, getl)
+	static String TransformFilePath(String path, Boolean errorWhenUndefined, Getl getl, Boolean sysVars = false) {
+		return TransformFilePath(path, errorWhenUndefined, true, getl, sysVars)
 	}
 
 	/**
