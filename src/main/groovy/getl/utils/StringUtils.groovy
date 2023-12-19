@@ -83,12 +83,12 @@ class StringUtils {
 	static private final Pattern EvalMacroStringPattern2 = Pattern.compile('[%]([^%]+)[%]')
 
 	/**
-	 * Set for string {variables}
+	 * Parse text for variables
 	 * @param value parsing string
-	 * @param vars variables value
+	 * @param vars variable values
 	 * @param errorWhenUndefined throw an error if non-passed parameters are found in the string
 	 * @param formatValue value formatting code
-	 * @return converted string
+	 * @return Parsed text
 	 */
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true,

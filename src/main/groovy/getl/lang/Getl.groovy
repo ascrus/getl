@@ -5803,6 +5803,29 @@ Examples:
     }
 
     /**
+     * Parse text for variables
+     * @param value parsing string
+     * @param vars variable values
+     * @param errorWhenUndefined throw an error if non-passed parameters are found in the string
+     * @param formatValue value formatting code
+     * @return Parsed text
+     */
+    static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true, Closure<Object> formatValue = null) {
+        return StringUtils.EvalMacroString(value, vars, errorWhenUndefined, formatValue)
+    }
+
+    /**
+     * Transform path based on OS environment variables or resource/repository directories
+     * @param path file path
+     * @param errorWhenUndefined throw error if no variables found from the path
+     * @param sysVars use system variables date, time and datetime
+     * @return transformed path
+     */
+    String TransformFilePath(String path, Boolean errorWhenUndefined = true, Boolean sysVars = false) {
+        return FileUtils.TransformFilePath(path, errorWhenUndefined, this, sysVars)
+    }
+
+    /**
      * Attach local data for dataset processing
      * @param dataset destination dataset
      * @param data local data

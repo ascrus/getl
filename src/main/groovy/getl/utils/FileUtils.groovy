@@ -1480,7 +1480,7 @@ class FileUtils {
 
 	/**
 	 * Transform path based on OS environment variables or resource/repository directories
-	 * @param path original file path
+	 * @param path file path
 	 * @param errorWhenUndefined throw error if no variables found from the path
 	 * @param useResource allow used resource and repository files path
 	 * @param getl current Getl instance
@@ -1491,13 +1491,6 @@ class FileUtils {
 	static String TransformFilePath(String path, Boolean errorWhenUndefined = true, Boolean useResource = true, Getl getl = null, Boolean sysVars = false) {
 		if (path == null)
 			return null
-
-		if (useResource) {
-			if (getl != null && IsRepositoryFileName(path))
-				return ResourceFileName(path, getl)
-			if (IsResourceFileName(path, false))
-				return ResourceFileName(path)
-		}
 
 		def p = (['#TEMPDIR': SystemTempDir()] + Config.SystemProps()) as Map<String, Object>
 		if (getl != null) {
@@ -1513,16 +1506,26 @@ class FileUtils {
 			p.putAll([date: DateUtils.FormatDate('yyyy-MM-dd', curDt), time: DateUtils.FormatDate('HH-mm-ss', curDt),
 					  datetime: DateUtils.FormatDate('yyyy-MM-dd_HH-mm-ss', curDt)])
 
-			if (getl != null)
+			if (getl != null) {
+				p.put('environment', getl.configuration.environment)
 				p.putAll(getl.scriptExtendedVars)
+			}
 		}
 
-		return StringUtils.EvalMacroString(path, p, errorWhenUndefined)
+		def res = StringUtils.EvalMacroString(path, p, errorWhenUndefined)
+		if (useResource) {
+			if (getl != null && IsRepositoryFileName(res))
+				res = ResourceFileName(res, getl)
+			else if (IsResourceFileName(res, false))
+				res = ResourceFileName(res)
+		}
+
+		return res
 	}
 
 	/**
 	 * Transform path based on OS environment variables
-	 * @param path original file path
+	 * @param path file path
 	 * @param getl current Getl instance
 	 * @param sysVars use system variables date, time and datetime
 	 * @return transformed path
@@ -1533,7 +1536,7 @@ class FileUtils {
 
 	/**
 	 * Transform path based on OS environment variables or resource/repository directories
-	 * @param path original file path
+	 * @param path file path
 	 * @param errorWhenUndefined throw error if no variables found from the path
 	 * @param getl current Getl instance
 	 * @param sysVars use system variables date, time and datetime
