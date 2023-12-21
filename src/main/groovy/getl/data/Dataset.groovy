@@ -570,7 +570,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	/**
 	 * Valid connection value
 	 */
-	void validConnection (Boolean connecting = true) {
+	void validConnection(Boolean connecting = true) {
 		if (connection == null)
 			throw new RequiredParameterError(this, 'connection')
 
@@ -753,7 +753,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	 * Create new dataset container
 	 */
 	void create(Map procParams = new HashMap()) {
-		validConnection()
+		validConnection(false)
 		if (!connection.driver.isOperation(Driver.Operation.CREATE))
 			throw new NotSupportError(this, 'create')
 
@@ -778,7 +778,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	 * Drop exists dataset container
 	 */
 	void drop(Map procParams = new HashMap()) {
-		validConnection()
+		validConnection(false)
 		if (!connection.driver.isOperation(Driver.Operation.DROP))
 			throw new NotSupportError(this, 'drop')
 		
@@ -802,7 +802,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 	 * Clear data of dataset
 	 */
 	void truncate(Map procParams = new HashMap()) {
-		validConnection()
+		validConnection(false)
 
 		if (procParams == null)
 			procParams = new HashMap()

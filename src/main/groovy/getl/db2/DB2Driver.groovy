@@ -31,8 +31,8 @@ class DB2Driver extends JDBCDriver {
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Support.COLUMN_CHANGE_TYPE,
-				 Driver.Support.INDEX, Support.INDEXFORTEMPTABLE, Driver.Support.TIME, Driver.Support.DATE]
+				[Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.COLUMN_CHANGE_TYPE,
+				 Support.INDEX, Support.INDEXFORTEMPTABLE, Support.TIME, Support.DATE]
 	}
 
 	/*@SuppressWarnings("UnnecessaryQualifiedReference")

@@ -81,7 +81,8 @@ end;'''
 				[Support.SELECT_WITHOUT_FROM, Support.BOOLEAN]
 
 		if (jdbcConnection.serverMajorVersion > 21)
-			res.addAll([Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST])
+			res.addAll([Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST,
+						Support.CREATEVIEWIFNOTEXISTS, Support.DROPVIEWIFEXISTS, Support.CREATESEQUENCEIFNOTEXISTS, Support.DROPSEQUENCEIFEXISTS])
 
 		return res
 	}

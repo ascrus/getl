@@ -1417,6 +1417,7 @@ class JDBCDriver extends Driver {
 				if (transactionalDDL && !(con.autoCommit()))
 					sbCommands.append(formatSqlStatements('COMMIT') + '\n')*/
 				sbCommands.append(formatDDLStatements(sqlCodeCT, p.queryParams as Map, true))
+				sbCommands.append('\n')
 			}
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
@@ -1444,6 +1445,7 @@ class JDBCDriver extends Driver {
 						if (transactionalDDL && !(con.autoCommit()))
 							sbCommands.append(formatSqlStatements('COMMIT') + '\n')*/
 						sbCommands.append(formatDDLStatements(sqlCodeCI, p.queryParams as Map, true))
+						sbCommands.append('\n')
 					}
 				}
 			}
@@ -1734,7 +1736,7 @@ class JDBCDriver extends Driver {
 		return [
 				tableName: fullNameDataset(dataset),
 				type: type,
-				ifExists: (validExists && isSupport(Support.DROPIFEXIST))?'IF EXISTS':''
+				ifExists: (validExists)?'IF EXISTS':''
 		]
 	}
 
@@ -1754,16 +1756,16 @@ class JDBCDriver extends Driver {
 		if (type == null)
 			throw new NotSupportError(ds, 'drop dataset')
 
-		def validExists = BoolUtils.IsValue(params.ifExists)
-		if (validExists && !isSupport(Support.DROPIFEXIST)) {
-			if (!isTable(ds))
-				throw new NotSupportError(ds, 'drop if exists')
-			if (!(ds as TableDataset).exists)
-				return
-		}
-
 		def con = jdbcConnection
 		def ddlOnly = BoolUtils.IsValue(params.ddlOnly)
+
+		def validExists = BoolUtils.IsValue(params.ifExists)
+		if (validExists && !ddlOnly) {
+			if ((type == 'TABLE' && !isSupport(Support.DROPIFEXIST)) || (type == 'VIEW' && !isSupport(Support.DROPVIEWIFEXISTS)))
+				throw new NotSupportError(ds, 'drop if exists')
+			/*if (!(ds as TableDataset).exists)
+				return*/
+		}
 
 		def varsDts = dropTableParams(ds, type, validExists, params)
 		def sql = sqlExpressionValue('ddlDrop', varsDts)
@@ -2243,6 +2245,8 @@ ${sql.stripTrailing()}
 
 		if (params == null)
 			params = new HashMap()
+
+		jdbcConnection.tryConnect()
 
 		def con = jdbcConnection
 		def ddlOperator = BoolUtils.IsValue(params.ddlOperator)
@@ -3204,6 +3208,9 @@ ${sql.stripTrailing()}
 	 */
 	@Synchronized('operationLock')
 	protected void createSequence(Sequence sequence, Boolean ifNotExists, SequenceCreateSpec opts) {
+		if (!isSupport(Support.SEQUENCE))
+			throw new NotSupportError(sequence, 'SEQUENCE')
+
 		def qp = [name: sequence.fullName] as Map<String, Object>
 		if (ifNotExists && isSupport(Support.CREATESEQUENCEIFNOTEXISTS))
 			qp.ifNotExists = 'IF NOT EXISTS'
@@ -3239,6 +3246,9 @@ ${sql.stripTrailing()}
 	 */
 	@Synchronized('operationLock')
 	protected void dropSequence(Sequence sequence, Boolean ifExists, Boolean ddlOnly) {
+		if (!isSupport(Support.SEQUENCE))
+			throw new NotSupportError(sequence, 'SEQUENCE')
+
 		def qp = [name: sequence.fullName] as Map<String, Object>
 		if (ifExists && isSupport(Support.DROPSEQUENCEIFEXISTS))
 			qp.ifExists = 'IF EXISTS'
@@ -3543,7 +3553,7 @@ FROM {source} {after_from}
 			if (needTran)
 				connection.startTran(false, startTransactionDDL)
 			try {
-				dataset.currentJDBCConnection.executeCommand(sql)
+				executeCommand(sql)
 			}
 			catch (Exception e) {
 				if (needTran)

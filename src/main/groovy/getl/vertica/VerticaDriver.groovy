@@ -78,10 +78,10 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	List<Support> supported() {
         return super.supported() +
-				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE,
+				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.TIMESTAMP_WITH_TIMEZONE,
                  Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE,
-				 Support.TIMESTAMP_WITH_TIMEZONE, Support.CREATEIFNOTEXIST, Support.DROPIFEXIST,
-				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
+				 Support.CREATEIFNOTEXIST, Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
+				 Support.CREATEVIEWIFNOTEXISTS, Support.DROPVIEWIFEXISTS,
 				 Support.BULKLOADMANYFILES, Support.BULKESCAPED, Support.BULKGZ, Support.BULKNULLASVALUE,
 				 Support.START_TRANSACTION, Support.LOCAL_TEMPORARY_VIEW /*, Support.ARRAY*/]
     }
@@ -884,7 +884,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected Map<String, Object> dropTableParams(JDBCDataset dataset, String type, Boolean validExists, Map<String, Object> params) {
 		def res = super.dropTableParams(dataset, type, validExists, params)
-		if (params.cascade == null)
+		if (params.cascade == null && type == 'TABLE')
 			res.cascade = 'CASCADE'
 
 		return res

@@ -70,10 +70,9 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	List<Support> supported() {
 		def res = super.supported() +
-				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE,
-				 Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION]
-		/*if (serverVersion > 12)
-			res.addAll([Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST])*/
+				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE,
+				 Support.COLUMN_CHANGE_TYPE, Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION,
+				 Support.DROPIFEXIST, Support.DROPINDEXIFEXIST, Support.DROPSCHEMAIFEXIST, Support.DROPSEQUENCEIFEXISTS, Support.DROPVIEWIFEXISTS]
 
 		return res
 	}

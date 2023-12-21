@@ -66,7 +66,7 @@ class FirebirdDriver extends JDBCDriver {
     List<Driver.Support> supported() {
         return super.supported() +
             [Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.TIME, Support.DATE,
-             Support.TIMESTAMP_WITH_TIMEZONE, Support.COLUMN_CHANGE_TYPE, Support.AUTO_INCREMENT, Support.CREATEIFNOTEXIST] -
+             Support.TIMESTAMP_WITH_TIMEZONE, Support.COLUMN_CHANGE_TYPE, Support.AUTO_INCREMENT] -
             [Support.DATABASE, Support.SCHEMA, Support.SELECT_WITHOUT_FROM]
     }
 

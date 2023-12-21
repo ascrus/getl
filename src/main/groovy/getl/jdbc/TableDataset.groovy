@@ -150,7 +150,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Merge rows from other dataset */
 	Long unionDataset(Map procParams = new HashMap()) {
-		validConnection()
+		validConnection(false)
 		validTableName()
 
 		if (procParams == null)
@@ -225,7 +225,7 @@ class TableDataset extends JDBCDataset {
 	 * @param procParams parameters
 	 */
 	Long deleteRows(Map procParams = new HashMap()) {
-		validConnection()
+		validConnection(false)
 		validTableName()
 
 		procParams = procParams?:new HashMap()
@@ -922,7 +922,7 @@ class TableDataset extends JDBCDataset {
 		procParams = procParams?:new HashMap()
 		methodParams.validation('renameTo', procParams, [connection.driver.methodParams.params('renameTableTo')])
 
-		validConnection()
+		validConnection(false)
 		validTableName()
 
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))

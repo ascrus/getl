@@ -76,12 +76,12 @@ class PostgreSQLDriver extends JDBCDriver {
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.LOCAL_TEMPORARY, Support.START_TRANSACTION,
-				 Driver.Support.SEQUENCE, Driver.Support.CLOB, Driver.Support.INDEX, Support.INDEXFORTEMPTABLE,
-				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Support.COLUMN_CHANGE_TYPE,
-				 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST,
-				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Driver.Support.AUTO_INCREMENT,
-				 Driver.Support.BLOB, Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.ARRAY]
+				[Support.LOCAL_TEMPORARY, Support.START_TRANSACTION,
+				 Support.SEQUENCE, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE,
+				 Support.UUID, Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE,
+				 Support.CREATEIFNOTEXIST, Support.DROPIFEXIST, Support.CREATEINDEXIFNOTEXIST, Support.DROPINDEXIFEXIST,
+				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.CREATESEQUENCEIFNOTEXISTS, Support.DROPSEQUENCEIFEXISTS, Support.DROPVIEWIFEXISTS,
+				 Support.AUTO_INCREMENT, Support.BLOB, Support.TIMESTAMP_WITH_TIMEZONE, Support.ARRAY]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -509,7 +509,7 @@ WHERE
 	@Override
 	protected Map<String, Object> dropTableParams(JDBCDataset dataset, String type, Boolean validExists, Map<String, Object> params) {
 		def res = super.dropTableParams(dataset, type, validExists, params)
-		if (params.cascade == null)
+		if (params.cascade == null && type == 'TABLE')
 			res.cascade = 'CASCADE'
 
 		return res

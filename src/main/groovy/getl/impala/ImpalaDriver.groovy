@@ -77,7 +77,7 @@ class ImpalaDriver extends JDBCDriver {
     List<Driver.Support> supported() {
         return super.supported() +
                 [Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
-                 Driver.Support.EXTERNAL, Driver.Support.BULKLOADMANYFILES] -
+                 Support.CREATEVIEWIFNOTEXISTS, Support.DROPVIEWIFEXISTS, Driver.Support.EXTERNAL, Driver.Support.BULKLOADMANYFILES] -
                 [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD,
                  Driver.Support.CHECK_FIELD, Driver.Support.SELECT_WITHOUT_FROM, Driver.Support.TRANSACTIONAL]
     }

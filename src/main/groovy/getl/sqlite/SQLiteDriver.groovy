@@ -41,9 +41,10 @@ class SQLiteDriver extends JDBCDriver {
 
     List<Driver.Support> supported() {
         super.supported() +
-                [Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.INDEXFORTEMPTABLE, Driver.Support.LOCAL_TEMPORARY,
-                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST,
-                 Driver.Support.DATE, Driver.Support.TIME] - [Driver.Support.SCHEMA]
+                [Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.LOCAL_TEMPORARY,
+                 Support.CREATEIFNOTEXIST, Support.DROPIFEXIST, Support.CREATEINDEXIFNOTEXIST, Support.DROPINDEXIFEXIST,
+                 Support.CREATEVIEWIFNOTEXISTS, Support.DROPVIEWIFEXISTS, Support.DATE, Support.TIME] -
+                [Support.SCHEMA]
     }
 
     @Override

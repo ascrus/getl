@@ -351,7 +351,6 @@ class Sequence implements GetlRepository, WithConnection, ObjectTags {
 		def parent = new SequenceCreateSpec(this)
 		parent.runClosure(cl)
 		def con = currentJDBCConnection
-		con.tryConnect()
 		con.currentJDBCDriver.createSequence(this, ifNotExists, parent)
 	}
 
@@ -371,7 +370,6 @@ class Sequence implements GetlRepository, WithConnection, ObjectTags {
 	void dropSequence(Boolean ifExists = false, Boolean ddlOnly = false) {
 		validConnection()
 		def con = currentJDBCConnection
-		con.tryConnect()
 		con.currentJDBCDriver.dropSequence(this, ifExists, ddlOnly)
 	}
 
@@ -382,7 +380,6 @@ class Sequence implements GetlRepository, WithConnection, ObjectTags {
 	void restartWith(Long newValue, Boolean ddlOnly = false) {
 		validConnection()
 		def con = currentJDBCConnection
-		con.tryConnect()
 		con.currentJDBCDriver.restartSequence(this, newValue, ddlOnly)
 	}
 }
