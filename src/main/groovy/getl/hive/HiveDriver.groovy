@@ -111,7 +111,7 @@ class HiveDriver extends JDBCDriver {
             partitionFields.sort(true) { Field a, Field b -> (a.ordPartition?:999999999) <=> (b.ordPartition?:999999999) }
             def partitionCols = [] as List<String>
             partitionFields.each { Field f ->
-                partitionCols.add(generateColumnDefinition(f, false))
+                partitionCols.add(createDatasetAddColumn(f))
             }
             sb << "PARTITIONED BY (${partitionCols.join(', ')})"
             sb << '\n'

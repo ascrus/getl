@@ -1,7 +1,10 @@
+//file:noinspection DuplicatedCode
 package getl.mssql
 
 import getl.data.Field
+import getl.exception.InternalError
 import getl.jdbc.JDBCDataset
+import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.JDBCDriver
 import getl.utils.ConvertUtils
@@ -37,6 +40,8 @@ class MSSQLDriver extends JDBCDriver {
 		commitDDL = false // true
 		transactionalDDL = true
 		transactionalTruncate = true
+		allowColumnsInDefinitionExpression = false
+		allowChangeTypeIfDefaultUsing = false
 
 		createViewTypes = ['CREATE']
 
@@ -45,7 +50,14 @@ class MSSQLDriver extends JDBCDriver {
 		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
 		sqlExpressions.ddlStartTran = 'BEGIN TRANSACTION'
 		sqlExpressions.changeSessionProperty = 'SET {name} {value}'
+
+		sqlExpressions.ddlCreateField = '{column}{ %type%}{ %increment%}{ %default%}{ %not_null%}{ %check%}{ %compute%}'
 		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} {typeName}'
+		sqlExpressions.ddlRenameTable = 'EXEC sp_rename \'{tableName}\', \'{newTableName}\''
+		sqlExpressions.ddlAddColumnTable = 'ALTER TABLE {tableName} ADD {fieldDesc}'
+		sqlExpressions.ddlAddDefaultColumnTable = 'ALTER TABLE {tableName} ADD DEFAULT {fieldDefault} FOR {fieldName}'
+		sqlExpressions.ddlAddNotNullColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {column} {type} NOT NULL'
+		sqlExpressions.ddlDropNotNullColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {column} {type} NULL'
 
 		sqlTypeMap.DOUBLE.name = 'float'
 		sqlTypeMap.BOOLEAN.name = 'bit'
@@ -71,8 +83,9 @@ class MSSQLDriver extends JDBCDriver {
 	List<Support> supported() {
 		def res = super.supported() +
 				[Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.UUID, Support.TIME, Support.DATE,
-				 Support.COLUMN_CHANGE_TYPE, Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION,
-				 Support.DROPIFEXIST, Support.DROPINDEXIFEXIST, Support.DROPSCHEMAIFEXIST, Support.DROPSEQUENCEIFEXISTS, Support.DROPVIEWIFEXISTS]
+				 Support.AUTO_INCREMENT, Support.COLUMN_CHANGE_TYPE, Support.TIMESTAMP_WITH_TIMEZONE, Support.MULTIDATABASE, Support.START_TRANSACTION,
+				 Support.DROPIFEXIST, Support.DROPINDEXIFEXIST, Support.DROPSCHEMAIFEXIST, Support.DROPSEQUENCEIFEXISTS, Support.DROPVIEWIFEXISTS] -
+				[Support.DROP_DEFAULT_VALUE, Support.ALTER_DEFAULT_VALUE]
 
 		return res
 	}
@@ -96,7 +109,7 @@ class MSSQLDriver extends JDBCDriver {
 	/** Current Mssql connection */
 	@SuppressWarnings('unused')
 	MSSQLConnection getCurrentMSSQLConnection() { connection as MSSQLConnection }
-	
+
 	@Override
 	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
@@ -141,6 +154,17 @@ class MSSQLDriver extends JDBCDriver {
 	void prepareField (Field field) {
 		super.prepareField(field)
 
+		if (field.defaultValue != null && field.defaultValue.length() > 0) {
+			def str = field.defaultValue
+			def i = 0
+			def len = str.length()
+			while (i < str.length().intdiv(2) && str[i] == '(' && str[len - i - 1] == ')')
+				i++
+
+			if (i > 0 && i * 2 < str.length())
+				field.defaultValue = str.substring(i, str.length() - i)
+		}
+
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)DATETIMEOFFSET")) {
 				field.type = Field.timestamp_with_timezoneFieldType
@@ -180,4 +204,76 @@ class MSSQLDriver extends JDBCDriver {
 
 	@Override
 	Boolean timestampWithTimezoneConvertOnWrite() { return true }
+
+	static private final String ReadPrimaryKeyConstraintName = '''SELECT CONSTRAINT_NAME
+FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+WHERE 
+    {Lower(TABLE_CATALOG) = '%db%' AND\n}Lower(TABLE_SCHEMA) = '{schema}' AND 
+    Lower(TABLE_NAME) ='{table}' AND
+    CONSTRAINT_TYPE = 'PRIMARY KEY' '''
+
+	@Override
+	String primaryKeyConstraintName(TableDataset table) {
+		def q = new QueryDataset()
+		q.connection = connection
+		q.query = ReadPrimaryKeyConstraintName
+		q.queryParams.db = (table.currentJDBCConnection.connectDatabase()?:defaultDBName)?.toLowerCase()
+		q.queryParams.schema = (table.schemaName()?:defaultSchemaName).toLowerCase()
+		q.queryParams.table = table.tableName.toLowerCase()
+		def r = q.rows()
+		if (r.size() > 1)
+			throw new InternalError(table, 'Error reading primary key from list of constraints', "${r.size()} records returned")
+
+		return (!r.isEmpty())?r[0].constraint_name as String:null
+	}
+
+	static private final String ReadColumnsConstraintName = '''SELECT 
+	obj_Constraint.NAME AS constraint_name,
+    obj_Constraint.type AS constraint_type,
+    columns.name AS column_name
+FROM sys.objects obj_table 
+    JOIN sys.objects obj_Constraint 
+        ON obj_table.object_id = obj_Constraint.parent_object_id 
+    JOIN sys.sysconstraints constraints 
+         ON constraints.constid = obj_Constraint.object_id 
+    JOIN sys.columns columns 
+         ON columns.object_id = obj_table.object_id 
+        AND columns.column_id = constraints.colid 
+WHERE obj_table.object_id = OBJECT_ID('{%db%.}{schema}.{table}')'''
+
+	@Override
+	protected List<Map<String, String>> columnsConstraintName(TableDataset table) {
+		def res = [] as List<Map<String, String>>
+
+		def q = new QueryDataset()
+		q.connection = connection
+		q.query = ReadColumnsConstraintName
+		q.queryParams.db = prepareObjectName(table.currentJDBCConnection.connectDatabase()?:defaultDBName, table)
+		q.queryParams.schema = prepareObjectName(table.schemaName()?:defaultSchemaName, table)
+		q.queryParams.table = prepareObjectName(table.tableName, table)
+
+		q.eachRow { row ->
+			def constraintName = (row.constraint_name as String)
+			def columnName = (row.column_name as String)
+			String type = null
+			switch ((row.constraint_type as String).trim()) {
+				case 'D':
+					type = 'DEFAULT'
+					break
+				case 'C':
+					type = 'CHECK'
+					break
+				case 'F':
+					type = 'FOREIGN KEY'
+					break
+				case 'PK':
+					type = 'PRIMARY KEY'
+					break
+			}
+			if (type != null)
+				res.add([constraint: constraintName, type: type, column: columnName])
+		}
+
+		return res
+	}
 }

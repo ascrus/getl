@@ -3,16 +3,13 @@ package getl.oracle
 import getl.data.Field
 import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriverProto
-import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.Flow
-import getl.tfs.TDS
 import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import oracle.sql.TIMESTAMPTZ
-import org.h2.value.ValueTimestampTimeZone
 import org.junit.Ignore
 import org.junit.Test
 
@@ -36,7 +33,7 @@ class OracleDriverTest extends JDBCDriverProto {
 		ds.field << new Field(name: 'id', type: Field.integerFieldType, isKey: true)
 		ds.field << new Field(name: 'dt', type: Field.datetimeFieldType)
 		ds.field << new Field(name: 'dtz', type: Field.timestamp_with_timezoneFieldType)
-		ds.drop(ifExists: true)
+		ds.drop(ifExists: true, useExists: true)
 		ds.create()
 		try {
 			new Flow().writeTo(dest: ds) { updater ->
@@ -227,4 +224,7 @@ class OracleDriverTest extends JDBCDriverProto {
 			}
 		}
 	}
+
+	@Override
+	protected Boolean synchronizeStructureTable()  { true }
 }

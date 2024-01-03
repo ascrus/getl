@@ -897,6 +897,7 @@ class TableDataset extends JDBCDataset {
 
 	/**
 	 * Synchronize structure with table in database
+	 * @param recreateTables drop and create tables if exists
 	 * @param softCheckType soft type checking
 	 * @param softCheckNull soft nullable checking
 	 * @param softCheckPK soft primary key checking
@@ -907,15 +908,14 @@ class TableDataset extends JDBCDataset {
 	 * @return structure synchronization script or null if not generated script
 	 */
 	@NamedVariant
-	String synchronizeStructure(Boolean softCheckType = true,
-							  Boolean softCheckNull = true, Boolean softCheckPK = true,
-							  Boolean checkDefaultExpression = false,
-							  Boolean detectUnnecessaryFields = false, Boolean recreateTableForIncompatibleType = false, Boolean ddlOnly = true) {
+	String synchronizeStructure(Boolean recreateTables = false, Boolean softCheckType = true, Boolean softCheckNull = true, Boolean softCheckPK = true,
+							  	Boolean checkDefaultExpression = false, Boolean detectUnnecessaryFields = false, Boolean recreateTableForIncompatibleType = false,
+								Boolean ddlOnly = true) {
 		validConnection()
 		validTableName()
-		return currentJDBCConnection.currentJDBCDriver.synchronizeStructure(this, BoolUtils.IsValue(softCheckType), BoolUtils.IsValue(softCheckNull),
-				BoolUtils.IsValue(softCheckPK), BoolUtils.IsValue(checkDefaultExpression), BoolUtils.IsValue(detectUnnecessaryFields),
-				BoolUtils.IsValue(recreateTableForIncompatibleType), BoolUtils.IsValue(ddlOnly))
+		return currentJDBCConnection.currentJDBCDriver.synchronizeStructure(this, BoolUtils.IsValue(recreateTables), BoolUtils.IsValue(softCheckType),
+				BoolUtils.IsValue(softCheckNull), BoolUtils.IsValue(softCheckPK), BoolUtils.IsValue(checkDefaultExpression),
+				BoolUtils.IsValue(detectUnnecessaryFields), BoolUtils.IsValue(recreateTableForIncompatibleType), BoolUtils.IsValue(ddlOnly))
 	}
 
 	void renameTo(String newName, Map procParams = null) {
@@ -925,8 +925,8 @@ class TableDataset extends JDBCDataset {
 		validConnection(false)
 		validTableName()
 
-		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
-			throw new NotSupportError(this, 'bulk load file')
+		if (!connection.driver.isOperation(Driver.Operation.RENAME_TABLE))
+			throw new NotSupportError(this, 'rename table')
 
 		currentJDBCConnection.currentJDBCDriver.renameTableTo(this, newName, procParams)
 	}

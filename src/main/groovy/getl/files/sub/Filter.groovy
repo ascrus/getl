@@ -1,14 +1,21 @@
 package getl.files.sub
 
-class Filter implements FilenameFilter {
-    Filter (Closure code) {
-		this.code = code 
+import net.lingala.zip4j.model.ExcludeFileFilter
+
+class Filter implements FilenameFilter, ExcludeFileFilter {
+    Filter(Closure filterCode) {
+		this.code = filterCode
 	}
 
-	private Closure code
+	private Closure<Boolean> code
 	
 	@Override
 	boolean accept(File file, String name) {
-		code.call(file, name)
+		return code(file, name)
+	}
+
+	@Override
+	boolean isExcluded(File file) {
+		return !code(file.parentFile, file.name)
 	}
 }

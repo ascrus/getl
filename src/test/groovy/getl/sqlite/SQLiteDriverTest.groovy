@@ -16,4 +16,7 @@ class SQLiteDriverTest extends JDBCDriverProto {
 
     @Override
     protected String getCurrentTimestampFuncName() { 'DATETIME()' }
+
+    @Override
+    protected Boolean synchronizeStructureTable()  { true }
 }

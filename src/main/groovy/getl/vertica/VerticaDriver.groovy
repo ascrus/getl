@@ -53,10 +53,11 @@ class VerticaDriver extends JDBCDriver {
 
 		defaultSchemaName = 'public'
 		tempSchemaName = 'v_temp_schema'
-		allowExpressions = true
+		allowBulkLoadExpressions = true
 		lengthTextInBytes = true
 		defaultBatchSize = 10000L
 
+		sqlExpressions.ddlAutoIncrement = 'AUTO_INCREMENT'
 		sqlExpressions.ddlCreatePrimaryKey = 'PRIMARY KEY ({columns}) {check_pk}'
 		sqlExpressions.ddlCreateView = '{create}{ %temporary%} VIEW{ %ifNotExists%} {name}{ %privileges% SCHEMA PRIVILEGES} AS\n{select}'
 		sqlExpressions.ddlCreateSchema = 'CREATE SCHEMA{ %ifNotExists%} {schema}{ AUTHORIZATION %authorization%}{ DEFAULT %privileges% SCHEMA PRIVILEGES}'
@@ -73,17 +74,20 @@ class VerticaDriver extends JDBCDriver {
 		sqlTypeMap.TEXT.name = 'long varchar'
 
 		driverSqlKeywords.addAll(['NEW'])
+
+		allowChangeTypeIfDefaultUsing = false
 	}
 
 	@Override
 	List<Support> supported() {
         return super.supported() +
-				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.TIMESTAMP_WITH_TIMEZONE,
+				[Support.LOCAL_TEMPORARY, Support.GLOBAL_TEMPORARY, Support.SEQUENCE, Support.TIMESTAMP_WITH_TIMEZONE, Support.AUTO_INCREMENT,
                  Support.BLOB, Support.CLOB, Support.UUID, Support.TIME, Support.DATE, Support.COLUMN_CHANGE_TYPE,
 				 Support.CREATEIFNOTEXIST, Support.DROPIFEXIST, Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST,
 				 Support.CREATEVIEWIFNOTEXISTS, Support.DROPVIEWIFEXISTS,
 				 Support.BULKLOADMANYFILES, Support.BULKESCAPED, Support.BULKGZ, Support.BULKNULLASVALUE,
-				 Support.START_TRANSACTION, Support.LOCAL_TEMPORARY_VIEW /*, Support.ARRAY*/]
+				 Support.START_TRANSACTION, Support.LOCAL_TEMPORARY_VIEW /*, Support.ARRAY*/] -
+				[Support.COMPUTE_FIELD]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -151,10 +155,10 @@ class VerticaDriver extends JDBCDriver {
 		return result
 	}
 
-	@Override
+	/*@Override
 	String generateComputeDefinition(Field f) {
 		return "DEFAULT USING ${f.compute}"
-	}
+	}*/
 
 	/**
 	 * Convert text to unicode escape Vertica string
@@ -719,6 +723,17 @@ class VerticaDriver extends JDBCDriver {
 	protected void prepareCopyTableDestination(TableDataset dest, Map<String, Object> qParams ) {
 		if (dest.writeDirective.direct != null && (dest.writeDirective.direct as String).toLowerCase() != VerticaWriteSpec.AUTO)
 			qParams.after_insert = "/*+${dest.writeDirective.direct}*/"
+	}
+
+	@Override
+	Map<String, Object> generateColumnDefinition(Field field, Boolean useNativeDBType, ColumnGenerationType generationType = false, Field prevFieldValues = null) {
+		def res = super.generateColumnDefinition(field, useNativeDBType, generationType, prevFieldValues)
+		if (field.isAutoincrement) {
+			res.type = null
+			res.not_null = null
+		}
+
+		return res
 	}
 
 	@Override

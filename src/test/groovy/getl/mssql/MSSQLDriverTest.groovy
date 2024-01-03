@@ -67,4 +67,7 @@ class MSSQLDriverTest extends JDBCDriverProto {
 	protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
 
 	protected boolean getTestSequence() { false }
+
+	@Override
+	protected Boolean synchronizeStructureTable()  { true }
 }

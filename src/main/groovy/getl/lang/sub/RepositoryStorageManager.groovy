@@ -937,7 +937,7 @@ final class RepositoryStorageManager {
 
         def file = new File(fileName)
         if (!file.exists())
-            throw new DslError(dslCreator, '#io.file.not_found', [type: 'Object', file: file.path])
+            throw new DslError(dslCreator, '#io.file.not_found', [type: 'Object', path: file.path])
 
         def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8', environment: env,
                 configVars: this.dslCreator.configVars, owner: dslCreator)

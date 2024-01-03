@@ -27,9 +27,12 @@ class MySQLDriver extends JDBCDriver {
         localTemporaryTablePrefix = 'TEMPORARY'
 		defaultSchemaFromConnectDatabase = true
 
+		modifyColumnRequiresAllProperties = true
+
 		sqlExpressions.convertTextToTimestamp = 'CAST(\'{value}\' AS datetime)'
 		sqlExpressions.sysDualTable = 'DUAL'
 		sqlExpressions.changeSessionProperty = 'SET {name} = {value}'
+
 		sqlExpressions.ddlChangeColumnTable = 'ALTER TABLE {tableName} MODIFY {fieldDesc}'
 
 		sqlTypeMap.BLOB.name = 'blob'
@@ -52,6 +55,10 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	List<Driver.Operation> operations() {
         return super.operations() - [Driver.Operation.RETRIEVELOCALTEMPORARYFIELDS]
+	}
+
+	String generateDefaultDefinition(Field f) {
+		return "DEFAULT (${f.defaultValue})"
 	}
 
 	@Override

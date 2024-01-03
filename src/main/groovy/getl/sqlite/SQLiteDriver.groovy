@@ -3,7 +3,10 @@ package getl.sqlite
 
 import getl.data.Field
 import getl.driver.Driver
+import getl.exception.InternalError
 import getl.jdbc.JDBCDriver
+import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
 import getl.utils.ConvertUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -21,6 +24,7 @@ class SQLiteDriver extends JDBCDriver {
         super.initParams()
 
         commitDDL = false
+        transactionalDDL = true
         caseObjectName = "UPPER"
         caseRetrieveObject = "UPPER"
         caseQuotedName = true
@@ -31,20 +35,24 @@ class SQLiteDriver extends JDBCDriver {
         localTemporaryTablePrefix = 'TEMPORARY'
 
         createViewTypes = ['CREATE']
+
         sqlExpressions.convertTextToTimestamp = 'DATETIME(\'{value}\')'
         sqlExpressions.now = 'DATETIME()'
 
         ruleEscapedText.put('\'', '\'\'')
         ruleEscapedText.remove('\n')
         ruleEscapedText.remove('\\')
+
+        allowColumnsInDefinitionExpression = false
+        allowChangeTypePrimaryKeyField = false
     }
 
-    List<Driver.Support> supported() {
+    List<Support> supported() {
         super.supported() +
                 [Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.LOCAL_TEMPORARY,
                  Support.CREATEIFNOTEXIST, Support.DROPIFEXIST, Support.CREATEINDEXIFNOTEXIST, Support.DROPINDEXIFEXIST,
                  Support.CREATEVIEWIFNOTEXISTS, Support.DROPVIEWIFEXISTS, Support.DATE, Support.TIME] -
-                [Support.SCHEMA]
+                [Support.SCHEMA, Support.ALTER_COLUMN, Support.DROP_CONSTRAINT]
     }
 
     @Override
@@ -60,6 +68,10 @@ class SQLiteDriver extends JDBCDriver {
     /** Current SQLite connection */
     @SuppressWarnings('unused')
     SQLiteConnection getCurrentSQLiteConnection() { connection as SQLiteConnection }
+
+    String generateDefaultDefinition(Field f) {
+        return "DEFAULT (${f.defaultValue})"
+    }
 
     @Override
     String getNowFunc() { sqlExpressionValue('DATETIME()') }
@@ -192,4 +204,20 @@ class SQLiteDriver extends JDBCDriver {
 
     @Override
     protected String sessionID() { sessionID }
+
+    static private final String ReadPrimaryKeyConstraintName = '''PRAGMA index_list('{table}')'''
+
+    @Override
+    String primaryKeyConstraintName(TableDataset table) {
+        def q = new QueryDataset()
+        q.connection = connection
+        q.query = ReadPrimaryKeyConstraintName
+        q.queryParams.table = table.tableName.toLowerCase()
+        def r = q.rows()
+        if (r.size() == 0)
+            throw new InternalError(table, 'Error reading primary key from list of constraints')
+        def pk = r.find { row -> row.origin == 'pk' && row.unique == 1 }
+
+        return (pk != null)?pk.name as String:null
+    }
 }

@@ -130,7 +130,7 @@ abstract class JDBCDriverProto extends GetlTest {
     }
 
     protected void createTable() {
-        table.drop(ifExists: true)
+        table.drop(ifExists: true, useExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
 			def indexes = [:]
             indexes.put("${table.tableName}_idx_1".toString(), [columns: ['id2', 'name']])
@@ -216,7 +216,7 @@ abstract class JDBCDriverProto extends GetlTest {
             type = JDBCDataset.Type.GLOBAL_TEMPORARY
         }
         tempTable.field = fields
-        tempTable.drop(ifExists: true)
+        tempTable.drop(ifExists: true, useExists: true)
         if (con.driver.isSupport(Driver.Support.INDEXFORTEMPTABLE)) {
             tempTable.create(indexes: [_getl_global_temp_test_idx_1: [columns: ['id2', 'name']]])
         }
@@ -232,12 +232,15 @@ abstract class JDBCDriverProto extends GetlTest {
     }
 
     protected renameTable() {
+        if (!table.currentJDBCConnection.currentJDBCDriver.isOperation(Driver.Operation.RENAME_TABLE))
+            return
+
         table.renameTo(table.tableName + '_rename')
         table.tableName = table.tableName + '_rename'
     }
 
     protected void dropTable() {
-        table.drop(ifExists: true)
+        table.drop(ifExists: true, useExists: true)
         assertFalse(table.exists)
     }
 
@@ -795,7 +798,7 @@ IF ('{support_update}' = 'true') DO {
             schemaName = con.schemaName
             tableName = name
             field = fields
-            drop(ifExists: true)
+            drop(ifExists: true, useExists: true)
             create()
         }
 
@@ -877,7 +880,7 @@ IF ('{support_update}' = 'true') DO {
             }
 
             tableName = tableName + '_clone'
-            drop(ifExists: true)
+            drop(ifExists: true, useExists: true)
             createOpts {indexes.clear() }
             create()
         }
@@ -974,7 +977,7 @@ IF ('{support_update}' = 'true') DO {
 
             drop()
             shouldFail { drop() }
-            drop(ifExists: true)
+            drop(ifExists: true, useExists: true)
         }
     }
 
@@ -1139,7 +1142,7 @@ IF ('{support_update}' = 'true') DO {
                 field('name') { length = 50; isNull = false }
                 field('value') { type = numericFieldType; length = 12; precision = 2 }
 
-                drop(ifExists: true)
+                drop(ifExists: true, useExists: true)
                 create()
 
                 etl.rowsTo {
@@ -1156,7 +1159,7 @@ IF ('{support_update}' = 'true') DO {
                 tableName = 'test_merge_buffer'
                 field = d.field
 
-                drop(ifExists: true)
+                drop(ifExists: true, useExists: true)
                 create()
 
                 etl.rowsTo {
@@ -1192,37 +1195,41 @@ IF ('{support_update}' = 'true') DO {
             if (exists)
                 drop()
 
-            field('id') { type = integerFieldType; isKey = true }
+            field('id') { type = integerFieldType; isKey = true; defaultValue = 0 }
             field('name') { length = 20 }
             field('value') { type = numericFieldType; length = 10; precision = 1; isNull = false }
             field('dt') { type = timestampFieldType }
             field('unknown_field') { type = integerFieldType }
-
-            def sqlCreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
-                    detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
-
+            def sqlCreate = synchronizeStructure(recreateTables: true, softCheckType: false, softCheckNull: false, softCheckPK: false,
+                    checkDefaultExpression: true, detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
             println sqlCreate
-            //sql.exec(true, sqlCreate)
 
-            field('id') { type = bigintFieldType }
+            field('name') { isNull = false; length = 30 }
+            def sqlRecreate = synchronizeStructure(recreateTables: true, softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
+                    detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
+            println sqlRecreate
+
+            field('id') { type = bigintFieldType; defaultValue = null }
             field('name') { isNull = false; length = 50 }
             field('value') { length = 12; precision = 1; isNull = true }
             field('dt') { isKey = true; defaultValue = con.currentJDBCDriver.sqlExpressionValue('now') }
+            def valueName = currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('value', it)
+            if (currentJDBCConnection.currentJDBCDriver.allowColumnsInDefinitionExpression())
+                field('kpi') { type = integerFieldType; isNull = false; defaultValue = "(CASE WHEN $valueName IS NULL THEN NULL ELSE $valueName END)" }
+            else
+                field('kpi') { type = integerFieldType; isNull = false; defaultValue = 0 }
             removeField('unknown_field')
-
             con.disconnect()
             def sqlAlter = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
                     detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
             println sqlAlter
-            //sql.exec(true, sqlAlter)
 
             if (table.connection.driver.isOperation(Driver.Operation.RENAME_TABLE)) {
                 field('value') { type = doubleFieldType }
                 con.disconnect()
-                def sqlRecreate = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
+                def sqlRecreateTypes = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,
                         detectUnnecessaryFields: true, recreateTableForIncompatibleType: true, ddlOnly: false)
-                println sqlRecreate
-                //sql.exec(true, sqlRecreate)
+                println sqlRecreateTypes
             }
         }
 
@@ -1231,7 +1238,7 @@ IF ('{support_update}' = 'true') DO {
             retrieveFields()
         }
 
-        def checkFields = table.DetectChangeFields(checkedDataset: checkTable, needFields: table.field,
+        def checkFields = table.DetectChangeFields(checkedDataset: checkTable, needFields: table.field, softCheckType: true,
                 checkDefaultExpression: false, detectUnnecessaryFields: true)
         if (checkFields != null) {
             println 'Validation synchronize:'

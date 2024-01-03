@@ -47,7 +47,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type', 'tableMask', 'filter'])
 		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey',
                                                 'useNativeDBType', 'type', 'ddlOnly'])
-		methodParams.register('dropDataset', ['ifExists', 'ddlOnly'])
+		methodParams.register('dropDataset', ['ifExists', 'useExists', 'ddlOnly'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
                                             'onSaveBatch', 'where', 'queryParams'])
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
@@ -81,7 +81,7 @@ class JDBCDriver extends Driver {
 		commitDML = false
 		transactionalDDL = false
 		transactionalTruncate = false
-		allowExpressions = false
+		allowBulkLoadExpressions = false
 		lengthTextInBytes = false
 		defaultBatchSize = 500L
 
@@ -106,6 +106,11 @@ class JDBCDriver extends Driver {
 		ruleNameNotQuote = defaultRuleNameNotQuote
 		ruleEscapedText = ['\\': '\\\\', '\n': '\\n', '\'': '\\\'']
 
+		allowChangeTypeIfDefaultUsing = true
+		allowColumnsInDefinitionExpression = true
+		modifyColumnRequiresAllProperties = false
+		allowChangeTypePrimaryKeyField = true
+
 		setSqlExpressionSqlDateFormat('yyyy-MM-dd')
 		setSqlExpressionSqlTimeFormat('HH:mm:ss')
 		setSqlExpressionSqlTimestampFormat('yyyy-MM-dd HH:mm:ss.SSSSSS')
@@ -123,14 +128,17 @@ class JDBCDriver extends Driver {
 
 				ddlCreateTable: 'CREATE{ %type%} TABLE{ %ifNotExists%} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
 				ddlCreateIndex: 'CREATE{ %unique%}{ %hash%} INDEX{ %ifNotExists%} {indexName} ON {tableName} ({columns})',
-				ddlCreateField: '{column} {type}{ %increment%}{ %not_null%}{ %default%}{ %check%}{ %compute%}',
-				ddlAlterField: '{column} {type}',
+				ddlCreateField: '{column}{ %type%}{ %increment%}{ %not_null%}{ %default%}{ %check%}{ %compute%}',
+				ddlAddFieldFull: null,
+				ddlAddFieldPart: '{column}{ %type%}',
+				ddlModifyField: null,
+				ddlDropField: '{column}',
 				ddlCreatePrimaryKey: 'PRIMARY KEY{ %hash%} ({columns})',
 				ddlAddConstraint: 'ALTER TABLE {tableName} ADD CONSTRAINT {constraintName} {constraintDesc}',
 				ddlDropConstraint: 'ALTER TABLE {tableName} DROP CONSTRAINT {constraintName}',
 				ddlDrop: 'DROP {type} {%ifExists% }{tableName}',
 				ddlCreateView: '{create}{ %temporary%} VIEW{ %ifNotExists%} {name} AS\n{select}',
-				ddlAutoIncrement: null,
+				ddlAutoIncrement: 'IDENTITY',
 				ddlCreateSchema: 'CREATE SCHEMA{ %ifNotExists%} {schema}',
 				ddlDropSchema: 'DROP SCHEMA{ %ifExists%} {schema}',
 				ddlStartTran: 'START TRANSACTION',
@@ -141,13 +149,13 @@ class JDBCDriver extends Driver {
 				ddlRestartSequence: 'ALTER SEQUENCE {name} RESTART WITH {value}',
 				ddlRenameTable: 'ALTER TABLE {tableName} RENAME TO {newTableName}',
 				ddlChangeColumnTable: null,
-				ddlAddColumnTable: 'ALTER TABLE {tableName} ADD COLUMN {fieldName} {fieldDesc}',
+				ddlAddColumnTable: 'ALTER TABLE {tableName} ADD COLUMN {fieldDesc}',
 				ddlDropColumnTable: 'ALTER TABLE {tableName} DROP COLUMN {fieldName}',
 				ddlChangeTypeColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} TYPE {typeName}',
 				ddlAddDefaultColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DEFAULT {fieldDefault}',
 				ddlDropDefaultColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} DROP DEFAULT',
-				ddlAddNotNullColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET NOT NULL',
-				ddlDropNotNullColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} DROP NOT NULL'
+				ddlAddNotNullColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {column} SET NOT NULL',
+				ddlDropNotNullColumnTable: 'ALTER TABLE {tableName} ALTER COLUMN {column} DROP NOT NULL'
 		])
 
 		sqlTypeMap = new HashMap<String, Map<String, Object>>()
@@ -207,6 +215,12 @@ class JDBCDriver extends Driver {
 		compatibleFieldType.put(Field.objectFieldType, [])
 	}
 
+	@Override
+	protected void prepareDriver() {
+		super.prepareDriver()
+		buildRuleQuotedKeywords()
+	}
+
 	/** Start time connect */
 	private Date connectDate
 
@@ -221,8 +235,8 @@ class JDBCDriver extends Driver {
 	@Override
 	List<Support> supported() {
 		[Support.CONNECT, Support.SQL, Support.EACHROW, Support.WRITE, Support.BATCH,
-		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.NOT_NULL_FIELD,
-		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW, Support.SCHEMA,
+		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.ALTER_COLUMN, Support.ALTER_DEFAULT_VALUE, Support.DROP_DEFAULT_VALUE, Support.NOT_NULL_FIELD,
+		 Support.PRIMARY_KEY, Support.DROP_CONSTRAINT, Support.TRANSACTIONAL, Support.VIEW, Support.SCHEMA,
 		 Support.DATABASE, Support.SELECT_WITHOUT_FROM, Support.CHECK_FIELD,
 		 Support.TIMESTAMP, Support.BOOLEAN]
 	}
@@ -691,6 +705,10 @@ class JDBCDriver extends Driver {
 		sqlConnect = sql
 
 		afterConnect()
+		buildRuleQuotedKeywords()
+	}
+
+	protected buildRuleQuotedKeywords() {
 		ruleQuotedKeywords.clear()
 		ruleQuotedKeywords.addAll((driverSqlKeywords + serverSqlKeywords).unique()*.toUpperCase().sort())
 	}
@@ -1022,8 +1040,8 @@ class JDBCDriver extends Driver {
 					f.precision = rs.getInt("DECIMAL_DIGITS")
 					if (f.precision < 0) f.precision = null
 
-					def dv = rs.getString('COLUMN_DEF')
-					if (dv != null && dv.length() > 0)
+					def dv = rs.getString('COLUMN_DEF')?.trim()
+					if (dv != null && dv.length() > 0 && dv.toUpperCase() != 'NULL')
 						f.defaultValue = dv
 
 					f.isNull = (rs.getInt("NULLABLE") == ResultSetMetaData.columnNullable)
@@ -1083,14 +1101,17 @@ class JDBCDriver extends Driver {
 		def tn = tabName.toLowerCase()
 
 		def res = [] as List<String>
-		try (def rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, prepareObjectNameForMetaFunc(schemaName),
+		def ord = [] as List<Integer>
+		try (def rs = sqlConnect.connection.metaData.getPrimaryKeys(prepareObjectNameForMetaFunc(names.dbName), prepareObjectNameForMetaFunc(schemaName),
 				prepareObjectNameForMetaFunc(tabName))) {
 			while (rs.next())
-				if (rs.getString('TABLE_SCHEM')?.toLowerCase() == sn && rs.getString('TABLE_NAME')?.toLowerCase() == tn)
-					res.add(rs.getString("COLUMN_NAME"))
+				if (rs.getString('TABLE_SCHEM')?.toLowerCase() == sn && rs.getString('TABLE_NAME')?.toLowerCase() == tn) {
+					res.add(rs.getString('COLUMN_NAME'))
+					ord.add(rs.getInt('KEY_SEQ'))
+				}
 		}
 
-		return res
+		return res.sort { a, b -> ord[res.indexOf(a)] <=> ord[res.indexOf(b)] }
 	}
 
 	/** Read fields from query */
@@ -1235,7 +1256,7 @@ class JDBCDriver extends Driver {
 	/** Truncate table running in transaction */
 	protected Boolean transactionalTruncate
 	/** Allow expression for bulk load */
-	protected Boolean allowExpressions
+	protected Boolean allowBulkLoadExpressions
 	/** String lengths are in bytes, not characters */
 	protected Boolean lengthTextInBytes
 	/** The default schema is the name of the connected database */
@@ -1274,6 +1295,26 @@ class JDBCDriver extends Driver {
 	private List<String> ruleQuotedKeywords
 	/** List of keywords that cannot be used as an identifier name without quotes */
 	List<String> getRuleQuotedKeywords() { ruleQuotedKeywords }
+
+	/** Allow change type for column when using in default value by other columns */
+	protected Boolean allowChangeTypeIfDefaultUsing
+	/** Allow change type for column when using in default value by other columns */
+	Boolean allowChangeTypeIfDefaultUsing() { allowChangeTypeIfDefaultUsing }
+
+	/** Allow using columns in definition expression by other columns */
+	protected Boolean allowColumnsInDefinitionExpression
+	/** Allow using columns in definition expression by other columns */
+	Boolean allowColumnsInDefinitionExpression() { allowColumnsInDefinitionExpression }
+
+	/** Changing a column requires specifying all properties */
+	protected Boolean modifyColumnRequiresAllProperties
+	/** Changing a column requires specifying all properties */
+	Boolean getModifyColumnRequiresAllProperties() { modifyColumnRequiresAllProperties }
+
+	/** Allow change type for primary key fields */
+	protected Boolean allowChangeTypePrimaryKeyField
+	/** Allow change type for primary key fields */
+	protected Boolean getAllowChangeTypePrimaryKeyField() { allowChangeTypePrimaryKeyField }
 
 	/** Name dual system table */
 	String getSysDualTable() { sqlExpressionValue('sysDualTable') }
@@ -1495,28 +1536,43 @@ class JDBCDriver extends Driver {
 
 	/**
 	 * Get column definition for CREATE TABLE statement
-	 * @param f - specified field
+	 * @param field - specified field
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
-	String generateColumnDefinition(Field f, Boolean useNativeDBType, Boolean isAlter = false) {
-		def fp = new HashMap<String, String>()
-		fp.column = prepareFieldNameForSQL(f.name)
-		fp.type = type2sqlType(f, useNativeDBType)
-		if (isSupport(Support.PRIMARY_KEY) && !f.isNull)
-			fp.not_null =  'NOT NULL'
-		else if (needNullKeyWordOnCreateField)
-			fp.not_null = 'NULL'
-		if (isSupport(Support.AUTO_INCREMENT) && f.isAutoincrement)
-			fp.increment = sqlExpressionValue('ddlAutoIncrement')
-		if (isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)
-			fp.default = generateDefaultDefinition(f)
-		if (isSupport(Support.CHECK_FIELD) && f.checkValue != null)
-			fp.check = generateCheckDefinition(f)
-		if (isSupport(Support.COMPUTE_FIELD) && f.compute != null)
-			fp.compute = generateComputeDefinition(f)
+	Map<String, Object> generateColumnDefinition(Field field, Boolean useNativeDBType, ColumnGenerationType generationType = ColumnGenerationType.CREATE, Field prevFieldValues = null) {
+		if (generationType == ColumnGenerationType.MODIFY && prevFieldValues == null)
+			throw new RequiredParameterError(jdbcConnection, 'prevFieldValues')
 
-		return (!isAlter)?sqlExpressionValue('ddlCreateField', fp):sqlExpressionValue('ddlAlterField', fp)
+		def res = new HashMap<String, Object>()
+
+		res.column = prepareFieldNameForSQL(field.name)
+		res.type = type2sqlType(field, useNativeDBType)
+
+		if ((generationType in [ColumnGenerationType.CREATE, ColumnGenerationType.ADD_FULL]) ||
+				(generationType == ColumnGenerationType.MODIFY && (modifyColumnRequiresAllProperties || field.isNull != prevFieldValues.isNull))) {
+			if (isSupport(Support.NOT_NULL_FIELD) && !field.isNull)
+				res.not_null = 'NOT NULL'
+			else if (needNullKeyWordOnCreateField || generationType == ColumnGenerationType.MODIFY)
+				res.not_null = 'NULL'
+		}
+		else if (needNullKeyWordOnCreateField)
+			res.not_null = 'NULL'
+
+		if (isSupport(Support.AUTO_INCREMENT) && field.isAutoincrement)
+			res.increment = sqlExpressionValue('ddlAutoIncrement')
+		else if (isSupport(Support.COMPUTE_FIELD) && field.compute != null)
+			res.compute = generateComputeDefinition(field)
+		else if (isSupport(Support.DEFAULT_VALUE) &&
+					((generationType in [ColumnGenerationType.CREATE, ColumnGenerationType.ADD_FULL] && field.defaultValue != null) ||
+						(generationType == ColumnGenerationType.MODIFY && (modifyColumnRequiresAllProperties || field.defaultValue != prevFieldValues.defaultValue))))
+			res.default = generateDefaultDefinition(field)
+
+		if (isSupport(Support.CHECK_FIELD) && field.checkValue != null &&
+				generationType in [ColumnGenerationType.CREATE, ColumnGenerationType.ADD_FULL, ColumnGenerationType.MODIFY])
+			res.check = generateCheckDefinition(field)
+
+		return res
 	}
 
 	/** Generate default constraint for field of table */
@@ -1541,16 +1597,32 @@ class JDBCDriver extends Driver {
 		return sqlExpressionValue('ddlCreatePrimaryKey', params + [hash: (BoolUtils.IsValue(params.hashPrimaryKey))?'HASH':null, columns: defPrimary.join(",")])
 	}
 
+	/** Type of column generation */
+	static enum ColumnGenerationType { CREATE, ADD_FULL, ADD_PART, MODIFY, DROP }
+
 	/**
 	 * Generate column definition for CREATE TABLE statement
-	 * @param f - specified field
+	 * @param field - specified field
 	 * @param useNativeDBType - use native type for typeName field property
+	 * @param generationType type of column generation
 	 * @return
 	 */
-	protected String createDatasetAddColumn(Field f, Boolean useNativeDBType) {
-		return generateColumnDefinition(f, useNativeDBType)
+	protected String createDatasetAddColumn(Field field, Boolean useNativeDBType = false, ColumnGenerationType generationType = ColumnGenerationType.CREATE,
+											Field oldValues = null) {
+		def params = generateColumnDefinition(field, useNativeDBType, generationType, oldValues)
+		def patternName = 'ddlCreateField'
+		if (generationType == ColumnGenerationType.ADD_FULL && sqlExpressions.get('ddlAddFieldFull') != null)
+			patternName =  'ddlAddFieldFull'
+		else if (generationType == ColumnGenerationType.ADD_PART && sqlExpressions.get('ddlAddFieldPart') != null)
+			patternName =  'ddlAddFieldPart'
+		else if (generationType == ColumnGenerationType.MODIFY && sqlExpressions.get('ddlModifyField') != null)
+			patternName =  'ddlModifyField'
+		else if (generationType == ColumnGenerationType.DROP && sqlExpressions.get('ddlDropField') != null)
+			patternName =  'ddlDropField'
+
+		return sqlExpressionValue(patternName, params)
 	}
-	
+
 	protected String createDatasetExtend(JDBCDataset dataset, Map params) {
 		return ""
 	}
@@ -1761,10 +1833,15 @@ class JDBCDriver extends Driver {
 
 		def validExists = BoolUtils.IsValue(params.ifExists)
 		if (validExists && !ddlOnly) {
-			if ((type == 'TABLE' && !isSupport(Support.DROPIFEXIST)) || (type == 'VIEW' && !isSupport(Support.DROPVIEWIFEXISTS)))
-				throw new NotSupportError(ds, 'drop if exists')
-			/*if (!(ds as TableDataset).exists)
-				return*/
+			def useExists = BoolUtils.IsValue(params.useExists)
+			if ((type == 'TABLE' && !isSupport(Support.DROPIFEXIST)) || (type == 'VIEW' && !isSupport(Support.DROPVIEWIFEXISTS))) {
+				if (useExists && !(ds as TableDataset).exists)
+					return
+				else if (!useExists)
+					throw new NotSupportError(ds, 'drop if exists')
+				else
+					validExists = false
+			}
 		}
 
 		def varsDts = dropTableParams(ds, type, validExists, params)
@@ -2487,7 +2564,7 @@ ${sql.stripTrailing()}
 		}
 		
 		// Allow aliases in map
-		def useExpressions = BoolUtils.IsValue(params.allowExpressions, this.allowExpressions)
+		def useExpressions = BoolUtils.IsValue(params.allowExpressions, this.allowBulkLoadExpressions)
 		
 		// Mapping column to field
 		def mapping = [] as List<BulkLoadMapping>
@@ -3883,10 +3960,13 @@ FROM {source} {after_from}
 	/** Map of compatible field type */
 	protected Map<Field.Type, List<Field.Type>> compatibleFieldType
 
-	/** Constraint primary key name */
+	/** Constraint primary key name for table */
 	protected String primaryKeyConstraintName(TableDataset table) { null }
-	/** Allow change type for primary key fields */
-	protected Boolean allowChangeTypePrimaryKeyField() { true }
+	/**
+	 * List of column constraints for table
+	 * @return list of constraints with map fields: constraint, type, column
+	 */
+	protected List<Map<String, String>> columnsConstraintName(TableDataset table) { null }
 	/** Detect incompatible type for changed fields */
 	protected Boolean incompatibleTypeForChangeFields(TableDataset table, Map<String, List<DatasetCompareField>> changed) {
 		def res = false
@@ -3906,10 +3986,8 @@ FROM {source} {after_from}
 	}
 
 	/** Synchronize structure with table in database */
-	String synchronizeStructure(TableDataset table, Boolean softCheckType,
-								Boolean softCheckNull, Boolean softCheckPK,
-								Boolean checkDefaultExpression,
-								Boolean detectUnnecessaryFields, Boolean recreateTableForIncompatibleType,
+	String synchronizeStructure(TableDataset table, Boolean recreateTables = false, Boolean softCheckType, Boolean softCheckNull, Boolean softCheckPK,
+								Boolean checkDefaultExpression, Boolean detectUnnecessaryFields, Boolean recreateTableForIncompatibleType,
 								Boolean ddlOnly) {
 		if (table.field.isEmpty()) {
 			table.retrieveFields()
@@ -3925,6 +4003,7 @@ FROM {source} {after_from}
 		if (!table.exists) {
 			startScript.append('CREATE NOT EXISTS TABLE ***/\n')
 			res.append(startScript.toString())
+
 			table.create(ddlOnly: ddlOnly)
 			res.append(table.lastSqlStatement.trim())
 			res.append('\n')
@@ -3954,21 +4033,39 @@ FROM {source} {after_from}
 		def tableName = table.fullTableName
 		res.append(startScript.toString())
 
-		if (recreateTableForIncompatibleType && incompatibleTypeForChangeFields(table, changed)) {
+		def needChangePk = (isSupport(Support.PRIMARY_KEY) && !checkTable.fieldListKeys.isEmpty() && !isSupport(Support.DROP_CONSTRAINT) &&
+				(changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) ||
+						(!allowChangeTypePrimaryKeyField && changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.find {
+							it.datasetField.isKey
+						} != null) ||
+						(isSupport(Support.NOT_NULL_FIELD) && changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.find {
+							it.datasetField.isKey && it.comparedField.isNull
+						})))
+
+		if (recreateTables) {
+			table.drop(ddlOnly: ddlOnly)
+			res.append(table.lastSqlStatement.trim())
+			res.append('\n')
+
+			table.create(ddlOnly: ddlOnly)
+			res.append(table.lastSqlStatement.trim())
+			res.append('\n')
+		}
+		else if (recreateTableForIncompatibleType && (incompatibleTypeForChangeFields(table, changed) || needChangePk)) {
 			def sb = new StringBuilder()
 			def bufTable = table.cloneDataset() as TableDataset
 			bufTable.tableName = '_GETL_' + tableName + '_'
 			if (bufTable.exists)
-				throw new DatasetError(table, '#el.repository.synch.already_temp_table',
+				throw new DatasetError(table, '#jdbc.table.synch.already_temp_table',
 						[connection: table.connection.toString(), table: table.toString(), buffer_table: bufTable.toString()])
 			bufTable.create(ddlOnly: ddlOnly)
 			sb.append(bufTable.lastSqlStatement.trim())
 			sb.append('\n')
-			table.copyTo(bufTable, null, [ddlOnly: ddlOnly, commit: true])
-			sb.append(table.lastSqlStatement.trim())
+			checkTable.copyTo(bufTable, null, [ddlOnly: ddlOnly, commit: true])
+			sb.append(checkTable.lastSqlStatement.trim())
 			sb.append('\n')
-			table.drop(ddlOnly: ddlOnly)
-			sb.append(table.lastSqlStatement.trim())
+			checkTable.drop(ddlOnly: ddlOnly)
+			sb.append(checkTable.lastSqlStatement.trim())
 			sb.append('\n')
 
 			bufTable.renameTo(table.tableName, [ddlOnly: ddlOnly])
@@ -3979,167 +4076,228 @@ FROM {source} {after_from}
 		}
 		else {
 			def sb = new StringBuilder()
-			def isDropPk = false
-			String pkName = null
-			def dropPk = {
-				if (isDropPk)
-					return
+			try {
+				def isDropPk = false
+				String pkName = null
+				def dropPk = {
+					if (isDropPk || checkTable.fieldListKeys.isEmpty() || !isSupport(Support.PRIMARY_KEY))
+						return
 
-				if (checkTable.fieldListKeys.isEmpty())
-					return
+					isDropPk = true
 
-				if (!isSupport(Support.PRIMARY_KEY))
-					return
+					if (!isSupport(Support.DROP_CONSTRAINT))
+						throw new NotSupportError(table, 'DROP CONSTRAINT')
 
-				pkName = prepareObjectNameForSQL(primaryKeyConstraintName(checkTable), checkTable)
-				if (pkName == null)
-					throw new DatasetError(table, '#dataset.fail_read_primary_key_constraint')
+					pkName = prepareObjectNameForSQL(primaryKeyConstraintName(checkTable), checkTable)
+					if (pkName == null)
+						throw new DatasetError(table, '#dataset.fail_read_primary_key_constraint')
 
-				isDropPk = true
-				def oper = sqlExpressionValue('ddlDropConstraint', [tableName: tableName, constraintName: pkName])
-				if (!ddlOnly)
-					executeCommand(oper, [ddlOperator: true])
-				sb.append(formatDDLStatements(oper, ddlOnly))
-				sb.append(newLine)
-			}
-
-			if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_NOT_FOUND)) {
-				changed.get(DatasetCompareField.COMPARE_FIELD_NOT_FOUND).each { val ->
-					def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
-					def fieldDesc = generateColumnDefinition(val.comparedField, false, false)
-					def oper = sqlExpressionValue('ddlAddColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
-					if (!ddlOnly)
-						executeCommand(oper, [ddlOperator: true])
+					def oper = sqlExpressionValue('ddlDropConstraint', [tableName: tableName, constraintName: pkName])
 					sb.append(formatDDLStatements(oper, ddlOnly))
 					sb.append(newLine)
-				}
-			}
-
-			if (isSupport(Support.PRIMARY_KEY) && !checkTable.fieldListKeys.isEmpty() &&
-					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) ||
-							(!allowChangeTypePrimaryKeyField() &&
-								(changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.find { it.datasetField.isKey } != null ||
-							(isSupport(Support.NOT_NULL_FIELD) &&
-								changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.find { it.datasetField.isKey && it.comparedField.isNull })))))
-				dropPk()
-
-			def changeLength = {
-				changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)?.each { val ->
-					def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
-					def typeName = type2sqlType(val.comparedField, false)
-					def oper = sqlExpressionValue('ddlChangeTypeColumnTable', [tableName: tableName, fieldName: fieldName, typeName: typeName])
 					if (!ddlOnly)
 						executeCommand(oper, [ddlOperator: true])
+				}
+
+				def postProcessingFields = [] as List<DatasetCompareField>
+				if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_NOT_FOUND)) {
+					changed.get(DatasetCompareField.COMPARE_FIELD_NOT_FOUND).each { val ->
+						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+						def needPostProcessing = (isSupport(Support.DEFAULT_VALUE) && !allowChangeTypeIfDefaultUsing &&
+								(changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE) ||
+										changed.containsKey(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)))
+						if (needPostProcessing)
+							postProcessingFields.add(val)
+
+						def fieldDesc = createDatasetAddColumn(val.comparedField, false,
+								(!needPostProcessing)?ColumnGenerationType.CREATE:ColumnGenerationType.ADD_PART, val.datasetField)
+						def oper = sqlExpressionValue('ddlAddColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+					}
+				}
+
+				if (isSupport(Support.PRIMARY_KEY) && !checkTable.fieldListKeys.isEmpty() &&
+						(changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) ||
+								(!allowChangeTypePrimaryKeyField &&
+									changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.find { it.datasetField.isKey } != null) ||
+								(isSupport(Support.NOT_NULL_FIELD) &&
+									changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.find { it.datasetField.isKey && it.comparedField.isNull } != null)))
+					dropPk()
+
+				List<Map<String, String>> defaultConstraints = null
+				def dropDefaultConstraint = { String columnName ->
+					String oper
+					if (isSupport(Support.DROP_DEFAULT_VALUE))
+						oper = sqlExpressionValue('ddlDropDefaultColumnTable', [tableName: tableName, fieldName: prepareObjectNameForSQL(columnName)])
+					else {
+						if (!isSupport(Support.DROP_CONSTRAINT))
+							throw new NotSupportError(jdbcConnection, 'DROP CONSTRAINT')
+
+						if (defaultConstraints == null) {
+							def constraintList = columnsConstraintName(checkTable)
+							defaultConstraints = (constraintList != null)?constraintList.findAll { it.type == 'DEFAULT' }:[]
+						}
+						def colName = columnName.toLowerCase()
+						def constr = defaultConstraints.find { it.column.toLowerCase() == colName }
+						if (constr == null)
+							throw new DatasetError(table, 'Not found default constraint for column {column}', [column: columnName])
+
+						oper = sqlExpressionValue('ddlDropConstraint', [tableName: tableName, constraintName: prepareObjectNameForSQL(constr.constraint, table)])
+					}
 					sb.append(formatDDLStatements(oper, ddlOnly))
 					sb.append(newLine)
+					if (!ddlOnly)
+						executeCommand(oper, [ddlOperator: true])
 				}
-			}
 
-			def changeType = {
-				if (isSupport(Support.COLUMN_CHANGE_TYPE)) {
-					changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.each { val ->
+				def changeLength = {
+					if (!isSupport(Support.ALTER_COLUMN))
+						return
+
+					changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)?.each { val ->
 						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
 						def typeName = type2sqlType(val.comparedField, false)
 						def oper = sqlExpressionValue('ddlChangeTypeColumnTable', [tableName: tableName, fieldName: fieldName, typeName: typeName])
-						if (!ddlOnly)
-							executeCommand(oper, [ddlOperator: true])
 						sb.append(formatDDLStatements(oper, ddlOnly))
 						sb.append(newLine)
-					}
-				}
-			}
-
-			def changeDefault = {
-				if (isSupport(Support.DEFAULT_VALUE)) {
-					changed.get(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE)?.each { val ->
-						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
-						def oper = (val.comparedField.defaultValue != null)?
-								sqlExpressionValue('ddlAddDefaultColumnTable', [tableName: tableName, fieldName: fieldName, fieldDefault: val.comparedField.defaultValue]):
-								sqlExpressionValue('ddlDropDefaultColumnTable', [tableName: tableName, fieldName: fieldName])
 						if (!ddlOnly)
 							executeCommand(oper, [ddlOperator: true])
-						sb.append(formatDDLStatements(oper, ddlOnly))
-						sb.append(newLine)
 					}
 				}
-			}
 
-			def changeNull = {
-				if (isSupport(Support.NOT_NULL_FIELD)) {
-					changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.each { val ->
+				def changeType = {
+					if (!isSupport(Support.ALTER_COLUMN) || !isSupport(Support.COLUMN_CHANGE_TYPE) ||
+							!changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE))
+						return
+
+					changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.each { val ->
+						if (isSupport(Support.DEFAULT_VALUE) && !allowChangeTypeIfDefaultUsing && val.datasetField.defaultValue != null) {
+								dropDefaultConstraint(val.datasetField.name)
+								postProcessingFields.add(val)
+						}
+
 						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+						def typeName = type2sqlType(val.comparedField, false)
+						def oper = sqlExpressionValue('ddlChangeTypeColumnTable', [tableName: tableName, fieldName: fieldName, typeName: typeName])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+					}
+				}
+
+				def changeDefault = {
+					if (!isSupport(Support.DEFAULT_VALUE) || !isSupport(Support.ALTER_COLUMN))
+						return
+
+					def procList = changed.get(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE)?:[]
+					postProcessingFields?.each { val ->
+						if (procList.find { it.comparedField.name == val.comparedField.name } == null)
+							procList.add(val)
+					}
+					procList.each { val ->
+						if ((val.comparedField.defaultValue != null)) {
+							if (!isSupport(Support.ALTER_DEFAULT_VALUE) && val.datasetField?.defaultValue != null &&
+									postProcessingFields.find { it.comparedField.name == val.comparedField.name } == null)
+								dropDefaultConstraint(val.datasetField.name)
+
+							def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+							def oper = sqlExpressionValue('ddlAddDefaultColumnTable', [tableName: tableName, fieldName: fieldName,
+																					   fieldDefault: val.comparedField.defaultValue])
+							sb.append(formatDDLStatements(oper, ddlOnly))
+							sb.append(newLine)
+							if (!ddlOnly)
+								executeCommand(oper, [ddlOperator: true])
+						}
+					}
+				}
+
+				def changeNull = {
+					if (!isSupport(Support.NOT_NULL_FIELD) || !isSupport(Support.ALTER_COLUMN))
+						return
+
+					def procList = changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?:[] as List<DatasetCompareField>
+					procList.addAll(postProcessingFields.findAll { !it.comparedField.isNull } )
+
+					procList.each { val ->
+						def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+						def fieldDesc = generateColumnDefinition(val.comparedField, false,
+								(val.datasetField == null)?ColumnGenerationType.CREATE:ColumnGenerationType.MODIFY, val.datasetField)
 						def oper = (!val.comparedField.isNull)?
-								sqlExpressionValue('ddlAddNotNullColumnTable', [tableName: tableName, fieldName: fieldName]):
-								sqlExpressionValue('ddlDropNotNullColumnTable', [tableName: tableName, fieldName: fieldName])
-						if (!ddlOnly)
-							executeCommand(oper, [ddlOperator: true])
+								sqlExpressionValue('ddlAddNotNullColumnTable', [tableName: tableName] + fieldDesc):
+								sqlExpressionValue('ddlDropNotNullColumnTable', [tableName: tableName] + fieldDesc)
 						sb.append(formatDDLStatements(oper, ddlOnly))
 						sb.append(newLine)
-					}
-				}
-			}
-
-			def useChangeColumnTable = (sqlExpression('ddlChangeColumnTable') != null)
-			if (useChangeColumnTable &&
-				(changed.containsKey(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE) ||
-					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE) && isSupport(Support.COLUMN_CHANGE_TYPE)) ||
-					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE) && isSupport(Support.DEFAULT_VALUE)) ||
-					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE) && isSupport(Support.NOT_NULL_FIELD)))) {
-				def changeFields = [] as List<String>
-				def l1 = changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
-				if (l1 != null)
-					changeFields.addAll(l1)
-				def l2 = changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
-				if (l2 != null)
-					changeFields.addAll(l2)
-				def l3 = changed.get(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
-				if (l3 != null)
-					changeFields.addAll(l3)
-				def l4 = changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE)?.collect { val -> val.comparedField.name }
-				if (l4 != null)
-					changeFields.addAll(l4)
-				changeFields = changeFields.unique()
-				table.field.each { field ->
-					if (field.name in changeFields) {
-						def fieldName = prepareObjectNameForSQL(field.name, table)
-						def fieldDesc = generateColumnDefinition(field, false, false)
-						def oper = sqlExpressionValue('ddlChangeColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
 						if (!ddlOnly)
 							executeCommand(oper, [ddlOperator: true])
-						sb.append(formatDDLStatements(oper, ddlOnly))
-						sb.append(newLine)
 					}
 				}
-			}
-			else {
-				changeLength()
-				changeType()
-				changeDefault()
-				changeNull()
-			}
 
-			if (!table.fieldListKeys.isEmpty() && isSupport(Support.PRIMARY_KEY) &&
-					(changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) || isDropPk)) {
-				if (pkName == null)
-					pkName = prepareObjectNameForSQL(((table.schemaName() != null)?"${table.schemaName()}_":'') + table.tableName + '_primary_key', checkTable)
-                def pkDesc = generatePrimaryKeyDefinition(table, table.createDirective)
-                def oper = sqlExpressionValue('ddlAddConstraint', [tableName: tableName, constraintName: pkName, constraintDesc: pkDesc])
-				if (!ddlOnly)
-					executeCommand(oper, [ddlOperator: true])
-				sb.append(formatDDLStatements(oper, ddlOnly))
-                sb.append(newLine)
-			}
+				if (isSupport(Support.ALTER_COLUMN)) {
+					if (sqlExpression('ddlChangeColumnTable') != null &&
+							(changed.containsKey(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE) ||
+									(changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE) && isSupport(Support.COLUMN_CHANGE_TYPE)) ||
+									(changed.containsKey(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE) && isSupport(Support.DEFAULT_VALUE)) ||
+									(changed.containsKey(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE) && isSupport(Support.NOT_NULL_FIELD)))) {
+						def changeFields = [] as List<DatasetCompareField>
 
-			if (changed.containsKey(DatasetCompareField.COMPARE_UNNECESSARY_FIELD)) {
-				changed.get(DatasetCompareField.COMPARE_UNNECESSARY_FIELD).each { val ->
-					def fieldName = prepareObjectNameForSQL(val.datasetField.name, table)
-					def fieldDesc = generateColumnDefinition(val.datasetField, false)
-					def oper = sqlExpressionValue('ddlDropColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
-					if (!ddlOnly)
-						executeCommand(oper, [ddlOperator: true])
+						if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE))
+							changeFields.addAll(changed.get(DatasetCompareField.COMPARE_FIELD_LENGTH_NOT_COMPATIBLE))
+						if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE))
+							changeFields.addAll(changed.get(DatasetCompareField.COMPARE_FIELD_TYPE_NOT_COMPATIBLE))
+						if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE))
+							changeFields.addAll(changed.get(DatasetCompareField.COMPARE_FIELD_DEFAULT_NOT_COMPATIBLE))
+						if (changed.containsKey(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE))
+							changeFields.addAll(changed.get(DatasetCompareField.COMPARE_FIELD_NULL_NOT_COMPATIBLE))
+
+						changeFields = changeFields.unique { a, b -> a.comparedField?.name <=> b.comparedField?.name }
+						changeFields.each { val ->
+							def fieldName = prepareObjectNameForSQL(val.comparedField.name, table)
+							def fieldDesc = createDatasetAddColumn(val.comparedField, false, ColumnGenerationType.MODIFY, val.datasetField)
+							def oper = sqlExpressionValue('ddlChangeColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
+							sb.append(formatDDLStatements(oper, ddlOnly))
+							sb.append(newLine)
+							if (!ddlOnly)
+								executeCommand(oper, [ddlOperator: true])
+						}
+					} else {
+						changeLength()
+						changeType()
+						changeDefault()
+						changeNull()
+					}
+				}
+
+				if (!table.fieldListKeys.isEmpty() && isSupport(Support.PRIMARY_KEY) &&
+						((changed.containsKey(DatasetCompareField.COMPARE_FIELD_KEY_NOT_COMPATIBLE) && !isDropPk) || (isDropPk && isSupport(Support.DROP_CONSTRAINT)))) {
+					if (pkName == null)
+						pkName = prepareObjectNameForSQL(((table.schemaName() != null)?"${table.schemaName()}_":'') + table.tableName + '_primary_key', checkTable)
+					def pkDesc = generatePrimaryKeyDefinition(table, table.createDirective)
+					def oper = sqlExpressionValue('ddlAddConstraint', [tableName: tableName, constraintName: pkName, constraintDesc: pkDesc])
 					sb.append(formatDDLStatements(oper, ddlOnly))
 					sb.append(newLine)
+					if (!ddlOnly)
+						executeCommand(oper, [ddlOperator: true])
 				}
+
+				if (changed.containsKey(DatasetCompareField.COMPARE_UNNECESSARY_FIELD)) {
+					changed.get(DatasetCompareField.COMPARE_UNNECESSARY_FIELD).each { val ->
+						def fieldName = prepareObjectNameForSQL(val.datasetField.name, table)
+						def fieldDesc = createDatasetAddColumn(val.datasetField, false, ColumnGenerationType.DROP)
+						def oper = sqlExpressionValue('ddlDropColumnTable', [tableName: tableName, fieldName: fieldName, fieldDesc: fieldDesc])
+						sb.append(formatDDLStatements(oper, ddlOnly))
+						sb.append(newLine)
+						if (!ddlOnly)
+							executeCommand(oper, [ddlOperator: true])
+					}
+				}
+			}
+			catch (Exception e) {
+				table.logger.dump(e, 'Table synchronize', table.toString(), sb.toString())
+				throw e
 			}
 
 			res.append(sb.toString())

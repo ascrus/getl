@@ -1006,11 +1006,11 @@ class FileUtils {
 	 * @param zipFilePath zip file path
 	 * @param sourcePath source files path
      * @param params zip parameters
-	 * @param checkFileName code for checking the inclusion of files in the archive
+	 * @param allowFileToArchive code for checking the inclusion of files in the archive (File directory, String fileName)
 	 */
 	static void CompressToZip(String zipFilePath, String sourcePath, Map params,
 							  @ClosureParams(value = SimpleType, options = ['java.io.File', 'java.lang.String'])
-									  Closure checkFileName) {
+									  Closure allowFileToArchive) {
 		zipFilePath = TransformFilePath(zipFilePath)
 		sourcePath = TransformFilePath(sourcePath)
 
@@ -1043,9 +1043,10 @@ class FileUtils {
 		
 		Path p = new Path(mask: fileMask)
 
-		def filter = { File pathFile, String name ->
+		def filterCode = { File pathFile, String name ->
 			def accept = p.match(name)
-			if (accept && checkFileName != null) accept = (checkFileName(pathFile, name) == true)
+			if (accept && allowFileToArchive != null)
+				accept = (allowFileToArchive(pathFile, name) == true)
 			
 			return accept
 		}
@@ -1053,7 +1054,10 @@ class FileUtils {
 		if (params.rootDir != null)
 			parameters.rootFolderNameInZip = params.rootDir.toString()
 
-		new File(filePath).listFiles(new Filter(filter)).each { File f ->
+		def filter = new Filter(filterCode)
+		parameters.excludeFileFilter = filter
+
+		new File(filePath).listFiles(filter).each { File f ->
 			if (f.directory)
 				zipFile.addFolder(f, parameters)
 			else

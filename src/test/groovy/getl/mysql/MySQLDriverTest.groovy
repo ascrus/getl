@@ -1,5 +1,6 @@
 package getl.mysql
 
+import getl.data.Field
 import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriverProto
 import getl.utils.Config

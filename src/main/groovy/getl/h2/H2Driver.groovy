@@ -32,7 +32,7 @@ class H2Driver extends JDBCDriver {
 		super.initParams()
 
 		commitDDL = false
-		allowExpressions = true
+		allowBulkLoadExpressions = true
 		caseObjectName = "UPPER"
 		caseRetrieveObject = "UPPER"
 		caseQuotedName = true
@@ -51,11 +51,13 @@ class H2Driver extends JDBCDriver {
 		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DATA TYPE {typeName}'
 
 		ruleEscapedText.put('\'', '\'\'')
+
+		allowColumnsInDefinitionExpression = false
 	}
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Override
-	List<Driver.Support> supported() {
+	List<Driver.Support> supported() { /* TODO: H2 ARRAY NOT FULL */
 		return super.supported() +
 				[Support.GLOBAL_TEMPORARY, Support.LOCAL_TEMPORARY, Support.MEMORY,
 				 Support.SEQUENCE, Support.BLOB, Support.CLOB, Support.INDEX, Support.INDEXFORTEMPTABLE, Support.COLUMN_CHANGE_TYPE,
@@ -63,8 +65,8 @@ class H2Driver extends JDBCDriver {
 				 Support.DROPIFEXIST, Support.CREATEIFNOTEXIST, Driver.Support.CREATEINDEXIFNOTEXIST, Driver.Support.DROPINDEXIFEXIST,
 				 Support.CREATESCHEMAIFNOTEXIST, Support.DROPSCHEMAIFEXIST, Support.DROPVIEWIFEXISTS, Support.CREATEVIEWIFNOTEXISTS,
 				 Support.DROPSEQUENCEIFEXISTS, Support.CREATESEQUENCEIFNOTEXISTS
-				 /*, Support.ARRAY*/]
-		/* TODO: H2 ARRAY NOT FULL */
+				 /*, Support.ARRAY*/] /*-
+				[Support.ALTER_DEFAULT_VALUE]*/
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

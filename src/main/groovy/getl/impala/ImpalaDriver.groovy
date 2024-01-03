@@ -114,7 +114,7 @@ class ImpalaDriver extends JDBCDriver {
             partitionFields.sort(true) { Field a, Field b -> (a.ordPartition?:999999999) <=> (b.ordPartition?:999999999) }
             def partitionCols = [] as List<String>
             partitionFields.each { Field f ->
-                partitionCols.add(generateColumnDefinition(f, false))
+                partitionCols.add(createDatasetAddColumn(f))
             }
             sb << "PARTITIONED BY (${partitionCols.join(', ')})"
             sb << '\n'
@@ -372,7 +372,7 @@ class ImpalaDriver extends JDBCDriver {
         files.each { fileName ->
             def file = new File(fileName)
             if (!file.exists())
-                throw new IOFilesError(dest, '#io.file.not_found', [file: fileName])
+                throw new IOFilesError(dest, '#io.file.not_found', [path: fileName])
 
             csvCon.path = file.parent
             csvFile.fileName = file.name

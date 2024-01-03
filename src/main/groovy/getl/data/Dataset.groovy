@@ -1610,7 +1610,7 @@ class Dataset implements GetlRepository, WithConnection, ObjectTags {
 
 	@Override
 	String toString() {
-		return (dslNameObject != null)?(dslNameObject + ' [' + objectName + ']'):(getClass().simpleName + ' [' + objectName + ']')
+		return (dslNameObject != null && dslNameObject.length() > 0 && dslNameObject[0] != '#')?(dslNameObject + ' [' + objectName + ']'):(getClass().simpleName + ' [' + objectName + ']')
 	}
 
 	/** Format for reading and writing schema files */

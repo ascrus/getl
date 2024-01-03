@@ -193,7 +193,7 @@ class ConfigSlurper extends ConfigManager {
 		if (file == null)
 			throw new RequiredParameterError('file', 'LoadConfigFile')
 		if (!file.exists())
-			throw new IOFilesError('#io.file.not_found', [file: file.path, type: 'Config'])
+			throw new IOFilesError('#io.file.not_found', [path: file.path, type: 'Config'])
 
 		def logger = (owner?.logging?.manager != null)?owner.logging.manager:Logs.global
 		if (codePage == null)
