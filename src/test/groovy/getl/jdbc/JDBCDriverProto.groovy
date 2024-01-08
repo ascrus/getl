@@ -1214,10 +1214,15 @@ IF ('{support_update}' = 'true') DO {
             field('value') { length = 12; precision = 1; isNull = true }
             field('dt') { isKey = true; defaultValue = con.currentJDBCDriver.sqlExpressionValue('now') }
             def valueName = currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL('value', it)
-            if (currentJDBCConnection.currentJDBCDriver.allowColumnsInDefinitionExpression())
-                field('kpi') { type = integerFieldType; isNull = false; defaultValue = "(CASE WHEN $valueName IS NULL THEN NULL ELSE $valueName END)" }
-            else
-                field('kpi') { type = integerFieldType; isNull = false; defaultValue = 0 }
+            field('kpi') {
+                type = integerFieldType
+                isNull = false
+                checkValue = 'kpi >= 0'
+                if (currentJDBCConnection.currentJDBCDriver.allowColumnsInDefinitionExpression())
+                    defaultValue = "(CASE WHEN $valueName IS NULL THEN NULL ELSE $valueName END)"
+                else
+                    defaultValue = 0
+            }
             removeField('unknown_field')
             con.disconnect()
             def sqlAlter = synchronizeStructure(softCheckType: false, softCheckNull: false, softCheckPK: false, checkDefaultExpression: true,

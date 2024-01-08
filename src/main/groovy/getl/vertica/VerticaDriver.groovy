@@ -56,6 +56,8 @@ class VerticaDriver extends JDBCDriver {
 		allowBulkLoadExpressions = true
 		lengthTextInBytes = true
 		defaultBatchSize = 10000L
+		allowChangeTypeIfDefaultUsing = false
+		allowConstraintsInAddColumn = false
 
 		sqlExpressions.ddlAutoIncrement = 'AUTO_INCREMENT'
 		sqlExpressions.ddlCreatePrimaryKey = 'PRIMARY KEY ({columns}) {check_pk}'
@@ -66,6 +68,7 @@ class VerticaDriver extends JDBCDriver {
 		sqlExpressions.ddlDropConstraint = 'ALTER TABLE {tableName} DROP CONSTRAINT {constraintName} CASCADE'
 		sqlExpressions.ddlDropColumnTable = 'ALTER TABLE {tableName} DROP COLUMN {fieldName} CASCADE'
 		sqlExpressions.ddlChangeTypeColumnTable = 'ALTER TABLE {tableName} ALTER COLUMN {fieldName} SET DATA TYPE {typeName}'
+		sqlExpressions.ddlAddFieldFull = '{column}{ %type%}{ %increment%}{ %not_null%}{ %default%}'
 		sqlExpressions.changeSessionProperty = 'SET {name} TO {value}'
 		sqlExpressions.escapedText = 'E\'{text}\''
 
@@ -74,8 +77,6 @@ class VerticaDriver extends JDBCDriver {
 		sqlTypeMap.TEXT.name = 'long varchar'
 
 		driverSqlKeywords.addAll(['NEW'])
-
-		allowChangeTypeIfDefaultUsing = false
 	}
 
 	@Override
